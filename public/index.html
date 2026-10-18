@@ -1622,7 +1622,7 @@
               <div id="userActiveEventsContainer" class="space-y-2.5 hidden"></div>
 
 
-              <!-- 2. MEETING STATUS & CHECK-IN CARD (Original Gradient Hero with Floating Bubbles) -->
+              <!-- 2. MEETING STATUS & CHECK-IN CARD (Layout of Image 1 with Animated Gradient Hero Background of Image 2) -->
               <div id="userMeetingHeroCard" class="gradient-hero text-white rounded-2xl p-5 sm:p-6 shadow-card relative overflow-hidden border border-white/10 before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_65%)] before:pointer-events-none transition-colors duration-300">
                 <!-- Bubble Animation Background -->
                 <div id="heroBubbleContainer" class="hero-bubble-wrapper">
@@ -1634,17 +1634,17 @@
                 </div>
 
                 <div class="relative z-10 flex flex-row items-start sm:items-center justify-between gap-4">
-                  <!-- ฝั่งซ้าย: สถานะ, ชื่อการประชุม, วันเวลา และสถานที่ -->
-                  <div class="flex-1 min-w-0 space-y-2.5">
+                  <!-- ฝั่งซ้าย: สถานะ, ชื่อการประชุม, วันเวลา, สถานที่ และปุ่มดำเนินการด่วน (ตามเลย์เอาต์ภาพ 1) -->
+                  <div class="flex-1 min-w-0 space-y-2">
                     <div class="flex items-center gap-2 flex-wrap">
-                      <span id="heroStatusWrapper" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
+                      <span id="heroStatusWrapper" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                         <span id="heroStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
                         <span id="userBannerStatusPill">กำลังประชุม</span>
                       </span>
                       <span id="heroOnlineBadge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white backdrop-blur-xs items-center gap-1 border border-white/20">
                         <i data-lucide="globe" class="text-[10px]"></i> <span id="heroOnlinePlatformLabel">Google Meet</span>
                       </span>
-                      <span id="heroUserCheckinPill" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/20 text-white backdrop-blur-xs">
+                      <span id="heroUserCheckinPill" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/20 text-white backdrop-blur-xs">
                         ยังไม่เช็คชื่อ
                       </span>
                     </div>
@@ -1657,21 +1657,34 @@
                       <p id="userBannerDateTime">วันที่: - • เวลา: -</p>
                       <p id="userBannerLocation">ห้องประชุม: -</p>
                     </div>
+
+                    <!-- 3 ปุ่มดำเนินการด่วนตามเลย์เอาต์ภาพ 1 (QR เช็คชื่อของฉัน, ยกมือขอพูด, แจ้งลาประชุม) -->
+                    <div class="pt-1.5 flex flex-wrap items-center gap-2">
+                      <button type="button" onclick="openQrExpandModal()" class="inline-flex items-center justify-center gap-1.5 rounded-xl text-xs font-semibold h-8 px-3.5 bg-white text-indigo-950 hover:bg-white/90 shadow-sm transition-all cursor-pointer">
+                        <i data-lucide="qr-code" class="h-3.5 w-3.5"></i>
+                        <span>QR เช็คชื่อของฉัน</span>
+                      </button>
+                      <button type="button" onclick="switchUserTab('RAISE')" class="inline-flex items-center justify-center gap-1.5 rounded-xl text-xs font-medium h-8 px-3 bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-xs transition-colors cursor-pointer">
+                        <i data-lucide="hand" class="h-3.5 w-3.5"></i>
+                        <span>ยกมือขอพูด</span>
+                      </button>
+                      <button type="button" onclick="openLeaveModal()" class="inline-flex items-center justify-center gap-1.5 rounded-xl text-xs font-medium h-8 px-3 bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-xs transition-colors cursor-pointer">
+                        <i data-lucide="calendar-off" class="h-3.5 w-3.5"></i>
+                        <span>แจ้งลาประชุม</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <!-- ฝั่งขวา: QR Code ประจำตัวสมาชิก (แสดงเฉพาะโหมด On-site ให้ Admin สแกน) -->
+                  <!-- ฝั่งขวา: QR Code ประจำตัวสมาชิก (ตามเลย์เอาต์ภาพ 1) -->
                   <div id="heroOnsiteQrWrapper" class="shrink-0 flex flex-col items-center text-center">
-                    <div class="text-[11px] font-semibold text-white/80 mb-1.5 hidden sm:block">
+                    <div class="text-[11px] font-semibold text-white/80 mb-1 hidden sm:block">
                       <span id="heroMemberCodeTop">COMSAN</span>
                     </div>
                     <div onclick="openQrExpandModal()" title="คลิกเพื่อย่อ/ขยาย QR Code"
-                      class="bg-white p-2.5 sm:p-3 rounded-xl shadow-xs cursor-pointer hover:scale-105 transition flex items-center justify-center border border-white/30 text-slate-900">
-                      <div id="userQrCodeBox" class="w-[88px] h-[88px] sm:w-[104px] sm:h-[104px] flex items-center justify-center"></div>
+                      class="bg-white p-2 rounded-2xl shadow-md cursor-pointer hover:scale-105 transition flex items-center justify-center border border-white/30 text-slate-900">
+                      <div id="userQrCodeBox" class="w-[76px] h-[76px] sm:w-[88px] sm:h-[88px] flex items-center justify-center"></div>
                     </div>
-                    <button type="button" onclick="openQrExpandModal()" class="mt-2 text-[11px] font-semibold text-white/90 hover:text-white flex items-center gap-1 cursor-pointer">
-                      <span>QR CODE ประจำตัวฉัน</span> <i data-lucide="zoom-in" class="h-3 w-3"></i>
-                    </button>
-                    <p id="userQrCodeText" class="text-[10px] font-mono text-white/70 mt-0.5">COMSAN-01</p>
+                    <p id="userQrCodeText" class="text-[10px] font-mono text-white/70 mt-1">COMSAN-01</p>
                   </div>
                 </div>
 

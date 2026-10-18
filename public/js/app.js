@@ -78,7 +78,7 @@ function updateMeetingTimersAndBanners() {
     if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
     if (userBannerStatusPill) userBannerStatusPill.textContent = 'กำลังประชุม';
     if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300';
+    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
   }
 
   // Online meeting UI elements
