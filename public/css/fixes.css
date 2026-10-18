@@ -1,0 +1,90 @@
+/* Mobile, Responsive & Cross-Browser Bug Fixes */
+
+/* Universal Hidden Utility */
+.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* Responsive display overrides taking precedence over universal .hidden */
+@media (min-width: 640px) {
+  .sm\:block { display: block !important; }
+  .sm\:flex { display: flex !important; }
+  .sm\:inline { display: inline !important; }
+  .sm\:inline-block { display: inline-block !important; }
+  .sm\:grid { display: grid !important; }
+}
+@media (min-width: 768px) {
+  .md\:block { display: block !important; }
+  .md\:flex { display: flex !important; }
+  .md\:inline { display: inline !important; }
+  .md\:inline-block { display: inline-block !important; }
+  .md\:grid { display: grid !important; }
+}
+@media (min-width: 1024px) {
+  .lg\:block { display: block !important; }
+  .lg\:flex { display: flex !important; }
+  .lg\:inline { display: inline !important; }
+  .lg\:grid { display: grid !important; }
+}
+
+/* Force date and time inputs inside bounds on iOS Safari */
+input[type="date"],
+input[type="time"] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  min-height: 2.65rem !important;
+  line-height: 1.5 !important;
+  text-align: center !important;
+}
+
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: center !important;
+  margin: 0 auto !important;
+}
+
+/* Remove number spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Symmetric Segmented Controls */
+.segmented-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.375rem;
+}
+@media (max-width: 640px) {
+  .segmented-btn-row-1 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.375rem;
+  }
+  .segmented-btn-row-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.375rem;
+  }
+}
+
+
+/* Modal Centering Fix */
+#calendarEventModal:not(.hidden),
+#calendarIcsModal:not(.hidden),
+#calendarEventDetailModal:not(.hidden) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+

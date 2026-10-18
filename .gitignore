@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env*
+.vercel/
+
+# Logs & OS artifacts
+*.log
+.DS_Store
+Thumbs.db
