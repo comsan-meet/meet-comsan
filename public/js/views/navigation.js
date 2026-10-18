@@ -409,10 +409,6 @@ function handleHeaderPrimaryAction(e) {
     openAdminSection('VOTING');
   } else if (action === 'CREATE_EVENT') {
     openAdminSection('CALENDAR');
-  } else if (action === 'ADD_STICKY_NOTE') {
-    if (typeof window.openAddStickyNoteModal === 'function') {
-      window.openAddStickyNoteModal();
-    }
   } else if (action === 'ADMIN_FILES') {
     openAdminSection('FILES');
   } else {
@@ -752,16 +748,12 @@ function switchUserToolSubTab(subTab) {
       const me = (window.appState.users || []).find(u => u.id === uid);
       if (me && !noteTa.value && me.note) noteTa.value = me.note;
     }
-    if (typeof window.renderChoiceStickyBoard === 'function') {
-      window.renderChoiceStickyBoard();
-    }
   } else if (targetSub === 'STREAM') {
     if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
   } else if (targetSub === 'FILES') {
     if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
   } else if (targetSub === 'SEATS') {
     if (typeof window.renderParliamentSeats === 'function') window.renderParliamentSeats();
-    if (typeof window.renderMemberDirectoryCards === 'function') window.renderMemberDirectoryCards();
   } else if (targetSub === 'RANDOM') {
     if (typeof window.rebuildRandomMemberPool === 'function') window.rebuildRandomMemberPool();
   } else if (targetSub === 'CALENDAR') {

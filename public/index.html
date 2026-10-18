@@ -1621,51 +1621,6 @@
               <!-- แถบแจ้งเตือนเหตุการณ์สำคัญแบบเรียลไทม์ (แสดงเมื่อมีการเปิดโหวตหรือถ่ายทอดสด) -->
               <div id="userActiveEventsContainer" class="space-y-2.5 hidden"></div>
 
-              <!-- 1. CHOICE 21:9 BANNER CAROUSEL (Exact match to comsan-choice.vercel.app Home) -->
-              <div id="choiceHomeBannerCarousel" class="w-full shadow-card rounded-xl overflow-hidden relative group select-none" role="region" aria-roledescription="carousel"
-                   onmouseenter="pauseHomeBannerCarousel()" onmouseleave="resumeHomeBannerCarousel()">
-                <div class="overflow-hidden">
-                  <div id="choiceHomeBannerTrack" class="flex transition-transform duration-500 ease-out" style="transform: translate3d(0%, 0px, 0px);">
-                    <!-- Slide 1: COMSAN Shirt Banner -->
-                    <div class="min-w-0 shrink-0 grow-0 basis-full">
-                      <div class="relative aspect-[21/9] w-full bg-muted">
-                        <a href="https://comsan-choice.vercel.app/product/comsan-dream-shirt" target="_blank" rel="noreferrer" class="block w-full h-full">
-                          <img src="https://fqobxhatdkmjnurizmpp.supabase.co/storage/v1/object/public/banners/shirt.webp" alt="COMSAN Banner 1" class="w-full h-full object-cover" />
-                        </a>
-                      </div>
-                    </div>
-                    <!-- Slide 2: COMSAN Headband Banner -->
-                    <div class="min-w-0 shrink-0 grow-0 basis-full">
-                      <div class="relative aspect-[21/9] w-full bg-muted">
-                        <a href="https://comsan-choice.vercel.app/product/comsan-headband" target="_blank" rel="noreferrer" class="block w-full h-full">
-                          <img src="https://fqobxhatdkmjnurizmpp.supabase.co/storage/v1/object/public/banners/headband.webp" alt="COMSAN Banner 2" class="w-full h-full object-cover" />
-                        </a>
-                      </div>
-                    </div>
-                    <!-- Slide 3: COMSAN Official Linktree Banner -->
-                    <div class="min-w-0 shrink-0 grow-0 basis-full">
-                      <div class="relative aspect-[21/9] w-full bg-muted">
-                        <a href="https://linktr.ee/comsanentertainer" target="_blank" rel="noreferrer" class="block w-full h-full">
-                          <img src="https://fqobxhatdkmjnurizmpp.supabase.co/storage/v1/object/public/banners/7024532e-b5da-4c7b-ba81-fb01f348cbce/12270387-fe03-43e3-9841-b9ab9e126897/1792336564505-tr065ulxm38.webp" alt="COMSAN Banner 3" class="w-full h-full object-cover" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <!-- Carousel Prev/Next Arrows -->
-                <button type="button" onclick="stepHomeBannerSlide(-1)" class="inline-flex items-center justify-center absolute h-8 w-8 md:h-10 md:w-10 rounded-full top-1/2 -translate-y-1/2 left-2 md:left-4 bg-black/25 hover:bg-black/45 border-none text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20" aria-label="Previous slide">
-                  <i data-lucide="arrow-left" class="h-4 w-4"></i>
-                </button>
-                <button type="button" onclick="stepHomeBannerSlide(1)" class="inline-flex items-center justify-center absolute h-8 w-8 md:h-10 md:w-10 rounded-full top-1/2 -translate-y-1/2 right-2 md:right-4 bg-black/25 hover:bg-black/45 border-none text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20" aria-label="Next slide">
-                  <i data-lucide="arrow-right" class="h-4 w-4"></i>
-                </button>
-                <!-- Carousel Indicator Dots -->
-                <div id="choiceHomeBannerDots" class="absolute bottom-3 md:bottom-4 left-0 right-0 flex justify-center gap-1.5 md:gap-2 z-20">
-                  <button type="button" onclick="goToHomeBannerSlide(0)" class="home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white w-5 md:w-8 cursor-pointer" aria-label="สไลด์ 1"></button>
-                  <button type="button" onclick="goToHomeBannerSlide(1)" class="home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white/40 w-1.5 md:w-2 cursor-pointer" aria-label="สไลด์ 2"></button>
-                  <button type="button" onclick="goToHomeBannerSlide(2)" class="home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white/40 w-1.5 md:w-2 cursor-pointer" aria-label="สไลด์ 3"></button>
-                </div>
-              </div>
 
               <!-- 2. MEETING STATUS & CHECK-IN CARD (Clean Choice Card Style, preserving all IDs) -->
               <div id="userMeetingHeroCard" class="rounded-xl border border-border bg-card text-card-foreground shadow-sm shadow-card p-5 sm:p-6 relative overflow-hidden transition-all">
@@ -1767,6 +1722,129 @@
                    ontouchstart="if(typeof pauseTodayEventCycle==='function')pauseTodayEventCycle()" ontouchend="if(typeof resumeTodayEventCycle==='function')resumeTodayEventCycle()">
               </div>
 
+              <!-- AUTO-SLIDING RECOMMENDED FEATURES CAROUSEL (ฟีเจอร์แนะนำ เลื่อนไปทางซ้ายทุก 2 วินาที) -->
+              <div id="recommendedFeaturesCarousel" class="relative overflow-hidden rounded-xl border border-border bg-card hover:border-primary/40 transition shadow-2xs group/carousel select-none cursor-pointer"
+                   onmouseenter="pauseRecommendedCarousel()" onmouseleave="resumeRecommendedCarousel()"
+                   ontouchstart="pauseRecommendedCarousel()" ontouchend="resumeRecommendedCarousel()">
+                
+                <!-- Sliding Track -->
+                <div id="recommendedCarouselTrack" class="flex w-full transition-transform duration-500 ease-out will-change-transform">
+                  
+                  <!-- Slide 0: บันทึกการประชุม (NOTE) -->
+                  <div onclick="handleRecommendedFeatureClick('NOTE')" class="w-full shrink-0 flex items-center justify-between p-4 pb-5 sm:pb-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div class="flex items-center gap-3.5 min-w-0 pr-2">
+                      <div class="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg shrink-0">
+                        <i data-lucide="sticky-note" class="h-5 w-5"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h4 class="text-sm font-bold text-foreground truncate">กระดานจดบันทึกการประชุม</h4>
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">แนะนำ</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground truncate">บันทึกข้อสรุปและประเด็นสำคัญประจำตัวคุณ พร้อมส่งออกสรุป PDF</p>
+                      </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground/60 shrink-0"></i>
+                  </div>
+
+                  <!-- Slide 1: แชร์หน้าจอ (STREAM) -->
+                  <div onclick="handleRecommendedFeatureClick('STREAM')" class="w-full shrink-0 flex items-center justify-between p-4 pb-5 sm:pb-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div class="flex items-center gap-3.5 min-w-0 pr-2">
+                      <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg shrink-0">
+                        <i data-lucide="monitor" class="h-5 w-5"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h4 class="text-sm font-bold text-foreground truncate">แชร์หน้าจอและการนำเสนอ</h4>
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">แนะนำ</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground truncate">รับชมการนำเสนอ สไลด์ และจอพรีเซนต์ของวิทยากรแบบเรียลไทม์</p>
+                      </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground/60 shrink-0"></i>
+                  </div>
+
+                  <!-- Slide 2: คลังเอกสาร (FILES) -->
+                  <div onclick="handleRecommendedFeatureClick('FILES')" class="w-full shrink-0 flex items-center justify-between p-4 pb-5 sm:pb-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div class="flex items-center gap-3.5 min-w-0 pr-2">
+                      <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg shrink-0">
+                        <i data-lucide="file-text" class="h-5 w-5"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h4 class="text-sm font-bold text-foreground truncate">คลังเอกสารประกอบการประชุม</h4>
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">แนะนำ</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground truncate">ดาวน์โหลดระเบียบวาระ สไลด์ และเอกสารแนบประกอบการประชุม</p>
+                      </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground/60 shrink-0"></i>
+                  </div>
+
+                  <!-- Slide 3: การลงมติ (VOTE) -->
+                  <div onclick="handleRecommendedFeatureClick('VOTE')" class="w-full shrink-0 flex items-center justify-between p-4 pb-5 sm:pb-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div class="flex items-center gap-3.5 min-w-0 pr-2">
+                      <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg shrink-0">
+                        <i data-lucide="vote" class="h-5 w-5"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h4 class="text-sm font-bold text-foreground truncate">การลงมติและการโหวต</h4>
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">แนะนำ</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground truncate">ร่วมออกเสียงลงคะแนนมติในวาระต่างๆ ได้อย่างโปร่งใสและแม่นยำ</p>
+                      </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground/60 shrink-0"></i>
+                  </div>
+
+                  <!-- Slide 4: วงล้อสุ่มสมาชิก (RANDOM) -->
+                  <div onclick="handleRecommendedFeatureClick('RANDOM')" class="w-full shrink-0 flex items-center justify-between p-4 pb-5 sm:pb-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div class="flex items-center gap-3.5 min-w-0 pr-2">
+                      <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg shrink-0">
+                        <i data-lucide="dices" class="h-5 w-5"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h4 class="text-sm font-bold text-foreground truncate">วงล้อสุ่มสมาชิกชมรม</h4>
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">แนะนำ</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground truncate">สุ่มผู้ตอบคำถามหรือกิจกรรมกลุ่มด้วยวงล้อแอนิเมชันสุดตื่นเต้น</p>
+                      </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground/60 shrink-0"></i>
+                  </div>
+
+                  <!-- Slide 5: ผังสมาชิกชมรมและที่นั่ง (SEATS) -->
+                  <div onclick="handleRecommendedFeatureClick('SEATS')" class="w-full shrink-0 flex items-center justify-between p-4 pb-5 sm:pb-4 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div class="flex items-center gap-3.5 min-w-0 pr-2">
+                      <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-lg shrink-0">
+                        <i data-lucide="layout-dashboard" class="h-5 w-5"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h4 class="text-sm font-bold text-foreground truncate">ผังสมาชิกชมรมและที่นั่ง</h4>
+                          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">แนะนำ</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground truncate">ตรวจสอบตำแหน่งที่นั่งและสถานะการเข้าร่วมประชุมของเพื่อนสมาชิก</p>
+                      </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground/60 shrink-0"></i>
+                  </div>
+
+                </div>
+
+                <!-- Pagination Dots -->
+                <div id="recommendedCarouselDots" class="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10 pointer-events-auto">
+                  <button type="button" onclick="event.stopPropagation(); goToRecommendedSlide(0);" class="rec-dot h-1.5 rounded-full transition-all duration-300 w-4 bg-primary cursor-pointer" aria-label="สไลด์ 1"></button>
+                  <button type="button" onclick="event.stopPropagation(); goToRecommendedSlide(1);" class="rec-dot h-1.5 rounded-full transition-all duration-300 w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50 cursor-pointer" aria-label="สไลด์ 2"></button>
+                  <button type="button" onclick="event.stopPropagation(); goToRecommendedSlide(2);" class="rec-dot h-1.5 rounded-full transition-all duration-300 w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50 cursor-pointer" aria-label="สไลด์ 3"></button>
+                  <button type="button" onclick="event.stopPropagation(); goToRecommendedSlide(3);" class="rec-dot h-1.5 rounded-full transition-all duration-300 w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50 cursor-pointer" aria-label="สไลด์ 4"></button>
+                  <button type="button" onclick="event.stopPropagation(); goToRecommendedSlide(4);" class="rec-dot h-1.5 rounded-full transition-all duration-300 w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50 cursor-pointer" aria-label="สไลด์ 5"></button>
+                  <button type="button" onclick="event.stopPropagation(); goToRecommendedSlide(5);" class="rec-dot h-1.5 rounded-full transition-all duration-300 w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50 cursor-pointer" aria-label="สไลด์ 6"></button>
+                </div>
+              </div>
+
               <!-- SEGMENTED CONTROL PILL BAR (เอกสาร | แชร์หน้าจอ | สมุดจด | ปฏิทินงาน | สมาชิกชมรม | วงล้อสุ่ม) -->
               <div class="bg-muted/60 p-1.5 rounded-2xl grid grid-cols-6 sm:grid-cols-6 gap-1.5 border border-border/50 select-none">
                 <button type="button" onclick="switchUserToolSubTab('FILES')" id="uToolBtn_FILES"
@@ -1793,14 +1871,6 @@
                   class="col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer">
                   <i data-lucide="dices" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">วงล้อสุ่ม</span>
                 </button>
-              </div>
-
-              <!-- Compatibility hidden elements to preserve reactive JS handlers -->
-              <div class="hidden" aria-hidden="true">
-                <div id="uHomeOverview"></div>
-                <div id="userHomeMembersRow"></div>
-                <div id="userHomeOpenVotesBox"></div>
-                <div id="recommendedFeaturesCarousel"><div id="recommendedCarouselTrack"></div><div id="recommendedCarouselDots"></div></div>
               </div>
 
               <!-- =================================================== -->
@@ -1954,152 +2024,47 @@
             </div>
 
             <!-- =================================================== -->
-            <!-- SUB-VIEW 3: กระดานความคิด & สมุดจดบันทึก (Exact Choice /board) -->
+            <!-- SUB-VIEW 3: บันทึกส่วนตัว (PDF Export)                 -->
             <!-- =================================================== -->
-            <div id="uToolSec_NOTE" class="hidden space-y-5">
-              <!-- Top Toolbar: Switch between กระดานโพสต์อิท and สมุดจดบันทึกการประชุม (PDF) -->
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div class="inline-flex p-1 rounded-xl bg-muted border border-border/60">
-                  <button type="button" id="btnBoardTabSticky" onclick="switchBoardMode('STICKY')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer flex items-center gap-1.5">
-                    <i data-lucide="sticky-note" class="h-3.5 w-3.5 text-primary"></i>
-                    <span>กระดานโพสต์อิท</span>
-                  </button>
-                  <button type="button" id="btnBoardTabPersonal" onclick="switchBoardMode('PERSONAL')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer flex items-center gap-1.5">
-                    <i data-lucide="file-text" class="h-3.5 w-3.5"></i>
-                    <span>บันทึกการประชุมส่วนตัว (PDF)</span>
+            <div id="uToolSec_NOTE" class="hidden space-y-3">
+              <div class="flex items-center justify-between px-1">
+                <h3 class="text-base sm:text-lg font-bold text-foreground">บันทึกของฉัน</h3>
+                <span class="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+                  <i data-lucide="lock" class="h-3.5 w-3.5"></i> เห็นเฉพาะคุณ - บันทึกอัตโนมัติ และจะส่งให้กับผู้ดูแลระบบเมื่อจบประชุม
+                </span>
+              </div>
+
+              <div class="bg-card text-card-foreground border border-border rounded-xl shadow-sm shadow-card overflow-hidden">
+                <!-- แถบเครื่องมือด้านบน -->
+                <div class="px-4 py-2.5 border-b border-border flex items-center justify-between bg-muted/20">
+                  <div class="flex items-center gap-2 text-muted-foreground text-sm">
+                    <button type="button" onclick="insertNotePrefix('• ')" title="เพิ่มหัวข้อย่อย" class="hover:text-primary p-1.5 rounded-md hover:bg-muted transition cursor-pointer"><i data-lucide="list" class="h-4 w-4"></i></button>
+                    <button type="button" onclick="insertNotePrefix('☐ ')" title="เพิ่มรายการเช็คลิสต์" class="hover:text-primary p-1.5 rounded-md hover:bg-muted transition cursor-pointer"><i data-lucide="list-checks" class="h-4 w-4"></i></button>
+                    <button type="button" onclick="insertNotePrefix('📌 ประเด็นสำคัญ: ')" title="เน้นประเด็นสำคัญ" class="hover:text-primary px-2 py-1 rounded-md hover:bg-muted transition font-bold text-xs cursor-pointer">📌 ประเด็นสำคัญ</button>
+                  </div>
+                  <button type="button" onclick="exportUserNoteToPDF()" title="ดาวน์โหลดเป็นไฟล์ PDF"
+                    class="px-3.5 py-1.5 rounded-md gradient-primary text-white text-xs font-semibold shadow-xs hover:opacity-95 transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="download" class="h-3.5 w-3.5"></i> <span>ดาวน์โหลด PDF</span>
                   </button>
                 </div>
 
-                <div class="flex items-center gap-2">
-                  <button type="button" onclick="openAddStickyNoteModal()" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium border border-input bg-background hover:bg-accent hover:!text-white h-9 px-3 transition-colors cursor-pointer" title="แปะโพสต์อิทใหม่">
-                    <i data-lucide="plus" class="h-4 w-4"></i>
-                    <span>แปะโน้ตใหม่</span>
-                  </button>
-                  <button type="button" onclick="exportUserNoteToPDF()" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium gradient-primary text-white h-9 px-3 shadow-xs transition-all cursor-pointer" title="ดาวน์โหลดสรุป PDF">
-                    <i data-lucide="download" class="h-3.5 w-3.5"></i>
-                    <span>ส่งออก PDF</span>
-                  </button>
+                <div class="p-4 sm:p-5">
+                  <textarea id="userNoteTextarea" oninput="saveUserNoteDraft()" rows="9"
+                    placeholder="พิมพ์ประเด็นสำคัญ หรือสรุปเนื้อหาการประชุมที่นี่..."
+                    class="w-full bg-transparent text-sm text-foreground focus:outline-none resize-none leading-relaxed"></textarea>
                 </div>
               </div>
 
-              <!-- 1. Choice Dotted Sticky-Note Canvas (Exact match to extra__board.png) -->
-              <div id="choiceStickyBoardView" class="space-y-3">
-                <div class="relative w-full rounded-2xl overflow-auto select-none transition-all duration-300 h-[420px] md:h-[480px] border border-border/40 bg-muted/10 shadow-inner">
-                  <div id="choiceStickyCanvas" onclick="handleStickyCanvasClick(event)" class="relative shrink-0 bg-background bg-[radial-gradient(currentColor_1px,transparent_1px)] [background-size:24px_24px] text-muted-foreground/15 dark:text-muted-foreground/20 cursor-crosshair w-full h-full min-w-[680px] min-h-[420px]">
-                    <!-- Sticky notes rendered dynamically by renderChoiceStickyBoard() -->
-                  </div>
-                </div>
-                <!-- Bottom topic bar matching Choice /board -->
-                <div class="rounded-xl bg-card border border-border shadow-card px-4 py-3 flex items-center justify-between gap-3">
-                  <div class="min-w-0 flex-1 space-y-0.5">
-                    <h3 class="text-sm sm:text-base font-bold truncate text-foreground leading-snug">ไอเดียและข้อเสนอแนะในที่ประชุม</h3>
-                    <p class="text-xs text-muted-foreground truncate">แตะปุ่ม "แปะโน้ตใหม่" หรือคลิกพื้นที่ว่างบนกระดานเพื่อร่วมแชร์ไอเดีย</p>
-                  </div>
-                  <button type="button" onclick="openAddStickyNoteModal()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3 text-xs font-medium shrink-0 gap-1.5 shadow-xs cursor-pointer">
-                    <i data-lucide="pen-line" class="h-3.5 w-3.5"></i>
-                    <span>แปะโน้ต</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- 2. Personal Meeting Note Editor (Preserves #userNoteTextarea & auto-save) -->
-              <div id="personalMeetingNoteView" class="hidden space-y-3">
-                <div class="flex items-center justify-between px-1">
-                  <h3 class="text-base font-bold text-foreground">บันทึกการประชุมส่วนตัวของฉัน</h3>
-                  <span class="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                    <i data-lucide="lock" class="h-3.5 w-3.5"></i> บันทึกอัตโนมัติ & ส่งออก PDF ได้ทันที
-                  </span>
-                </div>
-
-                <div class="bg-card text-card-foreground border border-border rounded-xl shadow-sm shadow-card overflow-hidden">
-                  <div class="px-4 py-2.5 border-b border-border flex items-center justify-between bg-muted/20">
-                    <div class="flex items-center gap-2 text-muted-foreground text-sm">
-                      <button type="button" onclick="insertNotePrefix('• ')" title="เพิ่มหัวข้อย่อย" class="hover:text-primary p-1.5 rounded-md hover:bg-muted transition cursor-pointer"><i data-lucide="list" class="h-4 w-4"></i></button>
-                      <button type="button" onclick="insertNotePrefix('☐ ')" title="เพิ่มรายการเช็คลิสต์" class="hover:text-primary p-1.5 rounded-md hover:bg-muted transition cursor-pointer"><i data-lucide="list-checks" class="h-4 w-4"></i></button>
-                      <button type="button" onclick="insertNotePrefix('📌 ประเด็นสำคัญ: ')" title="เน้นประเด็นสำคัญ" class="hover:text-primary px-2 py-1 rounded-md hover:bg-muted transition font-bold text-xs cursor-pointer">📌 ประเด็นสำคัญ</button>
-                    </div>
-                    <button type="button" onclick="exportUserNoteToPDF()" title="ดาวน์โหลดเป็นไฟล์ PDF"
-                      class="px-3 py-1.5 rounded-md bg-primary/10 hover:bg-primary hover:text-white text-primary text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
-                      <i data-lucide="download" class="h-3.5 w-3.5"></i> <span>ดาวน์โหลด PDF</span>
-                    </button>
-                  </div>
-
-                  <div class="p-4">
-                    <textarea id="userNoteTextarea" oninput="saveUserNoteDraft()" rows="7"
-                      placeholder="พิมพ์ประเด็นสำคัญ หรือสรุปเนื้อหาการประชุมที่นี่..."
-                      class="w-full bg-transparent text-sm text-foreground focus:outline-none resize-none leading-relaxed"></textarea>
-                  </div>
-                </div>
-
-                <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 px-2">
-                  <i data-lucide="cloud-upload" class="h-3.5 w-3.5"></i> <span id="noteAutoSaveStatus">บันทึกอัตโนมัติแล้ว</span>
-                </p>
-              </div>
+              <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5 px-1">
+                <i data-lucide="cloud-upload" class="h-3.5 w-3.5"></i> <span id="noteAutoSaveStatus">บันทึกอัตโนมัติแล้ว</span>
+              </p>
             </div>
 
             <!-- =================================================== -->
-            <!-- SUB-VIEW 4: สมาชิกทั้งหมด & ผังที่นั่ง (Exact Choice /members) -->
+            <!-- SUB-VIEW 4: ผังที่นั่งสมาชิกชมรม                        -->
             <!-- =================================================== -->
-            <div id="uToolSec_SEATS" class="hidden space-y-5">
-              <!-- Search & Filter Pills (Exact match to 04_members.png) -->
-              <div class="space-y-4">
-                <div class="relative">
-                  <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"></i>
-                  <input type="text" id="memberDirectorySearchInput" oninput="renderMemberDirectoryCards()" placeholder="ค้นหาสมาชิก..."
-                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm pl-10" />
-                </div>
-
-                <div class="relative overflow-x-auto w-full whitespace-nowrap scrollbar-none">
-                  <div class="flex gap-2 pb-2" id="memberDirectoryFilterPills">
-                    <button type="button" onclick="setMemberDirectoryFilter('ALL')" id="memPill_ALL"
-                      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 rounded-full pl-3.5 pr-2 gap-1.5 transition-all duration-200 cursor-pointer">
-                      <span>ทั้งหมด</span>
-                      <div id="memPillCount_ALL" class="px-1.5 py-0 h-5 min-w-5 text-[11px] font-bold rounded-full bg-primary-foreground text-primary flex items-center justify-center shadow-xs">60</div>
-                    </button>
-                    <button type="button" onclick="setMemberDirectoryFilter('CHECKED_IN')" id="memPill_CHECKED_IN"
-                      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium border border-input bg-background hover:bg-accent hover:!text-white h-9 rounded-full px-4 gap-1.5 transition-all duration-200 cursor-pointer">
-                      <span>เช็คชื่อแล้ว</span>
-                    </button>
-                    <button type="button" onclick="setMemberDirectoryFilter('NOT_CHECKED_IN')" id="memPill_NOT_CHECKED_IN"
-                      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium border border-input bg-background hover:bg-accent hover:!text-white h-9 rounded-full px-4 gap-1.5 transition-all duration-200 cursor-pointer">
-                      <span>ยังไม่มา</span>
-                    </button>
-                    <button type="button" onclick="setMemberDirectoryFilter('COMMITTEE')" id="memPill_COMMITTEE"
-                      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium border border-input bg-background hover:bg-accent hover:!text-white h-9 rounded-full px-4 gap-1.5 transition-all duration-200 cursor-pointer">
-                      <span>คณะกรรมการ</span>
-                    </button>
-                    <button type="button" onclick="setMemberDirectoryFilter('YEAR_1')" id="memPill_YEAR_1"
-                      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium border border-input bg-background hover:bg-accent hover:!text-white h-9 rounded-full px-4 gap-1.5 transition-all duration-200 cursor-pointer">
-                      <span>ชั้นปีที่ 1</span>
-                    </button>
-                    <button type="button" onclick="setMemberDirectoryFilter('YEAR_2')" id="memPill_YEAR_2"
-                      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium border border-input bg-background hover:bg-accent hover:!text-white h-9 rounded-full px-4 gap-1.5 transition-all duration-200 cursor-pointer">
-                      <span>ชั้นปีที่ 2</span>
-                    </button>
-                    <button type="button" onclick="setMemberDirectoryFilter('YEAR_3')" id="memPill_YEAR_3"
-                      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium border border-input bg-background hover:bg-accent hover:!text-white h-9 rounded-full px-4 gap-1.5 transition-all duration-200 cursor-pointer">
-                      <span>ชั้นปีที่ 3</span>
-                    </button>
-                    <button type="button" onclick="setMemberDirectoryFilter('YEAR_4')" id="memPill_YEAR_4"
-                      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium border border-input bg-background hover:bg-accent hover:!text-white h-9 rounded-full px-4 gap-1.5 transition-all duration-200 cursor-pointer">
-                      <span>ชั้นปีที่ 4</span>
-                    </button>
-                    <button type="button" onclick="setMemberDirectoryFilter('SEATING')" id="memPill_SEATING"
-                      class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium border border-input bg-background hover:bg-accent hover:!text-white h-9 rounded-full px-4 gap-1.5 transition-all duration-200 cursor-pointer">
-                      <i data-lucide="layout-grid" class="h-3.5 w-3.5"></i>
-                      <span>ผังที่นั่งประชุม</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 3-Column Choice Member Cards Grid (Exact match to 04_members.png) -->
-              <div id="userMemberDirectoryGrid" class="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3">
-                <!-- Populated by renderMemberDirectoryCards() in seatingChart.js -->
-              </div>
-
-              <!-- Interactive Parliament Seating Chart Card -->
-              <div id="userSeatingChartSectionCard" class="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-6 shadow-sm shadow-card">
+            <div id="uToolSec_SEATS" class="hidden space-y-4">
+              <div class="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-6 shadow-sm shadow-card">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div class="flex items-center gap-2.5">
                     <button type="button" onclick="toggleSeatingChartCollapse('USER')"
@@ -2107,13 +2072,13 @@
                       <i data-lucide="chevron-up" id="userSeatingCollapseIcon" class="h-4 w-4"></i>
                     </button>
                     <div>
-                      <h3 class="text-base sm:text-lg font-bold text-foreground">ผังที่นั่งห้องประชุม</h3>
+                      <h3 class="text-base sm:text-lg font-bold text-foreground">สมาชิกชมรมทั้งหมด</h3>
                       <p class="text-xs text-muted-foreground">ตำแหน่งของคุณจะมีกรอบสีทองล้อมรอบ</p>
                     </div>
                   </div>
 
                   <div id="userSeatModeSwitchBox" class="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
-                    <button type="button" onclick="setParliamentMode('ATTENDANCE')" id="uBtnParlAttendance" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition cursor-pointer">
+                    <button type="button" onclick="setParliamentMode('ATTENDANCE')" id="uBtnParlAttendance" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-600 text-white transition cursor-pointer shadow-xs">
                       การเข้าประชุม
                     </button>
                     <button type="button" onclick="setParliamentMode('VOTING')" id="uBtnParlVoting" class="px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer">
@@ -2132,7 +2097,7 @@
                     <div id="userParliamentLegend" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"></div>
                     <div class="p-4 sm:p-6 bg-muted/20 rounded-xl border border-border space-y-5">
                       <div class="w-56 mx-auto py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-center text-xs font-semibold text-primary">
-                        ผังที่นั่งสมาชิกทั้งหมด
+                        ผังสมาชิกชมรมทั้งหมด
                       </div>
                       <div id="userParliamentSeatsCanvas" class="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-10 gap-2 sm:gap-3 justify-items-center max-w-4xl mx-auto"></div>
                     </div>
@@ -2176,19 +2141,17 @@
           </section>
 
           <!-- ===================================================== -->
-          <!-- USER TAB 2: การโหวตทั้งหมด (Exact Choice /all-votes)    -->
+          <!-- USER TAB 2: การลงมติ (VOTE)                            -->
           <!-- ===================================================== -->
-          <section id="uTab_VOTE" class="hidden space-y-6">
-            <!-- Search Bar (Exact match to 02_all_votes.png) -->
-            <div class="relative">
-              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"></i>
-              <input type="text" id="userVoteSearchInput" oninput="renderVotingCardsSafe()" placeholder="ค้นหาการโหวต..."
-                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-sm pl-10" />
-              <span class="hidden" id="voteElapsedTimerText">0 นาที</span>
+          <section id="uTab_VOTE" class="hidden space-y-5">
+            <div class="flex items-center justify-end px-1">
+              <span class="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <i data-lucide="clock" class="h-3.5 w-3.5"></i> เวลาประชุม <strong id="voteElapsedTimerText" class="text-foreground font-semibold">0 นาที</strong>
+              </span>
             </div>
 
-            <!-- พื้นที่แสดงการ์ดการโหวตสไตล์ Comsan Choice (2-Column Grid + Ballot/Results Views) -->
-            <div id="userVotingArea" class="space-y-4"></div>
+            <!-- พื้นที่แสดงการ์ดญัตติโหวต (การ์ดตัวเลือกพร้อมปุ่มยืนยันด้านล่าง) -->
+            <div id="userVotingArea" class="space-y-6"></div>
           </section>
 
           <!-- ===================================================== -->
@@ -3844,56 +3807,7 @@
     </button>
   </div>
 
-  <!-- Choice Member Detail Modal (Matches sub_member_detail.png) -->
-  <div id="choiceMemberDetailModal" class="hidden fixed inset-0 z-[75] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4" onclick="if(event.target===this)closeChoiceMemberDetailModal()">
-    <div class="w-full max-w-md rounded-xl border border-border bg-card text-card-foreground shadow-xl p-6 space-y-5 relative animate-in fade-in zoom-in-95 duration-150">
-      <button type="button" onclick="closeChoiceMemberDetailModal()" class="absolute right-4 top-4 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition">
-        <i data-lucide="x" class="h-4 w-4"></i>
-      </button>
-      <div id="choiceMemberDetailBody"></div>
-    </div>
-  </div>
 
-  <!-- Choice Sticky Note Creator Modal (Matches /board Add Note Modal) -->
-  <div id="addStickyNoteModal" class="hidden fixed inset-0 z-[75] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4" onclick="if(event.target===this)closeAddStickyNoteModal()">
-    <div class="w-full max-w-md rounded-xl border border-border bg-card text-card-foreground shadow-xl p-6 space-y-4 relative animate-in fade-in zoom-in-95 duration-150">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-lg font-semibold text-foreground">เพิ่มกระดาษโน้ตใหม่</h3>
-          <p class="text-xs text-muted-foreground mt-0.5">แบ่งปันไอเดียหรือข้อเสนอแนะบนกระดานความคิด COMSAN</p>
-        </div>
-        <button type="button" onclick="closeAddStickyNoteModal()" class="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition">
-          <i data-lucide="x" class="h-4 w-4"></i>
-        </button>
-      </div>
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs font-medium text-foreground block mb-1.5">ข้อความบนโพสต์อิท</label>
-          <textarea id="newStickyNoteText" rows="4" placeholder="เขียนไอเดีย ความคิดเห็น หรือสิ่งที่อยากบอกเพื่อนในชมรม..." class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"></textarea>
-        </div>
-        <div>
-          <label class="text-xs font-medium text-foreground block mb-1.5">เลือกสีกระดาษโน้ต</label>
-          <div id="stickyColorPickerRow" class="flex items-center gap-2.5">
-            <button type="button" onclick="selectStickyNoteColor('#FEF08A', this)" data-color="#FEF08A" class="w-8 h-8 rounded-full border-2 border-primary ring-2 ring-primary/30 transition transform scale-110" style="background-color:#FEF08A;"></button>
-            <button type="button" onclick="selectStickyNoteColor('#FBCFE8', this)" data-color="#FBCFE8" class="w-8 h-8 rounded-full border border-black/10 transition hover:scale-105" style="background-color:#FBCFE8;"></button>
-            <button type="button" onclick="selectStickyNoteColor('#BAE6FD', this)" data-color="#BAE6FD" class="w-8 h-8 rounded-full border border-black/10 transition hover:scale-105" style="background-color:#BAE6FD;"></button>
-            <button type="button" onclick="selectStickyNoteColor('#BBF7D0', this)" data-color="#BBF7D0" class="w-8 h-8 rounded-full border border-black/10 transition hover:scale-105" style="background-color:#BBF7D0;"></button>
-            <button type="button" onclick="selectStickyNoteColor('#DDD6FE', this)" data-color="#DDD6FE" class="w-8 h-8 rounded-full border border-black/10 transition hover:scale-105" style="background-color:#DDD6FE;"></button>
-            <button type="button" onclick="selectStickyNoteColor('#FED7AA', this)" data-color="#FED7AA" class="w-8 h-8 rounded-full border border-black/10 transition hover:scale-105" style="background-color:#FED7AA;"></button>
-          </div>
-        </div>
-      </div>
-      <div class="flex items-center justify-end gap-2 pt-2">
-        <button type="button" onclick="closeAddStickyNoteModal()" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-white h-9 px-4">ยกเลิก</button>
-        <button type="button" onclick="saveNewStickyNote()" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4">แปะโพสต์อิท</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Choice Vote Ballot / Results Modal (Matches sub_vote_preview.png & sub_vote_results.png) -->
-  <div id="choiceVoteDetailModal" class="hidden fixed inset-0 z-[75] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onclick="if(event.target===this)closeChoiceVoteDetailModal()">
-    <div id="choiceVoteDetailModalContent" class="w-full max-w-xl my-auto"></div>
-  </div>
 
   </div>
 

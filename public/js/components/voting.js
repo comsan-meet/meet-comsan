@@ -121,355 +121,110 @@ function submitVoteFromPopup(motionId, choice) {
   closeAutoVotePopup();
 }
 
-function buildChoiceVoteCardHtml(mot, motNumber, me, state) {
-  const opts = typeof window.getMotionOptions === 'function' ? window.getMotionOptions(mot) : (mot.options || []);
-  const savedVote = (mot.votes && me) ? mot.votes[me.id] : null;
-  const activeSelection = window.pendingVoteChoices[mot.id] || savedVote;
-  const selectedOptObj = opts.find(o => o.id === activeSelection);
-  const isClosed = !mot.isOpen;
-  const totalUsers = (state.users || []).length || 60;
-  const votedCount = mot.votes ? Object.keys(mot.votes).length : 0;
-  const meetingDateStr = (state.meeting && state.meeting.date) ? state.meeting.date : 'วันนี้';
-
-  const statusBadgeHtml = isClosed
-    ? `<div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-muted text-muted-foreground">ปิดแล้ว</div>`
-    : `<div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">กำลังเปิดโหวต</div>`;
-
-  return `
-    <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card hover:shadow-lg transition-all flex flex-col justify-between">
-      <div class="flex flex-col space-y-1.5 p-6 pb-3">
-        <div class="flex items-start justify-between gap-2">
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <h3 class="tracking-tight text-lg font-semibold text-foreground leading-snug">${mot.title}</h3>
-              ${statusBadgeHtml}
-            </div>
-            <div class="flex items-center gap-1.5 flex-wrap mt-1.5">
-              <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">
-                ${mot.isSecret ? 'โหวตลับ' : 'ทั่วไป'}
-              </div>
-              ${savedVote ? `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">✔ โหวตแล้ว (${selectedOptObj ? selectedOptObj.label : savedVote})</span>` : ''}
-            </div>
-            <p class="text-sm text-muted-foreground mt-2">วาระการประชุม • ญัตติที่ ${String(motNumber).padStart(2, '0')} (${opts.map(o => o.label).join(' / ')})</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="p-6 pt-0 space-y-3">
-        <div class="flex items-center justify-between text-xs text-muted-foreground">
-          <div class="flex items-center space-x-1">
-            <i data-lucide="calendar" class="h-3.5 w-3.5"></i>
-            <span>${meetingDateStr}</span>
-          </div>
-          <div class="flex items-center space-x-1">
-            <i data-lucide="users" class="h-3.5 w-3.5"></i>
-            <span>โหวตแล้ว ${votedCount}/${totalUsers} คน</span>
-          </div>
-        </div>
-
-        ${!isClosed ? `
-          <div class="pt-1 space-y-2 border-t border-border/60">
-            <div class="grid grid-cols-1 gap-1.5 pt-1">
-              ${opts.map(opt => {
-                const isSelected = activeSelection === opt.id;
-                const safeImg = opt.image ? opt.image.replace(/'/g, "\\'") : '';
-                const safeLbl = String(opt.label || '').replace(/'/g, "\\'");
-                return `
-                  <div onclick="selectDraftVoteOption('${mot.id}', '${opt.id}')"
-                    class="w-full text-left cursor-pointer rounded-md p-2.5 border transition flex flex-col gap-2 ${isSelected ? 'border-primary bg-primary/10 ring-1 ring-primary/30' : 'border-input bg-background hover:bg-muted/50'}">
-                    ${opt.image ? `
-                      <div class="relative w-full">
-                        <img src="${opt.image}" class="w-full h-28 object-cover rounded-md block" />
-                        <button type="button" onclick="event.stopPropagation(); openImagePreview('${safeImg}', '${safeLbl}')"
-                          class="absolute top-2 right-2 z-10 px-2 py-1 rounded-md bg-black/70 text-white text-[10px] font-medium flex items-center gap-1">
-                          <i data-lucide="zoom-in" class="w-3 h-3"></i> <span>ขยาย</span>
-                        </button>
-                      </div>
-                    ` : ''}
-                    <div class="flex items-center justify-between gap-2">
-                      <span class="text-xs sm:text-sm font-medium text-foreground truncate">${opt.label}</span>
-                      <span class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 text-[10px] ${isSelected ? 'bg-primary border-primary text-white' : 'border-muted-foreground/40'}">
-                        ${isSelected ? '✓' : ''}
-                      </span>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-            <button type="button" onclick="confirmUserVote('${mot.id}')"
-              class="w-full inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold h-9 px-3 gradient-primary text-primary-foreground shadow-xs hover:opacity-95 transition cursor-pointer">
-              <i data-lucide="check" class="w-3.5 h-3.5"></i>
-              <span>ยืนยันลงมติ ${selectedOptObj ? `• ${selectedOptObj.label}` : ''}</span>
-            </button>
-          </div>
-        ` : ''}
-
-        <div class="flex gap-2 pt-1">
-          <button type="button" onclick="openChoiceVoteDetailModal('${mot.id}', 'BALLOT')" class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-white h-9 rounded-md px-3 flex-1 cursor-pointer">
-            <i data-lucide="eye" class="h-3.5 w-3.5"></i>
-            <span>${isClosed ? 'ดูตัวอย่าง' : 'คูหาลงคะแนน'}</span>
-          </button>
-          <button type="button" onclick="openChoiceVoteDetailModal('${mot.id}', 'RESULTS')" class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-9 rounded-md px-3 flex-1 cursor-pointer">
-            <span>ดูผลลัพธ์</span>
-          </button>
-        </div>
-        <div class="pt-0.5">
-          <button type="button" onclick="openAdminSection('VOTING')" class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-white w-full text-xs h-8 px-3 cursor-pointer">
-            <i data-lucide="settings" class="h-3.5 w-3.5"></i>
-            <span>จัดการการโหวต</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
 function renderVotingCardsSafe() {
   const userId = window.currentUserId;
   const state = window.appState;
-  if (!state) return;
-  const me = (state.users || []).find(u => u.id === userId) || (state.users && state.users[0]) || { id: userId || 'COMSAN-01' };
+  if (!userId || !state) return;
+  const me = (state.users || []).find(u => u.id === userId);
   const votingArea = document.getElementById('userVotingArea');
-  const homeOpenVotesBox = document.getElementById('userHomeOpenVotesBox');
+  if (!me || !votingArea) return;
 
-  const allMotions = Array.isArray(state.motions) ? state.motions : [];
-
-  // 1. Render Home "การลงคะแนนที่เปิดอยู่" box (Matching 01_home.png)
-  if (homeOpenVotesBox) {
-    const openMotions = allMotions
-      .map((mot, idx) => ({ mot, motNumber: idx + 1 }))
-      .filter(item => item.mot.isOpen);
-
-    if (openMotions.length === 0) {
-      homeOpenVotesBox.innerHTML = `
-        <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
-          <div class="p-8 text-center text-muted-foreground">ไม่มีการลงคะแนนที่เปิดอยู่ในขณะนี้</div>
-        </div>
-      `;
-    } else {
-      homeOpenVotesBox.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${openMotions.map(({ mot, motNumber }) => buildChoiceVoteCardHtml(mot, motNumber, me, state)).join('')}
-        </div>
-      `;
-    }
-  }
-
-  // 2. Render "/all-votes" page (#userVotingArea) (Matching 02_all_votes.png)
-  if (!votingArea) return;
-
-  const searchInput = document.getElementById('userVoteSearchInput');
-  const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
-
-  if (allMotions.length === 0) {
-    votingArea.innerHTML = `
-      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
-        <div class="p-12 text-center text-muted-foreground">ยังไม่มีรายการการลงคะแนนในระบบ</div>
-      </div>
-    `;
+  if (!Array.isArray(state.motions) || state.motions.length === 0) {
+    votingArea.innerHTML = `<div class="py-16 text-center bg-card rounded-xl border border-border text-xs text-muted-foreground">ยังไม่มีญัตติที่เปิดให้ลงเสียงในขณะนี้</div>`;
     return;
   }
 
-  const sortedMotions = allMotions.map((mot, originalIdx) => ({
+  // Sort motions: Open motions (mot.isOpen === true) ALWAYS appear at the very top!
+  // Within the same open/closed status, show the newest motions first.
+  const sortedMotions = [...state.motions].map((mot, originalIdx) => ({
     mot,
     originalIdx,
     motNumber: originalIdx + 1
-  })).filter(({ mot }) => {
-    if (!query) return true;
-    return String(mot.title || '').toLowerCase().includes(query);
-  }).sort((a, b) => {
+  })).sort((a, b) => {
     if (a.mot.isOpen && !b.mot.isOpen) return -1;
     if (!a.mot.isOpen && b.mot.isOpen) return 1;
     return b.originalIdx - a.originalIdx;
   });
 
-  if (sortedMotions.length === 0) {
-    votingArea.innerHTML = `
-      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
-        <div class="p-12 text-center text-muted-foreground">ไม่พบรายการการลงคะแนนที่ค้นหา</div>
-      </div>
-    `;
-    return;
-  }
+  votingArea.innerHTML = sortedMotions.map(({ mot, motNumber }) => {
+    const opts = typeof window.getMotionOptions === 'function' ? window.getMotionOptions(mot) : (mot.options || []);
+    const savedVote = mot.votes ? mot.votes[me.id] : null;
+    const activeSelection = window.pendingVoteChoices[mot.id] || savedVote;
+    const selectedOptObj = opts.find(o => o.id === activeSelection);
+    const isClosed = !mot.isOpen;
 
-  votingArea.innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      ${sortedMotions.map(({ mot, motNumber }) => buildChoiceVoteCardHtml(mot, motNumber, me, state)).join('')}
-    </div>
-  `;
-
-  if (typeof window.refreshIcons === 'function') window.refreshIcons();
-}
-
-function openChoiceVoteDetailModal(motionId, mode = 'RESULTS') {
-  const state = window.appState;
-  if (!state || !Array.isArray(state.motions)) return;
-  const motIdx = state.motions.findIndex(m => m.id === motionId);
-  if (motIdx === -1) return;
-  const mot = state.motions[motIdx];
-  const modal = document.getElementById('choiceVoteDetailModal');
-  const content = document.getElementById('choiceVoteDetailModalContent');
-  if (!modal || !content) return;
-
-  window._activeChoiceModalMotionId = motionId;
-  window._activeChoiceModalMode = mode;
-
-  const opts = typeof window.getMotionOptions === 'function' ? window.getMotionOptions(mot) : (mot.options || []);
-  const userId = window.currentUserId;
-  const savedVote = (mot.votes && userId) ? mot.votes[userId] : null;
-  const activeSelection = window.pendingVoteChoices[mot.id] || savedVote;
-  const totalUsers = (state.users || []).length || 60;
-  const votesMap = mot.votes || {};
-  const votedCount = Object.keys(votesMap).length;
-  const participationPct = totalUsers > 0 ? Math.round((votedCount / totalUsers) * 100) : 0;
-
-  if (mode === 'BALLOT') {
-    content.innerHTML = `
-      <div class="rounded-xl border border-border bg-card text-card-foreground shadow-xl overflow-hidden">
-        <div class="p-6 space-y-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${mot.isOpen ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}">
-                  ${mot.isOpen ? 'กำลังเปิดลงคะแนน' : 'ตัวอย่างการลงคะแนน (ปิดแล้ว)'}
-                </span>
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">
-                  ${mot.isSecret ? 'โหวตลับ' : 'ทั่วไป'}
-                </span>
-              </div>
-              <h3 class="text-xl font-bold text-foreground mt-2">${mot.title}</h3>
-              <p class="text-xs text-muted-foreground mt-1">เลือกตัวเลือกที่คุณต้องการลงคะแนน (เลือกได้ 1 ตัวเลือก)</p>
-            </div>
-            <button type="button" onclick="closeChoiceVoteDetailModal()" class="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-              <i data-lucide="x" class="h-4 w-4"></i>
-            </button>
+    return `
+      <div class="space-y-4 ${isClosed ? 'opacity-60 grayscale' : ''}">
+        <div class="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-3 shadow-card">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-primary">วาระการประชุม • ญัตติที่ ${String(motNumber).padStart(2, '0')} ${mot.isSecret ? '(โหวตลับ)' : ''}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-medium ${isClosed ? 'bg-muted text-muted-foreground border border-border' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}">
+              ${isClosed ? '🔒 ปิดการโหวตแล้ว' : '● เปิดให้ลงมติ'}
+            </span>
           </div>
-
-          <div class="space-y-2.5 pt-2">
-            ${opts.map(opt => {
-              const isSelected = activeSelection === opt.id;
-              return `
-                <div onclick="${mot.isOpen ? `selectDraftVoteOption('${mot.id}', '${opt.id}'); openChoiceVoteDetailModal('${mot.id}', 'BALLOT');` : ''}"
-                  class="rounded-lg border p-4 flex items-center justify-between gap-3 transition ${mot.isOpen ? 'cursor-pointer' : ' opacity-75'} ${isSelected ? 'border-primary bg-primary/10 ring-1 ring-primary/30' : 'border-border bg-background hover:bg-muted/40'}">
-                  <div class="flex items-center gap-3">
-                    <span class="w-5 h-5 rounded-full border flex items-center justify-center text-xs ${isSelected ? 'border-primary bg-primary text-white' : 'border-muted-foreground/40'}">
-                      ${isSelected ? '●' : ''}
-                    </span>
-                    <span class="font-medium text-sm text-foreground">${opt.label}</span>
-                  </div>
-                  ${savedVote === opt.id ? `<span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">คะแนนปัจจุบันของคุณ</span>` : ''}
-                </div>
-              `;
-            }).join('')}
-          </div>
-
-          <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
-            <button type="button" onclick="openChoiceVoteDetailModal('${mot.id}', 'RESULTS')" class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-input bg-background hover:bg-accent hover:text-white h-9 px-4">
-              ดูผลลัพธ์
-            </button>
-            ${mot.isOpen ? `
-              <button type="button" onclick="confirmUserVote('${mot.id}'); closeChoiceVoteDetailModal();" class="inline-flex items-center justify-center rounded-md text-xs font-semibold gradient-primary text-primary-foreground h-9 px-5 shadow-xs">
-                ยืนยันการลงคะแนน
-              </button>
-            ` : `
-              <button type="button" onclick="closeChoiceVoteDetailModal()" class="inline-flex items-center justify-center rounded-md text-xs font-medium bg-primary text-primary-foreground h-9 px-4">
-                ปิดหน้าต่าง
-              </button>
-            `}
-          </div>
+          <h4 class="text-lg sm:text-xl font-bold text-foreground leading-snug">${mot.title}</h4>
+          ${savedVote ? `<div class="pt-2 border-t border-border flex items-center justify-between text-xs"><span class="text-muted-foreground">สถานะการลงมติของคุณ</span><strong class="text-emerald-600 dark:text-emerald-400 font-medium">✔ บันทึกคะแนนแล้ว (${selectedOptObj ? selectedOptObj.label : savedVote})</strong></div>` : ''}
         </div>
-      </div>
-    `;
-  } else {
-    // RESULTS MODE (Matches sub_vote_results.png 100%)
-    const tallies = opts.map(opt => {
-      const count = Object.values(votesMap).filter(v => v === opt.id).length;
-      const pct = votedCount > 0 ? Math.round((count / votedCount) * 100) : 0;
-      return { ...opt, count, pct };
-    }).sort((a, b) => b.count - a.count);
 
-    const maxCount = tallies.length > 0 ? tallies[0].count : 0;
-
-    content.innerHTML = `
-      <div class="rounded-xl border border-border bg-card text-card-foreground shadow-xl overflow-hidden">
-        <div class="p-6 space-y-5">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="text-xl font-bold text-foreground">${mot.title}</h3>
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${mot.isOpen ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}">
-                  ${mot.isOpen ? 'กำลังเปิดโหวต' : 'ปิดแล้ว'}
-                </span>
-              </div>
-              <p class="text-xs text-muted-foreground mt-1">สรุปผลการลงคะแนนเสียงในที่ประชุม</p>
-            </div>
-            <button type="button" onclick="closeChoiceVoteDetailModal()" class="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-              <i data-lucide="x" class="h-4 w-4"></i>
-            </button>
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-sm font-semibold text-foreground">ลงมติของคุณ</span>
+            <span class="text-xs text-muted-foreground">เลือก 1 ตัวเลือก</span>
           </div>
 
-          <!-- 3 Summary Stat Cards (Matches sub_vote_results.png) -->
-          <div class="grid grid-cols-3 gap-3">
-            <div class="rounded-lg border border-border bg-background p-3.5 text-center">
-              <p class="text-2xl font-bold text-primary">${votedCount}</p>
-              <p class="text-xs text-muted-foreground mt-0.5">ผู้ลงคะแนน</p>
-            </div>
-            <div class="rounded-lg border border-border bg-background p-3.5 text-center">
-              <p class="text-2xl font-bold text-foreground">${totalUsers}</p>
-              <p class="text-xs text-muted-foreground mt-0.5">ผู้มีสิทธิ์ทั้งหมด</p>
-            </div>
-            <div class="rounded-lg border border-border bg-background p-3.5 text-center">
-              <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">${participationPct}%</p>
-              <p class="text-xs text-muted-foreground mt-0.5">อัตราการมีส่วนร่วม</p>
-            </div>
-          </div>
+          ${opts.map(opt => {
+            const isSelected = activeSelection === opt.id;
+            const safeImg = opt.image ? opt.image.replace(/'/g, "\\'") : '';
+            const safeLbl = String(opt.label || '').replace(/'/g, "\\'");
 
-          <!-- Option Progress Bars -->
-          <div class="space-y-3">
-            <h4 class="text-sm font-semibold text-foreground">ผลการนับคะแนนแยกตามตัวเลือก</h4>
-            ${tallies.map((t, idx) => {
-              const isWinner = maxCount > 0 && t.count === maxCount;
-              return `
-                <div class="rounded-lg border ${isWinner ? 'border-primary/40 bg-primary/[0.03]' : 'border-border bg-background'} p-3.5 space-y-2">
-                  <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-2 font-semibold text-foreground">
-                      <span>${t.label}</span>
-                      ${isWinner ? '<span class="inline-flex items-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 text-[10px] font-bold">👑 คะแนนสูงสุด</span>' : ''}
+            return `
+              <div onclick="${isClosed ? '' : `selectDraftVoteOption('${mot.id}', '${opt.id}')`}"
+                class="w-full text-left cursor-pointer rounded-xl p-4 border transition flex flex-col gap-3 ${isSelected ? 'border-primary bg-primary/[0.05] ring-1 ring-primary/30 shadow-2xs' : 'border-border bg-card hover:border-primary/40'} ${isClosed ? 'cursor-not-allowed' : ''}">
+                ${opt.image ? `
+                  <div class="relative w-full">
+                    <img src="${opt.image}" class="w-full h-40 object-cover rounded-lg block" />
+                    <button type="button" onclick="event.stopPropagation(); openImagePreview('${safeImg}', '${safeLbl}')"
+                      title="คลิกเพื่อขยายดูรูปเต็ม"
+                      class="absolute top-2.5 right-2.5 z-10 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black text-white text-xs font-medium backdrop-blur-sm flex items-center gap-1.5 shadow-md transition active:scale-95">
+                      <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i> <span>ขยายดูรูป</span>
+                    </button>
+                  </div>
+                ` : ''}
+                <div class="w-full flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-3.5 min-w-0">
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}">
+                      ${getOptionIcon(opt.id)}
                     </div>
-                    <span class="text-xs font-semibold text-muted-foreground">${t.count} คะแนน (${t.pct}%)</span>
+                    <div class="min-w-0">
+                      <p class="text-sm sm:text-base font-semibold text-foreground truncate">${opt.label}</p>
+                      <p class="text-xs text-muted-foreground truncate">${getOptionSubText(opt.id, opt.label)}</p>
+                    </div>
                   </div>
-                  <div class="w-full h-2.5 bg-muted rounded-full overflow-hidden">
-                    <div class="h-full rounded-full transition-all duration-500 ${isWinner ? 'gradient-primary' : 'bg-primary/60'}" style="width: ${t.pct}%"></div>
+                  <div class="w-6 h-6 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'bg-primary border-primary text-white' : 'border-border'}">
+                    ${isSelected ? '<i data-lucide="check" class="w-3.5 h-3.5"></i>' : ''}
                   </div>
                 </div>
-              `;
-            }).join('')}
-          </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
 
-          <div class="flex items-center justify-end gap-2 pt-2 border-t border-border">
-            <button type="button" onclick="openChoiceVoteDetailModal('${mot.id}', 'BALLOT')" class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-input bg-background hover:bg-accent hover:text-white h-9 px-4">
-              ดูหน้าคูหาลงคะแนน
-            </button>
-            <button type="button" onclick="closeChoiceVoteDetailModal()" class="inline-flex items-center justify-center rounded-md text-xs font-medium bg-primary text-primary-foreground h-9 px-4">
-              ปิดหน้าต่าง
-            </button>
-          </div>
+        <div class="space-y-2 pt-1 text-center">
+          <p class="text-xs text-muted-foreground flex items-center justify-center gap-1">
+            <i data-lucide="info" class="w-4 h-4 text-primary"></i>
+            <span>${selectedOptObj ? `คุณเลือก "${selectedOptObj.label}" แล้ว • กดปุ่มด้านล่างเพื่อยืนยัน` : 'แตะเลือกตัวเลือกด้านบนเพื่อลงมติ'}</span>
+          </p>
+          <button type="button" ${isClosed ? 'disabled' : ''} onclick="confirmUserVote('${mot.id}')"
+            class="w-full h-11 rounded-xl gradient-primary text-white font-medium text-sm shadow-md transition-all active:scale-[0.98] ${isClosed ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} flex items-center justify-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i> <span>ยืนยันลงมติ ${selectedOptObj ? `• ${selectedOptObj.label}` : ''}</span>
+          </button>
         </div>
       </div>
     `;
-  }
+  }).join('');
 
-  modal.classList.remove('hidden');
   if (typeof window.refreshIcons === 'function') window.refreshIcons();
 }
-
-function closeChoiceVoteDetailModal() {
-  const modal = document.getElementById('choiceVoteDetailModal');
-  if (modal) modal.classList.add('hidden');
-}
-
-window.openChoiceVoteDetailModal = openChoiceVoteDetailModal;
-window.closeChoiceVoteDetailModal = closeChoiceVoteDetailModal;
 
 function handleMotionTypeChange() {
   const select = document.getElementById('motionTypeSelect');
