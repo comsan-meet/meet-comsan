@@ -429,8 +429,8 @@ function updateRaiseHandUserUI() {
 
   if (mNavBtn && mNavLbl) {
     mNavBtn.className = isInQueue
-      ? 'absolute -top-5 inset-x-0 mx-auto w-[60px] h-[60px] rounded-full flex items-center justify-center transition-all duration-300 bg-emerald-600 text-white active:scale-95 shadow-[0_4px_14px_rgba(16,185,129,0.35)]'
-      : 'absolute -top-5 inset-x-0 mx-auto w-[60px] h-[60px] rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)]';
+      ? 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-emerald-600 text-white active:scale-95 shadow-[0_4px_14px_rgba(5,150,105,0.4)] cursor-pointer'
+      : 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)] hover:scale-105 cursor-pointer';
     mNavLbl.className = 'sr-only';
   }
 

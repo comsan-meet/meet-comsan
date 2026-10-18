@@ -36,7 +36,8 @@ function updateChatFloatingButtons() {
   } else {
     if (adminFloatBtn) adminFloatBtn.classList.add('hidden');
     if (userFloatBtn) {
-      if (window.activeUserTab !== 'CHAT') {
+      const isMobile = window.innerWidth < 768;
+      if (window.activeUserTab !== 'CHAT' && !isMobile) {
         userFloatBtn.classList.remove('hidden');
       } else {
         userFloatBtn.classList.add('hidden');
@@ -79,13 +80,11 @@ function updateSidebarActiveStates() {
     const isActive = !isAdminMode && t === window.activeUserTab;
     if (mBtn) {
       mBtn.className = isActive
-        ? 'flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all h-full text-primary font-semibold'
-        : 'flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground font-medium';
+        ? 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-primary'
+        : 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground';
     }
     if (mPill) {
-      mPill.className = isActive
-        ? 'w-12 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center transition relative'
-        : 'w-12 h-7 rounded-full flex items-center justify-center transition relative';
+      mPill.className = 'flex items-center justify-center transition relative';
     }
   });
 
@@ -93,8 +92,8 @@ function updateSidebarActiveStates() {
   if (mRaiseBtn) {
     const isRaiseActive = !isAdminMode && window.activeUserTab === 'RAISE';
     mRaiseBtn.className = isRaiseActive
-      ? 'absolute -top-4 inset-x-0 mx-auto w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-white shadow-card active:scale-95 border-2 border-primary cursor-pointer ring-2 ring-primary/40'
-      : 'absolute -top-4 inset-x-0 mx-auto w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 gradient-primary text-white shadow-card active:scale-95 border-2 border-background cursor-pointer';
+      ? 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.35)] ring-2 ring-primary ring-offset-2 ring-offset-background cursor-pointer'
+      : 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)] hover:scale-105 cursor-pointer';
   }
 }
 
