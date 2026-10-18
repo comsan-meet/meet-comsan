@@ -1622,95 +1622,95 @@
               <div id="userActiveEventsContainer" class="space-y-2.5 hidden"></div>
 
 
-              <!-- 2. MEETING STATUS & CHECK-IN CARD (Clean Choice Card Style, preserving all IDs) -->
-              <div id="userMeetingHeroCard" class="rounded-xl border border-border bg-card text-card-foreground shadow-sm shadow-card p-5 sm:p-6 relative overflow-hidden transition-all">
-                <div id="heroBubbleContainer" class="hidden"></div>
+              <!-- 2. MEETING STATUS & CHECK-IN CARD (Original Gradient Hero with Floating Bubbles) -->
+              <div id="userMeetingHeroCard" class="gradient-hero text-white rounded-2xl p-5 sm:p-6 shadow-card relative overflow-hidden border border-white/10 before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_65%)] before:pointer-events-none transition-colors duration-300">
+                <!-- Bubble Animation Background -->
+                <div id="heroBubbleContainer" class="hero-bubble-wrapper">
+                  <div class="hero-bubble hero-bubble-1"></div>
+                  <div class="hero-bubble hero-bubble-2"></div>
+                  <div class="hero-bubble hero-bubble-3"></div>
+                  <div class="hero-bubble hero-bubble-4"></div>
+                  <div class="hero-bubble hero-bubble-5"></div>
+                </div>
+
                 <div class="relative z-10 flex flex-row items-start sm:items-center justify-between gap-4">
-                  <div class="flex-1 min-w-0 space-y-2">
+                  <!-- ฝั่งซ้าย: สถานะ, ชื่อการประชุม, วันเวลา และสถานที่ -->
+                  <div class="flex-1 min-w-0 space-y-2.5">
                     <div class="flex items-center gap-2 flex-wrap">
-                      <span id="heroStatusWrapper" class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
-                        <span id="heroStatusDot" class="w-2 h-2 rounded-full bg-primary"></span>
+                      <span id="heroStatusWrapper" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
+                        <span id="heroStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
                         <span id="userBannerStatusPill">กำลังประชุม</span>
                       </span>
-                      <span id="heroOnlineBadge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary items-center gap-1 border border-primary/20">
-                        <i data-lucide="globe" class="h-3 w-3"></i> <span id="heroOnlinePlatformLabel">Google Meet</span>
+                      <span id="heroOnlineBadge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white backdrop-blur-xs items-center gap-1 border border-white/20">
+                        <i data-lucide="globe" class="text-[10px]"></i> <span id="heroOnlinePlatformLabel">Google Meet</span>
                       </span>
-                      <span id="heroUserCheckinPill" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
+                      <span id="heroUserCheckinPill" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/20 text-white backdrop-blur-xs">
                         ยังไม่เช็คชื่อ
                       </span>
                     </div>
 
-                    <h2 id="userBannerTitle" class="text-lg sm:text-xl font-bold leading-snug text-foreground break-words tracking-tight">
+                    <h2 id="userBannerTitle" class="text-xl sm:text-2xl font-bold leading-snug text-white break-words tracking-tight">
                       ประชุมคณะกรรมการชมรมคมสัน
                     </h2>
 
-                    <div class="space-y-1 text-xs text-muted-foreground">
+                    <div class="space-y-1 text-xs text-white/85 font-medium">
                       <p id="userBannerDateTime">วันที่: - • เวลา: -</p>
                       <p id="userBannerLocation">ห้องประชุม: -</p>
                     </div>
-
-                    <div class="pt-1 flex flex-wrap items-center gap-2">
-                      <button type="button" onclick="openQrExpandModal()" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer">
-                        <i data-lucide="qr-code" class="h-3.5 w-3.5"></i>
-                        <span>QR เช็คชื่อของฉัน</span>
-                      </button>
-                      <button type="button" onclick="switchUserTab('RAISE')" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 border border-input bg-background hover:bg-accent hover:text-white transition-colors cursor-pointer">
-                        <i data-lucide="hand" class="h-3.5 w-3.5"></i>
-                        <span>ยกมือขอพูด</span>
-                      </button>
-                      <button type="button" onclick="openLeaveModal()" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 border border-input bg-background hover:bg-accent hover:text-white transition-colors cursor-pointer">
-                        <i data-lucide="calendar-off" class="h-3.5 w-3.5"></i>
-                        <span>แจ้งลาประชุม</span>
-                      </button>
-                    </div>
                   </div>
 
-                  <!-- ฝั่งขวา: QR Code ประจำตัวสมาชิก -->
+                  <!-- ฝั่งขวา: QR Code ประจำตัวสมาชิก (แสดงเฉพาะโหมด On-site ให้ Admin สแกน) -->
                   <div id="heroOnsiteQrWrapper" class="shrink-0 flex flex-col items-center text-center">
-                    <div class="text-[10px] font-semibold text-muted-foreground mb-1 hidden sm:block">
+                    <div class="text-[11px] font-semibold text-white/80 mb-1.5 hidden sm:block">
                       <span id="heroMemberCodeTop">COMSAN</span>
                     </div>
                     <div onclick="openQrExpandModal()" title="คลิกเพื่อย่อ/ขยาย QR Code"
-                      class="bg-white p-2 rounded-xl shadow-xs cursor-pointer hover:scale-105 transition flex items-center justify-center border border-border text-slate-900">
-                      <div id="userQrCodeBox" class="w-[76px] h-[76px] sm:w-[88px] sm:h-[88px] flex items-center justify-center"></div>
+                      class="bg-white p-2.5 sm:p-3 rounded-xl shadow-xs cursor-pointer hover:scale-105 transition flex items-center justify-center border border-white/30 text-slate-900">
+                      <div id="userQrCodeBox" class="w-[88px] h-[88px] sm:w-[104px] sm:h-[104px] flex items-center justify-center"></div>
                     </div>
-                    <p id="userQrCodeText" class="text-[10px] font-mono text-muted-foreground mt-1">COMSAN-01</p>
+                    <button type="button" onclick="openQrExpandModal()" class="mt-2 text-[11px] font-semibold text-white/90 hover:text-white flex items-center gap-1 cursor-pointer">
+                      <span>QR CODE ประจำตัวฉัน</span> <i data-lucide="zoom-in" class="h-3 w-3"></i>
+                    </button>
+                    <p id="userQrCodeText" class="text-[10px] font-mono text-white/70 mt-0.5">COMSAN-01</p>
                   </div>
                 </div>
 
-                <!-- แผงการประชุมออนไลน์ (แสดงเฉพาะเมื่อเป็นการประชุม Online) -->
-                <div id="userBannerOnlineContainer" class="hidden relative z-10 mt-4 pt-3.5 border-t border-border flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <!-- แผงการประชุมออนไลน์แบบเต็มความกว้าง (แสดงเฉพาะเมื่อเป็นการประชุม Online) -->
+                <div id="userBannerOnlineContainer" class="hidden relative z-10 mt-4 pt-3.5 border-t border-white/15 flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                     <a id="userBannerOnlineBtn" href="#" target="_blank" rel="noopener noreferrer"
-                      class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md gradient-primary text-white font-medium shadow-xs transition-all text-xs sm:text-sm">
-                      <span id="userBannerOnlineIcon"><i data-lucide="video" class="h-4 w-4"></i></span>
+                      class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-100 shadow-md transition-all active:scale-95 text-xs sm:text-sm">
+                      <span id="userBannerOnlineIcon"><i data-lucide="video" class="h-4 w-4 text-emerald-600"></i></span>
                       <span id="userBannerOnlineLabel">เข้าสู่การประชุม (Google Meet)</span>
-                      <i data-lucide="external-link" class="h-3.5 w-3.5 opacity-80"></i>
+                      <i data-lucide="external-link" class="h-3.5 w-3.5 opacity-60 ml-0.5"></i>
                     </a>
 
-                    <div id="userBannerPasscodeTag" class="hidden inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 rounded-md bg-muted border border-border text-xs text-foreground cursor-pointer hover:bg-muted/80 transition"
+                    <div id="userBannerPasscodeTag" class="hidden inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-2 sm:py-1.5 rounded-xl bg-white/15 border border-white/25 text-xs text-white backdrop-blur-sm cursor-pointer hover:bg-white/20 transition"
                       onclick="copyOnlinePasscode()" title="คลิกเพื่อคัดลอกรหัสผ่าน">
                       <div class="flex items-center gap-1.5">
-                        <i data-lucide="key" class="h-3.5 w-3.5 text-primary"></i>
-                        <span class="text-muted-foreground">รหัสผ่าน:</span>
-                        <span id="userBannerPasscodeText" class="font-mono font-bold tracking-wider text-foreground">123456</span>
+                        <i data-lucide="key" class="h-3.5 w-3.5 text-amber-300"></i>
+                        <span class="opacity-80">รหัสผ่าน:</span>
+                        <span id="userBannerPasscodeText" class="font-mono font-bold tracking-wider text-amber-200">123456</span>
                       </div>
-                      <i data-lucide="copy" class="h-3.5 w-3.5 text-muted-foreground"></i>
+                      <span class="inline-flex items-center gap-1 text-[11px] opacity-75 hover:opacity-100 bg-white/10 px-2 py-0.5 rounded-md">
+                        <i data-lucide="copy" class="h-3 w-3"></i>
+                        <span>คัดลอก</span>
+                      </span>
                     </div>
                   </div>
 
                   <div id="heroOnlineCheckinAction" class="flex items-center w-full sm:w-auto">
                     <div id="heroOnlineNotCheckedInBox" class="flex items-center w-full sm:w-auto">
                       <button type="button" onclick="openUserScanAdminQrModal()"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-xs transition-all text-xs sm:text-sm cursor-pointer">
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md transition-all active:scale-95 text-xs sm:text-sm cursor-pointer">
                         <i data-lucide="qr-code" class="h-4 w-4"></i>
                         <span>สแกน QR เช็คชื่อ</span>
                       </button>
                     </div>
-                    <div id="heroOnlineCheckedInBox" class="hidden w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-                      <i data-lucide="check-circle-2" class="h-4 w-4"></i>
+                    <div id="heroOnlineCheckedInBox" class="hidden w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold backdrop-blur-xs">
+                      <i data-lucide="check-circle-2" class="h-4 w-4 text-emerald-400"></i>
                       <span>เช็คชื่อเรียบร้อย</span>
-                      <span id="heroOnlineCheckinTime" class="font-mono text-[11px]">(11:15 น.)</span>
+                      <span id="heroOnlineCheckinTime" class="font-mono text-[11px] opacity-80">(11:15 น.)</span>
                     </div>
                   </div>
                 </div>

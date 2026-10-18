@@ -53,8 +53,8 @@ function updateMeetingTimersAndBanners() {
     if (adminSetupBadge) adminSetupBadge.textContent = 'ยังไม่เริ่มประชุม';
     if (adminNotStartedBanner) adminNotStartedBanner.classList.remove('hidden');
     if (userBannerStatusPill) userBannerStatusPill.textContent = 'ยังไม่มีการประชุม';
-    if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-muted-foreground/60';
-    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border/60';
+    if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-slate-300';
+    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300';
   } else if (m.isEnded) {
     if (stateBadge) stateBadge.textContent = 'จบการประชุมแล้ว';
     if (pulseDot) pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
@@ -64,8 +64,8 @@ function updateMeetingTimersAndBanners() {
     if (adminSetupBadge) adminSetupBadge.textContent = 'จบการประชุมแล้ว';
     if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
     if (userBannerStatusPill) userBannerStatusPill.textContent = 'จบการประชุมแล้ว';
-    if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-rose-500';
-    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20';
+    if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-rose-400';
+    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-rose-300';
   } else {
     const startMs = m.startedAtMs || nowMs;
     const elapsedMin = Math.max(0, Math.floor((nowMs - startMs) / 60000));
@@ -77,8 +77,8 @@ function updateMeetingTimersAndBanners() {
     if (adminSetupBadge) adminSetupBadge.textContent = 'กำลังดำเนินการประชุม';
     if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
     if (userBannerStatusPill) userBannerStatusPill.textContent = 'กำลังประชุม';
-    if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-ping';
-    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+    if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300';
   }
 
   // Online meeting UI elements
@@ -111,12 +111,12 @@ function updateMeetingTimersAndBanners() {
     }
   }
 
-  // Hero Card Display Logic (Clean Comsan Choice Card Style)
-  if (heroCard) {
-    heroCard.classList.remove('gradient-hero', 'hero-card-gray');
-  }
-
+  // Hero Card Display Logic (Active vs Inactive)
   if (isMeetingActive) {
+    if (heroCard) {
+      heroCard.classList.add('gradient-hero');
+      heroCard.classList.remove('hero-card-gray');
+    }
     if (userBannerTitle) userBannerTitle.textContent = m.title || 'การประชุมชมรมสันทนาการ (COMSAN)';
     if (userBannerDateTime) userBannerDateTime.textContent = `${m.date || todayISO} • ${m.startTime || '17:00'}–${m.endTime || '19:00'} น. (ตัดสาย ${m.lateTime || '17:15'} น.)`;
 
@@ -180,6 +180,10 @@ function updateMeetingTimersAndBanners() {
       if (heroOnsiteQrWrapper) heroOnsiteQrWrapper.classList.remove('hidden');
     }
   } else {
+    if (heroCard) {
+      heroCard.classList.remove('gradient-hero');
+      heroCard.classList.add('hero-card-gray');
+    }
     const heroOnlineBadge = document.getElementById('heroOnlineBadge');
     if (heroOnlineBadge) heroOnlineBadge.classList.add('hidden');
     if (userBannerTitle) userBannerTitle.textContent = 'ยังไม่มีการประชุมในขณะนี้';
@@ -641,8 +645,8 @@ function renderAll() {
             statusBadge.className = 'px-2.5 py-0.5 text-[10px] rounded-full bg-sky-500/20 text-sky-600 font-bold';
           }
           if (heroCheckPill) {
-            heroCheckPill.textContent = 'แจ้งลาประชุม';
-            heroCheckPill.className = 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-sky-500/15 text-sky-600 dark:text-sky-400';
+            heroCheckPill.textContent = '📋 แจ้งลาประชุม';
+            heroCheckPill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-400/25 text-sky-200';
           }
           if (pCard) pCard.className = 'bg-sky-500/10 border border-sky-500/30 rounded-[24px] p-4 flex items-center gap-3.5';
           if (pIcon) pIcon.className = 'w-10 h-10 rounded-full bg-sky-600 text-white flex items-center justify-center shrink-0';
@@ -654,8 +658,8 @@ function renderAll() {
             statusBadge.className = 'px-2.5 py-0.5 text-[10px] rounded-full bg-amber-500/20 text-amber-600 font-bold';
           }
           if (heroCheckPill) {
-            heroCheckPill.textContent = `มาสาย (${me.checkInTimeStr})`;
-            heroCheckPill.className = 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-amber-500/15 text-amber-600 dark:text-amber-400';
+            heroCheckPill.textContent = `⚠️ มาสาย (${me.checkInTimeStr})`;
+            heroCheckPill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/25 text-amber-200';
           }
           if (pCard) pCard.className = 'bg-amber-500/10 border border-amber-500/30 rounded-[24px] p-4 flex items-center gap-3.5';
           if (pIcon) pIcon.className = 'w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shrink-0';
@@ -667,8 +671,8 @@ function renderAll() {
             statusBadge.className = 'px-2.5 py-0.5 text-[10px] rounded-full bg-emerald-500/20 text-emerald-600 font-bold';
           }
           if (heroCheckPill) {
-            heroCheckPill.textContent = `เช็คชื่อแล้ว (${me.checkInTimeStr})`;
-            heroCheckPill.className = 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
+            heroCheckPill.textContent = `✔ เช็คชื่อแล้ว (${me.checkInTimeStr})`;
+            heroCheckPill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400/25 text-emerald-200';
           }
           if (pCard) pCard.className = 'bg-emerald-500/10 border border-emerald-500/30 rounded-[24px] p-4 flex items-center gap-3.5';
           if (pIcon) pIcon.className = 'w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0';
@@ -682,7 +686,9 @@ function renderAll() {
           }
           if (heroCheckPill) {
             heroCheckPill.textContent = isNotStarted ? 'ยังไม่เปิดประชุม' : 'ยังไม่เช็คชื่อ';
-            heroCheckPill.className = 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-secondary text-secondary-foreground';
+            heroCheckPill.className = isNotStarted 
+              ? 'px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/15 text-white/80'
+              : 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/15 text-indigo-100';
           }
           if (pCard) pCard.className = 'bg-slate-200/70 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-[24px] p-4 flex items-center gap-3.5';
           if (pIcon) pIcon.className = 'w-10 h-10 rounded-full bg-slate-400 text-white flex items-center justify-center shrink-0';
