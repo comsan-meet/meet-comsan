@@ -441,72 +441,55 @@ function renderUserCalendarSection() {
     });
   }).length;
 
-  // Build HTML
+  // Build HTML (Clean Comsan Choice Calendar Layout)
   let html = `
-    <!-- Top Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
-      <div>
-        <h3 class="text-base sm:text-lg font-extrabold text-foreground flex items-center gap-2">
-          <i data-lucide="calendar-days" class="w-5 h-5 text-primary inline-block"></i> ปฏิทินงานชมรมคมสัน
-        </h3>
-        <p class="text-xs text-muted-foreground mt-0.5">ตรวจสอบตารางงาน กิจกรรม และผู้รับผิดชอบในแต่ละหน้าที่</p>
-      </div>
-
-      <div class="flex items-center justify-between sm:justify-end gap-2 shrink-0 w-full sm:w-auto">
-        <button type="button" onclick="downloadAllCalendarEventsIcs()"
-          class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center justify-center gap-1.5 shadow-2xs truncate">
-          <i data-lucide="download" class="w-3.5 h-3.5 inline-block"></i>
-          <span class="truncate">บันทึกปฏิทิน (.ics)</span>
-        </button>
-
-        <!-- View Switcher -->
-        <div class="bg-muted p-1 rounded-xl flex items-center gap-1 border border-border/60 shrink-0">
-          <button type="button" onclick="setCalendarView('LIST')"
-            class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition ${window.calendarState.view === 'LIST' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'}">
-            <i data-lucide="list" class="w-3.5 h-3.5 mr-1 inline-block"></i> รายการ
-          </button>
-          <button type="button" onclick="setCalendarView('MONTH')"
-            class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition ${window.calendarState.view === 'MONTH' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'}">
-            <i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 inline-block"></i> เดือน
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filter & Search Toolbar -->
-    <div class="bg-card text-card-foreground border border-border rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3">
-      <!-- Quick Filter Pills -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
-        <button type="button" onclick="setCalendarAssigneeFilter('ALL')"
-          class="px-3 py-1.5 rounded-xl font-semibold transition shrink-0 ${window.calendarState.assigneeFilter === 'ALL' ? 'bg-primary text-white shadow-xs' : 'bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted'}">
-          งานทั้งหมด (${totalEventsCount})
-        </button>
-        <button type="button" onclick="setCalendarAssigneeFilter('MY_TASKS')"
-          class="px-3 py-1.5 rounded-xl font-semibold transition shrink-0 flex items-center gap-1.5 ${window.calendarState.assigneeFilter === 'MY_TASKS' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted'}">
-          <i data-lucide="user-check" class="w-3 h-3 inline-block"></i> งานที่ฉันรับผิดชอบ
-          <span class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${window.calendarState.assigneeFilter === 'MY_TASKS' ? 'bg-white/20 text-white' : 'bg-indigo-500/10 text-indigo-600'}">${myTasksCount}</span>
-        </button>
-
-        <div class="h-4 w-px bg-border/80 mx-1 shrink-0"></div>
-
-        <!-- Category Dropdown / Pills -->
-        <select onchange="setCalendarCategoryFilter(this.value)" class="text-xs bg-muted/60 border border-border rounded-xl px-2.5 py-1.5 text-foreground font-medium focus:ring-1 focus:ring-primary outline-none shrink-0">
-          <option value="ALL" ${window.calendarState.categoryFilter === 'ALL' ? 'selected' : ''}>ทุกหมวดหมู่</option>
-          <option value="EVENT" ${window.calendarState.categoryFilter === 'EVENT' ? 'selected' : ''}>กิจกรรมชมรม</option>
-          <option value="MEETING" ${window.calendarState.categoryFilter === 'MEETING' ? 'selected' : ''}>การประชุม</option>
-          <option value="DEADLINE" ${window.calendarState.categoryFilter === 'DEADLINE' ? 'selected' : ''}>กำหนดส่งงาน</option>
-          <option value="WORKSHOP" ${window.calendarState.categoryFilter === 'WORKSHOP' ? 'selected' : ''}>เวิร์กช็อป / อบรม</option>
-          <option value="OTHER" ${window.calendarState.categoryFilter === 'OTHER' ? 'selected' : ''}>อื่นๆ</option>
-        </select>
-
-        <!-- Search input -->
-        <div class="relative flex-1 min-w-[160px]">
-          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"></i>
-          <input type="text" placeholder="ค้นหาชื่องาน, ผู้รับผิดชอบ..."
+    <div class="space-y-4">
+      <!-- Search & Filter Bar (Matching Choice Style) -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="relative flex-1">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"></i>
+          <input type="text" placeholder="ค้นหากำหนดการ, สถานที่, ผู้รับผิดชอบ..."
             value="${window.calendarState.searchQuery || ''}"
             oninput="handleCalendarSearchInput(this.value)"
-            class="w-full pl-8 pr-3 py-1.5 rounded-xl bg-muted/50 border border-border text-xs text-foreground placeholder:text-muted-foreground/70 focus:bg-card focus:ring-1 focus:ring-primary outline-none transition">
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
         </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" onclick="downloadAllCalendarEventsIcs()"
+            class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-xs font-medium border border-input bg-background hover:bg-accent hover:text-white h-10 px-3">
+            <i data-lucide="download" class="h-4 w-4"></i>
+            <span>บันทึก .ics</span>
+          </button>
+          <div class="bg-muted p-1 rounded-lg flex items-center gap-1 border border-border/60 h-10">
+            <button type="button" onclick="setCalendarView('LIST')"
+              class="px-3 py-1 rounded-md text-xs font-medium transition ${window.calendarState.view === 'LIST' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'}">
+              รายการ
+            </button>
+            <button type="button" onclick="setCalendarView('MONTH')"
+              class="px-3 py-1 rounded-md text-xs font-medium transition ${window.calendarState.view === 'MONTH' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'}">
+              เดือน
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Horizontal Rounded-Full Filter Pills -->
+      <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <button type="button" onclick="setCalendarAssigneeFilter('ALL'); setCalendarCategoryFilter('ALL');"
+          class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium transition-colors h-8 rounded-full px-3.5 shrink-0 ${window.calendarState.assigneeFilter === 'ALL' && window.calendarState.categoryFilter === 'ALL' ? 'bg-primary text-primary-foreground' : 'border border-input bg-background hover:bg-accent hover:text-white'}">
+          ทั้งหมด (${totalEventsCount})
+        </button>
+        <button type="button" onclick="setCalendarAssigneeFilter('MY_TASKS')"
+          class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium transition-colors h-8 rounded-full px-3.5 shrink-0 ${window.calendarState.assigneeFilter === 'MY_TASKS' ? 'bg-primary text-primary-foreground' : 'border border-input bg-background hover:bg-accent hover:text-white'}">
+          งานที่ฉันรับผิดชอบ (${myTasksCount})
+        </button>
+        <button type="button" onclick="setCalendarAssigneeFilter('ALL'); setCalendarCategoryFilter('MEETING');"
+          class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium transition-colors h-8 rounded-full px-3.5 shrink-0 ${window.calendarState.categoryFilter === 'MEETING' ? 'bg-primary text-primary-foreground' : 'border border-input bg-background hover:bg-accent hover:text-white'}">
+          การประชุม
+        </button>
+        <button type="button" onclick="setCalendarAssigneeFilter('ALL'); setCalendarCategoryFilter('EVENT');"
+          class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium transition-colors h-8 rounded-full px-3.5 shrink-0 ${window.calendarState.categoryFilter === 'EVENT' ? 'bg-primary text-primary-foreground' : 'border border-input bg-background hover:bg-accent hover:text-white'}">
+          กิจกรรมชมรม
+        </button>
       </div>
     </div>
   `;
@@ -519,6 +502,7 @@ function renderUserCalendarSection() {
   }
 
   container.innerHTML = html;
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
 }
 
 // =========================================================================
@@ -754,16 +738,12 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
   const canManage = Boolean(isAdmin && isCalendarAdmin());
   if (events.length === 0) {
     return `
-      <div class="p-8 text-center bg-card border border-border rounded-2xl space-y-3">
-        <div class="w-14 h-14 mx-auto rounded-2xl bg-muted flex items-center justify-center text-muted-foreground text-2xl">
-          <i data-lucide="calendar-x" class="w-8 h-8"></i>
-        </div>
-        <h4 class="font-bold text-base text-foreground">ไม่พบรายการตารางงาน</h4>
-        <p class="text-xs text-muted-foreground max-w-sm mx-auto">ยังไม่มีกิจกรรมที่ตรงตามเงื่อนไขการค้นหา คุณสามารถตรวจสอบปฏิทินเดือนหรือนำเข้าไฟล์ .ics เพิ่มเติมได้</p>
+      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card p-10 text-center space-y-3 mt-4">
+        <p class="text-sm text-muted-foreground">ไม่พบกำหนดการที่ตรงตามเงื่อนไขการค้นหา</p>
         ${canManage ? `
-          <div class="pt-2">
-            <button type="button" onclick="openAddCalendarEventModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-white shadow-xs">
-              + เพิ่มตารางงานแรก
+          <div class="pt-1">
+            <button type="button" onclick="openAddCalendarEventModal()" class="inline-flex items-center justify-center rounded-md text-xs font-semibold bg-primary text-primary-foreground h-9 px-4">
+              + เพิ่มกำหนดการแรก
             </button>
           </div>
         ` : ''}
@@ -771,30 +751,40 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
     `;
   }
 
-  let html = `<div class="space-y-3.5">`;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  let html = `<div class="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 mt-4">`;
 
   events.forEach(evt => {
     const catInfo = CALENDAR_CATEGORIES[evt.category] || CALENDAR_CATEGORIES.EVENT;
 
-    // Date formatting (Thai)
+    // Format Thai Date matching Choice (e.g. "19 ตุลาคม 2569")
     let dateStr = evt.startDate || '';
-    let dayNum = '-', monthStr = '-';
+    let thaiFullDateStr = dateStr || 'ไม่ระบุวันที่';
     if (dateStr) {
       const parts = dateStr.split('-');
       if (parts.length === 3) {
-        dayNum = parseInt(parts[2], 10);
+        const y = parseInt(parts[0], 10) + 543;
         const mIdx = parseInt(parts[1], 10) - 1;
-        monthStr = THAI_MONTHS_SHORT[mIdx] || '';
+        const d = parseInt(parts[2], 10);
+        const mName = (typeof THAI_MONTHS !== 'undefined' && THAI_MONTHS[mIdx]) ? THAI_MONTHS[mIdx] : parts[1];
+        thaiFullDateStr = `${d} ${mName} ${y}`;
       }
     }
 
     // Time text
-    let timeText = 'ตลอดวัน';
+    let timeText = 'ตลอดทั้งวัน';
     if (!evt.isAllDay && evt.startTime) {
-      timeText = `${evt.startTime} - ${evt.endTime || '12:00'} น.`;
+      timeText = `${evt.startTime}${evt.endTime ? ' - ' + evt.endTime : ''} น.`;
     }
 
-    // Check if current user is an assignee
+    const isPast = dateStr && dateStr < todayIso;
+    const isToday = dateStr && dateStr === todayIso;
+    const statusBadge = isToday
+      ? `<div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">วันนี้</div>`
+      : (isPast
+        ? `<div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-muted text-muted-foreground">เสร็จสิ้น</div>`
+        : `<div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-primary/10 text-primary">กำลังจะมาถึง</div>`);
+
     const isMeAssigned = currentUser && Array.isArray(evt.assignees) && evt.assignees.some(a => {
       if (a.userId && a.userId === currentUser.id) return true;
       if (a.name && (a.name.includes(currentUser.firstName) || a.name.includes(currentUser.nickname))) return true;
@@ -802,116 +792,82 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
     });
 
     html += `
-      <div id="calEventItem_${evt.id}" class="bg-card text-card-foreground border border-border hover:border-primary/40 rounded-2xl p-4 sm:p-5 shadow-sm transition space-y-3.5 group">
-        <!-- Event Top Row -->
-        <div class="flex items-start gap-3.5">
-          <!-- Date Badge Box -->
-          <div class="w-14 h-14 rounded-2xl bg-muted/80 border border-border/80 flex flex-col items-center justify-center shrink-0 shadow-2xs group-hover:bg-primary/10 group-hover:border-primary/30 transition">
-            <span class="text-lg font-black text-foreground group-hover:text-primary leading-none">${dayNum}</span>
-            <span class="text-[10px] font-bold text-muted-foreground uppercase mt-0.5">${monthStr}</span>
-          </div>
-
-          <!-- Main Details -->
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap mb-1">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${catInfo.bg} ${catInfo.text} border ${catInfo.border} flex items-center gap-1">
-                <i data-lucide="${catInfo.icon || 'star'}" class="w-2.5 h-2.5 inline-block"></i> ${catInfo.label}
-              </span>
-
-              ${isMeAssigned ? `
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 animate-pulse">
-                  <i data-lucide="star" class="w-2.5 h-2.5 inline-block"></i> งานของคุณ
-                </span>
-              ` : ''}
-
-              ${evt.createdSource === 'ICS_IMPORT' ? `
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-500/10 text-slate-500 border border-slate-500/20" title="นำเข้าจากไฟล์ .ics">
-                  <i data-lucide="upload" class="w-2.5 h-2.5 mr-1 inline-block"></i> ICS
-                </span>
-              ` : ''}
-            </div>
-
-            <h4 class="font-bold text-sm sm:text-base text-foreground leading-snug group-hover:text-primary transition cursor-pointer"
-              onclick="openCalendarEventDetailModal('${evt.id}')">
-              ${evt.title}
-            </h4>
-
-            <div class="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-              <span class="flex items-center gap-1 font-medium">
-                <i data-lucide="clock" class="w-3.5 h-3.5 text-primary inline-block"></i> ${timeText}
-              </span>
-              ${evt.location ? `
-                <span class="flex items-center gap-1">
-                  <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500 inline-block"></i> <span class="truncate max-w-[200px]">${evt.location}</span>
-                </span>
-              ` : ''}
+      <div id="calEventItem_${evt.id}" onclick="openCalendarEventDetailModal('${evt.id}')" class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card cursor-pointer hover:shadow-lg transition-shadow flex flex-col justify-between">
+        <div class="flex flex-col space-y-1.5 p-6 pb-3">
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="tracking-tight text-lg font-semibold text-foreground leading-snug">${evt.title}</h3>
+                ${statusBadge}
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap mt-1">
+                <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">
+                  ${catInfo.label}
+                </div>
+                ${isMeAssigned ? `
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                    ★ งานของคุณ
+                  </span>
+                ` : ''}
+              </div>
+              ${evt.description ? `<p class="text-sm text-muted-foreground mt-2 line-clamp-2">${evt.description}</p>` : ''}
             </div>
           </div>
         </div>
 
-        ${evt.description ? `
-          <p class="text-xs text-muted-foreground line-clamp-2 pl-1">${evt.description}</p>
-        ` : ''}
-
-        <!-- Section: ผู้รับผิดชอบในส่วนไหน (Assignees & Responsibilities) -->
-        <div class="pt-2 border-t border-border/60">
-          <div class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-            <i data-lucide="user-cog" class="w-3.5 h-3.5 text-indigo-500 inline-block"></i> ผู้รับผิดชอบในส่วนงานนี้:
+        <div class="p-6 pt-0 space-y-2 text-sm text-muted-foreground">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="calendar" class="h-4 w-4 shrink-0"></i>
+            <span>${thaiFullDateStr}</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <i data-lucide="clock" class="h-4 w-4 shrink-0"></i>
+            <span>${timeText}</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <i data-lucide="map-pin" class="h-4 w-4 shrink-0"></i>
+            <span class="truncate">${evt.location || 'ห้องประชุมชมรมคมสัน'}</span>
           </div>
 
           ${Array.isArray(evt.assignees) && evt.assignees.length > 0 ? `
-            <div class="flex flex-wrap gap-2">
+            <div class="pt-2 border-t border-border/60 flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-medium text-muted-foreground">ผู้รับผิดชอบ:</span>
               ${evt.assignees.map(a => `
-                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-muted/80 border border-border text-xs">
-                  <div class="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold text-[10px] flex items-center justify-center shrink-0">
-                    ${(a.name || 'ผ')[0]}
-                  </div>
-                  <span class="font-bold text-foreground">${a.name || 'ไม่ระบุชื่อ'}</span>
-                  ${a.role ? `
-                    <span class="text-[10px] text-muted-foreground font-medium border-l border-border/80 pl-1.5 ml-0.5">
-                      ${a.role}
-                    </span>
-                  ` : ''}
-                </div>
+                <span class="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
+                  ${a.name}${a.role ? ' (' + a.role + ')' : ''}
+                </span>
               `).join('')}
             </div>
-          ` : `
-            <p class="text-xs text-muted-foreground/70 italic pl-1">ยังไม่ได้กำหนดผู้รับผิดชอบเฉพาะเจาะจง</p>
-          `}
-        </div>
+          ` : ''}
 
-        <!-- Action Buttons -->
-        <div class="pt-2 flex items-center justify-between gap-2 border-t border-border/40 flex-wrap">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <button type="button" onclick="downloadCalendarEventIcs('${evt.id}')"
-              class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground border border-border shadow-2xs transition flex items-center gap-1.5"
-              title="บันทึกไฟล์ .ics เข้าปฏิทินในเครื่อง / มือถือ">
-              <i data-lucide="download" class="w-3.5 h-3.5 text-primary inline-block"></i> บันทึกลงเครื่อง (.ics)
-            </button>
-            <button type="button" onclick="openGoogleCalendarAdd('${evt.id}')"
-              class="px-2.5 py-1.5 rounded-xl text-xs font-medium hover:bg-muted text-muted-foreground hover:text-foreground transition flex items-center gap-1"
-              title="เปิดเพิ่มใน Google Calendar">
-              <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-rose-500 inline-block"></i> เพิ่มใน Google Cal
-            </button>
-          </div>
-
-          ${canManage ? `
-            <div class="flex items-center gap-1.5 ml-auto">
-              <button type="button" onclick="openAddCalendarEventModal('${evt.id}')"
-                class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center gap-1 shadow-2xs">
-                <i data-lucide="pen" class="w-3.5 h-3.5 inline-block"></i> แก้ไข
+          <div class="pt-2 flex items-center justify-between gap-2 border-t border-border/50" onclick="event.stopPropagation()">
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="downloadCalendarEventIcs('${evt.id}')" class="inline-flex items-center gap-1 rounded-md border border-input bg-background hover:bg-accent hover:text-white px-2.5 py-1 text-xs font-medium text-foreground transition">
+                <i data-lucide="download" class="h-3.5 w-3.5"></i> <span>.ics</span>
               </button>
-              <button type="button" onclick="confirmDeleteCalendarEvent('${evt.id}', '${evt.title}')"
-                class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 transition flex items-center gap-1 shadow-2xs">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5 inline-block"></i> ลบ
+              <button type="button" onclick="openGoogleCalendarAdd('${evt.id}')" class="inline-flex items-center gap-1 rounded-md border border-input bg-background hover:bg-accent hover:text-white px-2.5 py-1 text-xs font-medium text-foreground transition">
+                <i data-lucide="calendar-plus" class="h-3.5 w-3.5"></i> <span>Google Cal</span>
               </button>
             </div>
-          ` : `
-            <button type="button" onclick="openCalendarEventDetailModal('${evt.id}')"
-              class="px-3 py-1.5 rounded-xl text-xs font-medium text-primary hover:underline ml-auto flex items-center gap-1">
-              ดูรายละเอียด <i data-lucide="arrow-right" class="w-3 h-3 inline-block"></i>
-            </button>
-          `}
+
+            ${canManage ? `
+              <div class="flex items-center gap-1.5 ml-auto">
+                <button type="button" onclick="openAddCalendarEventModal('${evt.id}')"
+                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary transition">
+                  แก้ไข
+                </button>
+                <button type="button" onclick="confirmDeleteCalendarEvent('${evt.id}', '${evt.title}')"
+                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition">
+                  ลบ
+                </button>
+              </div>
+            ` : `
+              <button type="button" onclick="openCalendarEventDetailModal('${evt.id}')"
+                class="text-xs font-medium text-primary hover:underline ml-auto">
+                ดูรายละเอียด
+              </button>
+            `}
+          </div>
         </div>
       </div>
     `;

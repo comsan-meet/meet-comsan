@@ -46,41 +46,63 @@ function handleUserLogin(e) {
   const passInput = (document.getElementById('userLoginPass')?.value || '').trim();
   const state = window.appState;
 
-  // 1. ตรวจสอบกรณีล็อกอินเป็น Admin จากหน้า Login หลัก
+  // 1. รองรับบัญชีองค์กร Comsan Choice (comsan.choice@gmail.com / choice2025) และ Admin
   const validAdminPass = window.ADMIN_PASSWORD || (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admincomsan26');
-  if (['admin', 'ผู้ดูแลระบบ', 'admincomsan', 'choice'].includes(nameInput) && (passInput === validAdminPass || passInput === 'admin' || passInput === '123')) {
+  const isChoiceOrgLogin = (nameInput === 'comsan.choice@gmail.com' || nameInput === 'comsan.choice' || nameInput === 'choice') &&
+                           (passInput === 'choice2025' || passInput === validAdminPass || passInput === '123');
+  const isAdminLogin = ['admin', 'ผู้ดูแลระบบ', 'admincomsan'].includes(nameInput) &&
+                       (passInput === validAdminPass || passInput === 'admin' || passInput === 'choice2025' || passInput === '123');
+
+  if (isChoiceOrgLogin || isAdminLogin) {
+    const defaultUser = (state?.users && state.users[0]) ? state.users[0].id : 'COMSAN-01';
     if (typeof window.setSessionAdmin === 'function') window.setSessionAdmin(true);
     else { window.isAdminAuthenticated = true; localStorage.setItem('comsan_admin_auth', 'true'); }
 
-    if (typeof window.setSessionRole === 'function') window.setSessionRole('ADMIN');
-    else { window.currentRole = 'ADMIN'; localStorage.setItem('comsan_role', 'ADMIN'); }
-
-    if (!window.currentUserId) {
-      if (typeof window.setSessionUser === 'function') window.setSessionUser('COMSAN-01', false);
-      else { window.currentUserId = 'COMSAN-01'; }
+    if (typeof window.setSessionUser === 'function') window.setSessionUser(defaultUser, true);
+    else {
+      window.currentUserId = defaultUser;
+      window.isUserAuthenticated = true;
+      localStorage.setItem('comsan_user_id', defaultUser);
+      localStorage.setItem('comsan_user_auth', 'true');
     }
+
+    const targetRole = isChoiceOrgLogin ? 'USER' : 'ADMIN';
+    if (typeof window.setSessionRole === 'function') window.setSessionRole(targetRole);
+    else { window.currentRole = targetRole; localStorage.setItem('comsan_role', targetRole); }
 
     const authScreen = document.getElementById('authScreen');
     const appLayout = document.getElementById('appLayout');
+    const loginCard = document.getElementById('userLoginCard');
+    const dashboard = document.getElementById('userDashboard');
     if (authScreen) authScreen.classList.add('hidden');
+    if (loginCard) loginCard.classList.add('hidden');
+    if (dashboard) dashboard.classList.remove('hidden');
     if (appLayout) {
       appLayout.classList.remove('hidden');
       appLayout.classList.add('flex');
     }
-    if (typeof window.switchRoleView === 'function') window.switchRoleView('ADMIN');
+
+    renderUserQrCode(defaultUser);
+    if (targetRole === 'USER') {
+      if (typeof window.openUserSection === 'function') window.openUserSection('HOME');
+      else if (typeof window.switchRoleView === 'function') window.switchRoleView('USER');
+    } else {
+      if (typeof window.switchRoleView === 'function') window.switchRoleView('ADMIN');
+    }
     if (typeof window.updateSidebarVisibility === 'function') window.updateSidebarVisibility();
     if (typeof window.renderAll === 'function') window.renderAll();
-    showToast('เข้าสู่ระบบผู้ดำเนินการ (ADMIN) สำเร็จ', 'success');
+    showToast('เข้าสู่ระบบ COMSAN สำเร็จ', 'success');
     return;
   }
 
-  // 2. ตรวจสอบสมาชิกทั่วไป (รองรับทั้งรหัสผ่านเฉพาะตัว หรือ 123 / a เพื่อความยืดหยุ่น)
+  // 2. ตรวจสอบสมาชิกทั่วไป (รองรับทั้งรหัสผ่านเฉพาะตัว หรือ 123 / a / choice2025 เพื่อความยืดหยุ่น)
   const found = (state?.users || []).find(
     u => (
       (u.nickname && u.nickname.toLowerCase() === nameInput) ||
       (u.firstName && u.firstName.toLowerCase() === nameInput) ||
-      (u.id && u.id.toLowerCase() === nameInput)
-    ) && (u.password === passInput || passInput === '123' || passInput === 'a' || (u.id && passInput === u.id.toLowerCase()))
+      (u.id && u.id.toLowerCase() === nameInput) ||
+      (u.studentId && String(u.studentId).toLowerCase() === nameInput)
+    ) && (u.password === passInput || passInput === '123' || passInput === 'a' || passInput === 'choice2025' || (u.id && passInput === u.id.toLowerCase()))
   );
 
   if (!found) {
@@ -122,10 +144,10 @@ function handleUserLogin(e) {
   if (qrText) qrText.textContent = found.id;
   if (noteTa) noteTa.value = found.note || '';
 
+  window.activeUserToolSubTab = 'OVERVIEW';
   if (typeof window.switchRoleView === 'function') window.switchRoleView('USER');
+  if (typeof window.openUserSection === 'function') window.openUserSection('HOME');
   if (typeof window.updateSidebarVisibility === 'function') window.updateSidebarVisibility();
-  if (typeof window.switchUserTab === 'function') window.switchUserTab('HOME');
-  if (typeof window.switchUserToolSubTab === 'function') window.switchUserToolSubTab('FILES');
   if (typeof window.initRecommendedFeaturesCarousel === 'function') window.initRecommendedFeaturesCarousel();
   if (typeof window.renderAll === 'function') window.renderAll();
   showToast(`สวัสดีคุณ${found.nickname} เข้าสู่ระบบสำเร็จ!`, 'success');
@@ -788,6 +810,289 @@ window.toggleUserCameraScanner = toggleUserCameraScanner;
 window.submitUserAdminCheckinCode = submitUserAdminCheckinCode;
 window.processUserAdminQrToken = processUserAdminQrToken;
 window.copyOnlinePasscode = copyOnlinePasscode;
+
+// =============================================================================
+// COMSAN CHOICE HOME BANNER CAROUSEL (21:9 Aspect Ratio)
+// =============================================================================
+let homeBannerSlideIndex = 0;
+let homeBannerTimer = null;
+let homeBannerPaused = false;
+const HOME_BANNER_TOTAL = 3;
+
+function renderHomeBannerPosition() {
+  const track = document.getElementById('choiceHomeBannerTrack') || document.getElementById('homeBannerCarouselTrack');
+  if (track) {
+    track.style.transform = `translate3d(-${homeBannerSlideIndex * 100}%, 0px, 0px)`;
+  }
+  const dotsWrap = document.getElementById('choiceHomeBannerDots') || document.getElementById('homeBannerCarouselDots');
+  if (dotsWrap) {
+    const dots = dotsWrap.querySelectorAll('.home-banner-dot');
+    dots.forEach((d, idx) => {
+      d.className = idx === homeBannerSlideIndex
+        ? 'home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white w-5 md:w-8 cursor-pointer'
+        : 'home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white/40 w-1.5 md:w-2 cursor-pointer hover:bg-white/70';
+    });
+  }
+}
+
+function stepHomeBannerSlide(delta) {
+  homeBannerSlideIndex = (homeBannerSlideIndex + delta + HOME_BANNER_TOTAL) % HOME_BANNER_TOTAL;
+  renderHomeBannerPosition();
+}
+
+function goToHomeBannerSlide(idx) {
+  homeBannerSlideIndex = ((idx % HOME_BANNER_TOTAL) + HOME_BANNER_TOTAL) % HOME_BANNER_TOTAL;
+  renderHomeBannerPosition();
+}
+
+function scheduleHomeBannerAutoSlide() {
+  if (homeBannerTimer) clearTimeout(homeBannerTimer);
+  if (homeBannerPaused) return;
+  homeBannerTimer = setTimeout(() => {
+    stepHomeBannerSlide(1);
+    scheduleHomeBannerAutoSlide();
+  }, 4500);
+}
+
+function pauseHomeBannerCarousel() {
+  homeBannerPaused = true;
+  if (homeBannerTimer) clearTimeout(homeBannerTimer);
+}
+
+function resumeHomeBannerCarousel() {
+  homeBannerPaused = false;
+  scheduleHomeBannerAutoSlide();
+}
+
+setTimeout(() => {
+  scheduleHomeBannerAutoSlide();
+}, 800);
+
+// =============================================================================
+// COMSAN CHOICE STICKY BOARD (/board) CONTROLLER
+// =============================================================================
+let selectedStickyColor = '#FEF08A';
+
+function getStickyBoardNotes() {
+  try {
+    const saved = localStorage.getItem('comsan_choice_sticky_notes');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+
+  const defaults = [
+    {
+      id: 'sn-1',
+      text: 'อยากให้มีกิจกรรมสันทนาการสานสัมพันธ์น้องใหม่ร่วมกับทุกสาขาในเทอมหน้าครับ 🎉',
+      color: '#FEF08A',
+      rotation: -2,
+      authorName: 'บอส (นายภูวดล ใจดี)',
+      authorRole: 'ประธานสโมสร',
+      createdAt: 'วันนี้ • 14:20',
+      likes: 5
+    },
+    {
+      id: 'sn-2',
+      text: 'เสนอให้จัดเตรียมเอกสารระเบียบวาระล่วงหน้าอย่างน้อย 2 วันก่อนวันประชุมใหญ่ เพื่อความรวดเร็วในการพิจารณาวาระ 📋',
+      color: '#BAE6FD',
+      rotation: 1.5,
+      authorName: 'เอิร์ธ (น.ส.กมลชนก ศรีสุข)',
+      authorRole: 'เลขานุการ',
+      createdAt: 'วันนี้ • 15:05',
+      likes: 4
+    },
+    {
+      id: 'sn-3',
+      text: 'ระบบเช็คชื่อผ่าน QR Code และโหวตมติแบบเรียลไทม์ใช้งานง่ายมากครับ ขอบคุณทีมงานฝ่ายเทคนิคทุกคน! 💜',
+      color: '#FBCFE8',
+      rotation: -1.2,
+      authorName: 'นนท์ (นายชานนท์ วงศ์สวัสดิ์)',
+      authorRole: 'กรรมการบริหาร',
+      createdAt: 'วันนี้ • 16:10',
+      likes: 7
+    }
+  ];
+  try {
+    localStorage.setItem('comsan_choice_sticky_notes', JSON.stringify(defaults));
+  } catch (e) {}
+  return defaults;
+}
+
+function saveStickyBoardNotes(notes) {
+  try {
+    localStorage.setItem('comsan_choice_sticky_notes', JSON.stringify(notes));
+  } catch (e) {}
+}
+
+function switchBoardMode(mode) {
+  const stickyView = document.getElementById('choiceStickyBoardView');
+  const personalView = document.getElementById('personalMeetingNoteView');
+  const btnSticky = document.getElementById('btnBoardTabSticky') || document.getElementById('boardTabStickyBtn');
+  const btnPersonal = document.getElementById('btnBoardTabPersonal') || document.getElementById('boardTabPersonalNoteBtn');
+
+  if (mode === 'PERSONAL') {
+    if (stickyView) stickyView.classList.add('hidden');
+    if (personalView) personalView.classList.remove('hidden');
+    if (btnPersonal) btnPersonal.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer flex items-center gap-1.5';
+    if (btnSticky) btnSticky.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer flex items-center gap-1.5';
+  } else {
+    if (stickyView) stickyView.classList.remove('hidden');
+    if (personalView) personalView.classList.add('hidden');
+    if (btnSticky) btnSticky.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer flex items-center gap-1.5';
+    if (btnPersonal) btnPersonal.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer flex items-center gap-1.5';
+    renderChoiceStickyBoard();
+  }
+}
+
+function renderChoiceStickyBoard() {
+  const canvas = document.getElementById('choiceStickyCanvas');
+  if (!canvas) return;
+
+  const notes = getStickyBoardNotes();
+  if (!notes.length) {
+    canvas.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-24 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-yellow-200/80 border border-yellow-300 shadow-sm flex items-center justify-center mb-4 -rotate-3">
+          <i data-lucide="sticky-note" class="h-8 w-8 text-yellow-800"></i>
+        </div>
+        <p class="text-base font-semibold text-foreground">ยังไม่มีโน้ตบนกระดานความคิด</p>
+        <p class="text-sm text-muted-foreground mt-1">กดปุ่ม "+ เพิ่มโน้ต" เพื่อแปะโพสต์อิทใบแรกของคุณ</p>
+      </div>
+    `;
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    return;
+  }
+
+  canvas.innerHTML = `
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-2 sm:p-4">
+      ${notes.map(note => {
+        const rot = typeof note.rotation === 'number' ? note.rotation : 0;
+        const bg = note.color || '#FEF08A';
+        return `
+          <div class="relative rounded-lg p-5 shadow-md hover:shadow-xl transition-all duration-200 flex flex-col justify-between min-h-[190px] border border-black/5 group"
+               style="background-color: ${bg}; transform: rotate(${rot}deg); color: #1e293b;">
+            <!-- Pin / Tape effect at top -->
+            <div class="absolute -top-2.5 left-1/2 -translate-x-1/2 w-12 h-5 bg-white/60 backdrop-blur-xs rounded-xs shadow-2xs border border-black/5"></div>
+
+            <div class="space-y-2 pt-1">
+              <p class="text-sm font-medium leading-relaxed whitespace-pre-wrap break-words" style="color: #0f172a;">${String(note.text || '').replace(/</g, '&lt;')}</p>
+            </div>
+
+            <div class="pt-4 mt-4 border-t border-black/10 flex items-center justify-between gap-2 text-xs" style="color: #334155;">
+              <div class="min-w-0">
+                <p class="font-semibold truncate" style="color: #0f172a;">${note.authorName || 'สมาชิก COMSAN'}</p>
+                <p class="text-[11px] opacity-75 truncate">${note.authorRole || 'สมาชิก'} • ${note.createdAt || 'เมื่อสักครู่'}</p>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="likeStickyNote('${note.id}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/60 hover:bg-white/90 text-rose-600 font-semibold text-xs transition shadow-2xs">
+                  <span>❤️</span>
+                  <span>${note.likes || 0}</span>
+                </button>
+                <button type="button" onclick="deleteStickyNote('${note.id}')" class="opacity-0 group-hover:opacity-100 p-1 rounded-full bg-white/60 hover:bg-rose-500 hover:text-white text-slate-600 transition" title="ลบโน้ต">
+                  <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+}
+
+function openAddStickyNoteModal() {
+  const modal = document.getElementById('addStickyNoteModal');
+  const ta = document.getElementById('newStickyNoteText');
+  if (ta) ta.value = '';
+  if (modal) {
+    modal.classList.remove('hidden');
+    setTimeout(() => { if (ta) ta.focus(); }, 100);
+  }
+}
+
+function closeAddStickyNoteModal() {
+  const modal = document.getElementById('addStickyNoteModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function selectStickyNoteColor(color, btnEl) {
+  selectedStickyColor = color || '#FEF08A';
+  const row = document.getElementById('stickyColorPickerRow');
+  if (row) {
+    row.querySelectorAll('button').forEach(b => {
+      b.className = 'w-8 h-8 rounded-full border border-black/10 transition hover:scale-105';
+    });
+  }
+  if (btnEl) {
+    btnEl.className = 'w-8 h-8 rounded-full border-2 border-primary ring-2 ring-primary/30 transition transform scale-110';
+  }
+}
+
+function saveNewStickyNote() {
+  const ta = document.getElementById('newStickyNoteText');
+  const text = (ta ? ta.value : '').trim();
+  if (!text) {
+    if (typeof showToast === 'function') showToast('กรุณาพิมพ์ข้อความบนกระดาษโน้ต', 'warning');
+    return;
+  }
+
+  const state = window.appState;
+  const me = state && (state.users || []).find(u => u.id === window.currentUserId);
+  const authorName = me ? `${me.nickname} (${me.firstName})` : 'Comsan Official';
+  const authorRole = me ? (me.position || 'สมาชิกชมรม') : 'ประธานสโมสร';
+  const rotations = [-2.2, -1.4, -0.8, 0.9, 1.5, 2.1];
+  const rot = rotations[Math.floor(Math.random() * rotations.length)];
+
+  const notes = getStickyBoardNotes();
+  notes.unshift({
+    id: 'sn-' + Date.now(),
+    text,
+    color: selectedStickyColor || '#FEF08A',
+    rotation: rot,
+    authorName,
+    authorRole,
+    createdAt: 'เมื่อสักครู่',
+    likes: 1
+  });
+  saveStickyBoardNotes(notes);
+  closeAddStickyNoteModal();
+  switchBoardMode('STICKY');
+  renderChoiceStickyBoard();
+  if (typeof showToast === 'function') showToast('แปะโพสต์อิทบนกระดานความคิดเรียบร้อยแล้ว!', 'success');
+}
+
+function likeStickyNote(noteId) {
+  const notes = getStickyBoardNotes();
+  const target = notes.find(n => n.id === noteId);
+  if (target) {
+    target.likes = (target.likes || 0) + 1;
+    saveStickyBoardNotes(notes);
+    renderChoiceStickyBoard();
+  }
+}
+
+function deleteStickyNote(noteId) {
+  const notes = getStickyBoardNotes().filter(n => n.id !== noteId);
+  saveStickyBoardNotes(notes);
+  renderChoiceStickyBoard();
+  if (typeof showToast === 'function') showToast('ลบกระดาษโน้ตแล้ว', 'info');
+}
+
+window.stepHomeBannerSlide = stepHomeBannerSlide;
+window.goToHomeBannerSlide = goToHomeBannerSlide;
+window.pauseHomeBannerCarousel = pauseHomeBannerCarousel;
+window.resumeHomeBannerCarousel = resumeHomeBannerCarousel;
+window.switchBoardMode = switchBoardMode;
+window.renderChoiceStickyBoard = renderChoiceStickyBoard;
+window.openAddStickyNoteModal = openAddStickyNoteModal;
+window.closeAddStickyNoteModal = closeAddStickyNoteModal;
+window.selectStickyNoteColor = selectStickyNoteColor;
+window.saveNewStickyNote = saveNewStickyNote;
+window.likeStickyNote = likeStickyNote;
+window.deleteStickyNote = deleteStickyNote;
 
 
 

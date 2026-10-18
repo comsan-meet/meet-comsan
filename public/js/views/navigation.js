@@ -1,5 +1,5 @@
 /**
- * COMSAN Meeting System - Navigation View Controller
+ * COMSAN Meeting System - Navigation View Controller (Comsan Choice Unified Sister-Site Edition)
  */
 
 function syncSidebarTopOffset() {
@@ -12,7 +12,6 @@ function syncSidebarTopOffset() {
 function updateChatFloatingButtons() {
   const adminFloatBtn = document.getElementById('adminMobileChatFloatBtnWrapper');
   const userFloatBtn = document.getElementById('userChatFloatBtnWrapper');
-  const isDesktop = window.innerWidth >= 768;
   const authScreen = document.getElementById('authScreen');
   const isAuthVisible = authScreen && !authScreen.classList.contains('hidden');
   const isAdminLogged = Boolean(window.isAdminAuthenticated);
@@ -37,7 +36,7 @@ function updateChatFloatingButtons() {
   } else {
     if (adminFloatBtn) adminFloatBtn.classList.add('hidden');
     if (userFloatBtn) {
-      if (isDesktop && window.activeUserTab !== 'CHAT') {
+      if (window.activeUserTab !== 'CHAT') {
         userFloatBtn.classList.remove('hidden');
       } else {
         userFloatBtn.classList.add('hidden');
@@ -46,9 +45,51 @@ function updateChatFloatingButtons() {
   }
 }
 
+function updateSidebarActiveStates() {
+  const activeClass = 'sidebar-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium bg-primary/10 text-primary transition-colors group cursor-pointer';
+  const inactiveClass = 'sidebar-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors group cursor-pointer';
+
+  const userNavIds = ['HOME', 'VOTE', 'SEATS', 'CALENDAR', 'NOTE', 'FILES', 'STREAM', 'RAISE', 'RANDOM', 'CHAT', 'PROFILE'];
+  const adminNavIds = ['DASHBOARD', 'CHAT', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS'];
+
+  const isAdminMode = window.currentRole === 'ADMIN';
+  const currentUserTab = window.activeUserTab || 'HOME';
+  const currentSubTab = window.activeUserToolSubTab || 'OVERVIEW';
+
+  // Determine which user nav item is active when in USER mode
+  let activeUserNavKey = currentUserTab;
+  if (currentUserTab === 'HOME' && currentSubTab && currentSubTab !== 'OVERVIEW') {
+    activeUserNavKey = currentSubTab;
+  }
+
+  userNavIds.forEach(id => {
+    const btn = document.getElementById(`uNav_${id}`);
+    if (btn) {
+      btn.className = (!isAdminMode && id === activeUserNavKey) ? activeClass : inactiveClass;
+    }
+  });
+
+  adminNavIds.forEach(id => {
+    const btn = document.getElementById(`aNav_${id}`);
+    if (btn) {
+      btn.className = (isAdminMode && id === window.activeAdminTab) ? activeClass : inactiveClass;
+    }
+  });
+
+  // Update Mobile Bottom Nav (HOME, SEATS, VOTE, CALENDAR, PROFILE)
+  const mobileNavKeys = ['HOME', 'SEATS', 'CALENDAR', 'PROFILE'];
+  mobileNavKeys.forEach(key => {
+    const mBtn = document.getElementById(`mNav_${key}`);
+    if (!mBtn) return;
+    const isActive = !isAdminMode && activeUserNavKey === key;
+    mBtn.className = isActive
+      ? 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-primary'
+      : 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground';
+  });
+}
+
 function updateSidebarVisibility() {
   const sidebar = document.getElementById('appSidebar');
-  const topToggleBtn = document.getElementById('topSidebarToggleBtn');
   const backdrop = document.getElementById('sidebarBackdrop');
   const mobileBottomNav = document.getElementById('mobileBottomNav');
   const mobileHeader = document.getElementById('mobileHeader');
@@ -63,7 +104,13 @@ function updateSidebarVisibility() {
   const isUserLogged = Boolean(window.isUserAuthenticated) && Boolean(window.currentUserId);
   const isAuthenticated = isAdminLogged || isUserLogged;
 
-  // 1. ถ้ายังไม่ได้เข้าสู่ระบบ (หน้า Auth / Login)
+  // Always keep legacy #mobileHeader hidden because #desktopMainHeader is now unified across mobile & desktop (matching Comsan Choice)
+  if (mobileHeader) {
+    mobileHeader.classList.add('hidden');
+    mobileHeader.classList.remove('flex');
+  }
+
+  // 1. Not authenticated -> show Auth page
   if (!isAuthenticated) {
     if (authScreen) authScreen.classList.remove('hidden');
     if (appLayout) {
@@ -78,10 +125,6 @@ function updateSidebarVisibility() {
       mobileBottomNav.classList.add('hidden');
       mobileBottomNav.classList.remove('flex');
     }
-    if (mobileHeader) {
-      mobileHeader.classList.add('hidden');
-      mobileHeader.classList.remove('flex');
-    }
     if (desktopHeader) {
       desktopHeader.classList.add('hidden');
       desktopHeader.classList.remove('flex');
@@ -91,56 +134,43 @@ function updateSidebarVisibility() {
     return;
   }
 
-  // 2. เมื่อเข้าสู่ระบบแล้ว
+  // 2. Authenticated -> show App Layout
   if (authScreen) authScreen.classList.add('hidden');
   if (appLayout) {
     appLayout.classList.remove('hidden');
     appLayout.classList.add('flex');
   }
 
-  const quickActionBtn = document.getElementById('sidebarQuickActionBtn');
+  // Show both เมนูหลัก and ระบบจัดการ in the sidebar (just like Comsan Choice!)
+  if (sidebarUser) sidebarUser.classList.remove('hidden');
+  if (sidebarAdmin) sidebarAdmin.classList.remove('hidden');
 
-  // สลับชุดเมนูให้ตรงกับบทบาท (USER / ADMIN)
-  if (window.currentRole === 'ADMIN') {
-    if (sidebarAdmin) sidebarAdmin.classList.remove('hidden');
-    if (sidebarUser) sidebarUser.classList.add('hidden');
-    if (quickActionBtn) quickActionBtn.classList.remove('hidden');
+  const isChatActive = (window.currentRole === 'ADMIN' && window.activeAdminTab === 'CHAT') ||
+                       (window.currentRole !== 'ADMIN' && window.activeUserTab === 'CHAT');
+
+  if (isChatActive) {
+    if (desktopHeader) {
+      desktopHeader.classList.add('hidden');
+      desktopHeader.classList.remove('flex');
+    }
   } else {
-    if (sidebarUser) sidebarUser.classList.remove('hidden');
-    if (sidebarAdmin) sidebarAdmin.classList.add('hidden');
-    if (quickActionBtn) quickActionBtn.classList.add('hidden');
+    if (desktopHeader) {
+      desktopHeader.classList.remove('hidden');
+      desktopHeader.classList.add('flex');
+    }
   }
 
-  const btnMobileSidebar = document.getElementById('btnMobileSidebarToggle');
-
   if (isDesktop) {
-    // DESKTOP: แสดง Sidebar ติดซ้าย sticky h-screen และแสดง Desktop Header
-    if (mobileHeader) {
-      mobileHeader.classList.add('hidden');
-      mobileHeader.classList.remove('flex');
-    }
     if (mobileBottomNav) {
       mobileBottomNav.classList.add('hidden');
       mobileBottomNav.classList.remove('flex');
     }
-
-    const isChatActive = (window.currentRole === 'ADMIN' && window.activeAdminTab === 'CHAT') ||
-                         (window.currentRole !== 'ADMIN' && window.activeUserTab === 'CHAT');
-
     if (isChatActive) {
-      if (desktopHeader) {
-        desktopHeader.classList.add('hidden');
-        desktopHeader.classList.remove('flex', 'md:flex');
-      }
       if (sidebar) {
         sidebar.classList.add('hidden');
         sidebar.classList.remove('flex', 'md:flex');
       }
     } else {
-      if (desktopHeader) {
-        desktopHeader.classList.remove('hidden');
-        desktopHeader.classList.add('flex', 'md:flex');
-      }
       if (sidebar) {
         sidebar.classList.remove('hidden', '-translate-x-full', 'mobile-drawer-open');
         sidebar.classList.add('flex', 'md:flex', 'translate-x-0');
@@ -149,88 +179,33 @@ function updateSidebarVisibility() {
     }
     if (backdrop) backdrop.classList.add('hidden');
   } else {
-    // MOBILE: ซ่อน Desktop Header, แสดง Mobile Header, สลับ Bottom Bar ตามบทบาท
     if (sidebar) sidebar.classList.remove('sidebar-collapsed');
-    if (desktopHeader) {
-      desktopHeader.classList.add('hidden');
-      desktopHeader.classList.remove('flex');
-    }
-    if (mobileHeader) {
-      mobileHeader.classList.remove('hidden');
-      mobileHeader.classList.add('flex');
-    }
 
-    if (window.currentRole === 'ADMIN') {
-      if (window.activeAdminTab === 'CHAT') {
-        if (mobileHeader) {
-          mobileHeader.classList.add('hidden');
-          mobileHeader.classList.remove('flex');
-        }
-      } else {
-        if (mobileHeader) {
-          mobileHeader.classList.remove('hidden');
-          mobileHeader.classList.add('flex');
-        }
-      }
-      // 1. ADMIN ON MOBILE: แสดงปุ่ม Hamburger Menu บน Header
-      if (btnMobileSidebar) {
-        btnMobileSidebar.classList.remove('hidden');
-        btnMobileSidebar.classList.add('flex');
-      }
-      // ซ่อน Bottom Bar ในหน้า Admin
-      if (mobileBottomNav) {
+    // Show Choice Mobile Bottom Nav on mobile (unless in full-screen CHAT)
+    if (mobileBottomNav) {
+      if (isChatActive) {
         mobileBottomNav.classList.add('hidden');
         mobileBottomNav.classList.remove('flex');
+      } else {
+        mobileBottomNav.classList.remove('hidden');
+        mobileBottomNav.classList.add('flex');
       }
+    }
 
-      if (sidebar) {
-        if (window.isMobileSidebarOpen) {
-          sidebar.classList.remove('hidden', '-translate-x-full');
-          sidebar.classList.add('flex', 'translate-x-0', 'mobile-drawer-open');
-          if (backdrop) backdrop.classList.remove('hidden');
-        } else {
-          sidebar.classList.add('-translate-x-full', 'hidden');
-          sidebar.classList.remove('translate-x-0', 'mobile-drawer-open', 'flex');
-          if (backdrop) backdrop.classList.add('hidden');
-        }
-      }
-    } else {
-      // 2. USER ON MOBILE:
-      if (btnMobileSidebar) {
-        btnMobileSidebar.classList.add('hidden');
-        btnMobileSidebar.classList.remove('flex');
-      }
-
-      // ผู้ใช้งานใช้ Mobile Bottom Bar นำทาง
-      if (mobileBottomNav) {
-        if (window.activeUserTab === 'CHAT') {
-          mobileBottomNav.classList.add('hidden');
-          mobileBottomNav.classList.remove('flex');
-        } else {
-          mobileBottomNav.classList.remove('hidden');
-          mobileBottomNav.classList.add('flex');
-        }
-      }
-      if (mobileHeader) {
-        if (window.activeUserTab === 'CHAT') {
-          mobileHeader.classList.add('hidden');
-          mobileHeader.classList.remove('flex');
-        } else {
-          mobileHeader.classList.remove('hidden');
-          mobileHeader.classList.add('flex');
-        }
-      }
-
-      // ปิดและซ่อน Sidebar สำหรับ User บนมือถือเสมอ
-      window.isMobileSidebarOpen = false;
-      if (sidebar) {
+    if (sidebar) {
+      if (window.isMobileSidebarOpen && !isChatActive) {
+        sidebar.classList.remove('hidden', '-translate-x-full');
+        sidebar.classList.add('flex', 'translate-x-0', 'mobile-drawer-open');
+        if (backdrop) backdrop.classList.remove('hidden');
+      } else {
         sidebar.classList.add('-translate-x-full', 'hidden');
         sidebar.classList.remove('translate-x-0', 'mobile-drawer-open', 'flex');
+        if (backdrop) backdrop.classList.add('hidden');
       }
-      if (backdrop) backdrop.classList.add('hidden');
     }
   }
 
+  updateSidebarActiveStates();
   updateSidebarProfile();
   updateChatFloatingButtons();
 }
@@ -245,20 +220,20 @@ function updateSidebarProfile() {
 
   if (!nameEl) return;
 
-  if (window.currentRole === 'ADMIN') {
+  const userId = window.currentUserId;
+  const state = window.appState;
+  const me = state && (state.users || []).find(u => u.id === userId);
+
+  if (window.currentRole === 'ADMIN' && !me) {
     nameEl.textContent = 'Meeting Official';
-    if (roleEl) roleEl.textContent = 'ผู้ดูแลระบบ (Admin)';
-    if (initialEl) initialEl.textContent = 'A';
+    if (roleEl) roleEl.textContent = 'ประธานสโมสร';
+    if (initialEl) initialEl.textContent = 'M';
     if (avatarContainer && typeof window.updateAvatarElement === 'function') {
-      window.updateAvatarElement(avatarContainer, { nickname: 'Admin', id: 'admin' });
+      window.updateAvatarElement(avatarContainer, { nickname: 'Meeting Official', id: 'admin' });
     }
     if (verified) verified.classList.remove('hidden');
     return;
   }
-
-  const userId = window.currentUserId;
-  const state = window.appState;
-  const me = state && (state.users || []).find(u => u.id === userId);
 
   if (me) {
     nameEl.textContent = me.nickname ? `${me.nickname} (${me.firstName})` : me.id;
@@ -268,61 +243,237 @@ function updateSidebarProfile() {
       window.updateAvatarElement(avatarContainer, me);
     }
     if (verified) {
-      if (me.position && (me.position.includes('ประธาน') || me.position.includes('เลขา') || me.position.includes('Official'))) {
-        verified.classList.remove('hidden');
-      } else {
-        verified.classList.add('hidden');
-      }
+      verified.classList.remove('hidden');
     }
   } else {
-    nameEl.textContent = 'ผู้ใช้งาน';
-    if (roleEl) roleEl.textContent = 'ผู้เข้าร่วมประชุม';
-    if (initialEl) initialEl.textContent = 'U';
+    nameEl.textContent = 'Comsan Official';
+    if (roleEl) roleEl.textContent = 'ประธานสโมสร';
+    if (initialEl) initialEl.textContent = 'C';
     if (avatarContainer && typeof window.updateAvatarElement === 'function') {
-      window.updateAvatarElement(avatarContainer, 'U');
+      window.updateAvatarElement(avatarContainer, 'C');
     }
-    if (verified) verified.classList.add('hidden');
+    if (verified) verified.classList.remove('hidden');
   }
 }
 
 function updateDesktopHeader() {
   const titleEl = document.getElementById('desktopHeadingTitle');
   const subEl = document.getElementById('desktopHeadingSubtitle');
+  const primaryBtn = document.getElementById('headerPrimaryActionBtn');
+  const primaryLabel = document.getElementById('headerPrimaryActionLabel');
   if (!titleEl) return;
 
-  if (window.currentRole === 'ADMIN' && window.isAdminAuthenticated) {
-    titleEl.textContent = 'ระบบจัดการประชุม (Admin)';
-    if (subEl) subEl.textContent = 'แผงควบคุมและดูแลการประชุม • คมสัน';
+  const totalMembers = (window.appState && Array.isArray(window.appState.users)) ? window.appState.users.length : 60;
+
+  if (window.currentRole === 'ADMIN') {
+    const adminTitles = {
+      DASHBOARD: ['จัดการการประชุม', 'ควบคุมสถานะการประชุม วาระ และภาพรวมแบบเรียลไทม์'],
+      CHECKIN: ['เช็คชื่อผู้เข้าร่วม', 'สแกน QR Code และตรวจสอบสถานะการเข้าร่วมประชุม'],
+      VOTING: ['สร้างการลงคะแนน', 'เปิดญัตติใหม่และควบคุมการลงมติในที่ประชุม'],
+      QUEUE: ['คิวผู้ขอพูด', 'จัดลำดับผู้ยกมือขออภิปรายและจับเวลา'],
+      CALENDAR: ['จัดการปฏิทิน', 'เพิ่มและแก้ไขกำหนดการประชุมขององค์กร'],
+      FILES: ['จัดการเอกสาร', 'อัปโหลดเอกสารประกอบการประชุมสำหรับสมาชิก'],
+      STREAM: ['ตั้งค่าถ่ายทอดสด', 'จัดการลิงก์สัญญาณภาพสดและห้องประชุมออนไลน์'],
+      MEMBERS: ['จัดการสมาชิก', `นำเข้าและจัดการรายชื่อสมาชิกในองค์กร (${totalMembers} คน)`],
+      NOTES: ['โน้ตสรุปสมาชิก', 'ตรวจสอบบันทึกการประชุมที่สมาชิกส่งเข้ามา'],
+      RANDOM: ['วงล้อสุ่มชื่อ', 'สุ่มชื่อสมาชิกในที่ประชุมพร้อมเอฟเฟกต์เสียง'],
+      SUMMARY: ['ประวัติและสรุปผล', 'รายงานผลการประชุมและส่งออกข้อมูล'],
+      SETTINGS: ['ตั้งค่าระบบ', 'จัดการรหัสผ่านและการตั้งค่าผู้ดูแลระบบ']
+    };
+    const [t, s] = adminTitles[window.activeAdminTab] || ['จัดการการประชุม', 'ระบบจัดการการประชุม COMSAN'];
+    titleEl.textContent = t;
+    if (subEl) subEl.textContent = s;
+    if (primaryBtn) {
+      primaryBtn.classList.remove('hidden');
+      primaryBtn.classList.add('inline-flex');
+      if (primaryLabel) primaryLabel.textContent = 'กลับหน้าหลัก';
+      primaryBtn.dataset.action = 'BACK_HOME';
+    }
     return;
   }
 
-  const userId = window.currentUserId;
-  const state = window.appState;
-  const me = state && (state.users || []).find(u => u.id === userId);
+  const currentTab = window.activeUserTab || 'HOME';
+  const currentSub = window.activeUserToolSubTab || 'OVERVIEW';
 
-  if (me) {
-    const nick = (me.nickname || me.firstName || 'สมาชิก').trim();
-    titleEl.textContent = `สวัสดีคุณ${nick}`;
-    if (subEl) subEl.textContent = 'ระบบจัดการประชุม • คมสัน';
-  } else {
-    titleEl.textContent = 'Meeting';
-    if (subEl) subEl.textContent = 'ระบบจัดการประชุม • คมสัน';
+  let pageKey = currentTab;
+  if (currentTab === 'HOME' && currentSub && currentSub !== 'OVERVIEW') {
+    pageKey = currentSub;
+  }
+
+  const pageMeta = {
+    HOME: {
+      title: 'Meeting',
+      sub: 'ระบบจัดการการประชุม',
+      cta: null
+    },
+    VOTE: {
+      title: 'การโหวตทั้งหมด',
+      sub: 'รายการการลงคะแนนทั้งหมดในระบบ',
+      cta: 'สร้างใหม่',
+      action: 'CREATE_VOTE'
+    },
+    SEATS: {
+      title: 'สมาชิกทั้งหมด',
+      sub: `รายชื่อสมาชิกในองค์กร (${totalMembers} คน)`,
+      cta: null
+    },
+    CALENDAR: {
+      title: 'ปฏิทิน',
+      sub: 'การประชุมและกำหนดการทั้งหมด',
+      cta: 'เพิ่มกำหนดการ',
+      action: 'CREATE_EVENT'
+    },
+    NOTE: {
+      title: 'กระดานความคิด',
+      sub: 'พื้นที่แบ่งปันไอเดียและความคิดเห็นของสมาชิกทุกคน',
+      cta: 'เพิ่มโน้ต',
+      action: 'ADD_STICKY_NOTE'
+    },
+    FILES: {
+      title: 'เอกสารการประชุม',
+      sub: 'คลังเอกสารและระเบียบวาระการประชุม',
+      cta: 'จัดการเอกสาร',
+      action: 'ADMIN_FILES'
+    },
+    STREAM: {
+      title: 'การถ่ายทอดสด',
+      sub: 'รับชมสัญญาณภาพและเสียงสดจากห้องประชุม',
+      cta: null
+    },
+    RAISE: {
+      title: 'ยกมือขอพูด',
+      sub: 'ส่งคำขออภิปรายและตรวจสอบลำดับคิวในที่ประชุม',
+      cta: null
+    },
+    RANDOM: {
+      title: 'วงล้อสุ่ม',
+      sub: 'ระบบสุ่มตัวแทนอภิปรายและผู้โชคดีในที่ประชุม',
+      cta: null
+    },
+    PROFILE: {
+      title: 'โปรไฟล์ของฉัน',
+      sub: 'จัดการข้อมูลของคุณ',
+      cta: null
+    }
+  };
+
+  const meta = pageMeta[pageKey] || pageMeta.HOME;
+  titleEl.textContent = meta.title;
+  if (subEl) subEl.textContent = meta.sub;
+
+  if (primaryBtn) {
+    if (meta.cta) {
+      primaryBtn.classList.remove('hidden');
+      primaryBtn.classList.add('inline-flex');
+      if (primaryLabel) primaryLabel.textContent = meta.cta;
+      primaryBtn.dataset.action = meta.action || '';
+    } else {
+      primaryBtn.classList.add('hidden');
+      primaryBtn.classList.remove('inline-flex');
+      primaryBtn.dataset.action = '';
+    }
   }
 }
 
-function handleSidebarQuickAction() {
-  if (window.currentRole === 'ADMIN') {
-    if (typeof window.switchAdminTab === 'function') {
-      window.switchAdminTab('VOTING');
-    }
-    if (typeof showToast === 'function') {
-      showToast('เปิดหน้าจัดการวาระและการลงมติ', 'info');
-    }
-  } else {
-    if (typeof window.triggerRaiseHand === 'function') {
-      window.triggerRaiseHand();
+function toggleSidebarCreateMenu(e) {
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  const dropdown = document.getElementById('sidebarCreateDropdown');
+  if (!dropdown) return;
+  dropdown.classList.toggle('hidden');
+}
+
+// Close sidebar create dropdown on outside click
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('sidebarCreateDropdown');
+  const btn = document.getElementById('sidebarQuickActionBtn');
+  if (dropdown && !dropdown.classList.contains('hidden')) {
+    if ((!btn || !btn.contains(e.target)) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden');
     }
   }
+});
+
+function handleQuickCreateAction(type) {
+  const dropdown = document.getElementById('sidebarCreateDropdown');
+  if (dropdown) dropdown.classList.add('hidden');
+
+  if (type === 'VOTE') {
+    openAdminSection('VOTING');
+  } else if (type === 'MEETING') {
+    openAdminSection('DASHBOARD');
+  } else if (type === 'EVENT') {
+    openAdminSection('CALENDAR');
+  }
+}
+
+function handleHeaderPrimaryAction(e) {
+  const btn = document.getElementById('headerPrimaryActionBtn');
+  const action = btn ? btn.dataset.action : '';
+  if (action === 'BACK_HOME') {
+    openUserSection('HOME');
+  } else if (action === 'CREATE_VOTE') {
+    openAdminSection('VOTING');
+  } else if (action === 'CREATE_EVENT') {
+    openAdminSection('CALENDAR');
+  } else if (action === 'ADD_STICKY_NOTE') {
+    if (typeof window.openAddStickyNoteModal === 'function') {
+      window.openAddStickyNoteModal();
+    }
+  } else if (action === 'ADMIN_FILES') {
+    openAdminSection('FILES');
+  } else {
+    toggleSidebarCreateMenu(e);
+  }
+}
+
+function openUserSection(section) {
+  // Ensure we are in USER role view
+  if (window.currentRole === 'ADMIN') {
+    window.currentRole = 'USER';
+    if (typeof window.setSessionRole === 'function') window.setSessionRole('USER');
+    const adminView = document.getElementById('adminView');
+    const userView = document.getElementById('userView');
+    if (adminView) adminView.classList.add('hidden');
+    if (userView) userView.classList.remove('hidden');
+  }
+
+  const toolSubSections = ['SEATS', 'CALENDAR', 'NOTE', 'FILES', 'STREAM', 'RANDOM'];
+
+  if (section === 'HOME') {
+    window.activeUserToolSubTab = 'OVERVIEW';
+    switchUserTab('HOME');
+    switchUserToolSubTab('OVERVIEW');
+  } else if (toolSubSections.includes(section)) {
+    window.activeUserToolSubTab = section;
+    if (window.activeUserTab !== 'HOME') {
+      actuallySwitchUserTab('HOME');
+    }
+    switchUserToolSubTab(section);
+  } else {
+    switchUserTab(section);
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openAdminSection(tab) {
+  const targetTab = tab || 'DASHBOARD';
+  if (!window.isAdminAuthenticated) {
+    window._pendingAdminTabAfterLogin = targetTab;
+    if (typeof window.requestAdminAccess === 'function') {
+      window.requestAdminAccess();
+    }
+    return;
+  }
+  if (window.currentRole !== 'ADMIN') {
+    switchRoleView('ADMIN');
+  }
+  switchAdminTab(targetTab);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function handleSidebarQuickAction() {
+  toggleSidebarCreateMenu();
 }
 
 function handleSidebarToggle() {
@@ -331,10 +482,6 @@ function handleSidebarToggle() {
   if (!sidebar) return;
 
   if (window.innerWidth < 768) {
-    if (window.currentRole !== 'ADMIN') {
-      closeMobileSidebar();
-      return;
-    }
     window.isMobileSidebarOpen = !window.isMobileSidebarOpen;
     if (window.isMobileSidebarOpen) {
       sidebar.classList.remove('hidden', '-translate-x-full');
@@ -383,9 +530,7 @@ function switchRoleView(role) {
     return;
   }
   if (role === 'USER' && !window.isUserAuthenticated && !window.isAdminAuthenticated) {
-    if (typeof window.updateSidebarVisibility === 'function') {
-      window.updateSidebarVisibility();
-    }
+    updateSidebarVisibility();
     return;
   }
   window.currentRole = role;
@@ -397,7 +542,6 @@ function switchRoleView(role) {
     if (typeof window.closeAdminVersionEditModal === 'function') window.closeAdminVersionEditModal();
   }
 
-  // If an authenticated admin switches to USER but no user ID is active, assign default persona so user UI functions for preview
   if (role === 'USER' && !window.currentUserId && window.isAdminAuthenticated) {
     if (typeof window.setSessionUser === 'function') {
       window.setSessionUser('COMSAN-01', false);
@@ -408,8 +552,6 @@ function switchRoleView(role) {
 
   const adminView = document.getElementById('adminView');
   const userView = document.getElementById('userView');
-  const sidebarUser = document.getElementById('sidebarUserMenu');
-  const sidebarAdmin = document.getElementById('sidebarAdminMenu');
   const btnUser = document.getElementById('btnRoleUser');
   const btnAdmin = document.getElementById('btnRoleAdmin');
   const btnUserMobile = document.getElementById('btnRoleUserMobile');
@@ -418,29 +560,21 @@ function switchRoleView(role) {
   if (role === 'ADMIN') {
     if (adminView) adminView.classList.remove('hidden');
     if (userView) userView.classList.add('hidden');
-    if (sidebarAdmin) sidebarAdmin.classList.remove('hidden');
-    if (sidebarUser) sidebarUser.classList.add('hidden');
 
-    // Desktop Buttons
     if (btnAdmin) btnAdmin.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition gradient-primary text-white shadow-xs';
     if (btnUser) btnUser.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition text-muted-foreground hover:text-foreground';
-
-    // Mobile Buttons
     if (btnAdminMobile) btnAdminMobile.className = 'px-2 py-1 rounded text-xs font-semibold gradient-primary text-white shadow-xs';
     if (btnUserMobile) btnUserMobile.className = 'px-2 py-1 rounded text-xs font-semibold text-muted-foreground hover:text-foreground';
 
-    switchAdminTab(window.activeAdminTab || 'DASHBOARD');
+    const nextAdminTab = window._pendingAdminTabAfterLogin || window.activeAdminTab || 'DASHBOARD';
+    window._pendingAdminTabAfterLogin = null;
+    switchAdminTab(nextAdminTab);
   } else {
     if (adminView) adminView.classList.add('hidden');
     if (userView) userView.classList.remove('hidden');
-    if (sidebarUser) sidebarUser.classList.remove('hidden');
-    if (sidebarAdmin) sidebarAdmin.classList.add('hidden');
 
-    // Desktop Buttons
     if (btnUser) btnUser.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition gradient-primary text-white shadow-xs';
     if (btnAdmin) btnAdmin.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition text-muted-foreground hover:text-foreground';
-
-    // Mobile Buttons
     if (btnUserMobile) btnUserMobile.className = 'px-2 py-1 rounded text-xs font-semibold gradient-primary text-white shadow-xs';
     if (btnAdminMobile) btnAdminMobile.className = 'px-2 py-1 rounded text-xs font-semibold text-muted-foreground hover:text-foreground';
 
@@ -463,15 +597,12 @@ function showChatSplashScreen(onCovered) {
   }
 
   isChatSplashActive = true;
-
-  // 1. Immediately cover screen with 100% opacity - NO entrance transition lag!
   splash.style.transition = 'none';
   splash.style.opacity = '1';
   splash.classList.remove('hidden');
   splash.classList.remove('pointer-events-none');
   splash.classList.add('flex');
 
-  // Subtle logo scale animation
   if (logo) {
     logo.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
     logo.style.transform = 'scale(0.92)';
@@ -480,12 +611,10 @@ function showChatSplashScreen(onCovered) {
     });
   }
 
-  // 2. Perform tab switch safely behind the opaque splash
   if (typeof onCovered === 'function') {
     setTimeout(onCovered, 50);
   }
 
-  // 3. Hold for 1.3 seconds as requested, then fade out smoothly
   setTimeout(() => {
     splash.style.transition = 'opacity 300ms cubic-bezier(0.4, 0, 0.2, 1)';
     splash.style.opacity = '0';
@@ -511,6 +640,9 @@ function switchUserTab(tab) {
     });
     return;
   }
+  if (tab === 'HOME' && !window.activeUserToolSubTab) {
+    window.activeUserToolSubTab = 'OVERVIEW';
+  }
   actuallySwitchUserTab(tab);
 }
 
@@ -528,33 +660,22 @@ function actuallySwitchUserTab(tab) {
   tabs.forEach(t => {
     const sec = document.getElementById(`uTab_${t}`);
     if (sec) sec.classList.toggle('hidden', t !== tab);
-
-    // Desktop Sidebar Button (Exact Comsan Choice style)
-    const dNav = document.getElementById(`uNav_${t}`);
-    if (dNav) {
-      dNav.className = t === tab
-        ? 'sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-semibold bg-primary/[0.06] text-primary transition-colors group cursor-pointer'
-        : 'sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer';
-    }
-
-    // Mobile Bottom Bar Button & Pill (Exact Comsan Choice style)
-    if (t !== 'RAISE') {
-      const mBtn = document.getElementById(`mNav_${t}`);
-      const mPill = document.getElementById(`mNavPill_${t}`);
-      if (mBtn) {
-        mBtn.className = t === tab
-          ? 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-primary'
-          : 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground';
-      }
-      if (mPill) {
-        mPill.className = 'relative flex items-center justify-center';
-      }
-    }
   });
+
+  if (tab === 'HOME') {
+    const subTab = window.activeUserToolSubTab || 'OVERVIEW';
+    const homeOverview = document.getElementById('uHomeOverview');
+    if (homeOverview) {
+      homeOverview.classList.toggle('hidden', subTab !== 'OVERVIEW');
+    }
+    ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'SEATS', 'RANDOM'].forEach(st => {
+      const sec = document.getElementById(`uToolSec_${st}`);
+      if (sec) sec.classList.toggle('hidden', st !== subTab);
+    });
+  }
 
   const isMobile = window.innerWidth < 768;
   const mobileBottomNav = document.getElementById('mobileBottomNav');
-  const mobileHeader = document.getElementById('mobileHeader');
 
   if (tab === 'CHAT') {
     const b1 = document.getElementById('floatingChatBadge');
@@ -566,26 +687,14 @@ function actuallySwitchUserTab(tab) {
     if (typeof window.closeIgChatRoom === 'function') window.closeIgChatRoom();
     if (typeof window.renderFloatingChat === 'function') window.renderFloatingChat(true);
 
-    if (isMobile) {
-      if (mobileBottomNav) {
-        mobileBottomNav.classList.add('hidden');
-        mobileBottomNav.classList.remove('flex');
-      }
-      if (mobileHeader) {
-        mobileHeader.classList.add('hidden');
-        mobileHeader.classList.remove('flex');
-      }
+    if (isMobile && mobileBottomNav) {
+      mobileBottomNav.classList.add('hidden');
+      mobileBottomNav.classList.remove('flex');
     }
   } else {
-    if (isMobile) {
-      if (mobileBottomNav && window.currentRole !== 'ADMIN') {
-        mobileBottomNav.classList.remove('hidden');
-        mobileBottomNav.classList.add('flex');
-      }
-      if (mobileHeader) {
-        mobileHeader.classList.remove('hidden');
-        mobileHeader.classList.add('flex');
-      }
+    if (isMobile && mobileBottomNav) {
+      mobileBottomNav.classList.remove('hidden');
+      mobileBottomNav.classList.add('flex');
     }
   }
 
@@ -606,38 +715,60 @@ function actuallySwitchUserTab(tab) {
 }
 
 function switchUserToolSubTab(subTab) {
-  window.activeUserToolSubTab = subTab;
+  const targetSub = subTab || 'OVERVIEW';
+  window.activeUserToolSubTab = targetSub;
+
+  if (window.activeUserTab !== 'HOME') {
+    window.activeUserTab = 'HOME';
+    ['HOME', 'VOTE', 'RAISE', 'CHAT', 'PROFILE'].forEach(t => {
+      const sec = document.getElementById(`uTab_${t}`);
+      if (sec) sec.classList.toggle('hidden', t !== 'HOME');
+    });
+  }
+
+  const homeOverview = document.getElementById('uHomeOverview');
+  if (homeOverview) {
+    homeOverview.classList.toggle('hidden', targetSub !== 'OVERVIEW');
+  }
+
   ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'SEATS', 'RANDOM'].forEach(st => {
     const sec = document.getElementById(`uToolSec_${st}`);
     const btn = document.getElementById(`uToolBtn_${st}`);
-    if (sec) sec.classList.toggle('hidden', st !== subTab);
+    if (sec) sec.classList.toggle('hidden', st !== targetSub);
     if (btn) {
-      btn.className = st === subTab
+      btn.className = st === targetSub
         ? 'col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20'
         : 'col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs';
     }
   });
 
-  if (subTab === 'NOTE') {
+  if (targetSub === 'NOTE') {
     const noteTa = document.getElementById('userNoteTextarea');
     const uid = window.currentUserId;
     if (noteTa && window.appState && uid) {
       const me = (window.appState.users || []).find(u => u.id === uid);
       if (me && !noteTa.value && me.note) noteTa.value = me.note;
     }
-  } else if (subTab === 'STREAM') {
+    if (typeof window.renderChoiceStickyBoard === 'function') {
+      window.renderChoiceStickyBoard();
+    }
+  } else if (targetSub === 'STREAM') {
     if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
-  } else if (subTab === 'FILES') {
+  } else if (targetSub === 'FILES') {
     if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
-  } else if (subTab === 'SEATS') {
+  } else if (targetSub === 'SEATS') {
     if (typeof window.renderParliamentSeats === 'function') window.renderParliamentSeats();
-  } else if (subTab === 'RANDOM') {
+    if (typeof window.renderMemberDirectoryCards === 'function') window.renderMemberDirectoryCards();
+  } else if (targetSub === 'RANDOM') {
     if (typeof window.rebuildRandomMemberPool === 'function') window.rebuildRandomMemberPool();
-  } else if (subTab === 'CALENDAR') {
+  } else if (targetSub === 'CALENDAR') {
     if (typeof window.renderUserCalendarSection === 'function') window.renderUserCalendarSection();
   }
-}
 
+  updateSidebarActiveStates();
+  updateDesktopHeader();
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+}
 
 function switchAdminTab(tab) {
   if (tab === 'CHAT' && window.activeAdminTab !== 'CHAT') {
@@ -653,39 +784,22 @@ function actuallySwitchAdminTab(tab) {
   window.activeAdminTab = tab;
   ['DASHBOARD', 'CHAT', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS'].forEach(t => {
     const sec = document.getElementById(`aTab_${t}`);
-    const nav = document.getElementById(`aNav_${t}`);
     if (sec) sec.classList.toggle('hidden', t !== tab);
-    if (nav) {
-      nav.className = t === tab
-        ? 'sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-semibold bg-primary/[0.06] text-primary transition-colors group cursor-pointer'
-        : 'sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer';
-    }
   });
 
   if (tab === 'CALENDAR') {
     if (typeof window.renderAdminCalendarSection === 'function') window.renderAdminCalendarSection();
   }
 
-  const isMobile = window.innerWidth < 768;
-  const mobileHeader = document.getElementById('mobileHeader');
-
   if (tab === 'CHAT') {
     const b = document.getElementById('aBadge_CHAT');
     if (b) b.classList.add('hidden');
     const mb = document.getElementById('adminMobileChatBadge');
     if (mb) mb.classList.add('hidden');
-
-    if (isMobile && mobileHeader) {
-      mobileHeader.classList.add('hidden');
-    }
     if (typeof window.closeAdminIgChatRoom === 'function') window.closeAdminIgChatRoom();
     if (typeof window.renderAdminChatSection === 'function') window.renderAdminChatSection(true);
-  } else {
-    if (isMobile && mobileHeader && window.currentRole === 'ADMIN') {
-      mobileHeader.classList.remove('hidden');
-      mobileHeader.classList.add('flex');
-    }
   }
+
   if (tab === 'RANDOM') {
     if (typeof window.rebuildRandomMemberPool === 'function') window.rebuildRandomMemberPool();
   }
@@ -711,7 +825,7 @@ document.addEventListener('keydown', (e) => {
       if (room && !room.classList.contains('hidden')) {
         if (typeof window.closeIgChatRoom === 'function') window.closeIgChatRoom();
       } else {
-        switchUserTab('HOME');
+        openUserSection('HOME');
       }
     }
   }
@@ -720,6 +834,7 @@ document.addEventListener('keydown', (e) => {
 // Window attachments
 window.syncSidebarTopOffset = syncSidebarTopOffset;
 window.updateSidebarVisibility = updateSidebarVisibility;
+window.updateSidebarActiveStates = updateSidebarActiveStates;
 window.updateChatFloatingButtons = updateChatFloatingButtons;
 window.handleSidebarToggle = handleSidebarToggle;
 window.closeMobileSidebar = closeMobileSidebar;
@@ -728,5 +843,11 @@ window.switchRoleView = switchRoleView;
 window.switchUserTab = switchUserTab;
 window.switchUserToolSubTab = switchUserToolSubTab;
 window.switchAdminTab = switchAdminTab;
+window.openUserSection = openUserSection;
+window.openAdminSection = openAdminSection;
+window.toggleSidebarCreateMenu = toggleSidebarCreateMenu;
+window.handleQuickCreateAction = handleQuickCreateAction;
+window.handleHeaderPrimaryAction = handleHeaderPrimaryAction;
+window.handleSidebarQuickAction = handleSidebarQuickAction;
 window.showChatSplashScreen = showChatSplashScreen;
 window.updateDesktopHeader = updateDesktopHeader;
