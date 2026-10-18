@@ -46,46 +46,56 @@ function updateChatFloatingButtons() {
 }
 
 function updateSidebarActiveStates() {
-  const activeClass = 'sidebar-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium bg-primary/10 text-primary transition-colors group cursor-pointer';
-  const inactiveClass = 'sidebar-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors group cursor-pointer';
+  const activeClass = 'sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group bg-primary/10 text-primary cursor-pointer';
+  const inactiveClass = 'sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer';
 
-  const userNavIds = ['HOME', 'VOTE', 'SEATS', 'CALENDAR', 'NOTE', 'FILES', 'STREAM', 'RAISE', 'RANDOM', 'CHAT', 'PROFILE'];
-  const adminNavIds = ['DASHBOARD', 'CHAT', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS'];
+  const userNavIds = ['HOME', 'VOTE', 'RAISE', 'CHAT', 'PROFILE'];
+  const adminNavIds = ['DASHBOARD', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS'];
 
   const isAdminMode = window.currentRole === 'ADMIN';
-  const currentUserTab = window.activeUserTab || 'HOME';
-  const currentSubTab = window.activeUserToolSubTab || 'OVERVIEW';
 
-  // Determine which user nav item is active when in USER mode
-  let activeUserNavKey = currentUserTab;
-  if (currentUserTab === 'HOME' && currentSubTab && currentSubTab !== 'OVERVIEW') {
-    activeUserNavKey = currentSubTab;
-  }
-
+  // 1. Sidebar User Menu
   userNavIds.forEach(id => {
     const btn = document.getElementById(`uNav_${id}`);
     if (btn) {
-      btn.className = (!isAdminMode && id === activeUserNavKey) ? activeClass : inactiveClass;
+      const isActive = !isAdminMode && id === window.activeUserTab;
+      btn.className = isActive ? activeClass : inactiveClass;
     }
   });
 
+  // 2. Sidebar Admin Menu
   adminNavIds.forEach(id => {
     const btn = document.getElementById(`aNav_${id}`);
     if (btn) {
-      btn.className = (isAdminMode && id === window.activeAdminTab) ? activeClass : inactiveClass;
+      const isActive = isAdminMode && id === window.activeAdminTab;
+      btn.className = isActive ? activeClass : inactiveClass;
     }
   });
 
-  // Update Mobile Bottom Nav (HOME, SEATS, VOTE, CALENDAR, PROFILE)
-  const mobileNavKeys = ['HOME', 'SEATS', 'CALENDAR', 'PROFILE'];
-  mobileNavKeys.forEach(key => {
-    const mBtn = document.getElementById(`mNav_${key}`);
-    if (!mBtn) return;
-    const isActive = !isAdminMode && activeUserNavKey === key;
-    mBtn.className = isActive
-      ? 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-primary'
-      : 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground';
+  // 3. Mobile Bottom Nav (HOME, VOTE, RAISE, CHAT, PROFILE)
+  ['HOME', 'VOTE', 'CHAT', 'PROFILE'].forEach(t => {
+    const mBtn = document.getElementById(`mNav_${t}`);
+    const mPill = document.getElementById(`mNavPill_${t}`);
+    const isActive = !isAdminMode && t === window.activeUserTab;
+    if (mBtn) {
+      mBtn.className = isActive
+        ? 'flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all h-full text-primary font-semibold'
+        : 'flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground font-medium';
+    }
+    if (mPill) {
+      mPill.className = isActive
+        ? 'w-12 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center transition relative'
+        : 'w-12 h-7 rounded-full flex items-center justify-center transition relative';
+    }
   });
+
+  const mRaiseBtn = document.getElementById('mNav_RAISE');
+  if (mRaiseBtn) {
+    const isRaiseActive = !isAdminMode && window.activeUserTab === 'RAISE';
+    mRaiseBtn.className = isRaiseActive
+      ? 'absolute -top-4 inset-x-0 mx-auto w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-white shadow-card active:scale-95 border-2 border-primary cursor-pointer ring-2 ring-primary/40'
+      : 'absolute -top-4 inset-x-0 mx-auto w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 gradient-primary text-white shadow-card active:scale-95 border-2 border-background cursor-pointer';
+  }
 }
 
 function updateSidebarVisibility() {
@@ -104,12 +114,6 @@ function updateSidebarVisibility() {
   const isUserLogged = Boolean(window.isUserAuthenticated) && Boolean(window.currentUserId);
   const isAuthenticated = isAdminLogged || isUserLogged;
 
-  // Always keep legacy #mobileHeader hidden because #desktopMainHeader is now unified across mobile & desktop (matching Comsan Choice)
-  if (mobileHeader) {
-    mobileHeader.classList.add('hidden');
-    mobileHeader.classList.remove('flex');
-  }
-
   // 1. Not authenticated -> show Auth page
   if (!isAuthenticated) {
     if (authScreen) authScreen.classList.remove('hidden');
@@ -124,6 +128,10 @@ function updateSidebarVisibility() {
     if (mobileBottomNav) {
       mobileBottomNav.classList.add('hidden');
       mobileBottomNav.classList.remove('flex');
+    }
+    if (mobileHeader) {
+      mobileHeader.classList.add('hidden');
+      mobileHeader.classList.remove('flex');
     }
     if (desktopHeader) {
       desktopHeader.classList.add('hidden');
@@ -141,37 +149,42 @@ function updateSidebarVisibility() {
     appLayout.classList.add('flex');
   }
 
-  // Show both เมนูหลัก and ระบบจัดการ in the sidebar (just like Comsan Choice!)
-  if (sidebarUser) sidebarUser.classList.remove('hidden');
-  if (sidebarAdmin) sidebarAdmin.classList.remove('hidden');
+  // Toggle User vs Admin menus in sidebar based on currentRole
+  if (window.currentRole === 'ADMIN') {
+    if (sidebarAdmin) sidebarAdmin.classList.remove('hidden');
+    if (sidebarUser) sidebarUser.classList.add('hidden');
+  } else {
+    if (sidebarUser) sidebarUser.classList.remove('hidden');
+    if (sidebarAdmin) sidebarAdmin.classList.add('hidden');
+  }
 
   const isChatActive = (window.currentRole === 'ADMIN' && window.activeAdminTab === 'CHAT') ||
                        (window.currentRole !== 'ADMIN' && window.activeUserTab === 'CHAT');
 
-  if (isChatActive) {
-    if (desktopHeader) {
-      desktopHeader.classList.add('hidden');
-      desktopHeader.classList.remove('flex');
-    }
-  } else {
-    if (desktopHeader) {
-      desktopHeader.classList.remove('hidden');
-      desktopHeader.classList.add('flex');
-    }
-  }
-
   if (isDesktop) {
+    // Desktop layout
+    if (mobileHeader) {
+      mobileHeader.classList.add('hidden');
+      mobileHeader.classList.remove('flex');
+    }
     if (mobileBottomNav) {
       mobileBottomNav.classList.add('hidden');
       mobileBottomNav.classList.remove('flex');
     }
-    if (isChatActive) {
-      if (sidebar) {
+    if (desktopHeader) {
+      if (isChatActive) {
+        desktopHeader.classList.add('hidden');
+        desktopHeader.classList.remove('flex');
+      } else {
+        desktopHeader.classList.remove('hidden');
+        desktopHeader.classList.add('flex');
+      }
+    }
+    if (sidebar) {
+      if (isChatActive) {
         sidebar.classList.add('hidden');
         sidebar.classList.remove('flex', 'md:flex');
-      }
-    } else {
-      if (sidebar) {
+      } else {
         sidebar.classList.remove('hidden', '-translate-x-full', 'mobile-drawer-open');
         sidebar.classList.add('flex', 'md:flex', 'translate-x-0');
         sidebar.classList.toggle('sidebar-collapsed', !!window.isSidebarCollapsed);
@@ -179,11 +192,22 @@ function updateSidebarVisibility() {
     }
     if (backdrop) backdrop.classList.add('hidden');
   } else {
-    if (sidebar) sidebar.classList.remove('sidebar-collapsed');
-
-    // Show Choice Mobile Bottom Nav on mobile (unless in full-screen CHAT)
-    if (mobileBottomNav) {
+    // Mobile layout
+    if (desktopHeader) {
+      desktopHeader.classList.add('hidden');
+      desktopHeader.classList.remove('flex');
+    }
+    if (mobileHeader) {
       if (isChatActive) {
+        mobileHeader.classList.add('hidden');
+        mobileHeader.classList.remove('flex');
+      } else {
+        mobileHeader.classList.remove('hidden');
+        mobileHeader.classList.add('flex');
+      }
+    }
+    if (mobileBottomNav) {
+      if (isChatActive || window.currentRole === 'ADMIN') {
         mobileBottomNav.classList.add('hidden');
         mobileBottomNav.classList.remove('flex');
       } else {
@@ -191,8 +215,8 @@ function updateSidebarVisibility() {
         mobileBottomNav.classList.add('flex');
       }
     }
-
     if (sidebar) {
+      sidebar.classList.remove('sidebar-collapsed');
       if (window.isMobileSidebarOpen && !isChatActive) {
         sidebar.classList.remove('hidden', '-translate-x-full');
         sidebar.classList.add('flex', 'translate-x-0', 'mobile-drawer-open');
@@ -203,6 +227,12 @@ function updateSidebarVisibility() {
         if (backdrop) backdrop.classList.add('hidden');
       }
     }
+  }
+
+  const mobileToggleBtn = document.getElementById('btnMobileSidebarToggle');
+  if (mobileToggleBtn) {
+    mobileToggleBtn.classList.remove('hidden');
+    mobileToggleBtn.classList.add('flex');
   }
 
   updateSidebarActiveStates();
@@ -293,13 +323,6 @@ function updateDesktopHeader() {
   }
 
   const currentTab = window.activeUserTab || 'HOME';
-  const currentSub = window.activeUserToolSubTab || 'OVERVIEW';
-
-  let pageKey = currentTab;
-  if (currentTab === 'HOME' && currentSub && currentSub !== 'OVERVIEW') {
-    pageKey = currentSub;
-  }
-
   const pageMeta = {
     HOME: {
       title: 'Meeting',
@@ -307,37 +330,8 @@ function updateDesktopHeader() {
       cta: null
     },
     VOTE: {
-      title: 'การโหวตทั้งหมด',
+      title: 'การลงมติ (โหวต)',
       sub: 'รายการการลงคะแนนทั้งหมดในระบบ',
-      cta: 'สร้างใหม่',
-      action: 'CREATE_VOTE'
-    },
-    SEATS: {
-      title: 'สมาชิกทั้งหมด',
-      sub: `รายชื่อสมาชิกในองค์กร (${totalMembers} คน)`,
-      cta: null
-    },
-    CALENDAR: {
-      title: 'ปฏิทิน',
-      sub: 'การประชุมและกำหนดการทั้งหมด',
-      cta: 'เพิ่มกำหนดการ',
-      action: 'CREATE_EVENT'
-    },
-    NOTE: {
-      title: 'กระดานความคิด',
-      sub: 'พื้นที่แบ่งปันไอเดียและความคิดเห็นของสมาชิกทุกคน',
-      cta: 'เพิ่มโน้ต',
-      action: 'ADD_STICKY_NOTE'
-    },
-    FILES: {
-      title: 'เอกสารการประชุม',
-      sub: 'คลังเอกสารและระเบียบวาระการประชุม',
-      cta: 'จัดการเอกสาร',
-      action: 'ADMIN_FILES'
-    },
-    STREAM: {
-      title: 'การถ่ายทอดสด',
-      sub: 'รับชมสัญญาณภาพและเสียงสดจากห้องประชุม',
       cta: null
     },
     RAISE: {
@@ -345,9 +339,9 @@ function updateDesktopHeader() {
       sub: 'ส่งคำขออภิปรายและตรวจสอบลำดับคิวในที่ประชุม',
       cta: null
     },
-    RANDOM: {
-      title: 'วงล้อสุ่ม',
-      sub: 'ระบบสุ่มตัวแทนอภิปรายและผู้โชคดีในที่ประชุม',
+    CHAT: {
+      title: 'แชตห้องประชุม',
+      sub: 'พูดคุยแลกเปลี่ยนความคิดเห็นระหว่างการประชุม',
       cta: null
     },
     PROFILE: {
@@ -357,7 +351,7 @@ function updateDesktopHeader() {
     }
   };
 
-  const meta = pageMeta[pageKey] || pageMeta.HOME;
+  const meta = pageMeta[currentTab] || pageMeta.HOME;
   titleEl.textContent = meta.title;
   if (subEl) subEl.textContent = meta.sub;
 
@@ -440,9 +434,7 @@ function openUserSection(section) {
   const toolSubSections = ['SEATS', 'CALENDAR', 'NOTE', 'FILES', 'STREAM', 'RANDOM'];
 
   if (section === 'HOME') {
-    window.activeUserToolSubTab = 'OVERVIEW';
     switchUserTab('HOME');
-    switchUserToolSubTab('OVERVIEW');
   } else if (toolSubSections.includes(section)) {
     window.activeUserToolSubTab = section;
     if (window.activeUserTab !== 'HOME') {
@@ -634,6 +626,15 @@ function showChatSplashScreen(onCovered) {
 }
 
 function switchUserTab(tab) {
+  // Support aliases for subtabs
+  const toolSubTabs = ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'SEATS', 'RANDOM'];
+  if (toolSubTabs.includes(tab)) {
+    window.activeUserToolSubTab = tab;
+    switchUserTab('HOME');
+    switchUserToolSubTab(tab);
+    return;
+  }
+
   if (tab === 'CHAT' && window.activeUserTab !== 'CHAT') {
     showChatSplashScreen(() => {
       actuallySwitchUserTab('CHAT');
@@ -641,7 +642,7 @@ function switchUserTab(tab) {
     return;
   }
   if (tab === 'HOME' && !window.activeUserToolSubTab) {
-    window.activeUserToolSubTab = 'OVERVIEW';
+    window.activeUserToolSubTab = 'FILES';
   }
   actuallySwitchUserTab(tab);
 }
@@ -663,19 +664,13 @@ function actuallySwitchUserTab(tab) {
   });
 
   if (tab === 'HOME') {
-    const subTab = window.activeUserToolSubTab || 'OVERVIEW';
-    const homeOverview = document.getElementById('uHomeOverview');
-    if (homeOverview) {
-      homeOverview.classList.toggle('hidden', subTab !== 'OVERVIEW');
-    }
-    ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'SEATS', 'RANDOM'].forEach(st => {
-      const sec = document.getElementById(`uToolSec_${st}`);
-      if (sec) sec.classList.toggle('hidden', st !== subTab);
-    });
+    const subTab = window.activeUserToolSubTab || 'FILES';
+    switchUserToolSubTab(subTab);
   }
 
   const isMobile = window.innerWidth < 768;
   const mobileBottomNav = document.getElementById('mobileBottomNav');
+  const mobileHeader = document.getElementById('mobileHeader');
 
   if (tab === 'CHAT') {
     const b1 = document.getElementById('floatingChatBadge');
@@ -687,14 +682,26 @@ function actuallySwitchUserTab(tab) {
     if (typeof window.closeIgChatRoom === 'function') window.closeIgChatRoom();
     if (typeof window.renderFloatingChat === 'function') window.renderFloatingChat(true);
 
-    if (isMobile && mobileBottomNav) {
-      mobileBottomNav.classList.add('hidden');
-      mobileBottomNav.classList.remove('flex');
+    if (isMobile) {
+      if (mobileBottomNav) {
+        mobileBottomNav.classList.add('hidden');
+        mobileBottomNav.classList.remove('flex');
+      }
+      if (mobileHeader) {
+        mobileHeader.classList.add('hidden');
+        mobileHeader.classList.remove('flex');
+      }
     }
   } else {
-    if (isMobile && mobileBottomNav) {
-      mobileBottomNav.classList.remove('hidden');
-      mobileBottomNav.classList.add('flex');
+    if (isMobile) {
+      if (mobileBottomNav && window.currentRole !== 'ADMIN') {
+        mobileBottomNav.classList.remove('hidden');
+        mobileBottomNav.classList.add('flex');
+      }
+      if (mobileHeader) {
+        mobileHeader.classList.remove('hidden');
+        mobileHeader.classList.add('flex');
+      }
     }
   }
 
@@ -710,12 +717,13 @@ function actuallySwitchUserTab(tab) {
 
   closeMobileSidebar();
   updateSidebarVisibility();
+  updateDesktopHeader();
   updateChatFloatingButtons();
   if (typeof window.renderAll === 'function') window.renderAll();
 }
 
 function switchUserToolSubTab(subTab) {
-  const targetSub = subTab || 'OVERVIEW';
+  const targetSub = subTab || 'FILES';
   window.activeUserToolSubTab = targetSub;
 
   if (window.activeUserTab !== 'HOME') {
@@ -726,19 +734,14 @@ function switchUserToolSubTab(subTab) {
     });
   }
 
-  const homeOverview = document.getElementById('uHomeOverview');
-  if (homeOverview) {
-    homeOverview.classList.toggle('hidden', targetSub !== 'OVERVIEW');
-  }
-
   ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'SEATS', 'RANDOM'].forEach(st => {
     const sec = document.getElementById(`uToolSec_${st}`);
     const btn = document.getElementById(`uToolBtn_${st}`);
     if (sec) sec.classList.toggle('hidden', st !== targetSub);
     if (btn) {
       btn.className = st === targetSub
-        ? 'col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20'
-        : 'col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs';
+        ? 'col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer'
+        : 'col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer';
     }
   });
 

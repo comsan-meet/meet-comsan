@@ -1360,11 +1360,35 @@
     <!-- MOBILE BACKDROP -->
     <div id="sidebarBackdrop" onclick="closeMobileSidebar()" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden"></div>
 
-    <!-- Hidden legacy mobile header container (Choice has no sticky top bar on mobile; uses page header + bottom nav) -->
-    <header id="mobileHeader" class="hidden" aria-hidden="true">
-      <button type="button" id="btnRoleUserMobile" onclick="switchRoleView('USER')"></button>
-      <button type="button" id="btnRoleAdminMobile" onclick="handleRoleAdminClick()"></button>
-      <button type="button" id="themeToggleBtn" onclick="toggleTheme()"><i data-lucide="sun" id="themeToggleIcon"></i></button>
+    <!-- MOBILE HEADER (Sticky Top Bar on mobile in Comsan Choice style) -->
+    <header id="mobileHeader" class="md:hidden sticky top-0 z-30 px-3.5 py-2.5 border-b border-border bg-card/85 backdrop-blur-md flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <button type="button" id="btnMobileSidebarToggle" onclick="handleSidebarToggle()"
+          class="w-9 h-9 rounded-xl border border-border bg-card hover:bg-muted text-foreground flex items-center justify-center shadow-xs transition shrink-0 cursor-pointer" title="เมนูทั้งหมด">
+          <i data-lucide="menu" class="h-4 w-4"></i>
+        </button>
+        <img src="/comsan_meeting_logo.svg" alt="Meeting Logo" class="h-8 w-8 object-contain shrink-0" />
+        <div>
+          <h1 class="text-base font-bold text-foreground leading-tight">Meeting</h1>
+          <p class="text-[9px] text-muted-foreground">ระบบจัดการประชุม • คมสัน</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/60">
+          <button type="button" onclick="switchRoleView('USER')" id="btnRoleUserMobile" class="px-2 py-1 rounded text-xs font-semibold gradient-primary text-white shadow-xs cursor-pointer">
+            <i data-lucide="user" class="pointer-events-none h-3.5 w-3.5"></i>
+          </button>
+          <button type="button" onclick="handleRoleAdminClick()" id="btnRoleAdminMobile" class="px-2 py-1 rounded text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer">
+            <i data-lucide="shield-check" class="pointer-events-none h-3.5 w-3.5"></i>
+          </button>
+        </div>
+        <button type="button" onclick="toggleTheme()" class="h-8 w-8 rounded-lg border border-border bg-card hover:bg-muted text-foreground flex items-center justify-center shadow-xs transition-colors cursor-pointer" title="เปลี่ยนธีม (สว่าง/มืด)" id="themeToggleBtn">
+          <i data-lucide="sun" id="themeToggleIcon" class="theme-toggle-icon h-3.5 w-3.5 text-amber-500"></i>
+        </button>
+        <button type="button" onclick="openSettingsModal()" class="h-8 w-8 rounded-lg border border-border bg-card hover:bg-muted text-foreground flex items-center justify-center shadow-xs cursor-pointer">
+          <i data-lucide="settings" class="h-3.5 w-3.5"></i>
+        </button>
+      </div>
     </header>
 
     <!-- SIDEBAR (<aside> - Exact Comsan Choice Sidebar Layout) -->
@@ -1385,85 +1409,28 @@
           </button>
         </div>
 
-        <!-- Quick Action Button + Popover Menu (Exact Choice '+ สร้างการลงคะแนน' style) -->
-        <div class="px-1 relative">
-          <button type="button" id="sidebarQuickActionBtn" onclick="toggleSidebarCreateMenu(event)" class="inline-flex items-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border hover:text-accent-foreground w-full justify-between gap-2 bg-card hover:bg-muted text-foreground border-border shadow-2xs rounded-xl py-2.5 h-11 px-3.5 font-medium cursor-pointer">
-            <div class="flex items-center gap-2.5">
-              <i data-lucide="plus" class="h-4 w-4 text-primary"></i>
-              <span id="sidebarQuickActionText">สร้างการลงคะแนน</span>
-            </div>
-            <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground"></i>
-          </button>
-
-          <!-- Choice Create Dropdown Popover -->
-          <div id="sidebarCreateDropdown" class="hidden absolute left-1 right-1 top-12 z-50 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg p-1.5 space-y-1 animate-fadeIn">
-            <div class="px-2.5 py-1.5 text-xs font-semibold text-foreground border-b border-border/60 mb-1">ตัวเลือกการสร้าง</div>
-            <button type="button" onclick="handleQuickCreateAction('VOTE')" class="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-accent hover:text-white text-left transition-colors group cursor-pointer">
-              <i data-lucide="vote" class="h-4 w-4 mt-0.5 text-primary group-hover:text-white shrink-0"></i>
-              <div>
-                <p class="text-xs font-semibold leading-tight">สร้างญัตติลงคะแนน</p>
-                <p class="text-[11px] text-muted-foreground group-hover:text-white/80 leading-tight mt-0.5">เปิดโหวตมติที่ประชุมหรือโหวตลับ</p>
-              </div>
-            </button>
-            <button type="button" onclick="handleQuickCreateAction('CALENDAR')" class="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-accent hover:text-white text-left transition-colors group cursor-pointer">
-              <i data-lucide="calendar-plus" class="h-4 w-4 mt-0.5 text-primary group-hover:text-white shrink-0"></i>
-              <div>
-                <p class="text-xs font-semibold leading-tight">สร้างกิจกรรมปฏิทิน</p>
-                <p class="text-[11px] text-muted-foreground group-hover:text-white/80 leading-tight mt-0.5">เพิ่มนัดหมายการประชุมหรือตารางงาน</p>
-              </div>
-            </button>
-            <button type="button" onclick="handleQuickCreateAction('NOTE')" class="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-accent hover:text-white text-left transition-colors group cursor-pointer">
-              <i data-lucide="sticky-note" class="h-4 w-4 mt-0.5 text-primary group-hover:text-white shrink-0"></i>
-              <div>
-                <p class="text-xs font-semibold leading-tight">แปะโน้ตกระดานความคิด</p>
-                <p class="text-[11px] text-muted-foreground group-hover:text-white/80 leading-tight mt-0.5">แชร์ไอเดียหรือจดบันทึกการประชุม</p>
-              </div>
-            </button>
-          </div>
-        </div>
-
         <!-- Hidden Status Elements (Preserves reactive JS handlers) -->
         <div class="hidden" aria-hidden="true">
           <span id="meetingStateBadge">การประชุมยังไม่เริ่ม</span>
           <span id="sidebarMeetingElapsed">ยังไม่เริ่ม</span>
           <span id="sidebarCutoffTime">17:15 น.</span>
-          <span class="supabase-status-badge"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>ออฟไลน์</span></span>
+          <button type="button" id="sidebarQuickActionBtn" onclick="toggleSidebarCreateMenu(event)"><span id="sidebarQuickActionText">สร้าง</span></button>
+          <div id="sidebarCreateDropdown" class="hidden"></div>
         </div>
 
-        <!-- Меนูหลัก (Exact Comsan Choice Main Menu Structure) -->
+        <!-- 1. USER MENU (Original Main Navigation Menu in Comsan Choice style) -->
         <div id="sidebarUserMenu" class="space-y-1">
           <p class="px-3 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">เมนูหลัก</p>
-          <a onclick="openUserSection('HOME')" id="uNav_HOME" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group bg-primary/10 text-primary cursor-pointer">
+          <a onclick="switchUserTab('HOME')" id="uNav_HOME" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group bg-primary/10 text-primary cursor-pointer">
             <i data-lucide="house" class="h-4 w-4 shrink-0 transition-colors text-primary"></i>
             <span class="truncate">หน้าหลัก</span>
           </a>
           <a onclick="switchUserTab('VOTE')" id="uNav_VOTE" class="sidebar-nav-btn flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <div class="flex items-center gap-3 min-w-0">
               <i data-lucide="vote" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
-              <span class="truncate">ลงคะแนน</span>
+              <span class="truncate">การลงมติ (โหวต)</span>
             </div>
             <span id="uBadge_VOTE" class="ml-auto px-2 py-0.5 text-[11px] rounded-full bg-primary/10 text-primary font-semibold">0</span>
-          </a>
-          <a onclick="openUserSection('SEATS')" id="uNav_SEATS" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="users" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
-            <span class="truncate">สมาชิก</span>
-          </a>
-          <a onclick="openUserSection('CALENDAR')" id="uNav_CALENDAR" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="calendar" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
-            <span class="truncate">ปฏิทิน</span>
-          </a>
-          <a onclick="openUserSection('NOTE')" id="uNav_NOTE" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="sticky-note" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
-            <span class="truncate">กระดานความคิด</span>
-            <div class="inline-flex items-center rounded-full border font-semibold transition-colors whitespace-nowrap shrink-0 ml-auto text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20">ใหม่</div>
-          </a>
-          <a onclick="openUserSection('FILES')" id="uNav_FILES" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="folder-open" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
-            <span class="truncate">เอกสารการประชุม</span>
-          </a>
-          <a onclick="openUserSection('STREAM')" id="uNav_STREAM" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="radio" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
-            <span class="truncate">การถ่ายทอดสด</span>
           </a>
           <a onclick="switchUserTab('RAISE')" id="uNav_RAISE" class="sidebar-nav-btn flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <div class="flex items-center gap-3 min-w-0">
@@ -1472,70 +1439,81 @@
             </div>
             <span id="uBadge_RAISE" class="ml-auto hidden px-2 py-0.5 text-[10px] rounded-full bg-emerald-500 text-white font-bold">ในคิว</span>
           </a>
-          <a onclick="openUserSection('RANDOM')" id="uNav_RANDOM" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="dices" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
-            <span class="truncate">วงล้อสุ่ม</span>
+          <a onclick="switchUserTab('CHAT')" id="uNav_CHAT" class="sidebar-nav-btn flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="message-square" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
+              <span class="truncate">แชตห้องประชุม</span>
+            </div>
+            <span id="uBadge_CHAT" class="ml-auto hidden px-2 py-0.5 text-[10px] rounded-full bg-rose-500 text-white font-bold">ใหม่</span>
           </a>
-          <a onclick="openUserMeetingHistoryModal()" id="uNav_HISTORY" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="history" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
-            <span class="truncate">ประวัติ</span>
+          <a onclick="switchUserTab('PROFILE')" id="uNav_PROFILE" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+            <i data-lucide="user" class="h-4 w-4 shrink-0 transition-colors text-muted-foreground group-hover:text-foreground"></i>
+            <span class="truncate">โปรไฟล์</span>
           </a>
-          <a onclick="switchUserTab('PROFILE')" id="uNav_PROFILE" class="hidden"></a>
+
+          <!-- Compatibility hidden links -->
+          <a onclick="switchUserTab('HOME'); switchUserToolSubTab('SEATS');" id="uNav_SEATS" class="hidden"></a>
+          <a onclick="switchUserTab('HOME'); switchUserToolSubTab('CALENDAR');" id="uNav_CALENDAR" class="hidden"></a>
+          <a onclick="switchUserTab('HOME'); switchUserToolSubTab('NOTE');" id="uNav_NOTE" class="hidden"></a>
+          <a onclick="switchUserTab('HOME'); switchUserToolSubTab('FILES');" id="uNav_FILES" class="hidden"></a>
+          <a onclick="switchUserTab('HOME'); switchUserToolSubTab('STREAM');" id="uNav_STREAM" class="hidden"></a>
+          <a onclick="switchUserTab('HOME'); switchUserToolSubTab('RANDOM');" id="uNav_RANDOM" class="hidden"></a>
+          <a onclick="openUserMeetingHistoryModal()" id="uNav_HISTORY" class="hidden"></a>
         </div>
 
-        <!-- ระบบจัดการ (Exact Comsan Choice Management Section below divider) -->
-        <div id="sidebarAdminMenu" class="space-y-1 pt-2 border-t border-border/50">
-          <p class="px-3 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">ระบบจัดการ</p>
-          <a onclick="openAdminSection('DASHBOARD')" id="aNav_DASHBOARD" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+        <!-- 2. ADMIN MENU (Original Admin Menu - shown when currentRole === 'ADMIN') -->
+        <div id="sidebarAdminMenu" class="hidden space-y-1">
+          <p class="px-3 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">ระบบจัดการ (ADMIN)</p>
+          <a onclick="switchAdminTab('DASHBOARD')" id="aNav_DASHBOARD" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group bg-primary/10 text-primary cursor-pointer">
             <i data-lucide="layout-dashboard" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">ศูนย์ควบคุมหลัก</span>
+            <span class="truncate">Dashboard</span>
           </a>
-          <a onclick="openAdminSection('SETTINGS')" id="aNav_SETTINGS" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+          <a onclick="switchAdminTab('SETTINGS')" id="aNav_SETTINGS" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="sliders" class="h-4 w-4 shrink-0 transition-colors"></i>
             <span class="truncate">ตั้งค่าการประชุม</span>
           </a>
-          <a onclick="openAdminSection('CHECKIN')" id="aNav_CHECKIN" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+          <a onclick="switchAdminTab('CHECKIN')" id="aNav_CHECKIN" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="qr-code" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">จัดการเช็คชื่อ</span>
+            <span class="truncate">เช็คชื่อ</span>
           </a>
-          <a onclick="openAdminSection('VOTING')" id="aNav_VOTING" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+          <a onclick="switchAdminTab('VOTING')" id="aNav_VOTING" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="vote" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">จัดการการโหวต</span>
+            <span class="truncate">การโหวต</span>
           </a>
-          <a onclick="openAdminSection('QUEUE')" id="aNav_QUEUE" class="sidebar-nav-btn flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+          <a onclick="switchAdminTab('QUEUE')" id="aNav_QUEUE" class="sidebar-nav-btn flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <div class="flex items-center gap-3 min-w-0">
               <i data-lucide="hand" class="h-4 w-4 shrink-0 transition-colors"></i>
-              <span class="truncate">จัดการคิวยกมือ</span>
+              <span class="truncate">คิวยกมือ</span>
             </div>
             <span id="aBadge_QUEUE" class="ml-auto px-2 py-0.5 text-[10px] rounded-full bg-amber-500 text-slate-950 font-bold">0</span>
           </a>
-          <a onclick="openAdminSection('STREAM')" id="aNav_STREAM" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="radio" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">จัดการการถ่ายทอดสด</span>
-          </a>
-          <a onclick="openAdminSection('FILES')" id="aNav_FILES" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="folder-open" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">จัดการเอกสาร</span>
-          </a>
-          <a onclick="openAdminSection('CALENDAR')" id="aNav_CALENDAR" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
-            <i data-lucide="calendar-days" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">จัดการปฏิทิน</span>
-          </a>
-          <a onclick="openAdminSection('RANDOM')" id="aNav_RANDOM" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+          <a onclick="switchAdminTab('RANDOM')" id="aNav_RANDOM" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="dices" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">จัดการวงล้อสุ่ม</span>
+            <span class="truncate">สุ่มหรรษา</span>
           </a>
-          <a onclick="openAdminSection('NOTES')" id="aNav_NOTES" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+          <a onclick="switchAdminTab('STREAM')" id="aNav_STREAM" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+            <i data-lucide="radio" class="h-4 w-4 shrink-0 transition-colors"></i>
+            <span class="truncate">การถ่ายทอดสด</span>
+          </a>
+          <a onclick="switchAdminTab('FILES')" id="aNav_FILES" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+            <i data-lucide="folder-open" class="h-4 w-4 shrink-0 transition-colors"></i>
+            <span class="truncate">เอกสารแนบ</span>
+          </a>
+          <a onclick="switchAdminTab('NOTES')" id="aNav_NOTES" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="sticky-note" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">โน้ตสรุปสมาชิก</span>
+            <span class="truncate">โน้ต</span>
           </a>
-          <a onclick="openAdminSection('SUMMARY')" id="aNav_SUMMARY" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+          <a onclick="switchAdminTab('CALENDAR')" id="aNav_CALENDAR" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+            <i data-lucide="calendar-days" class="h-4 w-4 shrink-0 transition-colors"></i>
+            <span class="truncate">ปฏิทินงาน</span>
+          </a>
+          <a onclick="switchAdminTab('SUMMARY')" id="aNav_SUMMARY" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0 transition-colors"></i>
             <span class="truncate">สรุปผลประชุม</span>
           </a>
-          <a onclick="openAdminSection('MEMBERS')" id="aNav_MEMBERS" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+          <a onclick="switchAdminTab('MEMBERS')" id="aNav_MEMBERS" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="file-spreadsheet" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">จัดการรายชื่อสมาชิก</span>
+            <span class="truncate">นำเข้าสมาชิก</span>
           </a>
         </div>
       </div>
@@ -1592,23 +1570,30 @@
             <p class="text-muted-foreground mt-1 text-sm md:text-base truncate" id="desktopHeadingSubtitle">ระบบจัดการการประชุม</p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
-            <!-- Hidden Role Buttons to preserve any legacy JS selectors -->
-            <div class="hidden" aria-hidden="true">
-              <button type="button" id="btnRoleUser" onclick="switchRoleView('USER')">สมาชิก</button>
-              <button type="button" id="btnRoleAdmin" onclick="handleRoleAdminClick()">ADMIN</button>
+            <!-- Role Switcher Pill (User <-> Admin) -->
+            <div class="flex items-center bg-muted/60 p-1 rounded-xl border border-border/60">
+              <button type="button" onclick="switchRoleView('USER')" id="btnRoleUser" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer">
+                <i data-lucide="user" class="mr-1 pointer-events-none inline h-3.5 w-3.5"></i> <span class="pointer-events-none">สมาชิก</span>
+              </button>
+              <button type="button" onclick="handleRoleAdminClick()" id="btnRoleAdmin" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer">
+                <i data-lucide="shield-check" class="mr-1 pointer-events-none inline h-3.5 w-3.5"></i> <span class="pointer-events-none">ADMIN</span>
+              </button>
             </div>
-            <!-- Choice 10x10 Square Outline Action Buttons -->
-            <button type="button" id="headerQuickCreateBtn" onclick="handleHeaderPrimaryAction(event)" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:!text-white h-10 w-10 shrink-0 cursor-pointer" title="สร้าง / จัดการ">
-              <i data-lucide="plus" class="h-5 w-5"></i>
+            <!-- Action Buttons in Comsan Choice style -->
+            <button type="button" onclick="openSettingsModal()" class="h-10 w-10 inline-flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted/80 text-foreground transition shadow-2xs cursor-pointer" title="ตั้งค่าระบบและธีมสี">
+              <i data-lucide="palette" class="h-4 w-4"></i>
             </button>
-            <button type="button" id="headerQrBtn" onclick="openQrExpandModal()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:!text-white h-10 w-10 shrink-0 cursor-pointer" title="QR Code ประจำตัวฉัน">
-              <i data-lucide="qr-code" class="h-5 w-5"></i>
+            <button type="button" onclick="emergencyResetCache()" class="h-10 w-10 inline-flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted/80 text-foreground transition shadow-2xs cursor-pointer" title="รีเฟรชข้อมูล">
+              <i data-lucide="rotate-cw" class="h-4 w-4"></i>
             </button>
-            <button type="button" id="headerNotifyBtn" onclick="openSettingsModal()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:!text-white h-10 w-10 shrink-0 cursor-pointer" title="การแจ้งเตือนและตั้งค่า">
-              <i data-lucide="bell" class="h-5 w-5"></i>
+            <button type="button" id="headerQuickCreateBtn" onclick="handleHeaderPrimaryAction(event)" class="hidden h-10 w-10 items-center justify-center rounded-xl border border-border bg-card hover:bg-muted/80 text-foreground transition shadow-2xs cursor-pointer" title="สร้าง">
+              <i data-lucide="plus" class="h-4 w-4"></i>
             </button>
-            <button type="button" id="btnMobileSidebarToggle" onclick="handleSidebarToggle()" class="md:hidden inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors border border-input bg-background hover:bg-accent hover:!text-white h-10 w-10 shrink-0 cursor-pointer" title="เมนูทั้งหมด">
-              <i data-lucide="menu" class="h-5 w-5"></i>
+            <button type="button" id="headerQrBtn" onclick="openQrExpandModal()" class="hidden h-10 w-10 items-center justify-center rounded-xl border border-border bg-card hover:bg-muted/80 text-foreground transition shadow-2xs cursor-pointer" title="QR Code ประจำตัว">
+              <i data-lucide="qr-code" class="h-4 w-4"></i>
+            </button>
+            <button type="button" id="headerNotifyBtn" onclick="openSettingsModal()" class="hidden h-10 w-10 items-center justify-center rounded-xl border border-border bg-card hover:bg-muted/80 text-foreground transition shadow-2xs cursor-pointer" title="แจ้งเตือน">
+              <i data-lucide="bell" class="h-4 w-4"></i>
             </button>
           </div>
         </div>
@@ -1633,281 +1618,195 @@
             <!-- ===================================================== -->
             <section id="uTab_HOME" class="space-y-6">
 
-              <!-- HOME OVERVIEW CONTAINER (Shown on หน้าหลัก, hidden when viewing a specific sub-page) -->
-              <div id="uHomeOverview" class="space-y-6">
+              <!-- แถบแจ้งเตือนเหตุการณ์สำคัญแบบเรียลไทม์ (แสดงเมื่อมีการเปิดโหวตหรือถ่ายทอดสด) -->
+              <div id="userActiveEventsContainer" class="space-y-2.5 hidden"></div>
 
-                <!-- แถบแจ้งเตือนเหตุการณ์สำคัญแบบเรียลไทม์ (แสดงเมื่อมีการเปิดโหวตหรือถ่ายทอดสด) -->
-                <div id="userActiveEventsContainer" class="space-y-2.5 hidden"></div>
-
-                <!-- TODAY'S CALENDAR EVENT BANNER -->
-                <div id="userTodayEventBanner" class="hidden relative overflow-hidden rounded-xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-card hover:border-primary/50 transition-all shadow-2xs group select-none cursor-pointer"
-                     onmouseenter="if(typeof pauseTodayEventCycle==='function')pauseTodayEventCycle()" onmouseleave="if(typeof resumeTodayEventCycle==='function')resumeTodayEventCycle()"
-                     ontouchstart="if(typeof pauseTodayEventCycle==='function')pauseTodayEventCycle()" ontouchend="if(typeof resumeTodayEventCycle==='function')resumeTodayEventCycle()">
-                </div>
-
-                <!-- 1. CHOICE 21:9 BANNER CAROUSEL (Exact match to comsan-choice.vercel.app Home) -->
-                <div id="choiceHomeBannerCarousel" class="w-full shadow-card rounded-xl overflow-hidden relative group select-none" role="region" aria-roledescription="carousel"
-                     onmouseenter="pauseHomeBannerCarousel()" onmouseleave="resumeHomeBannerCarousel()">
-                  <div class="overflow-hidden">
-                    <div id="choiceHomeBannerTrack" class="flex transition-transform duration-500 ease-out" style="transform: translate3d(0%, 0px, 0px);">
-                      <!-- Slide 1: COMSAN Shirt Banner -->
-                      <div class="min-w-0 shrink-0 grow-0 basis-full">
-                        <div class="relative aspect-[21/9] w-full bg-muted">
-                          <a href="https://comsan-choice.vercel.app/product/comsan-dream-shirt" target="_blank" rel="noreferrer" class="block w-full h-full">
-                            <img src="https://fqobxhatdkmjnurizmpp.supabase.co/storage/v1/object/public/banners/shirt.webp" alt="COMSAN Banner 1" class="w-full h-full object-cover" />
-                          </a>
-                        </div>
-                      </div>
-                      <!-- Slide 2: COMSAN Headband Banner -->
-                      <div class="min-w-0 shrink-0 grow-0 basis-full">
-                        <div class="relative aspect-[21/9] w-full bg-muted">
-                          <a href="https://comsan-choice.vercel.app/product/comsan-headband" target="_blank" rel="noreferrer" class="block w-full h-full">
-                            <img src="https://fqobxhatdkmjnurizmpp.supabase.co/storage/v1/object/public/banners/headband.webp" alt="COMSAN Banner 2" class="w-full h-full object-cover" />
-                          </a>
-                        </div>
-                      </div>
-                      <!-- Slide 3: COMSAN Official Linktree Banner -->
-                      <div class="min-w-0 shrink-0 grow-0 basis-full">
-                        <div class="relative aspect-[21/9] w-full bg-muted">
-                          <a href="https://linktr.ee/comsanentertainer" target="_blank" rel="noreferrer" class="block w-full h-full">
-                            <img src="https://fqobxhatdkmjnurizmpp.supabase.co/storage/v1/object/public/banners/7024532e-b5da-4c7b-ba81-fb01f348cbce/12270387-fe03-43e3-9841-b9ab9e126897/1792336564505-tr065ulxm38.webp" alt="COMSAN Banner 3" class="w-full h-full object-cover" />
-                          </a>
-                        </div>
+              <!-- 1. CHOICE 21:9 BANNER CAROUSEL (Exact match to comsan-choice.vercel.app Home) -->
+              <div id="choiceHomeBannerCarousel" class="w-full shadow-card rounded-xl overflow-hidden relative group select-none" role="region" aria-roledescription="carousel"
+                   onmouseenter="pauseHomeBannerCarousel()" onmouseleave="resumeHomeBannerCarousel()">
+                <div class="overflow-hidden">
+                  <div id="choiceHomeBannerTrack" class="flex transition-transform duration-500 ease-out" style="transform: translate3d(0%, 0px, 0px);">
+                    <!-- Slide 1: COMSAN Shirt Banner -->
+                    <div class="min-w-0 shrink-0 grow-0 basis-full">
+                      <div class="relative aspect-[21/9] w-full bg-muted">
+                        <a href="https://comsan-choice.vercel.app/product/comsan-dream-shirt" target="_blank" rel="noreferrer" class="block w-full h-full">
+                          <img src="https://fqobxhatdkmjnurizmpp.supabase.co/storage/v1/object/public/banners/shirt.webp" alt="COMSAN Banner 1" class="w-full h-full object-cover" />
+                        </a>
                       </div>
                     </div>
-                  </div>
-                  <!-- Carousel Prev/Next Arrows -->
-                  <button type="button" onclick="stepHomeBannerSlide(-1)" class="inline-flex items-center justify-center absolute h-8 w-8 md:h-10 md:w-10 rounded-full top-1/2 -translate-y-1/2 left-2 md:left-4 bg-black/25 hover:bg-black/45 border-none text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20" aria-label="Previous slide">
-                    <i data-lucide="arrow-left" class="h-4 w-4"></i>
-                  </button>
-                  <button type="button" onclick="stepHomeBannerSlide(1)" class="inline-flex items-center justify-center absolute h-8 w-8 md:h-10 md:w-10 rounded-full top-1/2 -translate-y-1/2 right-2 md:right-4 bg-black/25 hover:bg-black/45 border-none text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20" aria-label="Next slide">
-                    <i data-lucide="arrow-right" class="h-4 w-4"></i>
-                  </button>
-                  <!-- Carousel Indicator Dots -->
-                  <div id="choiceHomeBannerDots" class="absolute bottom-3 md:bottom-4 left-0 right-0 flex justify-center gap-1.5 md:gap-2 z-20">
-                    <button type="button" onclick="goToHomeBannerSlide(0)" class="home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white w-5 md:w-8 cursor-pointer" aria-label="สไลด์ 1"></button>
-                    <button type="button" onclick="goToHomeBannerSlide(1)" class="home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white/40 w-1.5 md:w-2 cursor-pointer" aria-label="สไลด์ 2"></button>
-                    <button type="button" onclick="goToHomeBannerSlide(2)" class="home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white/40 w-1.5 md:w-2 cursor-pointer" aria-label="สไลด์ 3"></button>
-                  </div>
-                </div>
-
-                <!-- 2. MEETING STATUS & CHECK-IN CARD (Clean Choice Card Style, preserving all IDs) -->
-                <div id="userMeetingHeroCard" class="rounded-xl border border-border bg-card text-card-foreground shadow-sm shadow-card p-5 sm:p-6 relative overflow-hidden transition-all">
-                  <div id="heroBubbleContainer" class="hidden"></div>
-                  <div class="relative z-10 flex flex-row items-start sm:items-center justify-between gap-4">
-                    <div class="flex-1 min-w-0 space-y-2">
-                      <div class="flex items-center gap-2 flex-wrap">
-                        <span id="heroStatusWrapper" class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
-                          <span id="heroStatusDot" class="w-2 h-2 rounded-full bg-primary"></span>
-                          <span id="userBannerStatusPill">กำลังประชุม</span>
-                        </span>
-                        <span id="heroOnlineBadge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary items-center gap-1 border border-primary/20">
-                          <i data-lucide="globe" class="h-3 w-3"></i> <span id="heroOnlinePlatformLabel">Google Meet</span>
-                        </span>
-                        <span id="heroUserCheckinPill" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
-                          ยังไม่เช็คชื่อ
-                        </span>
-                      </div>
-
-                      <h2 id="userBannerTitle" class="text-lg sm:text-xl font-bold leading-snug text-foreground break-words tracking-tight">
-                        ประชุมคณะกรรมการชมรมคมสัน
-                      </h2>
-
-                      <div class="space-y-1 text-xs text-muted-foreground">
-                        <p id="userBannerDateTime">วันที่: - • เวลา: -</p>
-                        <p id="userBannerLocation">ห้องประชุม: -</p>
-                      </div>
-
-                      <div class="pt-1 flex flex-wrap items-center gap-2">
-                        <button type="button" onclick="openQrExpandModal()" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer">
-                          <i data-lucide="qr-code" class="h-3.5 w-3.5"></i>
-                          <span>QR เช็คชื่อของฉัน</span>
-                        </button>
-                        <button type="button" onclick="switchUserTab('RAISE')" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 border border-input bg-background hover:bg-accent hover:text-white transition-colors cursor-pointer">
-                          <i data-lucide="hand" class="h-3.5 w-3.5"></i>
-                          <span>ยกมือขอพูด</span>
-                        </button>
-                        <button type="button" onclick="openLeaveModal()" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 border border-input bg-background hover:bg-accent hover:text-white transition-colors cursor-pointer">
-                          <i data-lucide="calendar-off" class="h-3.5 w-3.5"></i>
-                          <span>แจ้งลาประชุม</span>
-                        </button>
+                    <!-- Slide 2: COMSAN Headband Banner -->
+                    <div class="min-w-0 shrink-0 grow-0 basis-full">
+                      <div class="relative aspect-[21/9] w-full bg-muted">
+                        <a href="https://comsan-choice.vercel.app/product/comsan-headband" target="_blank" rel="noreferrer" class="block w-full h-full">
+                          <img src="https://fqobxhatdkmjnurizmpp.supabase.co/storage/v1/object/public/banners/headband.webp" alt="COMSAN Banner 2" class="w-full h-full object-cover" />
+                        </a>
                       </div>
                     </div>
-
-                    <!-- ฝั่งขวา: QR Code ประจำตัวสมาชิก -->
-                    <div id="heroOnsiteQrWrapper" class="shrink-0 flex flex-col items-center text-center">
-                      <div class="text-[10px] font-semibold text-muted-foreground mb-1 hidden sm:block">
-                        <span id="heroMemberCodeTop">COMSAN</span>
-                      </div>
-                      <div onclick="openQrExpandModal()" title="คลิกเพื่อย่อ/ขยาย QR Code"
-                        class="bg-white p-2 rounded-xl shadow-xs cursor-pointer hover:scale-105 transition flex items-center justify-center border border-border text-slate-900">
-                        <div id="userQrCodeBox" class="w-[76px] h-[76px] sm:w-[88px] sm:h-[88px] flex items-center justify-center"></div>
-                      </div>
-                      <p id="userQrCodeText" class="text-[10px] font-mono text-muted-foreground mt-1">COMSAN-01</p>
-                    </div>
-                  </div>
-
-                  <!-- แผงการประชุมออนไลน์ (แสดงเฉพาะเมื่อเป็นการประชุม Online) -->
-                  <div id="userBannerOnlineContainer" class="hidden relative z-10 mt-4 pt-3.5 border-t border-border flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                      <a id="userBannerOnlineBtn" href="#" target="_blank" rel="noopener noreferrer"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md gradient-primary text-white font-medium shadow-xs transition-all text-xs sm:text-sm">
-                        <span id="userBannerOnlineIcon"><i data-lucide="video" class="h-4 w-4"></i></span>
-                        <span id="userBannerOnlineLabel">เข้าสู่การประชุม (Google Meet)</span>
-                        <i data-lucide="external-link" class="h-3.5 w-3.5 opacity-80"></i>
-                      </a>
-
-                      <div id="userBannerPasscodeTag" class="hidden inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 rounded-md bg-muted border border-border text-xs text-foreground cursor-pointer hover:bg-muted/80 transition"
-                        onclick="copyOnlinePasscode()" title="คลิกเพื่อคัดลอกรหัสผ่าน">
-                        <div class="flex items-center gap-1.5">
-                          <i data-lucide="key" class="h-3.5 w-3.5 text-primary"></i>
-                          <span class="text-muted-foreground">รหัสผ่าน:</span>
-                          <span id="userBannerPasscodeText" class="font-mono font-bold tracking-wider text-foreground">123456</span>
-                        </div>
-                        <i data-lucide="copy" class="h-3.5 w-3.5 text-muted-foreground"></i>
-                      </div>
-                    </div>
-
-                    <div id="heroOnlineCheckinAction" class="flex items-center w-full sm:w-auto">
-                      <div id="heroOnlineNotCheckedInBox" class="flex items-center w-full sm:w-auto">
-                        <button type="button" onclick="openUserScanAdminQrModal()"
-                          class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-xs transition-all text-xs sm:text-sm cursor-pointer">
-                          <i data-lucide="qr-code" class="h-4 w-4"></i>
-                          <span>สแกน QR เช็คชื่อ</span>
-                        </button>
-                      </div>
-                      <div id="heroOnlineCheckedInBox" class="hidden w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-                        <i data-lucide="check-circle-2" class="h-4 w-4"></i>
-                        <span>เช็คชื่อเรียบร้อย</span>
-                        <span id="heroOnlineCheckinTime" class="font-mono text-[11px]">(11:15 น.)</span>
+                    <!-- Slide 3: COMSAN Official Linktree Banner -->
+                    <div class="min-w-0 shrink-0 grow-0 basis-full">
+                      <div class="relative aspect-[21/9] w-full bg-muted">
+                        <a href="https://linktr.ee/comsanentertainer" target="_blank" rel="noreferrer" class="block w-full h-full">
+                          <img src="https://fqobxhatdkmjnurizmpp.supabase.co/storage/v1/object/public/banners/7024532e-b5da-4c7b-ba81-fb01f348cbce/12270387-fe03-43e3-9841-b9ab9e126897/1792336564505-tr065ulxm38.webp" alt="COMSAN Banner 3" class="w-full h-full object-cover" />
+                        </a>
                       </div>
                     </div>
                   </div>
                 </div>
+                <!-- Carousel Prev/Next Arrows -->
+                <button type="button" onclick="stepHomeBannerSlide(-1)" class="inline-flex items-center justify-center absolute h-8 w-8 md:h-10 md:w-10 rounded-full top-1/2 -translate-y-1/2 left-2 md:left-4 bg-black/25 hover:bg-black/45 border-none text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20" aria-label="Previous slide">
+                  <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                </button>
+                <button type="button" onclick="stepHomeBannerSlide(1)" class="inline-flex items-center justify-center absolute h-8 w-8 md:h-10 md:w-10 rounded-full top-1/2 -translate-y-1/2 right-2 md:right-4 bg-black/25 hover:bg-black/45 border-none text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20" aria-label="Next slide">
+                  <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                </button>
+                <!-- Carousel Indicator Dots -->
+                <div id="choiceHomeBannerDots" class="absolute bottom-3 md:bottom-4 left-0 right-0 flex justify-center gap-1.5 md:gap-2 z-20">
+                  <button type="button" onclick="goToHomeBannerSlide(0)" class="home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white w-5 md:w-8 cursor-pointer" aria-label="สไลด์ 1"></button>
+                  <button type="button" onclick="goToHomeBannerSlide(1)" class="home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white/40 w-1.5 md:w-2 cursor-pointer" aria-label="สไลด์ 2"></button>
+                  <button type="button" onclick="goToHomeBannerSlide(2)" class="home-banner-dot h-1.5 md:h-2 rounded-full transition-all duration-300 bg-white/40 w-1.5 md:w-2 cursor-pointer" aria-label="สไลด์ 3"></button>
+                </div>
+              </div>
 
-                <!-- 3. สมาชิกของเรา (Exact Comsan Choice Horizontal Member Cards) -->
-                <div>
-                  <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-foreground">สมาชิกของเรา</h2>
-                    <button type="button" onclick="openUserSection('SEATS')" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:!text-white h-9 rounded-md px-3 cursor-pointer">ดูทั้งหมด</button>
-                  </div>
-                  <div class="relative overflow-x-auto w-full whitespace-nowrap scrollbar-none pb-1">
-                    <div id="userHomeMembersRow" class="flex gap-3 pb-2 px-1">
-                      <!-- Populated by renderHomeMembersRow() in seatingChart.js with exact w-32 Choice cards -->
+              <!-- 2. MEETING STATUS & CHECK-IN CARD (Clean Choice Card Style, preserving all IDs) -->
+              <div id="userMeetingHeroCard" class="rounded-xl border border-border bg-card text-card-foreground shadow-sm shadow-card p-5 sm:p-6 relative overflow-hidden transition-all">
+                <div id="heroBubbleContainer" class="hidden"></div>
+                <div class="relative z-10 flex flex-row items-start sm:items-center justify-between gap-4">
+                  <div class="flex-1 min-w-0 space-y-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span id="heroStatusWrapper" class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                        <span id="heroStatusDot" class="w-2 h-2 rounded-full bg-primary"></span>
+                        <span id="userBannerStatusPill">กำลังประชุม</span>
+                      </span>
+                      <span id="heroOnlineBadge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary items-center gap-1 border border-primary/20">
+                        <i data-lucide="globe" class="h-3 w-3"></i> <span id="heroOnlinePlatformLabel">Google Meet</span>
+                      </span>
+                      <span id="heroUserCheckinPill" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
+                        ยังไม่เช็คชื่อ
+                      </span>
                     </div>
+
+                    <h2 id="userBannerTitle" class="text-lg sm:text-xl font-bold leading-snug text-foreground break-words tracking-tight">
+                      ประชุมคณะกรรมการชมรมคมสัน
+                    </h2>
+
+                    <div class="space-y-1 text-xs text-muted-foreground">
+                      <p id="userBannerDateTime">วันที่: - • เวลา: -</p>
+                      <p id="userBannerLocation">ห้องประชุม: -</p>
+                    </div>
+
+                    <div class="pt-1 flex flex-wrap items-center gap-2">
+                      <button type="button" onclick="openQrExpandModal()" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer">
+                        <i data-lucide="qr-code" class="h-3.5 w-3.5"></i>
+                        <span>QR เช็คชื่อของฉัน</span>
+                      </button>
+                      <button type="button" onclick="switchUserTab('RAISE')" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 border border-input bg-background hover:bg-accent hover:text-white transition-colors cursor-pointer">
+                        <i data-lucide="hand" class="h-3.5 w-3.5"></i>
+                        <span>ยกมือขอพูด</span>
+                      </button>
+                      <button type="button" onclick="openLeaveModal()" class="inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium h-8 px-3 border border-input bg-background hover:bg-accent hover:text-white transition-colors cursor-pointer">
+                        <i data-lucide="calendar-off" class="h-3.5 w-3.5"></i>
+                        <span>แจ้งลาประชุม</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- ฝั่งขวา: QR Code ประจำตัวสมาชิก -->
+                  <div id="heroOnsiteQrWrapper" class="shrink-0 flex flex-col items-center text-center">
+                    <div class="text-[10px] font-semibold text-muted-foreground mb-1 hidden sm:block">
+                      <span id="heroMemberCodeTop">COMSAN</span>
+                    </div>
+                    <div onclick="openQrExpandModal()" title="คลิกเพื่อย่อ/ขยาย QR Code"
+                      class="bg-white p-2 rounded-xl shadow-xs cursor-pointer hover:scale-105 transition flex items-center justify-center border border-border text-slate-900">
+                      <div id="userQrCodeBox" class="w-[76px] h-[76px] sm:w-[88px] sm:h-[88px] flex items-center justify-center"></div>
+                    </div>
+                    <p id="userQrCodeText" class="text-[10px] font-mono text-muted-foreground mt-1">COMSAN-01</p>
                   </div>
                 </div>
 
-                <!-- 4. กระดานความคิด ใหม่ (Exact Comsan Choice Sticky-Note Banner Card) -->
-                <div class="mb-2">
-                  <div onclick="openUserSection('NOTE')" class="group relative overflow-hidden rounded-xl border border-border bg-card hover:border-primary/50 transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-md p-3 flex items-center justify-between gap-4 min-h-[74px]">
-                    <div class="flex items-center gap-3.5 pl-1 z-10 min-w-0">
-                      <div class="relative shrink-0 w-12 h-12 flex items-center justify-center">
-                        <svg viewBox="0 0 64 64" class="w-11 h-11 drop-shadow-xs group-hover:scale-105 transition-transform duration-300">
-                          <rect x="14" y="10" width="38" height="38" rx="4" transform="rotate(6 33 29)" fill="#FDE047" opacity="0.5"></rect>
-                          <rect x="10" y="12" width="40" height="40" rx="5" transform="rotate(-4 30 32)" fill="#FACC15" stroke="#EAB308" stroke-width="1"></rect>
-                          <path d="M20 26 H40 M20 33 H36 M20 40 H30" stroke="#854D0E" stroke-width="2.5" stroke-linecap="round" opacity="0.6" transform="rotate(-4 30 32)"></path>
-                          <circle cx="30" cy="15" r="3" fill="#EF4444"></circle>
-                        </svg>
+                <!-- แผงการประชุมออนไลน์ (แสดงเฉพาะเมื่อเป็นการประชุม Online) -->
+                <div id="userBannerOnlineContainer" class="hidden relative z-10 mt-4 pt-3.5 border-t border-border flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                    <a id="userBannerOnlineBtn" href="#" target="_blank" rel="noopener noreferrer"
+                      class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md gradient-primary text-white font-medium shadow-xs transition-all text-xs sm:text-sm">
+                      <span id="userBannerOnlineIcon"><i data-lucide="video" class="h-4 w-4"></i></span>
+                      <span id="userBannerOnlineLabel">เข้าสู่การประชุม (Google Meet)</span>
+                      <i data-lucide="external-link" class="h-3.5 w-3.5 opacity-80"></i>
+                    </a>
+
+                    <div id="userBannerPasscodeTag" class="hidden inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 rounded-md bg-muted border border-border text-xs text-foreground cursor-pointer hover:bg-muted/80 transition"
+                      onclick="copyOnlinePasscode()" title="คลิกเพื่อคัดลอกรหัสผ่าน">
+                      <div class="flex items-center gap-1.5">
+                        <i data-lucide="key" class="h-3.5 w-3.5 text-primary"></i>
+                        <span class="text-muted-foreground">รหัสผ่าน:</span>
+                        <span id="userBannerPasscodeText" class="font-mono font-bold tracking-wider text-foreground">123456</span>
                       </div>
-                      <div class="min-w-0">
-                        <div class="flex items-center gap-2">
-                          <h3 class="font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">กระดานความคิด</h3>
-                          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 shrink-0">ใหม่</span>
-                        </div>
-                        <p class="text-xs text-muted-foreground truncate mt-0.5">พื้นที่แปะโพสต์อิท แชร์ไอเดีย และจดบันทึกการประชุม</p>
-                      </div>
+                      <i data-lucide="copy" class="h-3.5 w-3.5 text-muted-foreground"></i>
                     </div>
-                    <div class="shrink-0 pr-1 z-10">
-                      <div class="w-8 h-8 rounded-full bg-muted/60 group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
-                        <i data-lucide="chevron-right" class="h-4 w-4"></i>
-                      </div>
+                  </div>
+
+                  <div id="heroOnlineCheckinAction" class="flex items-center w-full sm:w-auto">
+                    <div id="heroOnlineNotCheckedInBox" class="flex items-center w-full sm:w-auto">
+                      <button type="button" onclick="openUserScanAdminQrModal()"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-xs transition-all text-xs sm:text-sm cursor-pointer">
+                        <i data-lucide="qr-code" class="h-4 w-4"></i>
+                        <span>สแกน QR เช็คชื่อ</span>
+                      </button>
+                    </div>
+                    <div id="heroOnlineCheckedInBox" class="hidden w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                      <i data-lucide="check-circle-2" class="h-4 w-4"></i>
+                      <span>เช็คชื่อเรียบร้อย</span>
+                      <span id="heroOnlineCheckinTime" class="font-mono text-[11px]">(11:15 น.)</span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <!-- 5. การลงคะแนนที่เปิดอยู่ (Exact Comsan Choice Open Votes Section) -->
-                <div>
-                  <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-foreground">การลงคะแนนที่เปิดอยู่</h2>
-                    <button type="button" onclick="switchUserTab('VOTE')" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:!text-white h-9 rounded-md px-3 cursor-pointer">ดูทั้งหมด</button>
-                  </div>
-                  <div id="userHomeOpenVotesBox">
-                    <div class="rounded-lg border text-card-foreground shadow-sm shadow-card border-dashed bg-muted/20">
-                      <div class="flex flex-col items-center justify-center py-10 text-center">
-                        <div class="rounded-full bg-muted p-3 mb-3">
-                          <i data-lucide="vote" class="h-10 w-10 text-muted-foreground/50"></i>
-                        </div>
-                        <h3 class="mt-1 text-base font-semibold text-foreground">ไม่พบการโหวต</h3>
-                        <p class="mt-1.5 max-w-xs text-xs sm:text-sm leading-relaxed text-muted-foreground">ขณะนี้ยังไม่มีการโหวตที่กำลังเปิดอยู่ ลองกลับมาตรวจสอบอีกครั้งภายหลัง</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!-- TODAY'S CALENDAR EVENT BANNER -->
+              <div id="userTodayEventBanner" class="hidden relative overflow-hidden rounded-xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-card hover:border-primary/50 transition-all shadow-2xs group select-none cursor-pointer"
+                   onmouseenter="if(typeof pauseTodayEventCycle==='function')pauseTodayEventCycle()" onmouseleave="if(typeof resumeTodayEventCycle==='function')resumeTodayEventCycle()"
+                   ontouchstart="if(typeof pauseTodayEventCycle==='function')pauseTodayEventCycle()" ontouchend="if(typeof resumeTodayEventCycle==='function')resumeTodayEventCycle()">
+              </div>
 
-                <!-- 6. เอกสารและเครื่องมือการประชุม (Choice Styled Quick Access) -->
-                <div>
-                  <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-foreground">เครื่องมือการประชุม</h2>
-                    <button type="button" onclick="openUserSection('FILES')" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:!text-white h-9 rounded-md px-3 cursor-pointer">ดูเอกสารทั้งหมด</button>
-                  </div>
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div onclick="openUserSection('FILES')" class="rounded-xl border border-border bg-card hover:border-primary/50 p-4 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group">
-                      <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <i data-lucide="folder-open" class="h-5 w-5"></i>
-                      </div>
-                      <div>
-                        <p class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">เอกสารการประชุม</p>
-                        <p class="text-xs text-muted-foreground mt-0.5">ดาวน์โหลดระเบียบวาระ</p>
-                      </div>
-                    </div>
-                    <div onclick="openUserSection('STREAM')" class="rounded-xl border border-border bg-card hover:border-primary/50 p-4 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group">
-                      <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <i data-lucide="radio" class="h-5 w-5"></i>
-                      </div>
-                      <div>
-                        <p class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">การถ่ายทอดสด</p>
-                        <p class="text-xs text-muted-foreground mt-0.5">รับชมจอผู้นำเสนอสด</p>
-                      </div>
-                    </div>
-                    <div onclick="openUserSection('CALENDAR')" class="rounded-xl border border-border bg-card hover:border-primary/50 p-4 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group">
-                      <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <i data-lucide="calendar" class="h-5 w-5"></i>
-                      </div>
-                      <div>
-                        <p class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">ปฏิทินกิจกรรม</p>
-                        <p class="text-xs text-muted-foreground mt-0.5">ตารางงานและนัดหมาย</p>
-                      </div>
-                    </div>
-                    <div onclick="openUserSection('RANDOM')" class="rounded-xl border border-border bg-card hover:border-primary/50 p-4 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 group">
-                      <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <i data-lucide="dices" class="h-5 w-5"></i>
-                      </div>
-                      <div>
-                        <p class="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">วงล้อสุ่มสมาชิก</p>
-                        <p class="text-xs text-muted-foreground mt-0.5">สุ่มรายชื่อและประวัติ</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!-- SEGMENTED CONTROL PILL BAR (เอกสาร | แชร์หน้าจอ | สมุดจด | ปฏิทินงาน | สมาชิกชมรม | วงล้อสุ่ม) -->
+              <div class="bg-muted/60 p-1.5 rounded-2xl grid grid-cols-6 sm:grid-cols-6 gap-1.5 border border-border/50 select-none">
+                <button type="button" onclick="switchUserToolSubTab('FILES')" id="uToolBtn_FILES"
+                  class="col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer">
+                  <i data-lucide="file-text" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">เอกสาร</span>
+                </button>
+                <button type="button" onclick="switchUserToolSubTab('STREAM')" id="uToolBtn_STREAM"
+                  class="col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer">
+                  <i data-lucide="monitor" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">แชร์หน้าจอ</span>
+                </button>
+                <button type="button" onclick="switchUserToolSubTab('NOTE')" id="uToolBtn_NOTE"
+                  class="col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer">
+                  <i data-lucide="square-pen" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">สมุดจด</span>
+                </button>
+                <button type="button" onclick="switchUserToolSubTab('CALENDAR')" id="uToolBtn_CALENDAR"
+                  class="col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer">
+                  <i data-lucide="calendar-days" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">ปฏิทินงาน</span>
+                </button>
+                <button type="button" onclick="switchUserToolSubTab('SEATS')" id="uToolBtn_SEATS"
+                  class="col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer">
+                  <i data-lucide="users" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">สมาชิกชมรม</span>
+                </button>
+                <button type="button" onclick="switchUserToolSubTab('RANDOM')" id="uToolBtn_RANDOM"
+                  class="col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer">
+                  <i data-lucide="dices" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">วงล้อสุ่ม</span>
+                </button>
+              </div>
 
-                <!-- Hidden legacy elements to preserve JS compatibility -->
-                <div class="hidden" aria-hidden="true">
-                  <div id="recommendedFeaturesCarousel"><div id="recommendedCarouselTrack"></div><div id="recommendedCarouselDots"></div></div>
-                  <button type="button" id="uToolBtn_FILES"></button>
-                  <button type="button" id="uToolBtn_STREAM"></button>
-                  <button type="button" id="uToolBtn_NOTE"></button>
-                  <button type="button" id="uToolBtn_CALENDAR"></button>
-                  <button type="button" id="uToolBtn_SEATS"></button>
-                  <button type="button" id="uToolBtn_RANDOM"></button>
-                </div>
-
+              <!-- Compatibility hidden elements to preserve reactive JS handlers -->
+              <div class="hidden" aria-hidden="true">
+                <div id="uHomeOverview"></div>
+                <div id="userHomeMembersRow"></div>
+                <div id="userHomeOpenVotesBox"></div>
+                <div id="recommendedFeaturesCarousel"><div id="recommendedCarouselTrack"></div><div id="recommendedCarouselDots"></div></div>
               </div>
 
               <!-- =================================================== -->
               <!-- SUB-VIEW 1: เอกสารการประชุม (Dedicated Full View)      -->
               <!-- =================================================== -->
-              <div id="uToolSec_FILES" class="hidden space-y-4">
+              <div id="uToolSec_FILES" class="space-y-4">
               <div class="flex items-center justify-between gap-2 px-1">
                 <div class="min-w-0">
                   <h3 class="text-base sm:text-lg font-extrabold text-foreground">เอกสารการประชุม</h3>
@@ -3871,58 +3770,57 @@
       </div>
     </div>
 
-    <!-- Mobile Bottom Navigation (Exact Comsan Choice Style: หน้าหลัก, สมาชิก, ลงคะแนน, ปฏิทิน, โปรไฟล์) -->
-    <nav id="mobileBottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-lg z-50 select-none md:hidden">
-      <div class="max-w-md mx-auto grid grid-cols-5 items-center h-16 px-2 relative">
+    <!-- Mobile Bottom Navigation (Original Operational Structure with Comsan Choice Style) -->
+    <nav id="mobileBottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border shadow-lg z-50 select-none md:hidden">
+      <div class="max-w-md mx-auto grid grid-cols-5 items-center h-16 px-1 relative">
         <!-- 1. หน้าหลัก -->
-        <button type="button" onclick="openUserSection('HOME')" id="mNav_HOME" class="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-primary">
-          <div id="mNavPill_HOME" class="relative flex items-center justify-center">
-            <i data-lucide="house" class="h-5 w-5 transition-transform scale-110"></i>
+        <button type="button" onclick="switchUserTab('HOME')" id="mNav_HOME" class="flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all h-full text-primary">
+          <div id="mNavPill_HOME" class="w-12 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center transition relative">
+            <i data-lucide="house" class="h-4 w-4"></i>
           </div>
-          <span class="text-[11px] font-medium">หน้าหลัก</span>
+          <span class="text-[10px] font-semibold tracking-tight">หน้าหลัก</span>
         </button>
 
-        <!-- 2. สมาชิก -->
-        <button type="button" onclick="openUserSection('SEATS')" id="mNav_SEATS" class="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground">
-          <div id="mNavPill_SEATS" class="relative flex items-center justify-center">
-            <i data-lucide="users" class="h-5 w-5 transition-transform"></i>
+        <!-- 2. ลงเสียง -->
+        <button type="button" onclick="switchUserTab('VOTE')" id="mNav_VOTE" class="flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground">
+          <div id="mNavPill_VOTE" class="w-12 h-7 rounded-full flex items-center justify-center transition relative">
+            <i data-lucide="vote" class="h-4 w-4"></i>
+            <span id="mBadge_VOTE" class="hidden absolute -top-1 -right-0.5 w-4 h-4 rounded-full bg-destructive text-white text-[9px] font-extrabold flex items-center justify-center shadow-xs">0</span>
           </div>
-          <span class="text-[11px] font-medium">สมาชิก</span>
+          <span class="text-[10px] font-medium tracking-tight">ลงเสียง</span>
         </button>
 
-        <!-- 3. ปุ่มกลาง: ลงคะแนน (Exact Choice Floating Circular Button) -->
+        <!-- 3. ปุ่มกลาง: ยกมือ -->
         <div class="relative flex items-center justify-center h-full">
-          <button type="button" onclick="openUserSection('VOTE')" id="mNav_VOTE"
-            class="absolute -top-5 inset-x-0 mx-auto w-[60px] h-[60px] rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)]">
-            <div id="mNavPill_VOTE" class="relative flex items-center justify-center">
-              <i data-lucide="vote" class="h-6 w-6"></i>
-              <span id="mBadge_VOTE" class="hidden absolute -top-2 -right-2.5 w-4 h-4 rounded-full bg-destructive text-white text-[9px] font-extrabold flex items-center justify-center shadow-xs">0</span>
-            </div>
+          <button type="button" onclick="switchUserTab('RAISE')" id="mNav_RAISE"
+            class="absolute -top-4 inset-x-0 mx-auto w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 gradient-primary text-white shadow-card active:scale-95 border-2 border-background cursor-pointer">
+            <i data-lucide="hand" class="h-5 w-5"></i>
           </button>
-          <span class="sr-only">ลงคะแนน</span>
+          <span id="mNavLabel_RAISE" class="text-[10px] font-medium text-muted-foreground mt-7 tracking-tight">ยกมือ</span>
         </div>
 
-        <!-- 4. ปฏิทิน -->
-        <button type="button" onclick="openUserSection('CALENDAR')" id="mNav_CALENDAR" class="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground">
-          <div id="mNavPill_CALENDAR" class="relative flex items-center justify-center">
-            <i data-lucide="calendar" class="h-5 w-5 transition-transform"></i>
+        <!-- 4. แชต -->
+        <button type="button" onclick="switchUserTab('CHAT')" id="mNav_CHAT" class="flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground">
+          <div id="mNavPill_CHAT" class="w-12 h-7 rounded-full flex items-center justify-center transition relative">
+            <i data-lucide="message-square" class="h-4 w-4"></i>
+            <span id="floatingChatBadge" class="hidden absolute top-0.5 right-2 w-2 h-2 rounded-full bg-destructive ring-2 ring-card"></span>
           </div>
-          <span class="text-[11px] font-medium">ปฏิทิน</span>
+          <span class="text-[10px] font-medium tracking-tight">แชต</span>
         </button>
 
         <!-- 5. โปรไฟล์ -->
-        <button type="button" onclick="openUserSection('PROFILE')" id="mNav_PROFILE" class="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground">
-          <div id="mNavPill_PROFILE" class="relative flex items-center justify-center">
-            <i data-lucide="user" class="h-5 w-5 transition-transform"></i>
+        <button type="button" onclick="switchUserTab('PROFILE')" id="mNav_PROFILE" class="flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground">
+          <div id="mNavPill_PROFILE" class="w-12 h-7 rounded-full flex items-center justify-center transition relative">
+            <i data-lucide="user" class="h-4 w-4"></i>
           </div>
-          <span class="text-[11px] font-medium">โปรไฟล์</span>
+          <span class="text-[10px] font-medium tracking-tight">โปรไฟล์</span>
         </button>
       </div>
 
       <!-- Hidden compatibility elements for legacy JS references -->
-      <div class="hidden">
-        <button type="button" id="mNav_RAISE"><span id="mNavLabel_RAISE">ยกมือ</span></button>
-        <button type="button" id="mNav_CHAT"><div id="mNavPill_CHAT"><span id="floatingChatBadge"></span></div></button>
+      <div class="hidden" aria-hidden="true">
+        <button type="button" id="mNav_SEATS"></button>
+        <button type="button" id="mNav_CALENDAR"></button>
       </div>
     </nav>
 
