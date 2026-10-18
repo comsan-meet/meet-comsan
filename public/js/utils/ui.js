@@ -190,16 +190,15 @@ function applyTheme(mode) {
     htmlEl.classList.remove('dark');
   }
 
-  // Update theme icons: Light = Sun (พระอาทิตย์), Dark = Moon (พระจันทร์)
+  // Update theme icons: Light = Sun (พระอาทิตย์), Dark = Moon (พระจันทร์) matching Comsan Choice monochrome style
   const themeIcons = document.querySelectorAll('.theme-toggle-icon, #themeIcon, #themeToggleIcon, #sidebarThemeIcon');
   themeIcons.forEach(icon => {
     const iconName = isDark ? 'moon' : 'sun';
-    const colorClass = isDark ? 'text-indigo-400' : 'text-amber-500';
     if (typeof window.updateIcon === 'function') {
-      window.updateIcon(icon, iconName, `theme-toggle-icon ${colorClass} text-xs`);
+      window.updateIcon(icon, iconName, 'theme-toggle-icon h-4 w-4');
     } else {
       icon.setAttribute('data-lucide', iconName);
-      icon.className = `theme-toggle-icon ${colorClass} text-xs`;
+      icon.className = 'theme-toggle-icon h-4 w-4';
     }
   });
 
@@ -356,9 +355,9 @@ function updateSettingsModalUI() {
     const el = document.getElementById(`appOpt_${m}`);
     if (el) {
       if (m === curTheme) {
-        el.className = 'flex items-center gap-3 p-3.5 rounded-xl border-2 border-primary bg-primary/5 text-primary cursor-pointer transition shadow-2xs';
+        el.className = 'flex items-center space-x-3 p-4 rounded-lg border-2 border-primary bg-primary/5 transition-all cursor-pointer';
       } else {
-        el.className = 'flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 text-foreground cursor-pointer transition';
+        el.className = 'flex items-center space-x-3 p-4 rounded-lg border-2 border-border hover:border-primary/50 transition-all cursor-pointer';
       }
     }
   });
@@ -368,10 +367,10 @@ function updateSettingsModalUI() {
     if (el) {
       const check = el.querySelector('.check-icon');
       if (p === curPal) {
-        el.className = 'flex items-center gap-3 p-3 rounded-xl border-2 border-primary bg-primary/5 text-primary cursor-pointer transition shadow-2xs';
+        el.className = 'flex items-center space-x-3 p-3 rounded-lg border-2 border-primary bg-primary/5 transition-all cursor-pointer';
         if (check) check.classList.remove('hidden');
       } else {
-        el.className = 'flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/40 text-foreground cursor-pointer transition';
+        el.className = 'flex items-center space-x-3 p-3 rounded-lg border-2 border-border hover:border-primary/50 transition-all cursor-pointer';
         if (check) check.classList.add('hidden');
       }
     }

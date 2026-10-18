@@ -39,7 +39,7 @@
             fontFamily: {
               sans: ['Prompt', 'Poppins', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
               heading: ['Prompt', 'Poppins', 'sans-serif'],
-              poppins: ['Prompt', 'Poppins', 'sans-serif'],
+              poppins: ['Poppins', 'Prompt', 'sans-serif'],
               prompt: ['Prompt', 'sans-serif']
             },
             colors: {
@@ -83,6 +83,9 @@
               '2xs': 'var(--shadow-2xs)'
             },
             borderRadius: {
+              'sm': 'calc(var(--radius) - 4px)',
+              'md': 'calc(var(--radius) - 2px)',
+              'lg': 'var(--radius)',
               'xl': 'calc(var(--radius) + 2px)',
               '2xl': 'calc(var(--radius) + 6px)'
             }
@@ -362,130 +365,140 @@
   <!-- POP-UP MODAL 7: SETTINGS & THEME MODAL (Comsan Choice)    -->
   <!-- ========================================================= -->
   <div id="settingsModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-    <div class="bg-card border border-border rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-card text-card-foreground space-y-6">
-      <div class="flex items-center justify-between pb-2 border-b border-border">
+    <div class="bg-background border border-border rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-7 shadow-card text-foreground space-y-6">
+      <div class="pt-1 pb-2 flex items-center justify-between">
         <div>
-          <h2 class="text-2xl font-bold text-foreground">ตั้งค่า</h2>
-          <p class="text-xs text-muted-foreground mt-0.5">ปรับแต่งประสบการณ์ของคุณ</p>
+          <h2 class="text-3xl font-bold text-foreground">ตั้งค่า</h2>
+          <p class="text-muted-foreground mt-1">ปรับแต่งประสบการณ์ของคุณ</p>
         </div>
-        <button type="button" onclick="closeSettingsModal()" class="w-8 h-8 rounded-xl bg-muted/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition">
-          <i data-lucide="x" class=""></i>
+        <button type="button" onclick="closeSettingsModal()" class="h-10 w-10 rounded-md border border-input bg-background hover:bg-accent hover:text-white text-foreground flex items-center justify-center transition">
+          <i data-lucide="x" class="h-5 w-5"></i>
         </button>
       </div>
 
       <!-- รูปลักษณ์ (Appearance) -->
-      <div class="space-y-3">
-        <div>
-          <h3 class="text-sm font-semibold text-foreground">รูปลักษณ์</h3>
-          <p class="text-xs text-muted-foreground">เลือกธีมที่คุณต้องการ</p>
+      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
+        <div class="flex flex-col space-y-1.5 p-6 pb-3">
+          <h3 class="font-semibold tracking-tight text-lg">รูปลักษณ์</h3>
+          <p class="text-sm text-muted-foreground">เลือกธีมที่คุณต้องการ</p>
         </div>
-        <div class="space-y-2">
-          <div onclick="setAppearance('light')" id="appOpt_light" class="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 cursor-pointer transition">
-            <i data-lucide="sun" class="text-sm text-foreground"></i>
-            <span class="text-sm font-medium">สว่าง</span>
+        <div class="p-6 pt-0 grid gap-3">
+          <div onclick="setAppearance('light')" id="appOpt_light" class="flex items-center space-x-3 p-4 rounded-lg border-2 border-primary bg-primary/5 transition-all cursor-pointer">
+            <i data-lucide="sun" class="h-5 w-5 shrink-0"></i>
+            <span class="flex-1 font-medium">สว่าง</span>
           </div>
-          <div onclick="setAppearance('dark')" id="appOpt_dark" class="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 cursor-pointer transition">
-            <i data-lucide="moon" class="text-sm text-foreground"></i>
-            <span class="text-sm font-medium">มืด</span>
+          <div onclick="setAppearance('dark')" id="appOpt_dark" class="flex items-center space-x-3 p-4 rounded-lg border-2 border-border hover:border-primary/50 transition-all cursor-pointer">
+            <i data-lucide="moon" class="h-5 w-5 shrink-0"></i>
+            <span class="flex-1 font-medium">มืด</span>
           </div>
-          <div onclick="setAppearance('system')" id="appOpt_system" class="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 cursor-pointer transition">
-            <i data-lucide="monitor" class="text-sm text-foreground"></i>
-            <span class="text-sm font-medium">ตามระบบ</span>
+          <div onclick="setAppearance('system')" id="appOpt_system" class="flex items-center space-x-3 p-4 rounded-lg border-2 border-border hover:border-primary/50 transition-all cursor-pointer">
+            <i data-lucide="monitor" class="h-5 w-5 shrink-0"></i>
+            <span class="flex-1 font-medium">ตามระบบ</span>
           </div>
         </div>
       </div>
 
       <!-- ธีมสี (Color Theme) -->
-      <div class="space-y-3">
-        <div>
-          <h3 class="text-sm font-semibold text-foreground">ธีมสี</h3>
-          <p class="text-xs text-muted-foreground">เลือกชุดสีหลักของแอปพลิเคชัน</p>
+      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
+        <div class="flex flex-col space-y-1.5 p-6 pb-3">
+          <h3 class="font-semibold tracking-tight text-lg">ธีมสี</h3>
+          <p class="text-sm text-muted-foreground">เลือกชุดสีหลักของแอปพลิเคชัน</p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <div onclick="setColorPalette('default')" id="palOpt_default" class="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/30 cursor-pointer transition">
-            <span class="w-4 h-4 rounded-full bg-[#6366f1] shrink-0"></span>
-            <span class="text-sm font-medium flex-1">น้ำเงินคราม (ค่าเริ่มต้น)</span>
-            <i data-lucide="check" class="text-xs text-primary hidden check-icon"></i>
+        <div class="p-6 pt-0">
+          <div class="grid grid-cols-2 gap-2.5">
+            <div onclick="setColorPalette('default')" id="palOpt_default" class="flex items-center space-x-3 p-3 rounded-lg border-2 border-primary bg-primary/5 transition-all cursor-pointer">
+              <span class="h-6 w-6 rounded-full shrink-0 shadow-sm flex items-center justify-center text-white" style="background: linear-gradient(135deg, rgb(99, 102, 241), rgb(67, 56, 202));">
+                <i data-lucide="check" class="h-3.5 w-3.5 stroke-[3] check-icon"></i>
+              </span>
+              <span class="flex-1 font-medium text-sm">น้ำเงินคราม (ค่าเริ่มต้น)</span>
+            </div>
+            <div onclick="setColorPalette('ocean')" id="palOpt_ocean" class="flex items-center space-x-3 p-3 rounded-lg border-2 border-border hover:border-primary/50 transition-all cursor-pointer">
+              <span class="h-6 w-6 rounded-full shrink-0 shadow-sm flex items-center justify-center text-white" style="background: linear-gradient(135deg, rgb(14, 165, 233), rgb(37, 99, 235));">
+                <i data-lucide="check" class="h-3.5 w-3.5 stroke-[3] hidden check-icon"></i>
+              </span>
+              <span class="flex-1 font-medium text-sm">ฟ้าทะเล</span>
+            </div>
+            <div onclick="setColorPalette('emerald')" id="palOpt_emerald" class="flex items-center space-x-3 p-3 rounded-lg border-2 border-border hover:border-primary/50 transition-all cursor-pointer">
+              <span class="h-6 w-6 rounded-full shrink-0 shadow-sm flex items-center justify-center text-white" style="background: linear-gradient(135deg, rgb(16, 185, 129), rgb(13, 148, 136));">
+                <i data-lucide="check" class="h-3.5 w-3.5 stroke-[3] hidden check-icon"></i>
+              </span>
+              <span class="flex-1 font-medium text-sm">เขียวมรกต</span>
+            </div>
+            <div onclick="setColorPalette('violet')" id="palOpt_violet" class="flex items-center space-x-3 p-3 rounded-lg border-2 border-border hover:border-primary/50 transition-all cursor-pointer">
+              <span class="h-6 w-6 rounded-full shrink-0 shadow-sm flex items-center justify-center text-white" style="background: linear-gradient(135deg, rgb(139, 92, 246), rgb(147, 51, 234));">
+                <i data-lucide="check" class="h-3.5 w-3.5 stroke-[3] hidden check-icon"></i>
+              </span>
+              <span class="flex-1 font-medium text-sm">ม่วงไวโอเลต</span>
+            </div>
+            <div onclick="setColorPalette('rose')" id="palOpt_rose" class="flex items-center space-x-3 p-3 rounded-lg border-2 border-border hover:border-primary/50 transition-all cursor-pointer">
+              <span class="h-6 w-6 rounded-full shrink-0 shadow-sm flex items-center justify-center text-white" style="background: linear-gradient(135deg, rgb(244, 63, 94), rgb(219, 39, 119));">
+                <i data-lucide="check" class="h-3.5 w-3.5 stroke-[3] hidden check-icon"></i>
+              </span>
+              <span class="flex-1 font-medium text-sm">ชมพูกุหลาบ</span>
+            </div>
+            <div onclick="setColorPalette('amber')" id="palOpt_amber" class="flex items-center space-x-3 p-3 rounded-lg border-2 border-border hover:border-primary/50 transition-all cursor-pointer">
+              <span class="h-6 w-6 rounded-full shrink-0 shadow-sm flex items-center justify-center text-white" style="background: linear-gradient(135deg, rgb(245, 158, 11), rgb(234, 88, 12));">
+                <i data-lucide="check" class="h-3.5 w-3.5 stroke-[3] hidden check-icon"></i>
+              </span>
+              <span class="flex-1 font-medium text-sm">ส้มอำพัน</span>
+            </div>
           </div>
-          <div onclick="setColorPalette('ocean')" id="palOpt_ocean" class="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/30 cursor-pointer transition">
-            <span class="w-4 h-4 rounded-full bg-[#0ea5e9] shrink-0"></span>
-            <span class="text-sm font-medium flex-1">ฟ้าทะเล</span>
-            <i data-lucide="check" class="text-xs text-primary hidden check-icon"></i>
+        </div>
+      </div>
+
+      <!-- ภาษา (Language) -->
+      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
+        <div class="flex flex-col space-y-1.5 p-6 pb-3">
+          <h3 class="font-semibold tracking-tight text-lg">ภาษา</h3>
+          <p class="text-sm text-muted-foreground">เลือกภาษาที่คุณต้องการ</p>
+        </div>
+        <div class="p-6 pt-0 grid gap-3">
+          <div onclick="showToast('ภาษาอังกฤษเปิดให้บริการเร็วๆ นี้', 'info')" class="flex items-center space-x-3 p-4 rounded-lg border-2 border-border bg-muted/40 opacity-70 cursor-not-allowed select-none transition-all">
+            <i data-lucide="globe" class="h-5 w-5 text-muted-foreground shrink-0"></i>
+            <div class="flex-1 flex items-center justify-between gap-2">
+              <span class="font-medium text-muted-foreground">English (อังกฤษ)</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">เร็วๆ นี้</span>
+            </div>
           </div>
-          <div onclick="setColorPalette('emerald')" id="palOpt_emerald" class="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/30 cursor-pointer transition">
-            <span class="w-4 h-4 rounded-full bg-[#10b981] shrink-0"></span>
-            <span class="text-sm font-medium flex-1">เขียวมรกต</span>
-            <i data-lucide="check" class="text-xs text-primary hidden check-icon"></i>
-          </div>
-          <div onclick="setColorPalette('violet')" id="palOpt_violet" class="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/30 cursor-pointer transition">
-            <span class="w-4 h-4 rounded-full bg-[#8b5cf6] shrink-0"></span>
-            <span class="text-sm font-medium flex-1">ม่วงไวโอเลต</span>
-            <i data-lucide="check" class="text-xs text-primary hidden check-icon"></i>
-          </div>
-          <div onclick="setColorPalette('rose')" id="palOpt_rose" class="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/30 cursor-pointer transition">
-            <span class="w-4 h-4 rounded-full bg-[#f43f5e] shrink-0"></span>
-            <span class="text-sm font-medium flex-1">ชมพูกุหลาบ</span>
-            <i data-lucide="check" class="text-xs text-primary hidden check-icon"></i>
-          </div>
-          <div onclick="setColorPalette('amber')" id="palOpt_amber" class="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/30 cursor-pointer transition">
-            <span class="w-4 h-4 rounded-full bg-[#f59e0b] shrink-0"></span>
-            <span class="text-sm font-medium flex-1">ส้มอำพัน</span>
-            <i data-lucide="check" class="text-xs text-primary hidden check-icon"></i>
+          <div class="flex items-center space-x-3 p-4 rounded-lg border-2 border-primary bg-primary/5 transition-all cursor-pointer">
+            <i data-lucide="globe" class="h-5 w-5 shrink-0"></i>
+            <span class="flex-1 font-medium">ไทย</span>
           </div>
         </div>
       </div>
 
       <!-- เอฟเฟกต์การแสดงผล (Visual Effects) -->
-      <div class="space-y-3">
-        <div>
-          <h3 class="text-sm font-semibold text-foreground">เอฟเฟกต์การแสดงผล</h3>
-          <p class="text-xs text-muted-foreground">ปรับแต่งลูกเล่นและแอนิเมชันของระบบ</p>
+      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
+        <div class="flex flex-col space-y-1.5 p-6 pb-3">
+          <h3 class="font-semibold tracking-tight text-lg">เอฟเฟกต์การแสดงผล</h3>
+          <p class="text-sm text-muted-foreground">ปรับแต่งลูกเล่นและแอนิเมชันของระบบ</p>
         </div>
-        <div class="p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition flex items-center justify-between gap-3">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <i data-lucide="sparkles" class="text-sm"></i>
-            </div>
-            <div>
-              <h4 class="text-sm font-medium text-foreground">แอนิเมชันฟองสบู่ในการ์ด (Bubble Animation)</h4>
-              <p class="text-xs text-muted-foreground">แสดงลูกกลมเบลอลอยไปมาในบัตรการประชุมหลัก</p>
-            </div>
-          </div>
-          <!-- Toggle Switch -->
-          <label class="relative inline-flex items-center cursor-pointer shrink-0 select-none">
-            <input type="checkbox" id="settingBubbleAnimToggle" onchange="toggleHeroBubbleAnimation(this.checked)" class="sr-only peer" checked>
-            <div class="toggle-switch-track w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
-          </label>
-        </div>
-      </div>
-
-      <!-- ภาษา (Language) -->
-      <div class="space-y-3">
-        <div>
-          <h3 class="text-sm font-semibold text-foreground">ภาษา</h3>
-          <p class="text-xs text-muted-foreground">เลือกภาษาที่คุณต้องการ</p>
-        </div>
-        <div class="space-y-2">
-          <div onclick="showToast('ภาษาอังกฤษเปิดให้บริการเร็วๆ นี้', 'info')" class="flex items-center justify-between p-3.5 rounded-xl border border-border/70 bg-muted/30 text-muted-foreground opacity-60 cursor-not-allowed select-none transition">
+        <div class="p-6 pt-0">
+          <div class="p-3.5 rounded-lg border border-border bg-card hover:bg-muted/30 transition flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <i data-lucide="languages" class="text-sm text-muted-foreground"></i>
-              <span class="text-sm font-medium text-muted-foreground">English (อังกฤษ)</span>
+              <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <i data-lucide="sparkles" class="h-4 w-4"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-medium text-foreground">แอนิเมชันฟองสบู่ในการ์ด (Bubble Animation)</h4>
+                <p class="text-xs text-muted-foreground">แสดงลูกกลมเบลอลอยไปมาในบัตรการประชุมหลัก</p>
+              </div>
             </div>
-            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/80">เร็วๆ นี้</span>
-          </div>
-          <div class="flex items-center gap-3 p-3.5 rounded-xl border-2 border-primary bg-primary/5 text-primary cursor-pointer transition">
-            <i data-lucide="languages" class="text-sm text-primary"></i>
-            <span class="text-sm font-medium">ไทย</span>
+            <!-- Toggle Switch -->
+            <label class="relative inline-flex items-center cursor-pointer shrink-0 select-none">
+              <input type="checkbox" id="settingBubbleAnimToggle" onchange="toggleHeroBubbleAnimation(this.checked)" class="sr-only peer" checked>
+              <div class="toggle-switch-track w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+            </label>
           </div>
         </div>
       </div>
 
       <!-- Cloud Database (Supabase) Settings -->
-      <div class="space-y-3 p-4 rounded-xl border border-border bg-card">
+      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card p-6 space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-              <i data-lucide="cloud" class="text-sm"></i>
+              <i data-lucide="cloud" class="h-4 w-4"></i>
             </div>
             <div>
               <h3 class="text-sm font-semibold text-foreground">ฐานข้อมูลคลาวด์ (Supabase)</h3>
@@ -500,50 +513,51 @@
         <div class="space-y-2 pt-1 text-xs">
           <div>
             <label class="block font-medium text-foreground mb-1">Supabase Project URL</label>
-            <input type="text" id="settingSupabaseUrl" placeholder="https://xxxxxxxx.supabase.co" class="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:ring-2 focus:ring-primary focus:outline-none" />
+            <input type="text" id="settingSupabaseUrl" placeholder="https://xxxxxxxx.supabase.co" class="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-xs focus:ring-2 focus:ring-ring focus:outline-none" />
           </div>
           <div>
             <label class="block font-medium text-foreground mb-1">Supabase Anon Public Key</label>
-            <input type="password" id="settingSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs focus:ring-2 focus:ring-primary focus:outline-none" />
+            <input type="password" id="settingSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-xs focus:ring-2 focus:ring-ring focus:outline-none" />
           </div>
           <div class="flex items-center gap-2 pt-1 flex-wrap">
-            <button type="button" onclick="saveSupabaseSettingsFromModal()" class="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 transition flex items-center gap-1.5">
-              <i data-lucide="save" class="text-[11px]"></i>
+            <button type="button" onclick="saveSupabaseSettingsFromModal()" class="px-3 py-1.5 rounded-md bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 transition flex items-center gap-1.5">
+              <i data-lucide="save" class="h-3.5 w-3.5"></i>
               <span>บันทึกและเชื่อมต่อ</span>
             </button>
-            <button type="button" onclick="testSupabaseConnectionFromModal()" class="px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-foreground font-semibold text-xs transition flex items-center gap-1.5">
-              <i data-lucide="plug" class="text-[11px]"></i>
+            <button type="button" onclick="testSupabaseConnectionFromModal()" class="px-3 py-1.5 rounded-md border border-input bg-background hover:bg-accent hover:text-white text-foreground font-semibold text-xs transition flex items-center gap-1.5">
+              <i data-lucide="plug" class="h-3.5 w-3.5"></i>
               <span>ทดสอบการเชื่อมต่อ</span>
             </button>
-            <button type="button" onclick="uploadLocalStateToSupabase()" class="px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-xs transition flex items-center gap-1.5" title="อัปโหลดข้อมูลสมาชิกและสถานะปัจจุบันจากเครื่องขึ้น Supabase">
-              <i data-lucide="cloud-upload" class="text-[11px]"></i>
+            <button type="button" onclick="uploadLocalStateToSupabase()" class="px-3 py-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-xs transition flex items-center gap-1.5" title="อัปโหลดข้อมูลสมาชิกและสถานะปัจจุบันจากเครื่องขึ้น Supabase">
+              <i data-lucide="cloud-upload" class="h-3.5 w-3.5"></i>
               <span>ซิงค์ข้อมูลขึ้น Cloud</span>
             </button>
-            <button type="button" onclick="disconnectSupabaseFromModal()" class="px-2.5 py-1.5 rounded-lg border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 text-xs transition ml-auto" title="ตัดการเชื่อมต่อ">
-              <i data-lucide="unlink" class=""></i>
+            <button type="button" onclick="disconnectSupabaseFromModal()" class="px-2.5 py-1.5 rounded-md border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 text-xs transition ml-auto" title="ตัดการเชื่อมต่อ">
+              <i data-lucide="unlink" class="h-3.5 w-3.5"></i>
             </button>
           </div>
         </div>
       </div>
 
       <!-- เกี่ยวกับ (About) -->
-      <div class="p-4 rounded-xl border border-border bg-muted/20 space-y-2">
-        <div class="flex items-center gap-3">
-          <img id="settingsAboutLogo" src="/comsan_meeting_logo.svg" alt="Meeting Logo" onclick="handleSettingsLogoClick()" class="h-10 w-10 rounded-none shadow-xs object-contain cursor-pointer active:scale-90 transition-transform select-none" title="Meeting by Comsan" />
-          <div>
-            <h3 class="text-sm font-semibold text-foreground">เกี่ยวกับ</h3>
-            <p class="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
-              <span>Meeting by Comsan เวอร์ชัน</span>
-              <button type="button" id="settingsAppVersionBtn" onclick="handleVersionClick()"
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-xs bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer select-none active:scale-95"
-                title="คลิกเพื่อดูรายละเอียดเวอร์ชัน">
-                <span id="settingsAppVersionText">2.0.1</span>
-                <i data-lucide="info" class="text-[10px]"></i>
-              </button>
-            </p>
+      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
+        <div class="flex flex-col space-y-1.5 p-6 pb-2">
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold tracking-tight text-lg">เกี่ยวกับ</h3>
+            <img id="settingsAboutLogo" src="/comsan_meeting_logo.svg" alt="Meeting Logo" onclick="handleSettingsLogoClick()" class="h-8 w-8 rounded-none object-contain cursor-pointer active:scale-90 transition-transform select-none" title="Meeting by Comsan" />
           </div>
+          <p class="text-sm text-muted-foreground flex items-center gap-1.5 flex-wrap">
+            <span>Meeting เวอร์ชัน</span>
+            <button type="button" id="settingsAppVersionBtn" onclick="handleVersionClick()"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-xs bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer select-none active:scale-95"
+              title="คลิกเพื่อดูรายละเอียดเวอร์ชัน">
+              <span id="settingsAppVersionText">1.0.0</span>
+            </button>
+          </p>
         </div>
-        <p class="text-xs text-muted-foreground/80 pt-1">แพลตฟอร์มการประชุมและการลงมติที่ทันสมัยสำหรับชมรมและองค์กร • เครือข่ายชมรมคมสัน</p>
+        <div class="p-6 pt-0 text-sm text-muted-foreground">
+          <p>แพลตฟอร์มการประชุมและการลงมติที่ทันสมัยสำหรับชมรมและองค์กร</p>
+        </div>
       </div>
     </div>
   </div>
@@ -1341,68 +1355,63 @@
     <div id="sidebarBackdrop" onclick="closeMobileSidebar()" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden"></div>
 
     <!-- MOBILE HEADER (Sticky Top Bar on mobile) -->
-    <header id="mobileHeader" class="md:hidden sticky top-0 z-30 px-3.5 py-2.5 border-b border-border bg-card/85 backdrop-blur-md flex items-center justify-between">
-      <div class="flex items-center gap-2">
+    <header id="mobileHeader" class="md:hidden sticky top-0 z-30 px-4 py-2.5 border-b border-border bg-card/85 backdrop-blur-md flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
         <button type="button" id="btnMobileSidebarToggle" onclick="handleSidebarToggle()"
-          class="hidden w-9 h-9 rounded-xl border border-border bg-card hover:bg-muted text-foreground items-center justify-center shadow-xs transition shrink-0" title="เมนูทั้งหมด">
-          <i data-lucide="menu" class="text-sm"></i>
+          class="hidden w-9 h-9 rounded-md border border-input bg-background hover:bg-accent hover:text-white text-foreground items-center justify-center transition shrink-0" title="เมนูทั้งหมด">
+          <i data-lucide="menu" class="h-4 w-4"></i>
         </button>
-        <img src="/comsan_meeting_logo.svg" alt="Meeting Logo" class="h-8 w-8 rounded-none shadow-xs object-contain shrink-0" />
+        <img src="/comsan_meeting_logo.svg" alt="Meeting Logo" class="h-8 w-8 rounded-none object-contain shrink-0" />
         <div>
-          <h1 class="text-lg font-bold text-foreground leading-tight">Meeting</h1>
-          <p class="text-[9px] text-muted-foreground">ระบบจัดการประชุม • คมสัน</p>
+          <h1 class="text-lg font-medium font-['Poppins'] text-foreground leading-tight">Meeting</h1>
+          <p class="text-[10px] text-muted-foreground">ระบบจัดการประชุม</p>
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <div class="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/60">
+        <div class="flex items-center bg-muted/60 p-0.5 rounded-md border border-border/60">
           <button type="button" onclick="switchRoleView('USER')" id="btnRoleUserMobile" class="px-2 py-1 rounded text-xs font-semibold gradient-primary text-white shadow-xs">
-            <i data-lucide="user" class="pointer-events-none"></i>
+            <i data-lucide="user" class="h-3.5 w-3.5 pointer-events-none"></i>
           </button>
           <button type="button" onclick="handleRoleAdminClick()" id="btnRoleAdminMobile" class="px-2 py-1 rounded text-xs font-semibold text-muted-foreground hover:text-foreground">
-            <i data-lucide="shield-check" class="pointer-events-none"></i>
+            <i data-lucide="shield-check" class="h-3.5 w-3.5 pointer-events-none"></i>
           </button>
         </div>
-        <button type="button" onclick="toggleTheme()" class="h-8 w-8 rounded-lg border border-border bg-card hover:bg-muted text-foreground flex items-center justify-center shadow-xs transition-colors" title="เปลี่ยนธีม (สว่าง/มืด)" id="themeToggleBtn">
-          <i data-lucide="sun" id="themeToggleIcon" class="theme-toggle-icon text-xs text-amber-500"></i>
+        <button type="button" onclick="toggleTheme()" class="h-9 w-9 rounded-md border border-input bg-background hover:bg-accent hover:text-white text-foreground flex items-center justify-center transition-colors" title="เปลี่ยนธีม (สว่าง/มืด)" id="themeToggleBtn">
+          <i data-lucide="sun" id="themeToggleIcon" class="theme-toggle-icon h-4 w-4"></i>
         </button>
-        <button type="button" onclick="openSettingsModal()" class="h-8 w-8 rounded-lg border border-border bg-card hover:bg-muted text-foreground flex items-center justify-center shadow-xs">
-          <i data-lucide="settings" class="text-xs"></i>
+        <button type="button" onclick="openSettingsModal()" class="h-9 w-9 rounded-md border border-input bg-background hover:bg-accent hover:text-white text-foreground flex items-center justify-center transition-colors">
+          <i data-lucide="settings" class="h-4 w-4"></i>
         </button>
       </div>
     </header>
 
     <!-- DESKTOP SIDEBAR (<aside>) -->
-    <aside id="appSidebar" class="hidden md:flex flex-col w-64 lg:w-72 shrink-0 border-r border-border bg-card/85 backdrop-blur-md sticky top-0 h-screen z-40 select-none justify-between transition-colors pt-0">
-      <div class="p-4 space-y-3 overflow-y-auto flex-1 flex flex-col">
-        <!-- Logo & Brand Header -->
-        <div class="flex items-center justify-between px-1 py-1 select-none shrink-0">
-          <div class="flex items-center gap-3 cursor-pointer" onclick="switchUserTab('HOME')">
-            <img src="/comsan_meeting_logo.svg" alt="Meeting Logo" class="h-9 w-9 rounded-none shadow-xs shrink-0 object-contain transition-transform hover:scale-105" />
+    <aside id="appSidebar" class="hidden md:flex flex-col w-64 lg:w-72 shrink-0 border-r border-border bg-card/85 backdrop-blur-md sticky top-0 h-screen z-40 select-none justify-between transition-colors">
+      <div class="p-4 space-y-4 overflow-y-auto flex-1 flex flex-col">
+        <!-- Logo & Brand Header (Exact Comsan Choice Sidebar Brand) -->
+        <div class="flex items-center justify-between px-2 py-1.5 select-none shrink-0">
+          <div class="flex items-center gap-3 cursor-pointer min-w-0" onclick="switchUserTab('HOME')">
+            <img src="/comsan_meeting_logo.svg" alt="Meeting Logo" class="h-8 w-8 rounded-none shrink-0 object-contain" />
             <div class="flex flex-col min-w-0">
               <div class="flex items-center gap-1.5">
-                <h1 class="font-bold text-xl leading-tight text-foreground">Meeting</h1>
-                <span id="sidebarPulseDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="ออนไลน์"></span>
+                <h1 class="font-['Poppins'] font-medium text-2xl leading-tight text-foreground">Meeting</h1>
+                <span id="sidebarPulseDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="ออนไลน์"></span>
               </div>
-              <p class="text-xs text-muted-foreground truncate">ระบบจัดการประชุม • คมสัน</p>
-              <div class="mt-1">
-                <span onclick="openSettingsModal()" class="supabase-status-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 cursor-pointer hover:opacity-85 transition" title="คลิกเพื่อตั้งค่า Supabase">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>ออฟไลน์ / Supabase</span>
-                </span>
-              </div>
+              <p class="text-xs text-muted-foreground mt-0.5 truncate">ระบบจัดการประชุม</p>
             </div>
           </div>
-          <button type="button" onclick="closeMobileSidebar()" class="md:hidden w-8 h-8 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs" title="ปิดเมนู">
-            <i data-lucide="x" class="text-sm"></i>
+          <button type="button" onclick="closeMobileSidebar()" class="md:hidden w-8 h-8 rounded-md border border-input bg-background hover:bg-accent hover:text-white text-muted-foreground flex items-center justify-center transition" title="ปิดเมนู">
+            <i data-lucide="x" class="h-4 w-4"></i>
           </button>
         </div>
 
         <!-- Quick Action Button (Choice style - shown only for ADMIN) -->
-        <button type="button" id="sidebarQuickActionBtn" onclick="handleSidebarQuickAction()" class="hidden inline-flex items-center whitespace-nowrap text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border hover:bg-muted/80 w-full justify-between gap-2 bg-card text-foreground border-border shadow-2xs rounded-xl h-11 px-3.5 font-medium transition-colors shrink-0">
+        <button type="button" id="sidebarQuickActionBtn" onclick="handleSidebarQuickAction()" class="hidden inline-flex items-center whitespace-nowrap text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border hover:text-accent-foreground py-2 w-full justify-between gap-2 bg-card hover:bg-muted/80 text-foreground border-border shadow-2xs rounded-lg h-11 px-3.5 font-medium transition-colors shrink-0">
           <div class="flex items-center gap-2">
-            <i data-lucide="plus" class="text-primary text-xs"></i>
+            <i data-lucide="plus" class="h-4 w-4 text-primary"></i>
             <span id="sidebarQuickActionText">สร้างวาระใหม่</span>
           </div>
-          <i data-lucide="chevron-right" class="text-muted-foreground/60 text-xs"></i>
+          <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground/60"></i>
         </button>
 
         <!-- Hidden Status Elements (Preserves reactive JS handlers) -->
@@ -1410,81 +1419,115 @@
           <span id="meetingStateBadge">การประชุมยังไม่เริ่ม</span>
           <span id="sidebarMeetingElapsed">ยังไม่เริ่ม</span>
           <span id="sidebarCutoffTime">17:15 น.</span>
+          <span class="supabase-status-badge"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>ออฟไลน์</span></span>
         </div>
 
         <!-- User Nav Menu -->
         <div id="sidebarUserMenu" class="space-y-1">
-          <div class="px-2 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">เมนูหลัก</div>
-          <a onclick="switchUserTab('HOME')" id="uNav_HOME" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold bg-primary/10 text-primary transition-colors cursor-pointer group">
-            <i data-lucide="house" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">หน้าหลัก</span>
+          <div class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">เมนูหลัก</div>
+          <a onclick="switchUserTab('HOME')" id="uNav_HOME" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-semibold bg-primary/[0.06] text-primary transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="house" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">หน้าหลัก</span>
+            </div>
           </a>
-          <a onclick="switchUserTab('VOTE')" id="uNav_VOTE" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="vote" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">การลงมติ (โหวต)</span>
+          <a onclick="switchUserTab('VOTE')" id="uNav_VOTE" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="vote" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">การลงมติ (โหวต)</span>
+            </div>
             <span id="uBadge_VOTE" class="ml-auto px-2 py-0.5 text-[11px] rounded-full bg-primary/10 text-primary font-semibold">0</span>
           </a>
-          <a onclick="switchUserTab('RAISE')" id="uNav_RAISE" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="hand" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">ยกมือขอพูด</span>
+          <a onclick="switchUserTab('RAISE')" id="uNav_RAISE" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="hand" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">ยกมือขอพูด</span>
+            </div>
             <span id="uBadge_RAISE" class="ml-auto hidden px-2 py-0.5 text-[10px] rounded-full bg-emerald-500 text-white font-bold">ในคิว</span>
-          <a onclick="switchUserTab('PROFILE')" id="uNav_PROFILE" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="user" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">โปรไฟล์</span>
+          </a>
+          <a onclick="switchUserTab('PROFILE')" id="uNav_PROFILE" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="user" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">โปรไฟล์</span>
+            </div>
           </a>
         </div>
 
         <!-- Admin Nav Menu -->
         <div id="sidebarAdminMenu" class="hidden space-y-1">
-          <div class="px-2 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">ระบบจัดการ</div>
-          <a onclick="switchAdminTab('DASHBOARD')" id="aNav_DASHBOARD" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold bg-primary/10 text-primary transition-colors cursor-pointer group">
-            <i data-lucide="layout-dashboard" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">Dashboard</span>
+          <div class="px-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">ระบบจัดการ</div>
+          <a onclick="switchAdminTab('DASHBOARD')" id="aNav_DASHBOARD" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-semibold bg-primary/[0.06] text-primary transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="layout-dashboard" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">Dashboard</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('SETTINGS')" id="aNav_SETTINGS" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="sliders" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">ตั้งค่าการประชุม</span>
+          <a onclick="switchAdminTab('SETTINGS')" id="aNav_SETTINGS" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="sliders" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">ตั้งค่าการประชุม</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('CHECKIN')" id="aNav_CHECKIN" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="qr-code" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">เช็คชื่อ</span>
+          <a onclick="switchAdminTab('CHECKIN')" id="aNav_CHECKIN" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="qr-code" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">เช็คชื่อ</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('VOTING')" id="aNav_VOTING" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="vote" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">การโหวต</span>
+          <a onclick="switchAdminTab('VOTING')" id="aNav_VOTING" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="vote" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">การโหวต</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('QUEUE')" id="aNav_QUEUE" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="hand" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">คิวยกมือ</span>
+          <a onclick="switchAdminTab('QUEUE')" id="aNav_QUEUE" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="hand" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">คิวยกมือ</span>
+            </div>
             <span id="aBadge_QUEUE" class="ml-auto px-2 py-0.5 text-[10px] rounded-full bg-amber-500 text-slate-950 font-bold">0</span>
           </a>
-          <a onclick="switchAdminTab('RANDOM')" id="aNav_RANDOM" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="dices" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">สุ่มหรรษา</span>
+          <a onclick="switchAdminTab('RANDOM')" id="aNav_RANDOM" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="dices" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">สุ่มหรรษา</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('STREAM')" id="aNav_STREAM" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="tv" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">การถ่ายทอดสด</span>
+          <a onclick="switchAdminTab('STREAM')" id="aNav_STREAM" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="tv" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">การถ่ายทอดสด</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('FILES')" id="aNav_FILES" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="folder-open" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">เอกสารแนบ</span>
+          <a onclick="switchAdminTab('FILES')" id="aNav_FILES" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="folder-open" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">เอกสารแนบ</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('NOTES')" id="aNav_NOTES" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="sticky-note" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">โน้ต</span>
+          <a onclick="switchAdminTab('NOTES')" id="aNav_NOTES" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="sticky-note" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">โน้ต</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('CALENDAR')" id="aNav_CALENDAR" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="calendar-days" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">ปฏิทินงาน</span>
+          <a onclick="switchAdminTab('CALENDAR')" id="aNav_CALENDAR" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="calendar-days" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">ปฏิทินงาน</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('SUMMARY')" id="aNav_SUMMARY" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">สรุปผลประชุม</span>
+          <a onclick="switchAdminTab('SUMMARY')" id="aNav_SUMMARY" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">สรุปผลประชุม</span>
+            </div>
           </a>
-          <a onclick="switchAdminTab('MEMBERS')" id="aNav_MEMBERS" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer group">
-            <i data-lucide="file-spreadsheet" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
-            <span class="truncate">นำเข้าสมาชิก</span>
+          <a onclick="switchAdminTab('MEMBERS')" id="aNav_MEMBERS" class="sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="file-spreadsheet" class="h-4 w-4 shrink-0 transition-transform group-hover:scale-105"></i>
+              <span class="truncate">นำเข้าสมาชิก</span>
+            </div>
           </a>
         </div>
       </div>
@@ -1498,28 +1541,30 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1">
               <span class="text-sm font-medium text-foreground truncate block" id="sidebarProfileName">ผู้ใช้งาน</span>
-              <i data-lucide="check-circle-2" class="text-primary text-xs shrink-0" id="sidebarVerifiedIcon"></i>
+              <span class="inline-flex shrink-0 items-center justify-center" title="ผู้เข้าร่วมประชุม" id="sidebarVerifiedIcon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0 h-3.5 w-3.5"><g transform="translate(1.8, 1.8) scale(0.85)"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" fill="hsl(var(--accent))" stroke="none"></path><path d="m9 12 2 2 4-4" fill="none" stroke="hsl(var(--accent-foreground))" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
+              </span>
             </div>
             <p class="text-[11px] text-muted-foreground truncate" id="sidebarProfileRole">ผู้เข้าร่วมประชุม</p>
           </div>
-          <i data-lucide="chevron-right" class="text-muted-foreground/60 text-xs group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0"></i>
+          <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0"></i>
         </div>
 
         <!-- Toolbar row -->
         <div class="flex items-center justify-between pt-1 px-1">
           <div class="flex items-center gap-1">
-            <button type="button" onclick="openSettingsModal()" class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="ตั้งค่าระบบ">
-              <i data-lucide="settings" class="text-xs"></i>
+            <button type="button" onclick="openSettingsModal()" class="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="ตั้งค่าระบบ">
+              <i data-lucide="settings" class="h-4 w-4"></i>
             </button>
-            <button type="button" onclick="toggleTheme()" class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="เปลี่ยนธีม (สว่าง/มืด)" id="sidebarThemeBtn">
-              <i data-lucide="sun" id="sidebarThemeIcon" class="theme-toggle-icon text-xs text-amber-500"></i>
+            <button type="button" onclick="toggleTheme()" class="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="เปลี่ยนธีม (สว่าง/มืด)" id="sidebarThemeBtn">
+              <i data-lucide="sun" id="sidebarThemeIcon" class="theme-toggle-icon h-4 w-4"></i>
             </button>
-            <button type="button" onclick="showToast('ภาษาปัจจุบัน: ไทย (TH)', 'info')" class="h-8 px-2 inline-flex items-center justify-center rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="เปลี่ยนภาษา">
+            <button type="button" onclick="showToast('ภาษาปัจจุบัน: ไทย (TH)', 'info')" class="h-8 px-2 inline-flex items-center justify-center rounded-md text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="เปลี่ยนภาษา">
               TH
             </button>
           </div>
-          <button type="button" onclick="logoutUser()" class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer" title="ออกจากระบบ">
-            <i data-lucide="log-out" class="text-xs"></i>
+          <button type="button" onclick="logoutUser()" class="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer" title="ออกจากระบบ">
+            <i data-lucide="log-out" class="h-4 w-4"></i>
           </button>
         </div>
       </div>
@@ -1528,27 +1573,27 @@
     <!-- MAIN CONTENT COLUMN -->
     <div class="flex-1 min-w-0 flex flex-col">
       <!-- Desktop Page Title & Top Actions Header (Choice layout) -->
-      <div id="desktopMainHeader" class="hidden md:flex pt-6 pb-2 px-6 lg:px-8 items-center justify-between">
+      <div id="desktopMainHeader" class="hidden md:flex pt-6 pb-2 px-6 lg:px-8 max-w-4xl lg:max-w-5xl mx-auto w-full items-center justify-between">
         <div>
-          <h1 class="text-3xl font-medium text-foreground tracking-tight" id="desktopHeadingTitle">Meeting</h1>
-          <p class="text-sm text-muted-foreground mt-1" id="desktopHeadingSubtitle">ระบบจัดการประชุม • คมสัน</p>
+          <h1 class="text-3xl font-medium font-['Poppins'] text-foreground" id="desktopHeadingTitle">Meeting</h1>
+          <p class="text-muted-foreground mt-1" id="desktopHeadingSubtitle">ระบบจัดการประชุม</p>
         </div>
         <div class="flex items-center gap-2">
           <!-- Switch Role Pill Button (User <-> Admin) -->
-          <div class="flex items-center bg-muted/60 p-1 rounded-xl border border-border/60">
-            <button type="button" onclick="switchRoleView('USER')" id="btnRoleUser" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition gradient-primary text-white shadow-xs">
-              <i data-lucide="user" class="mr-1 pointer-events-none"></i> <span class="pointer-events-none">สมาชิก</span>
+          <div class="flex items-center bg-muted/60 p-1 rounded-md border border-border/60">
+            <button type="button" onclick="switchRoleView('USER')" id="btnRoleUser" class="px-3 py-1.5 rounded text-xs font-semibold transition gradient-primary text-white shadow-xs">
+              <i data-lucide="user" class="h-3.5 w-3.5 mr-1 pointer-events-none"></i> <span class="pointer-events-none">สมาชิก</span>
             </button>
-            <button type="button" onclick="handleRoleAdminClick()" id="btnRoleAdmin" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-muted-foreground hover:text-foreground">
-              <i data-lucide="shield-check" class="mr-1 pointer-events-none"></i> <span class="pointer-events-none">ADMIN</span>
+            <button type="button" onclick="handleRoleAdminClick()" id="btnRoleAdmin" class="px-3 py-1.5 rounded text-xs font-semibold transition text-muted-foreground hover:text-foreground">
+              <i data-lucide="shield-check" class="h-3.5 w-3.5 mr-1 pointer-events-none"></i> <span class="pointer-events-none">ADMIN</span>
             </button>
           </div>
           <!-- Action Buttons (Choice style) -->
-          <button type="button" onclick="openSettingsModal()" class="h-10 w-10 inline-flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted/80 text-foreground transition shadow-2xs" title="ตั้งค่าระบบและธีมสี">
-            <i data-lucide="palette" class="text-xs"></i>
+          <button type="button" onclick="openSettingsModal()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-white h-10 w-10" title="ตั้งค่าระบบและธีมสี">
+            <i data-lucide="palette" class="h-5 w-5"></i>
           </button>
-          <button type="button" onclick="emergencyResetCache()" class="h-10 w-10 inline-flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted/80 text-foreground transition shadow-2xs" title="รีเฟรชข้อมูล">
-            <i data-lucide="rotate-cw" class="text-xs"></i>
+          <button type="button" onclick="emergencyResetCache()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-white h-10 w-10" title="รีเฟรชข้อมูล">
+            <i data-lucide="rotate-cw" class="h-4 w-4"></i>
           </button>
         </div>
       </div>
@@ -2461,182 +2506,193 @@
           <!-- USER TAB 5: โปรไฟล์ (Matching choice_profile.png 100%)  -->
           <!-- ===================================================== -->
           <section id="uTab_PROFILE" class="hidden space-y-6">
-            <!-- Profile Page Header -->
-            <div class="px-1">
-              <h2 class="text-2xl font-bold text-foreground">โปรไฟล์ของฉัน</h2>
-              <p class="text-xs text-muted-foreground mt-0.5">จัดการข้อมูลของคุณ</p>
+            <!-- Profile Page Header (Matching choice_profile.html) -->
+            <div class="pt-2 pb-2 flex items-center justify-between">
+              <div>
+                <h2 class="text-3xl font-bold text-foreground">โปรไฟล์ของฉัน</h2>
+                <p class="text-muted-foreground mt-1">จัดการข้อมูลของคุณ</p>
+              </div>
+              <button type="button" onclick="openSettingsModal()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-white h-10 w-10 shrink-0" title="ตั้งค่า">
+                <i data-lucide="settings" class="h-5 w-5"></i>
+              </button>
             </div>
 
-            <!-- Profile Hero Card (Matching choice_profile.png Centered Layout) -->
-            <div class="bg-card text-card-foreground border border-border rounded-2xl p-6 sm:p-8 shadow-card flex flex-col items-center text-center space-y-4">
-              <div class="relative">
-                <div id="userAvatarText" class="w-20 h-20 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-3xl shadow-xs">
-                  U
+            <!-- Profile Hero Card (Matching choice_profile.html Centered Layout) -->
+            <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
+              <div class="flex flex-col space-y-1.5 p-6 text-center">
+                <div class="flex justify-center mb-2">
+                  <div id="userAvatarText" class="relative flex shrink-0 overflow-hidden rounded-full h-24 w-24 ring-2 ring-primary bg-primary/10 text-primary items-center justify-center font-bold text-3xl">
+                    U
+                  </div>
                 </div>
-                <span id="profileVerifiedBadge" class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs shadow-xs border-2 border-card">
-                  <i data-lucide="check" class=""></i>
-                </span>
-              </div>
-              <div class="space-y-1">
-                <div class="flex items-center justify-center gap-1.5">
-                  <h3 id="userProfileTitle" class="text-xl font-bold text-foreground">-</h3>
-                  <i data-lucide="check-circle-2" class="text-primary text-sm"></i>
+                <h3 class="font-semibold tracking-tight text-2xl flex items-center justify-center gap-2">
+                  <span id="userProfileTitle">-</span>
+                  <span id="profileVerifiedBadge" class="inline-flex shrink-0 items-center justify-center" title="ผู้เข้าร่วมประชุม">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0 h-6 w-6"><g transform="translate(1.8, 1.8) scale(0.85)"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" fill="hsl(var(--accent))" stroke="none"></path><path d="m9 12 2 2 4-4" fill="none" stroke="hsl(var(--accent-foreground))" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
+                  </span>
+                </h3>
+                <p id="userProfileSub" class="text-sm text-muted-foreground">-</p>
+                <div class="flex gap-3 pt-2">
+                  <button type="button" onclick="openSettingsModal()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary hover:bg-primary/90 h-10 px-4 py-2 flex-1 gradient-primary text-primary-foreground">
+                    แก้ไขโปรไฟล์
+                  </button>
+                  <button type="button" onclick="logoutUser()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-white h-10 px-4 py-2 flex-1">
+                    <i data-lucide="log-out" class="h-4 w-4 mr-1"></i>
+                    <span>ออกจากระบบ</span>
+                  </button>
                 </div>
-                <p id="userProfileSub" class="text-xs text-muted-foreground">-</p>
-              </div>
-              <div class="grid grid-cols-2 gap-3 w-full max-w-sm pt-2">
-                <button type="button" onclick="openSettingsModal()" class="w-full py-2.5 rounded-xl gradient-primary text-white font-medium text-xs shadow-xs transition hover:opacity-95">
-                  แก้ไขโปรไฟล์
-                </button>
-                <button type="button" onclick="logoutUser()" class="w-full py-2.5 rounded-xl border border-border bg-card hover:bg-muted/40 text-foreground font-medium text-xs shadow-2xs transition flex items-center justify-center gap-1.5">
-                  <i data-lucide="log-out" class="text-xs"></i>
-                  <span>ออกจากระบบ</span>
-                </button>
               </div>
             </div>
 
             <!-- ข้อมูลสมาชิก (Membership Info Card) -->
-            <div class="bg-card text-card-foreground border border-border rounded-2xl p-6 shadow-card space-y-4">
-              <h4 class="text-base font-bold text-foreground">ข้อมูลสมาชิก</h4>
-              <div class="space-y-3.5 text-sm">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-lg bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0">
-                    <i data-lucide="badge-check" class="text-sm"></i>
-                  </div>
+            <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
+              <div class="flex flex-col space-y-1.5 p-6 pb-3">
+                <h3 class="font-semibold tracking-tight text-lg">ข้อมูลสมาชิก</h3>
+              </div>
+              <div class="p-6 pt-0 space-y-4">
+                <div class="flex items-center space-x-3">
+                  <i data-lucide="badge-check" class="h-5 w-5 text-muted-foreground shrink-0"></i>
                   <div>
-                    <p class="text-xs text-muted-foreground">รหัสผู้เข้าร่วมประชุม</p>
-                    <p id="profileMemberIdText" class="font-semibold text-foreground font-mono">COMSAN-01</p>
+                    <p class="text-sm text-muted-foreground">รหัสผู้เข้าร่วมประชุม</p>
+                    <p id="profileMemberIdText" class="font-medium text-foreground font-mono">COMSAN-01</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-lg bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0">
-                    <i data-lucide="building" class="text-sm"></i>
-                  </div>
+                <div class="flex items-center space-x-3">
+                  <i data-lucide="building" class="h-5 w-5 text-muted-foreground shrink-0"></i>
                   <div>
-                    <p class="text-xs text-muted-foreground">สังกัด / ชมรม</p>
-                    <p id="profileMajorYearText" class="font-semibold text-foreground">ชมรมคมสัน วิทยาลัยการคอมพิวเตอร์</p>
+                    <p class="text-sm text-muted-foreground">สังกัด / ชมรม</p>
+                    <p id="profileMajorYearText" class="font-medium text-foreground">ชมรมคมสัน วิทยาลัยการคอมพิวเตอร์</p>
                   </div>
                 </div>
-                <div class="flex items-center gap-3">
-                  <div id="profileCheckinIconBox" class="w-8 h-8 rounded-lg bg-muted/70 text-muted-foreground flex items-center justify-center shrink-0 transition-colors">
-                    <i data-lucide="clock" id="profileCheckinStatusIcon" class="text-sm text-muted-foreground"></i>
+                <div class="flex items-center space-x-3">
+                  <div id="profileCheckinIconBox" class="flex items-center justify-center shrink-0 transition-colors">
+                    <i data-lucide="clock" id="profileCheckinStatusIcon" class="h-5 w-5 text-muted-foreground"></i>
                   </div>
                   <div>
-                    <p class="text-xs text-muted-foreground">สถานะการเช็คชื่อ</p>
-                    <p id="profileCheckinStatusText" class="font-semibold text-muted-foreground">ยังไม่เริ่มประชุม</p>
+                    <p class="text-sm text-muted-foreground">สถานะการเช็คชื่อ</p>
+                    <p id="profileCheckinStatusText" class="font-medium text-muted-foreground">ยังไม่เริ่มประชุม</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- ศูนย์ควบคุมและสถิติภาพรวม (Matching choice_profile.png 4-Grid Cards) -->
-            <div class="bg-card text-card-foreground border border-border rounded-2xl p-6 shadow-card space-y-4">
-              <div>
-                <div class="flex items-center gap-2">
-                  <i data-lucide="layout-dashboard" class="text-primary text-sm"></i>
-                  <h4 class="text-base font-bold text-foreground">ศูนย์ควบคุมและสถิติภาพรวม</h4>
-                </div>
-                <p class="text-xs text-muted-foreground mt-0.5">ตรวจสอบภาพรวมของการลงมติ เวลา และสถานะในที่ประชุม</p>
+            <!-- ศูนย์ควบคุมและสถิติภาพรวม (Matching choice_profile.html 4-Grid Cards) -->
+            <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
+              <div class="flex flex-col space-y-1.5 p-6 pb-3">
+                <h3 class="font-semibold tracking-tight text-lg flex items-center gap-2">
+                  <i data-lucide="layout-dashboard" class="h-5 w-5 text-primary"></i> ศูนย์ควบคุมและสถิติภาพรวม
+                </h3>
+                <p class="text-sm text-muted-foreground">ตรวจสอบภาพรวมของการลงมติ เวลา และสถานะในที่ประชุม</p>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div class="p-4 rounded-xl border border-border bg-card/60 space-y-2">
-                  <div class="flex items-center justify-between text-xs text-muted-foreground">
-                    <span class="flex items-center gap-1.5"><i data-lucide="users" class=""></i> สมาชิกทั้งหมด</span>
-                    <span class="font-mono text-[11px] opacity-60">01</span>
-                  </div>
-                  <p id="profileStatTotalMembers" class="text-2xl sm:text-3xl font-bold text-foreground">60</p>
-                </div>
-                <div class="p-4 rounded-xl border border-border bg-card/60 space-y-2">
-                  <div class="flex items-center justify-between text-xs text-muted-foreground">
-                    <span class="flex items-center gap-1.5"><i data-lucide="vote" class=""></i> การลงมติทั้งหมด</span>
-                    <span class="font-mono text-[11px] opacity-60">02</span>
-                  </div>
-                  <p id="profileStatTotalVotes" class="text-2xl sm:text-3xl font-bold text-foreground">0</p>
-                </div>
-                <div class="p-4 rounded-xl border border-border bg-card/60 space-y-2">
-                  <div class="flex items-center justify-between text-xs text-muted-foreground">
-                    <span class="flex items-center gap-1.5"><i data-lucide="hand" class=""></i> ยกมือขอพูด</span>
-                    <span class="font-mono text-[11px] opacity-60">03</span>
-                  </div>
-                  <p id="profileStatRaiseCount" class="text-2xl sm:text-3xl font-bold text-foreground">0</p>
-                </div>
-                <div class="p-4 rounded-xl border border-border bg-card/60 space-y-2">
-                  <div class="flex items-center justify-between text-xs text-muted-foreground">
-                    <span class="flex items-center gap-1.5"><i data-lucide="clock" class=""></i> เวลาในที่ประชุม</span>
-                    <span class="font-mono text-[11px] opacity-60">04</span>
-                  </div>
-                  <p id="profileStatAttendedMinutes" class="text-2xl sm:text-3xl font-bold text-foreground">0 นาที</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- เมนูจัดการ (Matching choice_profile.png Action Links) -->
-            <div class="bg-card text-card-foreground border border-border rounded-2xl p-6 shadow-card space-y-3">
-              <div>
-                <h4 class="text-base font-bold text-foreground">เมนูจัดการ</h4>
-                <p class="text-xs text-muted-foreground mt-0.5">เข้าถึงส่วนจัดการหลักของระบบได้อย่างรวดเร็ว</p>
-              </div>
-              <div class="space-y-2">
-                <div onclick="switchUserTab('VOTE')" class="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 cursor-pointer transition">
-                  <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <i data-lucide="vote" class="text-sm"></i>
-                    </div>
+              <div class="p-6 pt-0">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="rounded-xl border border-border/60 bg-background/80 p-4 flex items-center justify-between">
                     <div>
-                      <p class="text-sm font-semibold text-foreground">การโหวตทั้งหมด</p>
+                      <p class="text-xs text-muted-foreground">สมาชิกทั้งหมด</p>
+                      <p id="profileStatTotalMembers" class="text-2xl font-bold mt-1 text-foreground">60</p>
+                    </div>
+                    <span class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="users" class="h-4 w-4"></i>
+                    </span>
+                  </div>
+                  <div class="rounded-xl border border-border/60 bg-background/80 p-4 flex items-center justify-between">
+                    <div>
+                      <p class="text-xs text-muted-foreground">การลงมติทั้งหมด</p>
+                      <p id="profileStatTotalVotes" class="text-2xl font-bold mt-1 text-foreground">0</p>
+                    </div>
+                    <span class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="vote" class="h-4 w-4"></i>
+                    </span>
+                  </div>
+                  <div class="rounded-xl border border-border/60 bg-background/80 p-4 flex items-center justify-between">
+                    <div>
+                      <p class="text-xs text-muted-foreground">ยกมือขอพูด</p>
+                      <p id="profileStatRaiseCount" class="text-2xl font-bold mt-1 text-foreground">0</p>
+                    </div>
+                    <span class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="hand" class="h-4 w-4"></i>
+                    </span>
+                  </div>
+                  <div class="rounded-xl border border-border/60 bg-background/80 p-4 flex items-center justify-between">
+                    <div>
+                      <p class="text-xs text-muted-foreground">เวลาในที่ประชุม</p>
+                      <p id="profileStatAttendedMinutes" class="text-2xl font-bold mt-1 text-foreground">0 นาที</p>
+                    </div>
+                    <span class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="clock" class="h-4 w-4"></i>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- เมนูจัดการ (Matching choice_profile.html Action Links) -->
+            <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card">
+              <div class="flex flex-col space-y-1.5 p-6 pb-3">
+                <h3 class="font-semibold tracking-tight text-lg">เมนูจัดการ</h3>
+                <p class="text-sm text-muted-foreground">เข้าถึงส่วนจัดการหลักของระบบได้อย่างรวดเร็ว</p>
+              </div>
+              <div class="p-6 pt-0 space-y-2.5">
+                <button type="button" onclick="switchUserTab('VOTE')" class="w-full flex items-center justify-between rounded-xl border border-border px-4 py-3 text-left hover:bg-muted/60 transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="vote" class="h-4 w-4"></i>
+                    </span>
+                    <div>
+                      <p class="font-medium text-sm text-foreground">การโหวตทั้งหมด</p>
                       <p class="text-xs text-muted-foreground">ลงมติและดูหัวข้อการลงเสียงในที่ประชุม</p>
                     </div>
                   </div>
-                  <i data-lucide="chevron-right" class="text-xs text-muted-foreground/60"></i>
-                </div>
-                <div onclick="switchUserTab('HOME'); switchUserToolSubTab('SEATS');" class="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 cursor-pointer transition">
+                  <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground shrink-0"></i>
+                </button>
+                <button type="button" onclick="switchUserTab('HOME'); switchUserToolSubTab('SEATS');" class="w-full flex items-center justify-between rounded-xl border border-border px-4 py-3 text-left hover:bg-muted/60 transition-colors">
                   <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <i data-lucide="users" class="text-sm"></i>
-                    </div>
+                    <span class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="users" class="h-4 w-4"></i>
+                    </span>
                     <div>
-                      <p class="text-sm font-semibold text-foreground">ผังที่นั่ง & สมาชิกทั้งหมด</p>
+                      <p class="font-medium text-sm text-foreground">ผังที่นั่ง & สมาชิกทั้งหมด</p>
                       <p class="text-xs text-muted-foreground">ตรวจสอบผังที่นั่งและการเข้าประชุม</p>
                     </div>
                   </div>
-                  <i data-lucide="chevron-right" class="text-xs text-muted-foreground/60"></i>
-                </div>
-                <div onclick="switchUserTab('HOME'); switchUserToolSubTab('NOTE');" class="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 cursor-pointer transition">
+                  <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground shrink-0"></i>
+                </button>
+                <button type="button" onclick="switchUserTab('HOME'); switchUserToolSubTab('NOTE');" class="w-full flex items-center justify-between rounded-xl border border-border px-4 py-3 text-left hover:bg-muted/60 transition-colors">
                   <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <i data-lucide="sticky-note" class="text-sm"></i>
-                    </div>
+                    <span class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="sticky-note" class="h-4 w-4"></i>
+                    </span>
                     <div>
-                      <p class="text-sm font-semibold text-foreground">สมุดจดบันทึกการประชุม</p>
+                      <p class="font-medium text-sm text-foreground">สมุดจดบันทึกการประชุม</p>
                       <p class="text-xs text-muted-foreground">เขียนโน้ตสรุปประเด็นสำคัญและส่งออก PDF</p>
                     </div>
                   </div>
-                  <i data-lucide="chevron-right" class="text-xs text-muted-foreground/60"></i>
-                </div>
-                <div onclick="openLeaveModal()" class="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 cursor-pointer transition">
+                  <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground shrink-0"></i>
+                </button>
+                <button type="button" onclick="openLeaveModal()" class="w-full flex items-center justify-between rounded-xl border border-border px-4 py-3 text-left hover:bg-muted/60 transition-colors">
                   <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-                      <i data-lucide="calendar-minus" class="text-sm"></i>
-                    </div>
+                    <span class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="calendar-minus" class="h-4 w-4"></i>
+                    </span>
                     <div>
-                      <p class="text-sm font-semibold text-foreground">แจ้งลาการประชุม</p>
+                      <p class="font-medium text-sm text-foreground">แจ้งลาการประชุม</p>
                       <p class="text-xs text-muted-foreground">ส่งคำขอลาพร้อมแนบเหตุผล</p>
                     </div>
                   </div>
-                  <i data-lucide="chevron-right" class="text-xs text-muted-foreground/60"></i>
-                </div>
-                <div onclick="openUserMeetingHistoryModal()" class="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 cursor-pointer transition">
+                  <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground shrink-0"></i>
+                </button>
+                <button type="button" onclick="openUserMeetingHistoryModal()" class="w-full flex items-center justify-between rounded-xl border border-border px-4 py-3 text-left hover:bg-muted/60 transition-colors">
                   <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                      <i data-lucide="history" class="text-sm"></i>
-                    </div>
+                    <span class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="history" class="h-4 w-4"></i>
+                    </span>
                     <div>
-                      <p class="text-sm font-semibold text-foreground">ประวัติการประชุมย้อนหลัง</p>
+                      <p class="font-medium text-sm text-foreground">ประวัติการประชุมย้อนหลัง</p>
                       <p class="text-xs text-muted-foreground">ดูสรุปและดาวน์โหลดรายงานการประชุมที่ผ่านมา</p>
                     </div>
                   </div>
-                  <i data-lucide="chevron-right" class="text-xs text-muted-foreground/60"></i>
-                </div>
+                  <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground shrink-0"></i>
+                </button>
               </div>
             </div>
           </section>
@@ -3692,50 +3748,50 @@
       </div>
     </div>
 
-    <!-- Mobile Bottom Navigation (Choice Style) -->
-    <nav id="mobileBottomNav" class="hidden md:hidden fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-lg border-t border-border px-1.5 sm:px-4 pt-1.5 pb-safe shadow-card">
-      <div class="flex items-end justify-between w-full max-w-lg mx-auto">
+    <!-- Mobile Bottom Navigation (Exact Comsan Choice Style) -->
+    <nav id="mobileBottomNav" class="hidden fixed bottom-0 inset-x-0 bg-card border-t border-border shadow-lg z-50 select-none md:hidden">
+      <div class="max-w-md mx-auto grid grid-cols-5 items-center h-16 px-2 relative">
         <!-- 1. หน้าหลัก -->
-        <button type="button" onclick="switchUserTab('HOME')" id="mNav_HOME" class="flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-primary font-semibold transition-colors">
-          <div id="mNavPill_HOME" class="w-12 h-7 rounded-full bg-primary/10 flex items-center justify-center transition">
-            <i data-lucide="house" class="text-sm"></i>
+        <button type="button" onclick="switchUserTab('HOME')" id="mNav_HOME" class="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-primary">
+          <div id="mNavPill_HOME" class="relative flex items-center justify-center">
+            <i data-lucide="house" class="h-5 w-5 transition-transform scale-110"></i>
           </div>
-          <span class="text-[10px] font-semibold tracking-tight">หน้าหลัก</span>
+          <span class="text-[11px] font-medium">หน้าหลัก</span>
         </button>
 
         <!-- 2. ลงเสียง -->
-        <button type="button" onclick="switchUserTab('VOTE')" id="mNav_VOTE" class="flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-muted-foreground hover:text-foreground font-medium transition-colors">
-          <div id="mNavPill_VOTE" class="w-12 h-7 rounded-full flex items-center justify-center transition relative">
-            <i data-lucide="vote" class="text-sm"></i>
-            <span id="mBadge_VOTE" class="hidden absolute -top-1 right-1 w-4 h-4 rounded-full bg-destructive text-white text-[9px] font-extrabold flex items-center justify-center shadow-xs">0</span>
+        <button type="button" onclick="switchUserTab('VOTE')" id="mNav_VOTE" class="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground">
+          <div id="mNavPill_VOTE" class="relative flex items-center justify-center">
+            <i data-lucide="vote" class="h-5 w-5 transition-transform"></i>
+            <span id="mBadge_VOTE" class="hidden absolute -top-1.5 -right-2.5 w-4 h-4 rounded-full bg-destructive text-white text-[9px] font-extrabold flex items-center justify-center shadow-xs">0</span>
           </div>
-          <span class="text-[10px] font-medium tracking-tight">ลงเสียง</span>
+          <span class="text-[11px] font-medium">ลงเสียง</span>
         </button>
 
-        <!-- 3. ปุ่มกลาง: ยกมือ -->
-        <div class="flex-1 flex flex-col items-center justify-center -mt-5">
+        <!-- 3. ปุ่มกลาง: ยกมือ (Exact Choice Floating Circular Button) -->
+        <div class="relative flex items-center justify-center h-full">
           <button type="button" onclick="switchUserTab('RAISE')" id="mNav_RAISE"
-            class="w-[52px] h-[52px] rounded-full gradient-primary text-white shadow-card border-[3px] border-background flex items-center justify-center text-xl transition transform active:scale-95 hover:shadow-lg">
-            <i data-lucide="hand" class=""></i>
+            class="absolute -top-5 inset-x-0 mx-auto w-[60px] h-[60px] rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)]">
+            <i data-lucide="hand" class="h-6 w-6"></i>
           </button>
-          <span id="mNavLabel_RAISE" class="text-[10px] font-medium text-muted-foreground mt-1 tracking-tight">ยกมือ</span>
+          <span id="mNavLabel_RAISE" class="sr-only">ยกมือ</span>
         </div>
 
         <!-- 4. แชต -->
-        <button type="button" onclick="switchUserTab('CHAT')" id="mNav_CHAT" class="flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-muted-foreground hover:text-foreground font-medium transition-colors">
-          <div id="mNavPill_CHAT" class="w-12 h-7 rounded-full flex items-center justify-center transition relative">
-            <i data-lucide="message-square" class="text-sm"></i>
-            <span id="floatingChatBadge" class="hidden absolute top-0.5 right-2 w-2 h-2 rounded-full bg-destructive ring-2 ring-card"></span>
+        <button type="button" onclick="switchUserTab('CHAT')" id="mNav_CHAT" class="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground">
+          <div id="mNavPill_CHAT" class="relative flex items-center justify-center">
+            <i data-lucide="message-square" class="h-5 w-5 transition-transform"></i>
+            <span id="floatingChatBadge" class="hidden absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-destructive ring-2 ring-card"></span>
           </div>
-          <span class="text-[10px] font-medium tracking-tight">แชต</span>
+          <span class="text-[11px] font-medium">แชต</span>
         </button>
 
         <!-- 5. โปรไฟล์ -->
-        <button type="button" onclick="switchUserTab('PROFILE')" id="mNav_PROFILE" class="flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-muted-foreground hover:text-foreground font-medium transition-colors">
-          <div id="mNavPill_PROFILE" class="w-12 h-7 rounded-full flex items-center justify-center transition">
-            <i data-lucide="user" class="text-sm"></i>
+        <button type="button" onclick="switchUserTab('PROFILE')" id="mNav_PROFILE" class="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground">
+          <div id="mNavPill_PROFILE" class="relative flex items-center justify-center">
+            <i data-lucide="user" class="h-5 w-5 transition-transform"></i>
           </div>
-          <span class="text-[10px] font-medium tracking-tight">โปรไฟล์</span>
+          <span class="text-[11px] font-medium">โปรไฟล์</span>
         </button>
       </div>
     </nav>
@@ -3774,6 +3830,7 @@
       </div>
       <div id="pdfNoteBody" style="font-size: 14px; line-height: 1.7; white-space: pre-wrap;"></div>
     </div>
+  </div>
 <!-- ======================================================== -->
   <!-- MODULAR JAVASCRIPT ARCHITECTURE                          -->
   <!-- ======================================================== -->

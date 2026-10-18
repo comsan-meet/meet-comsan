@@ -339,43 +339,43 @@ function renderUserProfile() {
   if (checkinStatusEl) {
     if (me.isLeave) {
       checkinStatusEl.textContent = me.leaveReason ? `แจ้งลา (${me.leaveReason})` : 'แจ้งลาการประชุม';
-      checkinStatusEl.className = 'font-semibold text-sky-600 dark:text-sky-400';
-      if (checkinIconBox) checkinIconBox.className = 'w-8 h-8 rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 transition-colors';
+      checkinStatusEl.className = 'font-medium text-sky-600 dark:text-sky-400';
+      if (checkinIconBox) checkinIconBox.className = 'flex items-center justify-center shrink-0 transition-colors';
       if (checkinIconEl) {
-        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'clipboard-check', 'w-4 h-4 text-sky-600 dark:text-sky-400');
-        else { checkinIconEl.setAttribute('data-lucide', 'clipboard-check'); checkinIconEl.className = 'w-4 h-4 text-sky-600 dark:text-sky-400'; }
+        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'clipboard-check', 'h-5 w-5 text-sky-600 dark:text-sky-400');
+        else { checkinIconEl.setAttribute('data-lucide', 'clipboard-check'); checkinIconEl.className = 'h-5 w-5 text-sky-600 dark:text-sky-400'; }
       }
     } else if (me.checkedIn && me.isLate) {
       checkinStatusEl.textContent = `เช็คชื่อแล้ว (มาสาย • ${me.checkInTimeStr || '-'})`;
-      checkinStatusEl.className = 'font-semibold text-amber-600 dark:text-amber-400';
-      if (checkinIconBox) checkinIconBox.className = 'w-8 h-8 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 transition-colors';
+      checkinStatusEl.className = 'font-medium text-amber-600 dark:text-amber-400';
+      if (checkinIconBox) checkinIconBox.className = 'flex items-center justify-center shrink-0 transition-colors';
       if (checkinIconEl) {
-        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'clock', 'w-4 h-4 text-amber-600 dark:text-amber-400');
-        else { checkinIconEl.setAttribute('data-lucide', 'clock'); checkinIconEl.className = 'w-4 h-4 text-amber-600 dark:text-amber-400'; }
+        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'clock', 'h-5 w-5 text-amber-600 dark:text-amber-400');
+        else { checkinIconEl.setAttribute('data-lucide', 'clock'); checkinIconEl.className = 'h-5 w-5 text-amber-600 dark:text-amber-400'; }
       }
     } else if (me.checkedIn) {
       checkinStatusEl.textContent = `เช็คชื่อแล้ว (มาทันเวลา • ${me.checkInTimeStr || '-'})`;
-      checkinStatusEl.className = 'font-semibold text-emerald-600 dark:text-emerald-400';
-      if (checkinIconBox) checkinIconBox.className = 'w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 transition-colors';
+      checkinStatusEl.className = 'font-medium text-emerald-600 dark:text-emerald-400';
+      if (checkinIconBox) checkinIconBox.className = 'flex items-center justify-center shrink-0 transition-colors';
       if (checkinIconEl) {
-        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'user-check', 'w-4 h-4 text-emerald-600 dark:text-emerald-400');
-        else { checkinIconEl.setAttribute('data-lucide', 'user-check'); checkinIconEl.className = 'w-4 h-4 text-emerald-600 dark:text-emerald-400'; }
+        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'user-check', 'h-5 w-5 text-emerald-600 dark:text-emerald-400');
+        else { checkinIconEl.setAttribute('data-lucide', 'user-check'); checkinIconEl.className = 'h-5 w-5 text-emerald-600 dark:text-emerald-400'; }
       }
     } else if (!state.meeting || !state.meeting.isStarted) {
       checkinStatusEl.textContent = 'ยังไม่เริ่มประชุม';
-      checkinStatusEl.className = 'font-semibold text-muted-foreground';
-      if (checkinIconBox) checkinIconBox.className = 'w-8 h-8 rounded-lg bg-muted/70 text-muted-foreground flex items-center justify-center shrink-0 transition-colors';
+      checkinStatusEl.className = 'font-medium text-muted-foreground';
+      if (checkinIconBox) checkinIconBox.className = 'flex items-center justify-center shrink-0 transition-colors';
       if (checkinIconEl) {
-        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'clock', 'w-4 h-4 text-muted-foreground');
-        else { checkinIconEl.setAttribute('data-lucide', 'clock'); checkinIconEl.className = 'w-4 h-4 text-muted-foreground'; }
+        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'clock', 'h-5 w-5 text-muted-foreground');
+        else { checkinIconEl.setAttribute('data-lucide', 'clock'); checkinIconEl.className = 'h-5 w-5 text-muted-foreground'; }
       }
     } else {
       checkinStatusEl.textContent = 'ยังไม่ได้เช็คชื่อ';
-      checkinStatusEl.className = 'font-semibold text-rose-600 dark:text-rose-400';
-      if (checkinIconBox) checkinIconBox.className = 'w-8 h-8 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 transition-colors';
+      checkinStatusEl.className = 'font-medium text-rose-600 dark:text-rose-400';
+      if (checkinIconBox) checkinIconBox.className = 'flex items-center justify-center shrink-0 transition-colors';
       if (checkinIconEl) {
-        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'user-x', 'w-4 h-4 text-rose-600 dark:text-rose-400');
-        else { checkinIconEl.setAttribute('data-lucide', 'user-x'); checkinIconEl.className = 'w-4 h-4 text-rose-600 dark:text-rose-400'; }
+        if (typeof window.updateIcon === 'function') window.updateIcon(checkinIconEl, 'user-x', 'h-5 w-5 text-rose-600 dark:text-rose-400');
+        else { checkinIconEl.setAttribute('data-lucide', 'user-x'); checkinIconEl.className = 'h-5 w-5 text-rose-600 dark:text-rose-400'; }
       }
     }
   }

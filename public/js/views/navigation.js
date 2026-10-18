@@ -529,27 +529,25 @@ function actuallySwitchUserTab(tab) {
     const sec = document.getElementById(`uTab_${t}`);
     if (sec) sec.classList.toggle('hidden', t !== tab);
 
-    // Desktop Sidebar Button (Choice style: bg-primary/[0.08] text-primary)
+    // Desktop Sidebar Button (Exact Comsan Choice style)
     const dNav = document.getElementById(`uNav_${t}`);
     if (dNav) {
       dNav.className = t === tab
-        ? 'sidebar-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold bg-primary/[0.08] text-primary transition-colors group'
-        : 'sidebar-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group';
+        ? 'sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-semibold bg-primary/[0.06] text-primary transition-colors group cursor-pointer'
+        : 'sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer';
     }
 
-    // Mobile Bottom Bar Button & Pill (Choice style)
+    // Mobile Bottom Bar Button & Pill (Exact Comsan Choice style)
     if (t !== 'RAISE') {
       const mBtn = document.getElementById(`mNav_${t}`);
       const mPill = document.getElementById(`mNavPill_${t}`);
       if (mBtn) {
         mBtn.className = t === tab
-          ? 'flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-primary font-semibold transition-colors'
-          : 'flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-muted-foreground hover:text-foreground font-medium transition-colors';
+          ? 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-primary'
+          : 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground';
       }
       if (mPill) {
-        mPill.className = t === tab
-          ? 'w-12 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center transition relative'
-          : 'w-12 h-7 rounded-full flex items-center justify-center transition relative';
+        mPill.className = 'relative flex items-center justify-center';
       }
     }
   });
@@ -659,8 +657,8 @@ function actuallySwitchAdminTab(tab) {
     if (sec) sec.classList.toggle('hidden', t !== tab);
     if (nav) {
       nav.className = t === tab
-        ? 'sidebar-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold bg-primary/[0.08] text-primary transition-colors group'
-        : 'sidebar-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group';
+        ? 'sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-semibold bg-primary/[0.06] text-primary transition-colors group cursor-pointer'
+        : 'sidebar-nav-btn w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group cursor-pointer';
     }
   });
 

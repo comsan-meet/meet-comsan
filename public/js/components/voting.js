@@ -130,7 +130,7 @@ function renderVotingCardsSafe() {
   if (!me || !votingArea) return;
 
   if (!Array.isArray(state.motions) || state.motions.length === 0) {
-    votingArea.innerHTML = `<div class="py-16 text-center bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200/80 dark:border-slate-800 text-xs text-slate-400">ยังไม่มีญัตติที่เปิดให้ลงเสียงในขณะนี้</div>`;
+    votingArea.innerHTML = `<div class="py-16 text-center rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card text-sm text-muted-foreground">ยังไม่มีญัตติที่เปิดให้ลงเสียงในขณะนี้</div>`;
     return;
   }
 
@@ -155,7 +155,7 @@ function renderVotingCardsSafe() {
 
     return `
       <div class="space-y-4 ${isClosed ? 'opacity-60 grayscale' : ''}">
-        <div class="comsan-card p-5 sm:p-6 space-y-3">
+        <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card p-5 sm:p-6 space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold text-primary">วาระการประชุม • ญัตติที่ ${String(motNumber).padStart(2, '0')} ${mot.isSecret ? '(โหวตลับ)' : ''}</span>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-medium ${isClosed ? 'bg-muted text-muted-foreground border border-border' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}">
@@ -427,11 +427,9 @@ function updateRaiseHandUserUI() {
 
   if (mNavBtn && mNavLbl) {
     mNavBtn.className = isInQueue
-      ? 'w-[52px] h-[52px] rounded-full bg-emerald-600 text-white shadow-xl border-[3px] border-background flex items-center justify-center text-xl transition transform active:scale-95'
-      : 'w-[52px] h-[52px] rounded-full gradient-primary text-white shadow-card border-[3px] border-background flex items-center justify-center text-xl transition transform active:scale-95 hover:shadow-lg';
-    mNavLbl.className = (window.activeUserTab === 'RAISE' || isInQueue)
-      ? 'text-[10px] font-semibold text-primary mt-1 tracking-tight'
-      : 'text-[10px] font-medium text-muted-foreground mt-1 tracking-tight';
+      ? 'absolute -top-5 inset-x-0 mx-auto w-[60px] h-[60px] rounded-full flex items-center justify-center transition-all duration-300 bg-emerald-600 text-white active:scale-95 shadow-[0_4px_14px_rgba(16,185,129,0.35)]'
+      : 'absolute -top-5 inset-x-0 mx-auto w-[60px] h-[60px] rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)]';
+    mNavLbl.className = 'sr-only';
   }
 
   if (statusPill && outerCircle && mainTitle) {

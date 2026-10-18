@@ -30,7 +30,7 @@
   --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(250 84% 54%));
   --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
   --gradient-hero: linear-gradient(135deg, #312e81 0%, #4f46e5 48%, hsl(var(--primary)) 100%);
-  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  --shadow-card: 0 4px 6px -1px hsl(220 13% 91% / 0.3);
   --shadow-2xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-sm: 0 1px 2px 0 hsl(220 13% 91% / 0.5);
   --shadow-md: 0 4px 6px -1px hsl(220 13% 91% / 0.3);
@@ -61,7 +61,7 @@
   --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(250 84% 54%));
   --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
   --gradient-hero: linear-gradient(135deg, #1e1b4b 0%, #312e81 48%, hsl(var(--primary)) 100%);
-  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
   --shadow-2xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
   --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
@@ -191,7 +191,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 .font-poppins {
-  font-family: 'Prompt', 'Poppins', sans-serif;
+  font-family: 'Poppins', 'Prompt', sans-serif !important;
 }
 
 .font-prompt {
@@ -222,37 +222,37 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 /* =========================================================================
    UTILITY CLASSES (TAILWIND-COMPATIBLE FROM COMSAN CHOICE)
    ========================================================================= */
-.bg-background { background-color: hsl(var(--background)) !important; }
-.bg-foreground { background-color: hsl(var(--foreground)) !important; }
-.text-foreground { color: hsl(var(--foreground)) !important; }
+.bg-background { background-color: hsl(var(--background)); }
+.bg-foreground { background-color: hsl(var(--foreground)); }
+.text-foreground { color: hsl(var(--foreground)); }
 
-.bg-card { background-color: hsl(var(--card)) !important; }
-.text-card-foreground { color: hsl(var(--card-foreground)) !important; }
+.bg-card { background-color: hsl(var(--card)); }
+.text-card-foreground { color: hsl(var(--card-foreground)); }
 
-.bg-popover { background-color: hsl(var(--popover)) !important; }
-.text-popover-foreground { color: hsl(var(--popover-foreground)) !important; }
+.bg-popover { background-color: hsl(var(--popover)); }
+.text-popover-foreground { color: hsl(var(--popover-foreground)); }
 
-.bg-primary { background-color: hsl(var(--primary)) !important; }
-.text-primary { color: hsl(var(--primary)) !important; }
-.text-primary-foreground { color: hsl(var(--primary-foreground)) !important; }
+.bg-primary { background-color: hsl(var(--primary)); }
+.text-primary { color: hsl(var(--primary)); }
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
 
-.bg-secondary { background-color: hsl(var(--secondary)) !important; }
-.text-secondary-foreground { color: hsl(var(--secondary-foreground)) !important; }
+.bg-secondary { background-color: hsl(var(--secondary)); }
+.text-secondary-foreground { color: hsl(var(--secondary-foreground)); }
 
-.bg-muted { background-color: hsl(var(--muted)) !important; }
-.text-muted-foreground { color: hsl(var(--muted-foreground)) !important; }
+.bg-muted { background-color: hsl(var(--muted)); }
+.text-muted-foreground { color: hsl(var(--muted-foreground)); }
 
-.bg-accent { background-color: hsl(var(--accent)) !important; }
-.text-accent { color: hsl(var(--accent)) !important; }
-.text-accent-foreground { color: hsl(var(--accent-foreground)) !important; }
+.bg-accent { background-color: hsl(var(--accent)); }
+.text-accent { color: hsl(var(--accent)); }
+.text-accent-foreground { color: hsl(var(--accent-foreground)); }
 
-.bg-destructive { background-color: hsl(var(--destructive)) !important; }
-.text-destructive { color: hsl(var(--destructive)) !important; }
-.text-destructive-foreground { color: hsl(var(--destructive-foreground)) !important; }
+.bg-destructive { background-color: hsl(var(--destructive)); }
+.text-destructive { color: hsl(var(--destructive)); }
+.text-destructive-foreground { color: hsl(var(--destructive-foreground)); }
 
-.border-border { border-color: hsl(var(--border)) !important; }
-.border-input { border-color: hsl(var(--input)) !important; }
-.border-primary { border-color: hsl(var(--primary)) !important; }
+.border-border { border-color: hsl(var(--border)); }
+.border-input { border-color: hsl(var(--input)); }
+.border-primary { border-color: hsl(var(--primary)); }
 
 /* Gradients */
 .gradient-primary {
