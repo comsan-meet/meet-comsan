@@ -34,6 +34,7 @@ class HttpSocketBridge {
   trigger(event, payload) {
     if (this.hub && typeof this.hub.trigger === 'function') {
       this.hub.trigger(event, payload);
+      return;
     }
     const handlers = this.listeners.get(event);
     if (Array.isArray(handlers)) {
@@ -228,15 +229,6 @@ class UnifiedSocketHub {
     this.engine = newEngine;
     this.engine.hub = this;
 
-    // Mirror all registered listeners to newEngine so engine can notify directly if needed
-    this.listeners.forEach((fns, evt) => {
-      fns.forEach(fn => {
-        if (typeof this.engine.on === 'function') {
-          this.engine.on(evt, fn);
-        }
-      });
-    });
-
     console.info(`[SocketHub] Engine switched to: ${newEngine.constructor ? newEngine.constructor.name : 'CustomEngine'}`);
   }
 
@@ -249,9 +241,6 @@ class UnifiedSocketHub {
     if (!arr.includes(callback)) {
       arr.push(callback);
     }
-    if (this.engine && typeof this.engine.on === 'function') {
-      this.engine.on(event, callback);
-    }
   }
 
   off(event, callback) {
@@ -261,9 +250,6 @@ class UnifiedSocketHub {
     } else {
       const arr = this.listeners.get(event).filter(fn => fn !== callback);
       this.listeners.set(event, arr);
-    }
-    if (this.engine && typeof this.engine.off === 'function') {
-      this.engine.off(event, callback);
     }
   }
 

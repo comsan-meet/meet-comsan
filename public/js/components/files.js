@@ -2,10 +2,17 @@
  * COMSAN Meeting System - Files Component
  */
 
-function downloadSharedFile(fileId) {
+async function downloadSharedFile(fileId) {
   const state = window.appState;
   const f = (state.files || []).find(item => item.id === fileId);
-  if (!f || !f.dataUrl) return showToast('ไม่พบข้อมูลไฟล์', 'error');
+  if (!f) return showToast('ไม่พบข้อมูลไฟล์', 'error');
+
+  if (!f.dataUrl && typeof window.fetchFileContentFromCloud === 'function') {
+    showToast(`กำลังโหลดข้อมูลไฟล์ "${f.name}"...`, 'info');
+    f.dataUrl = await window.fetchFileContentFromCloud(fileId);
+  }
+
+  if (!f.dataUrl) return showToast('ไม่พบข้อมูลเนื้อหาของไฟล์', 'error');
   try {
     triggerUniversalBlobDownload(dataURLToBlob(f.dataUrl), f.name);
     showToast(`กำลังดาวน์โหลด "${f.name}"...`, 'info');
@@ -38,9 +45,9 @@ function handleFileUpload(e, roleType) {
   let uploaderId = 'ADMIN', uploaderName = 'ผู้ดำเนินการ (ADMIN)';
   if (roleType === 'USER') {
     const me = (window.appState.users || []).find(u => u.id === window.currentUserId);
-    if (!me || me.filePermission !== 'APPROVED') return;
-    uploaderId = me.id;
-    uploaderName = `${me.nickname} (${me.position})`;
+    uploaderId = me ? me.id : (window.currentUserId || 'USER');
+    const pos = (me && me.position) ? ` (${me.position})` : '';
+    uploaderName = me ? `${me.nickname || me.firstName || 'สมาชิก'}${pos}` : 'ผู้เข้าร่วมประชุม';
   }
   const reader = new FileReader();
   reader.onload = function (evt) {
@@ -58,8 +65,7 @@ function handleFileUpload(e, roleType) {
       isPinned: false,
       pinnedAt: null
     };
-    window.appState.files.push(fileObj);
-    window.saveLocalState();
+    // Do NOT push directly to appState.files to prevent 2x duplication; ActionReducer handles it
     window.socket.emit('file:upload', fileObj);
     e.target.value = '';
     renderFileDropSection();
@@ -224,10 +230,15 @@ function getFileVisualInfo(fileName, mimeType) {
   };
 }
 
-function previewSharedFile(fileId) {
+async function previewSharedFile(fileId) {
   const state = window.appState;
   const f = (state.files || []).find(item => item.id === fileId);
   if (!f) return showToast('ไม่พบข้อมูลไฟล์', 'error');
+
+  if (!f.dataUrl && typeof window.fetchFileContentFromCloud === 'function') {
+    showToast(`กำลังโหลดข้อมูลสำหรับดูตัวอย่าง...`, 'info');
+    f.dataUrl = await window.fetchFileContentFromCloud(fileId);
+  }
 
   const modal = document.getElementById('filePreviewModal');
   const titleEl = document.getElementById('filePreviewTitle');
@@ -517,8 +528,8 @@ function renderFileDropSection() {
     const permBox = document.getElementById('userFilePermissionBox');
     const dropzone = document.getElementById('userFileDropzone');
     if (me && permBox && dropzone) {
-      if (me.filePermission === 'APPROVED') {
-        permBox.innerHTML = `<button type="button" onclick="finishUserPermission('FILE')" class="px-3 py-1 rounded-full bg-rose-500/15 text-rose-600 text-[11px] sm:text-xs font-bold whitespace-nowrap shrink-0">เสร็จสิ้น</button>`;
+      if (me.filePermission === 'APPROVED' || me.checkedIn) {
+        permBox.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 text-[11px] font-bold">พร้อมแนบไฟล์</span>`;
         dropzone.classList.remove('hidden');
       } else if (me.filePermission === 'PENDING') {
         permBox.innerHTML = `<span class="px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 text-[11px] sm:text-xs font-bold whitespace-nowrap shrink-0 inline-block">รออนุมัติ...</span>`;

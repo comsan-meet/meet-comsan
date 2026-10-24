@@ -16,17 +16,32 @@ function isMeetingBeforeScheduledTime(m) {
   if (!m || !m.isStarted || m.isEnded) return false;
   if (!m.startTime) return false;
   const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const meetingDate = m.date || todayStr;
-  if (meetingDate === todayStr) {
-    const [startHour, startMin] = m.startTime.split(':').map(Number);
-    const currentHour = now.getHours();
-    const currentMin = now.getMinutes();
-    const currentTimeInMin = currentHour * 60 + currentMin;
-    const startTimeInMin = startHour * 60 + startMin;
-    return currentTimeInMin < startTimeInMin;
+  const localTodayStr = (typeof window.getLocalDateString === 'function')
+    ? window.getLocalDateString(now)
+    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const parts = String(m.startTime).split(':');
+  const startHour = Number(parts[0]);
+  const startMin = Number(parts[1]);
+  if (isNaN(startHour) || isNaN(startMin)) return false;
+  const startMinutes = startHour * 60 + startMin;
+
+  // 1. If meeting date is in the future
+  if (m.date && m.date > localTodayStr) {
+    return true;
   }
-  if (meetingDate > todayStr) return true;
+
+  // 2. If meeting date is today, compare minutes directly
+  if (m.date && m.date === localTodayStr) {
+    return currentMinutes < startMinutes;
+  }
+
+  // 3. Fallback: If current time is earlier than start time (e.g. 04:00 < 07:00), it is before scheduled time
+  if (currentMinutes < startMinutes) {
+    return true;
+  }
+
   return false;
 }
 
@@ -35,7 +50,9 @@ function updateMeetingTimersAndBanners() {
   if (!state || !state.meeting) return;
   const m = state.meeting;
   const nowMs = Date.now();
-  const todayISO = new Date().toISOString().slice(0, 10);
+  const todayISO = (typeof window.getLocalDateString === 'function')
+    ? window.getLocalDateString()
+    : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
 
   const stateBadge = document.getElementById('meetingStateBadge');
   const pulseDot = document.getElementById('meetingPulseDot');
@@ -128,20 +145,21 @@ function updateMeetingTimersAndBanners() {
     const startMs = m.startedAtMs || nowMs;
     const elapsedMin = Math.max(0, Math.floor((nowMs - startMs) / 60000));
     const isBeforeTime = isMeetingBeforeScheduledTime(m);
+    const startDisplayTime = m.startTime || '07:00';
 
     if (isBeforeTime) {
-      if (stateBadge) stateBadge.textContent = 'ยังไม่ถึงเวลาการประชุม (เปิดห้องแล้ว)';
+      if (stateBadge) stateBadge.textContent = `เปิดห้องล่วงหน้า (เริ่มประชุม ${startDisplayTime} น.)`;
       if (pulseDot) pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
-      if (sbElapsed) sbElapsed.textContent = `${elapsedMin} นาที`;
-      if (uElapsed) uElapsed.textContent = `${elapsedMin} นาที`;
-      if (voteElapsed) voteElapsed.textContent = `${elapsedMin} นาที`;
-      if (adminSetupBadge) adminSetupBadge.textContent = 'เปิดห้องแล้ว (ยังไม่ถึงเวลา)';
+      if (sbElapsed) sbElapsed.textContent = `รอเริ่ม (${startDisplayTime} น.)`;
+      if (uElapsed) uElapsed.textContent = `รอเริ่ม (${startDisplayTime} น.)`;
+      if (voteElapsed) voteElapsed.textContent = `รอเริ่ม (${startDisplayTime} น.)`;
+      if (adminSetupBadge) adminSetupBadge.textContent = `เปิดห้องล่วงหน้า (เริ่ม ${startDisplayTime} น.)`;
       if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
-      if (userBannerStatusPill) userBannerStatusPill.textContent = 'ยังไม่ถึงเวลาการประชุม';
+      if (userBannerStatusPill) userBannerStatusPill.textContent = `ยังไม่ถึงเวลาประชุม (เริ่ม ${startDisplayTime} น.)`;
       if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
       if (heroStatusWrapper) {
         heroStatusWrapper.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30';
-        heroStatusWrapper.innerHTML = '<span id="heroStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> <span>ยังไม่ถึงเวลาการประชุม</span>';
+        heroStatusWrapper.innerHTML = `<span id="heroStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> <span>เปิดห้องล่วงหน้า (เริ่ม ${startDisplayTime} น.)</span>`;
       }
     } else {
       if (stateBadge) stateBadge.textContent = 'กำลังดำเนินการประชุม';
@@ -171,7 +189,7 @@ function updateMeetingTimersAndBanners() {
         }
       }
       if (raiseBannerStatusSub) {
-        raiseBannerStatusSub.textContent = 'ยังไม่ถึงเวลาการประชุม (เปิดห้องก่อนเวลา)';
+        raiseBannerStatusSub.textContent = `เปิดห้องล่วงหน้า (เริ่มประชุม ${startDisplayTime} น.) - เช็คชื่อล่วงหน้าได้`;
         raiseBannerStatusSub.className = 'text-[11px] font-bold text-amber-600 dark:text-amber-400';
       }
       if (raiseBannerAgenda) {
@@ -210,7 +228,7 @@ function updateMeetingTimersAndBanners() {
   if (adminMeetingToggleLabel) {
     if (isMeetingActive) {
       if (isMeetingBeforeScheduledTime(m)) {
-        adminMeetingToggleLabel.textContent = 'เปิดห้องแล้ว (ยังไม่ถึงเวลาประชุม)';
+        adminMeetingToggleLabel.textContent = `เปิดห้องล่วงหน้า (เริ่มประชุม ${m.startTime || '07:00'} น.)`;
         adminMeetingToggleLabel.className = 'text-xs font-bold text-amber-600 dark:text-amber-400 select-none';
       } else {
         adminMeetingToggleLabel.textContent = 'กำลังประชุม (เปิดอยู่)';
@@ -570,7 +588,9 @@ function renderAll() {
     const state = window.appState;
     if (!state || !state.meeting) return;
     const m = state.meeting;
-    const todayISO = new Date().toISOString().slice(0, 10);
+    const todayISO = (typeof window.getLocalDateString === 'function')
+    ? window.getLocalDateString()
+    : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
 
     const sbCutoff = document.getElementById('sidebarCutoffTime');
     if (sbCutoff) sbCutoff.textContent = `${m.lateTime} น.`;
@@ -976,26 +996,18 @@ function setupSocketListeners() {
       newState.motions = uniqueM;
     }
 
-    // 2. Detect and trigger new Raise Hand events across devices
+    // 2. Track seen Raise Hand items
     const newQueue = Array.isArray(newState.raiseHandQueue) ? newState.raiseHandQueue : [];
     newQueue.forEach(item => {
       const qKey = String(item.queueId || item.userId);
-      if (!lastHandledQueueIds.has(qKey)) {
-        lastHandledQueueIds.add(qKey);
-        // Fire raise hand notification & popup for Admin!
-        socket.trigger('alert:raiseHand', item);
-      }
+      lastHandledQueueIds.add(qKey);
     });
 
-    // 3. Detect and trigger new Chat messages across devices
+    // 3. Track seen Chat messages
     const newChats = Array.isArray(newState.chats) ? newState.chats : [];
     newChats.forEach(msg => {
       const cKey = String(msg.id);
-      if (!lastHandledChatIds.has(cKey)) {
-        lastHandledChatIds.add(cKey);
-        // Trigger notify:chat
-        socket.trigger('notify:chat', msg);
-      }
+      lastHandledChatIds.add(cKey);
     });
 
     // 4. Detect new random spin across devices

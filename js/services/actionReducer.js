@@ -69,7 +69,12 @@
     state.meeting = state.meeting || {};
     state.randomizer = state.randomizer || { lastWinner: null, history: [] };
 
-    const todayISO = new Date().toISOString().slice(0, 10);
+    const todayISO = (typeof window !== 'undefined' && typeof window.getLocalDateString === 'function')
+      ? window.getLocalDateString()
+      : (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        })();
 
     switch (action) {
       // ==========================================
@@ -621,24 +626,30 @@
           mediaName: hasMedia ? (msgPayload.mediaName || '') : null,
           time: msgPayload.time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
         };
-        state.chats.push(newMsg);
+        state.chats = Array.isArray(state.chats) ? state.chats : [];
+        if (!state.chats.some(c => String(c.id) === String(newMsg.id))) {
+          state.chats.push(newMsg);
+        }
 
-        state.chatLogs.push({
-          id: 'LOG-' + newMsg.id,
-          msgId: String(newMsg.id),
-          timestamp: newMsg.timestamp,
-          sender: newMsg.sender,
-          senderId: newMsg.senderId || null,
-          target: newMsg.target || 'ALL',
-          text: newMsg.text || '',
-          mediaUrl: newMsg.mediaUrl || null,
-          mediaType: newMsg.mediaType || null,
-          mediaName: newMsg.mediaName || null,
-          time: newMsg.time,
-          dateStr: new Date(newMsg.timestamp).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }),
-          deleted: false,
-          deletedAt: null
-        });
+        state.chatLogs = Array.isArray(state.chatLogs) ? state.chatLogs : [];
+        if (!state.chatLogs.some(l => String(l.msgId) === String(newMsg.id))) {
+          state.chatLogs.push({
+            id: 'LOG-' + newMsg.id,
+            msgId: String(newMsg.id),
+            timestamp: newMsg.timestamp,
+            sender: newMsg.sender,
+            senderId: newMsg.senderId || null,
+            target: newMsg.target || 'ALL',
+            text: newMsg.text || '',
+            mediaUrl: newMsg.mediaUrl || null,
+            mediaType: newMsg.mediaType || null,
+            mediaName: newMsg.mediaName || null,
+            time: newMsg.time,
+            dateStr: new Date(newMsg.timestamp).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }),
+            deleted: false,
+            deletedAt: null
+          });
+        }
 
         notify('notify:chat', newMsg);
         result = { ok: true, message: newMsg };
@@ -740,7 +751,14 @@
           isPinned: Boolean(fileObj.isPinned),
           pinnedAt: fileObj.pinnedAt || null
         };
-        state.files.push(item);
+        state.files = Array.isArray(state.files) ? state.files : [];
+        const existingIdx = state.files.findIndex(f => f.id === item.id);
+        if (existingIdx !== -1) {
+          state.files[existingIdx] = item;
+        } else {
+          state.files.push(item);
+        }
+        notify('file:upload', item);
         notify('notify:event', {
           type: 'fileDrop',
           text: `📎 ${item.uploaderName} ดรอปไฟล์ใหม่: "${item.name}"`

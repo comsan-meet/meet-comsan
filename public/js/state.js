@@ -1,4 +1,4 @@
-﻿/**
+/**
  * COMSAN Meeting System - Application State Store
  */
 
@@ -6,7 +6,14 @@ const ADMIN_PASSWORD = 'admincomsan26';
 window.ADMIN_PASSWORD = ADMIN_PASSWORD;
 const LOCAL_STORAGE_KEY = 'COMSAN_HYBRID_STATE_V5';
 const localSyncChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('comsan_hybrid_channel_v5') : null;
-const todayISO = new Date().toISOString().slice(0, 10);
+function getLocalDateString(d = new Date()) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+window.getLocalDateString = getLocalDateString;
+const todayISO = getLocalDateString();
 
 const WHEEL_COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#EF4444', '#06B6D4', '#F97316'];
 const CUSTOM_PALETTE = [

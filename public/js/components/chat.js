@@ -974,7 +974,6 @@ function sendFloatingChatMessage(e) {
     time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
   };
 
-  state.chats.push(newMsg);
   appendChatLogLocal(newMsg);
   window.saveLocalState();
   if (window.socket) {
@@ -1021,7 +1020,6 @@ function sendAdminChat(e) {
     text,
     time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
   };
-  window.appState.chats.push(newMsg);
   appendChatLogLocal(newMsg);
   window.saveLocalState();
   if (window.socket) {

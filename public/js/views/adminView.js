@@ -152,7 +152,8 @@ function resetAllUsersAttendance(users) {
 function startOfficialMeeting(e) {
   if (e && e.preventDefault) e.preventDefault();
   const title = (document.getElementById('cfgMeetingTitle')?.value || '').trim();
-  const date = document.getElementById('cfgMeetingDate')?.value || new Date().toISOString().slice(0, 10);
+  const date = document.getElementById('cfgMeetingDate')?.value ||
+    ((typeof window.getLocalDateString === 'function') ? window.getLocalDateString() : new Date().toLocaleDateString('en-CA'));
   const startTime = document.getElementById('cfgStartTime')?.value || '17:00';
   const lateTime = document.getElementById('cfgLateTime')?.value || '17:15';
   const endTime = document.getElementById('cfgEndTime')?.value || '19:00';
@@ -697,8 +698,11 @@ function renderSummarySection() {
   } else {
     if (headerInfo) {
       const isLive = Boolean(state.meeting && state.meeting.isStarted && !state.meeting.isEnded);
+      const isBefore = isLive && (typeof isMeetingBeforeScheduledTime === 'function' && isMeetingBeforeScheduledTime(state.meeting));
       headerInfo.textContent = isLive
-        ? `การประชุมปัจจุบัน: ${state.meeting.title || 'ชมรมสันทนาการ'} (กำลังดำเนินการประชุม)`
+        ? (isBefore
+            ? `การประชุมปัจจุบัน: ${state.meeting.title || 'ชมรมสันทนาการ'} (เปิดห้องล่วงหน้า - เริ่ม ${state.meeting.startTime || '07:00'} น.)`
+            : `การประชุมปัจจุบัน: ${state.meeting.title || 'ชมรมสันทนาการ'} (กำลังดำเนินการประชุม)`)
         : (state.lastMeetingSummary
             ? `สรุปผลการประชุมล่าสุด: ${state.lastMeetingSummary.title || 'ชมรมสันทนาการ'} (เสร็จสิ้นแล้ว)`
             : 'สามารถเปลี่ยนสถานะสมาชิก (ลา / ขาด / มาสาย / มาทัน) ได้โดยตรงก่อนส่งออกไฟล์ Excel');

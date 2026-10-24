@@ -40,6 +40,7 @@
     triggerLocal(event, payload) {
       if (this.hub && typeof this.hub.trigger === 'function') {
         this.hub.trigger(event, payload);
+        return;
       }
       const handlers = this.listeners.get(event);
       if (Array.isArray(handlers)) {
@@ -104,15 +105,33 @@
       // Broadcast over Supabase Realtime channel
       if (this.channel) {
         try {
+          let payloadToSend = eventPayload;
+          if (eventName === 'state:update' && eventPayload) {
+            payloadToSend = this.prepareStateForBroadcast(eventPayload);
+          }
           this.channel.send({
             type: 'broadcast',
             event: eventName,
-            payload: eventPayload
+            payload: payloadToSend
           });
         } catch (e) {
           console.warn(`Supabase broadcast failed for ${eventName}:`, e);
         }
       }
+    }
+
+    prepareStateForBroadcast(state) {
+      if (!state) return state;
+      const clone = { ...state, activeStream: null };
+      if (Array.isArray(clone.files)) {
+        clone.files = clone.files.map(f => {
+          if (f.dataUrl && f.dataUrl.length > 25000) {
+            return { ...f, dataUrl: null, hasContent: true };
+          }
+          return f;
+        });
+      }
+      return clone;
     }
 
     scheduleSaveToSupabase(state) {
@@ -126,17 +145,19 @@
 
         try {
           this.isSaving = true;
+          const newUpdatedAt = new Date().toISOString();
           const { error } = await this.supabase
             .from(this.tableName)
             .upsert({
               id: 'current',
               state: stateToSave,
-              updated_at: new Date().toISOString()
+              updated_at: newUpdatedAt
             });
 
           if (error) {
             console.error('Supabase state upsert error:', error);
           } else {
+            this.lastSyncedUpdatedAt = newUpdatedAt;
             this.lastSyncTimestamp = Date.now();
             this.updateCloudStatusBadge(true, 'ซิงค์ข้อมูลกับ Supabase แล้ว');
           }
@@ -215,9 +236,8 @@
           .maybeSingle();
 
         if (!error && data && data.updated_at) {
-          const serverTime = new Date(data.updated_at).getTime();
-          // If remote update is newer than our last synced timestamp
-          if (serverTime > (this.lastSyncTimestamp || 0) + 100) {
+          // If updated_at is different from our last synced record
+          if (data.updated_at !== this.lastSyncedUpdatedAt) {
             const { data: full, error: fullErr } = await this.supabase
               .from(this.tableName)
               .select('state, updated_at')
@@ -225,7 +245,9 @@
               .maybeSingle();
 
             if (!fullErr && full && full.state) {
+              this.lastSyncedUpdatedAt = full.updated_at;
               this.lastSyncTimestamp = new Date(full.updated_at).getTime();
+
               if (typeof window.normalizeState === 'function') {
                 window.appState = window.normalizeState(full.state);
               } else {
@@ -302,6 +324,8 @@
         'notify:chat',
         'notify:event',
         'random:spin',
+        'file:upload',
+        'file:delete',
         'stream:frameUpdate',
         'stream:stopped'
       ];
@@ -309,6 +333,15 @@
       broadcastEvents.forEach(evt => {
         this.channel.on('broadcast', { event: evt }, ({ payload }) => {
           if (evt === 'state:update' && payload) {
+            // Merge files to preserve local full dataUrl if broadcast omitted it
+            if (Array.isArray(payload.files) && window.appState && Array.isArray(window.appState.files)) {
+              payload.files.forEach(pf => {
+                if (!pf.dataUrl) {
+                  const existing = window.appState.files.find(ef => ef.id === pf.id);
+                  if (existing && existing.dataUrl) pf.dataUrl = existing.dataUrl;
+                }
+              });
+            }
             if (typeof window.normalizeState === 'function') {
               window.appState = window.normalizeState(payload);
             } else {
@@ -316,6 +349,26 @@
             }
             if (typeof window.saveLocalState === 'function') window.saveLocalState();
             if (typeof window.renderAll === 'function') window.renderAll();
+          } else if (evt === 'file:upload' && payload) {
+            const state = window.appState;
+            if (state) {
+              state.files = Array.isArray(state.files) ? state.files : [];
+              const idx = state.files.findIndex(f => f.id === payload.id);
+              if (idx !== -1) {
+                state.files[idx] = payload;
+              } else {
+                state.files.push(payload);
+              }
+              if (typeof window.saveLocalState === 'function') window.saveLocalState();
+              if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
+            }
+          } else if (evt === 'file:delete' && payload) {
+            const state = window.appState;
+            if (state && Array.isArray(state.files)) {
+              state.files = state.files.filter(f => f.id !== payload);
+              if (typeof window.saveLocalState === 'function') window.saveLocalState();
+              if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
+            }
           }
           this.triggerLocal(evt, payload);
         });
@@ -366,6 +419,11 @@
         const state = window.appState;
         if (!state || !state.meeting || !state.meeting.isStarted || state.meeting.isEnded) return;
 
+        // If meeting is before scheduled start time (early check-in), do not increment minutes yet!
+        if (typeof isMeetingBeforeScheduledTime === 'function' && isMeetingBeforeScheduledTime(state.meeting)) {
+          return;
+        }
+
         // Only host/admin or active tab increments minutes
         const isAdmin = window.currentRole === 'ADMIN' && window.isAdminAuthenticated;
         if (!isAdmin) return;
@@ -410,4 +468,31 @@
   }
 
   window.SupabaseSocketAdapter = SupabaseSocketAdapter;
+
+  window.fetchFileContentFromCloud = async function(fileId) {
+    try {
+      if (window.socket && window.socket.engine && window.socket.engine.supabase) {
+        const sb = window.socket.engine.supabase;
+        const { data, error } = await sb
+          .from('comsan_meeting_state')
+          .select('state')
+          .eq('id', 'current')
+          .maybeSingle();
+
+        if (!error && data && data.state && Array.isArray(data.state.files)) {
+          const remoteF = data.state.files.find(item => item.id === fileId);
+          if (remoteF && remoteF.dataUrl) {
+            const localF = (window.appState && Array.isArray(window.appState.files))
+              ? window.appState.files.find(item => item.id === fileId)
+              : null;
+            if (localF) localF.dataUrl = remoteF.dataUrl;
+            return remoteF.dataUrl;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('fetchFileContentFromCloud error:', e);
+    }
+    return null;
+  };
 })();
