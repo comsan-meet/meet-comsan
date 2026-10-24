@@ -1053,7 +1053,7 @@ async function testSupabaseConnectionFromModal() {
 
   try {
     const cleanUrl = url.replace(/\/+$/, '');
-    const testEndpoint = `${cleanUrl}/rest/v1/`;
+    const testEndpoint = `${cleanUrl}/rest/v1/comsan_meeting_state?select=id&limit=1`;
     const resp = await fetch(testEndpoint, {
       method: 'GET',
       headers: {
@@ -1062,10 +1062,18 @@ async function testSupabaseConnectionFromModal() {
       }
     });
 
-    if (resp.status === 401) {
-      updateSupabaseStatusBadge(false, 'Anon Key ไม่ถูกต้อง');
+    if (resp.status === 401 || resp.status === 403) {
+      updateSupabaseStatusBadge(false, 'Anon Key ไม่ถูกต้อง หรือไม่มีสิทธิ์เข้าถึง');
       if (typeof window.showToast === 'function') {
-        window.showToast('Anon Key ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง', 'error');
+        window.showToast('Anon Key ไม่ถูกต้อง หรือไม่มีสิทธิ์เข้าถึง กรุณาตรวจสอบอีกครั้ง', 'error');
+      }
+      return;
+    }
+
+    if (!resp.ok && resp.status !== 404) {
+      updateSupabaseStatusBadge(false, 'เชื่อมต่อไม่สำเร็จ (' + resp.status + ')');
+      if (typeof window.showToast === 'function') {
+        window.showToast('เชื่อมต่อไม่สำเร็จ (HTTP ' + resp.status + ')', 'error');
       }
       return;
     }

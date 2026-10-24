@@ -3,9 +3,9 @@
  */
 
 window.COMSAN_SUPABASE_CONFIG = {
-  // If you want to hardcode your Supabase credentials, paste them here:
-  url: '',
-  anonKey: '',
+  // Hardcoded Supabase credentials for zero-config global client sync:
+  url: 'https://ajqxzoiubsxvetexxnbq.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqcXh6b2l1YnN4dmV0ZXh4bmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NjkzOTgsImV4cCI6MjEwODQ0NTM5OH0.xZBpsKg6gLMHevPssqDMy2l_nNbwXtVt3h_eqgXzxWY',
   channelName: 'comsan-meeting-room',
   tableName: 'comsan_meeting_state'
 };
