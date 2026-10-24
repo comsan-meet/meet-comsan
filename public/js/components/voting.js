@@ -130,7 +130,18 @@ function renderVotingCardsSafe() {
   if (!me || !votingArea) return;
 
   if (!Array.isArray(state.motions) || state.motions.length === 0) {
-    votingArea.innerHTML = `<div class="py-16 text-center bg-card rounded-xl border border-border text-xs text-muted-foreground">ยังไม่มีญัตติที่เปิดให้ลงเสียงในขณะนี้</div>`;
+    votingArea.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-300 bg-card rounded-2xl border border-border p-6 shadow-2xs">
+        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3">
+          <i data-lucide="vote" class="h-8 w-8 stroke-[1.8]"></i>
+        </div>
+        <h3 class="text-base sm:text-lg font-semibold text-foreground font-prompt">ไม่พบการลงคะแนน</h3>
+        <p class="mt-1.5 max-w-xs text-xs sm:text-sm leading-relaxed text-muted-foreground font-prompt">
+          ขณะนี้ยังไม่มีการลงมติที่เปิดอยู่ ระบบจะแจ้งเตือนเมื่อมีการเปิดญัตติใหม่
+        </p>
+      </div>
+    `;
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
     return;
   }
 
@@ -209,16 +220,25 @@ function renderVotingCardsSafe() {
           }).join('')}
         </div>
 
+        ${!isClosed ? `
         <div class="space-y-2 pt-1 text-center">
           <p class="text-xs text-muted-foreground flex items-center justify-center gap-1">
             <i data-lucide="info" class="w-4 h-4 text-primary"></i>
             <span>${selectedOptObj ? `คุณเลือก "${selectedOptObj.label}" แล้ว • กดปุ่มด้านล่างเพื่อยืนยัน` : 'แตะเลือกตัวเลือกด้านบนเพื่อลงมติ'}</span>
           </p>
-          <button type="button" ${isClosed ? 'disabled' : ''} onclick="confirmUserVote('${mot.id}')"
-            class="w-full h-11 rounded-xl gradient-primary text-white font-medium text-sm shadow-md transition-all active:scale-[0.98] ${isClosed ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} flex items-center justify-center gap-1.5">
+          <button type="button" onclick="confirmUserVote('${mot.id}')"
+            class="w-full h-11 rounded-xl gradient-primary text-white font-medium text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5">
             <i data-lucide="check" class="w-4 h-4"></i> <span>ยืนยันลงมติ ${selectedOptObj ? `• ${selectedOptObj.label}` : ''}</span>
           </button>
         </div>
+        ` : `
+        <div class="pt-2 text-center">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 text-muted-foreground text-xs font-medium border border-border">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span>ปิดการลงคะแนนในญัตตินี้แล้ว</span>
+          </span>
+        </div>
+        `}
       </div>
     `;
   }).join('');
@@ -408,6 +428,7 @@ function checkOpenMotionsPopup() {
 function updateRaiseHandUserUI() {
   const state = window.appState;
   if (!state) return;
+  const m = state.meeting || {};
   const queue = state.raiseHandQueue || [];
   const myIdx = window.currentUserId ? queue.findIndex(q => q.userId === window.currentUserId) : -1;
   const isInQueue = myIdx !== -1;
@@ -447,8 +468,39 @@ function updateRaiseHandUserUI() {
       if (waitBeforeNum) waitBeforeNum.textContent = myIdx;
       if (timeText) timeText.textContent = myItem ? myItem.time : '-';
       if (actionBtn) {
-        actionBtn.className = 'w-full py-4 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-1.5';
+        actionBtn.disabled = false;
+        actionBtn.className = 'w-full py-4 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer';
         actionBtn.innerHTML = '<i data-lucide="hand" class="w-5 h-5"></i> <span>กดยกเลิกการยกมือ (เอามือลง)</span>';
+      }
+    } else if (!m.isStarted) {
+      statusPill.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-bold';
+      statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-400"></span> การประชุมยังไม่เริ่ม';
+      outerCircle.className = 'w-full h-full rounded-full bg-muted border-8 border-border flex items-center justify-center text-5xl text-muted-foreground/40 transition-all';
+      if (checkBadge) { checkBadge.classList.add('hidden'); checkBadge.classList.remove('flex'); }
+      mainTitle.textContent = 'ยังไม่เปิดให้ยกมือพูด';
+      subDesc.textContent = 'การประชุมยังไม่เริ่ม ระบบจะเปิดให้ยกมือขอพูดเมื่อผู้ดูแลระบบเปิดการประชุมแล้ว';
+      if (myOrderNum) myOrderNum.textContent = '-';
+      if (waitBeforeNum) waitBeforeNum.textContent = '0 คน';
+      if (timeText) timeText.textContent = 'การประชุมยังไม่เริ่ม';
+      if (actionBtn) {
+        actionBtn.disabled = true;
+        actionBtn.className = 'w-full py-4 rounded-2xl bg-muted text-muted-foreground font-bold text-sm border border-border cursor-not-allowed opacity-80 flex items-center justify-center gap-1.5';
+        actionBtn.innerHTML = '<i data-lucide="clock" class="w-5 h-5"></i> <span>รอผู้ดูแลระบบเปิดประชุม</span>';
+      }
+    } else if (m.isEnded) {
+      statusPill.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold';
+      statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> จบการประชุมแล้ว';
+      outerCircle.className = 'w-full h-full rounded-full bg-rose-500/10 border-8 border-rose-500/15 flex items-center justify-center text-5xl text-rose-500 dark:text-rose-400 transition-all';
+      if (checkBadge) { checkBadge.classList.add('hidden'); checkBadge.classList.remove('flex'); }
+      mainTitle.textContent = 'จบการประชุมแล้ว';
+      subDesc.textContent = 'การประชุมได้สิ้นสุดลงแล้ว ไม่สามารถยกมือขอพูดได้';
+      if (myOrderNum) myOrderNum.textContent = '-';
+      if (waitBeforeNum) waitBeforeNum.textContent = '0 คน';
+      if (timeText) timeText.textContent = 'การประชุมเสร็จสิ้นแล้ว';
+      if (actionBtn) {
+        actionBtn.disabled = true;
+        actionBtn.className = 'w-full py-4 rounded-2xl bg-muted text-muted-foreground font-bold text-sm border border-border cursor-not-allowed opacity-80 flex items-center justify-center gap-1.5';
+        actionBtn.innerHTML = '<i data-lucide="check-circle-2" class="w-5 h-5"></i> <span>การประชุมเสร็จสิ้นแล้ว</span>';
       }
     } else {
       statusPill.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold';
@@ -459,9 +511,10 @@ function updateRaiseHandUserUI() {
       subDesc.textContent = 'แตะที่ปุ่มด้านล่างเพื่อส่งสัญญาณไปยังหน้าจอผู้ดำเนินรายการ';
       if (myOrderNum) myOrderNum.textContent = '-';
       if (waitBeforeNum) waitBeforeNum.textContent = queue.length;
-      if (timeText) timeText.textContent = '-';
+      if (timeText) timeText.textContent = `คิวผู้ยกมือทั้งหมดในขณะนี้: ${queue.length} คน`;
       if (actionBtn) {
-        actionBtn.className = 'w-full py-4 rounded-2xl btn-primary-gradient text-white font-extrabold text-sm shadow-lg transition active:scale-95 flex items-center justify-center gap-1.5';
+        actionBtn.disabled = false;
+        actionBtn.className = 'w-full py-4 rounded-2xl btn-primary-gradient text-white font-extrabold text-sm shadow-lg transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer';
         actionBtn.innerHTML = '<i data-lucide="hand" class="w-5 h-5"></i> <span>กดยกมือขอพูดทันที</span>';
       }
     }
@@ -492,6 +545,9 @@ function updateRaiseHandUserUI() {
       userLiveQueueList.classList.add('hidden');
     }
   }
+
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
 }
 
 // Window attachments

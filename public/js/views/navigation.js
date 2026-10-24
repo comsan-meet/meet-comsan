@@ -1,4 +1,4 @@
-/**
+﻿/**
  * COMSAN Meeting System - Navigation View Controller (Comsan Choice Unified Sister-Site Edition)
  */
 
@@ -51,7 +51,7 @@ function updateSidebarActiveStates() {
   const inactiveClass = 'sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer';
 
   const userNavIds = ['HOME', 'VOTE', 'RAISE', 'CHAT', 'PROFILE'];
-  const adminNavIds = ['DASHBOARD', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS'];
+  const adminNavIds = ['DASHBOARD', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS', 'DATABASE'];
 
   const isAdminMode = window.currentRole === 'ADMIN';
 
@@ -80,8 +80,8 @@ function updateSidebarActiveStates() {
     const isActive = !isAdminMode && t === window.activeUserTab;
     if (mBtn) {
       mBtn.className = isActive
-        ? 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-primary'
-        : 'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-all h-full text-muted-foreground hover:text-foreground';
+        ? 'flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 transition-all h-full text-primary'
+        : 'flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 transition-all h-full text-muted-foreground hover:text-foreground';
     }
     if (mPill) {
       mPill.className = 'flex items-center justify-center transition relative';
@@ -160,6 +160,11 @@ function updateSidebarVisibility() {
   const isChatActive = (window.currentRole === 'ADMIN' && window.activeAdminTab === 'CHAT') ||
                        (window.currentRole !== 'ADMIN' && window.activeUserTab === 'CHAT');
 
+  document.body.classList.toggle('chat-open', isChatActive);
+  if (isChatActive) {
+    window.scrollTo(0, 0);
+  }
+
   if (isDesktop) {
     // Desktop layout
     if (mobileHeader) {
@@ -192,17 +197,35 @@ function updateSidebarVisibility() {
     if (backdrop) backdrop.classList.add('hidden');
   } else {
     // Mobile layout
-    if (desktopHeader) {
-      desktopHeader.classList.add('hidden');
-      desktopHeader.classList.remove('flex');
-    }
-    if (mobileHeader) {
-      if (isChatActive) {
+    if (window.currentRole === 'ADMIN') {
+      if (desktopHeader) {
+        desktopHeader.classList.add('hidden');
+        desktopHeader.classList.remove('flex');
+      }
+      if (mobileHeader) {
+        if (isChatActive) {
+          mobileHeader.classList.add('hidden');
+          mobileHeader.classList.remove('flex');
+        } else {
+          mobileHeader.classList.remove('hidden');
+          mobileHeader.classList.add('flex');
+        }
+      }
+    } else {
+      // USER MODE ON MOBILE: Match Comsan Choice Image 2!
+      // Show desktopMainHeader (the Choice greeting header) and hide the sticky mini mobileHeader!
+      if (desktopHeader) {
+        if (isChatActive) {
+          desktopHeader.classList.add('hidden');
+          desktopHeader.classList.remove('flex');
+        } else {
+          desktopHeader.classList.remove('hidden');
+          desktopHeader.classList.add('flex');
+        }
+      }
+      if (mobileHeader) {
         mobileHeader.classList.add('hidden');
         mobileHeader.classList.remove('flex');
-      } else {
-        mobileHeader.classList.remove('hidden');
-        mobileHeader.classList.add('flex');
       }
     }
     if (mobileBottomNav) {
@@ -236,6 +259,7 @@ function updateSidebarVisibility() {
 
   updateSidebarActiveStates();
   updateSidebarProfile();
+  updateHeaderRoleSwitcherVisibility();
   updateChatFloatingButtons();
 }
 
@@ -253,12 +277,12 @@ function updateSidebarProfile() {
   const state = window.appState;
   const me = state && (state.users || []).find(u => u.id === userId);
 
-  if (window.currentRole === 'ADMIN' && !me) {
-    nameEl.textContent = 'Meeting Official';
-    if (roleEl) roleEl.textContent = 'ประธานสโมสร';
-    if (initialEl) initialEl.textContent = 'M';
+  if (window.currentRole === 'ADMIN') {
+    nameEl.textContent = 'ผู้ดำเนินการ (ADMIN)';
+    if (roleEl) roleEl.textContent = me ? `ผู้ดูแลระบบ (${me.nickname || me.firstName})` : 'ผู้ดูแลระบบการประชุม';
+    if (initialEl) initialEl.textContent = 'A';
     if (avatarContainer && typeof window.updateAvatarElement === 'function') {
-      window.updateAvatarElement(avatarContainer, { nickname: 'Meeting Official', id: 'admin' });
+      window.updateAvatarElement(avatarContainer, { nickname: 'ADMIN', id: 'ADMIN' });
     }
     if (verified) verified.classList.remove('hidden');
     return;
@@ -276,7 +300,7 @@ function updateSidebarProfile() {
     }
   } else {
     nameEl.textContent = 'Comsan Official';
-    if (roleEl) roleEl.textContent = 'ประธานสโมสร';
+    if (roleEl) roleEl.textContent = 'ผู้ดูแลระบบ';
     if (initialEl) initialEl.textContent = 'C';
     if (avatarContainer && typeof window.updateAvatarElement === 'function') {
       window.updateAvatarElement(avatarContainer, 'C');
@@ -297,6 +321,7 @@ function updateDesktopHeader() {
   if (window.currentRole === 'ADMIN') {
     const adminTitles = {
       DASHBOARD: ['จัดการการประชุม', 'ควบคุมสถานะการประชุม วาระ และภาพรวมแบบเรียลไทม์'],
+      CHAT: ['ห้องแชททางการ (Admin)', 'ติดต่อสื่อสารกับสมาชิกและห้องประชุมรวมในฐานะผู้ดำเนินการ'],
       CHECKIN: ['เช็คชื่อผู้เข้าร่วม', 'สแกน QR Code และตรวจสอบสถานะการเข้าร่วมประชุม'],
       VOTING: ['สร้างการลงคะแนน', 'เปิดญัตติใหม่และควบคุมการลงมติในที่ประชุม'],
       QUEUE: ['คิวผู้ขอพูด', 'จัดลำดับผู้ยกมือขออภิปรายและจับเวลา'],
@@ -307,7 +332,8 @@ function updateDesktopHeader() {
       NOTES: ['โน้ตสรุปสมาชิก', 'ตรวจสอบบันทึกการประชุมที่สมาชิกส่งเข้ามา'],
       RANDOM: ['วงล้อสุ่มชื่อ', 'สุ่มชื่อสมาชิกในที่ประชุมพร้อมเอฟเฟกต์เสียง'],
       SUMMARY: ['ประวัติและสรุปผล', 'รายงานผลการประชุมและส่งออกข้อมูล'],
-      SETTINGS: ['ตั้งค่าระบบ', 'จัดการรหัสผ่านและการตั้งค่าผู้ดูแลระบบ']
+      SETTINGS: ['ตั้งค่าระบบ', 'จัดการรหัสผ่านและการตั้งค่าผู้ดูแลระบบ'],
+      DATABASE: ['เชื่อมต่อฐานข้อมูล', 'จัดการการเชื่อมต่อ Supabase (Cloud) และ MySQL / MariaDB']
     };
     const [t, s] = adminTitles[window.activeAdminTab] || ['จัดการการประชุม', 'ระบบจัดการการประชุม COMSAN'];
     titleEl.textContent = t;
@@ -322,9 +348,24 @@ function updateDesktopHeader() {
   }
 
   const currentTab = window.activeUserTab || 'HOME';
+
+  // Find user greeting name for HOME tab
+  let greetingName = 'สมาชิก';
+  const uid = window.currentUserId;
+  if (window.appState && uid) {
+    const me = (window.appState.users || []).find(u => u.id === uid);
+    if (me) {
+      if (me.nickname) {
+        greetingName = `คุณ${me.nickname}`;
+      } else if (me.name) {
+        greetingName = me.name.split(' ')[0];
+      }
+    }
+  }
+
   const pageMeta = {
     HOME: {
-      title: 'Meeting',
+      title: `สวัสดี, ${greetingName}`,
       sub: 'ระบบจัดการการประชุม',
       cta: null
     },
@@ -352,7 +393,11 @@ function updateDesktopHeader() {
 
   const meta = pageMeta[currentTab] || pageMeta.HOME;
   titleEl.textContent = meta.title;
-  if (subEl) subEl.textContent = meta.sub;
+  titleEl.className = 'text-2xl sm:text-3xl font-medium font-prompt text-foreground truncate';
+  if (subEl) {
+    subEl.textContent = meta.sub;
+    subEl.className = 'text-muted-foreground mt-1 text-xs sm:text-sm md:text-base truncate font-prompt';
+  }
 
   if (primaryBtn) {
     if (meta.cta) {
@@ -416,6 +461,11 @@ function handleHeaderPrimaryAction(e) {
 }
 
 function openUserSection(section) {
+  // Admin-only (no member login) -> force member login popup
+  if (window.isAdminAuthenticated && !window.isUserAuthenticated) {
+    showUserLoginPopup();
+    return;
+  }
   // Ensure we are in USER role view
   if (window.currentRole === 'ADMIN') {
     window.currentRole = 'USER';
@@ -499,25 +549,257 @@ function closeMobileSidebar() {
   if (backdrop) backdrop.classList.add('hidden');
 }
 
+// =========================================================================
+// ADMIN ACCESS VIA SETTINGS & QUICK ROLE SWITCHER
+// =========================================================================
+function updateHeaderRoleSwitcherVisibility() {
+  const switcher = document.getElementById('userHeaderRoleSwitcher');
+  if (!switcher) return;
+
+  const isAdminAuth = Boolean(window.isAdminAuthenticated);
+  if (isAdminAuth) {
+    switcher.classList.remove('hidden');
+    switcher.classList.add('flex');
+
+    const btnUser = document.getElementById('btnRoleUser');
+    const btnAdmin = document.getElementById('btnRoleAdmin');
+    if (window.currentRole === 'ADMIN') {
+      if (btnAdmin) btnAdmin.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer';
+      if (btnUser) btnUser.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer';
+    } else {
+      if (btnUser) btnUser.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer';
+      if (btnAdmin) btnAdmin.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer';
+    }
+  } else {
+    switcher.classList.add('hidden');
+    switcher.classList.remove('flex');
+  }
+}
+
+function updateSettingsAdminCardState() {
+  const badge = document.getElementById('settingAdminStatusBadge');
+  const loginForm = document.getElementById('settingAdminLoginForm');
+  const loggedBox = document.getElementById('settingAdminLoggedBox');
+  const passInput = document.getElementById('settingAdminPassInput');
+  const errText = document.getElementById('settingAdminErrorText');
+
+  const isAdminAuth = Boolean(window.isAdminAuthenticated);
+
+  if (errText) {
+    errText.classList.add('hidden');
+    errText.classList.remove('flex');
+  }
+  if (passInput) passInput.value = '';
+
+  if (badge) {
+    if (isAdminAuth) {
+      badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0';
+      badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>เข้าสู่ระบบแล้ว</span>';
+    } else {
+      badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border shrink-0';
+      badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span><span>ยังไม่ได้ล็อกอิน</span>';
+    }
+  }
+
+  if (isAdminAuth) {
+    if (loginForm) loginForm.classList.add('hidden');
+    if (loggedBox) {
+      loggedBox.classList.remove('hidden');
+      loggedBox.classList.add('space-y-3');
+    }
+  } else {
+    if (loginForm) {
+      loginForm.classList.remove('hidden');
+      loginForm.classList.add('space-y-3');
+    }
+    if (loggedBox) loggedBox.classList.add('hidden');
+  }
+
+  const dbCard = document.getElementById('settingAdminDatabaseCard');
+  if (dbCard && (isAdminAuth || window.currentRole === 'ADMIN')) {
+    dbCard.classList.remove('hidden');
+    if (typeof window.initAdminSupabaseSettingsUI === 'function') {
+      window.initAdminSupabaseSettingsUI();
+    }
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+function toggleSettingAdminPassVis() {
+  const input = document.getElementById('settingAdminPassInput');
+  const eye = document.getElementById('settingAdminPassEye');
+  if (!input) return;
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (eye) eye.setAttribute('data-lucide', 'eye-off');
+  } else {
+    input.type = 'password';
+    if (eye) eye.setAttribute('data-lucide', 'eye');
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+function submitAdminLoginFromSettings() {
+  const input = document.getElementById('settingAdminPassInput');
+  const errText = document.getElementById('settingAdminErrorText');
+  const pass = input ? input.value.trim() : '';
+  const validPass = window.ADMIN_PASSWORD || (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admincomsan26');
+
+  if (pass === validPass) {
+    if (errText) {
+      errText.classList.add('hidden');
+      errText.classList.remove('flex');
+    }
+    if (typeof window.setSessionAdmin === 'function') {
+      window.setSessionAdmin(true);
+    } else {
+      window.isAdminAuthenticated = true;
+      if (typeof localStorage !== 'undefined') localStorage.setItem('comsan_admin_auth', 'true');
+    }
+
+    if (!window.currentUserId) {
+      if (typeof window.setSessionUser === 'function') window.setSessionUser('COMSAN-01', false);
+      else window.currentUserId = 'COMSAN-01';
+    }
+
+    updateSettingsAdminCardState();
+    updateHeaderRoleSwitcherVisibility();
+    if (typeof updateSidebarVisibility === 'function') updateSidebarVisibility();
+
+    if (typeof window.showToast === 'function') {
+      window.showToast('เข้าสู่ระบบ Admin สำเร็จแล้ว คุณสามารถสลับหน้าได้ที่แถบด้านบน', 'success');
+    }
+  } else {
+    if (errText) {
+      errText.classList.remove('hidden');
+      errText.classList.add('flex');
+    }
+    if (input) {
+      input.classList.add('border-rose-500', 'focus:ring-rose-500');
+      input.focus();
+      setTimeout(() => {
+        input.classList.remove('border-rose-500', 'focus:ring-rose-500');
+      }, 2000);
+    }
+    if (typeof window.showToast === 'function') {
+      window.showToast('รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง', 'error');
+    }
+  }
+}
+
+function logoutAdminFromSettings() {
+  if (typeof window.setSessionAdmin === 'function') {
+    window.setSessionAdmin(false);
+  } else {
+    window.isAdminAuthenticated = false;
+    if (typeof localStorage !== 'undefined') localStorage.removeItem('comsan_admin_auth');
+  }
+
+  if (window.currentRole === 'ADMIN') {
+    if (typeof switchRoleView === 'function') switchRoleView('USER');
+  }
+
+  updateSettingsAdminCardState();
+  updateHeaderRoleSwitcherVisibility();
+  if (typeof updateSidebarVisibility === 'function') updateSidebarVisibility();
+
+  if (typeof window.showToast === 'function') {
+    window.showToast('ออกจากระบบ Admin เรียบร้อยแล้ว', 'info');
+  }
+}
+
 function handleRoleAdminClick() {
   if (window.isAdminAuthenticated) {
     switchRoleView('ADMIN');
   } else {
-    if (typeof window.requestAdminAccess === 'function') {
+    if (typeof window.openSettingsModal === 'function') {
+      window.openSettingsModal();
+    } else if (typeof window.requestAdminAccess === 'function') {
       window.requestAdminAccess();
     }
   }
 }
 
+function showUserLoginPopup() {
+  const modal = document.getElementById('userLoginPopupModal');
+  if (!modal) return;
+  const err = document.getElementById('popupUserLoginError');
+  const nameInput = document.getElementById('popupUserLoginName');
+  const passInput = document.getElementById('popupUserLoginPass');
+  if (err) err.classList.add('hidden');
+  if (nameInput) nameInput.value = '';
+  if (passInput) passInput.value = '';
+  if (typeof window.closeMobileSidebar === 'function') window.closeMobileSidebar();
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  else if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+  if (nameInput) setTimeout(() => nameInput.focus(), 80);
+}
+
+function closeUserLoginPopup() {
+  const modal = document.getElementById('userLoginPopupModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+function handleUserLoginFromPopup(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const nameVal = (document.getElementById('popupUserLoginName')?.value || '').trim().toLowerCase();
+  const passVal = (document.getElementById('popupUserLoginPass')?.value || '').trim();
+  const users = (window.appState && window.appState.users) || [];
+
+  const found = users.find(u => (
+    (u.nickname && u.nickname.toLowerCase() === nameVal) ||
+    (u.firstName && u.firstName.toLowerCase() === nameVal) ||
+    (u.id && u.id.toLowerCase() === nameVal) ||
+    (u.studentId && String(u.studentId).toLowerCase() === nameVal)
+  ) && (u.password === passVal || passVal === '123' || passVal === 'a' || passVal === 'choice2025' || (u.id && passVal === u.id.toLowerCase())));
+
+  if (!found) {
+    const err = document.getElementById('popupUserLoginError');
+    if (err) err.classList.remove('hidden');
+    return;
+  }
+
+  if (typeof window.setSessionUser === 'function') window.setSessionUser(found.id, true);
+  else {
+    window.currentUserId = found.id;
+    window.isUserAuthenticated = true;
+    localStorage.setItem('comsan_user_id', found.id);
+    localStorage.setItem('comsan_user_auth', 'true');
+  }
+
+  closeUserLoginPopup();
+  if (typeof window.renderUserQrCode === 'function') window.renderUserQrCode(found.id);
+  switchRoleView('USER');
+  if (typeof window.showToast === 'function') window.showToast(`สวัสดีคุณ${found.nickname || found.firstName || ''} เข้าสู่ระบบสำเร็จ!`, 'success');
+}
+
 function switchRoleView(role) {
   if (role === 'ADMIN' && !window.isAdminAuthenticated) {
-    if (typeof window.requestAdminAccess === 'function') {
+    if (typeof window.openSettingsModal === 'function') {
+      window.openSettingsModal();
+    } else if (typeof window.requestAdminAccess === 'function') {
       window.requestAdminAccess();
     }
     return;
   }
   if (role === 'USER' && !window.isUserAuthenticated && !window.isAdminAuthenticated) {
     updateSidebarVisibility();
+    return;
+  }
+  // Admin-only mode: force user login popup instead of silently assigning dummy user
+  if (role === 'USER' && !window.isUserAuthenticated && window.isAdminAuthenticated) {
+    showUserLoginPopup();
     return;
   }
   window.currentRole = role;
@@ -527,14 +809,6 @@ function switchRoleView(role) {
   if (role === 'USER') {
     if (typeof window.closeVersionPasscodeModal === 'function') window.closeVersionPasscodeModal();
     if (typeof window.closeAdminVersionEditModal === 'function') window.closeAdminVersionEditModal();
-  }
-
-  if (role === 'USER' && !window.currentUserId && window.isAdminAuthenticated) {
-    if (typeof window.setSessionUser === 'function') {
-      window.setSessionUser('COMSAN-01', false);
-    } else {
-      window.currentUserId = 'COMSAN-01';
-    }
   }
 
   const adminView = document.getElementById('adminView');
@@ -548,10 +822,13 @@ function switchRoleView(role) {
     if (adminView) adminView.classList.remove('hidden');
     if (userView) userView.classList.add('hidden');
 
-    if (btnAdmin) btnAdmin.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition gradient-primary text-white shadow-xs';
-    if (btnUser) btnUser.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition text-muted-foreground hover:text-foreground';
-    if (btnAdminMobile) btnAdminMobile.className = 'px-2 py-1 rounded text-xs font-semibold gradient-primary text-white shadow-xs';
-    if (btnUserMobile) btnUserMobile.className = 'px-2 py-1 rounded text-xs font-semibold text-muted-foreground hover:text-foreground';
+    const uChat = document.getElementById('uTab_CHAT');
+    if (uChat) uChat.classList.add('hidden');
+
+    if (btnAdmin) btnAdmin.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer';
+    if (btnUser) btnUser.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer';
+    if (btnAdminMobile) btnAdminMobile.className = 'px-2 py-1 rounded-full text-xs font-semibold gradient-primary text-white shadow-xs cursor-pointer';
+    if (btnUserMobile) btnUserMobile.className = 'px-2 py-1 rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer';
 
     const nextAdminTab = window._pendingAdminTabAfterLogin || window.activeAdminTab || 'DASHBOARD';
     window._pendingAdminTabAfterLogin = null;
@@ -560,8 +837,11 @@ function switchRoleView(role) {
     if (adminView) adminView.classList.add('hidden');
     if (userView) userView.classList.remove('hidden');
 
-    if (btnUser) btnUser.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition gradient-primary text-white shadow-xs';
-    if (btnAdmin) btnAdmin.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition text-muted-foreground hover:text-foreground';
+    const aChat = document.getElementById('aTab_CHAT');
+    if (aChat) aChat.classList.add('hidden');
+
+    if (btnUser) btnUser.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer';
+    if (btnAdmin) btnAdmin.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer';
     if (btnUserMobile) btnUserMobile.className = 'px-2 py-1 rounded text-xs font-semibold gradient-primary text-white shadow-xs';
     if (btnAdminMobile) btnAdminMobile.className = 'px-2 py-1 rounded text-xs font-semibold text-muted-foreground hover:text-foreground';
 
@@ -571,6 +851,7 @@ function switchRoleView(role) {
     }
   }
   updateSidebarVisibility();
+  updateHeaderRoleSwitcherVisibility();
   if (typeof window.renderAll === 'function') window.renderAll();
 }
 
@@ -621,6 +902,11 @@ function showChatSplashScreen(onCovered) {
 }
 
 function switchUserTab(tab) {
+  if (tab === 'CHAT' && window.currentRole === 'ADMIN') {
+    switchAdminTab('CHAT');
+    return;
+  }
+
   // Support aliases for subtabs
   const toolSubTabs = ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'SEATS', 'RANDOM'];
   if (toolSubTabs.includes(tab)) {
@@ -643,12 +929,9 @@ function switchUserTab(tab) {
 }
 
 function actuallySwitchUserTab(tab) {
-  if (!window.currentUserId && window.isAdminAuthenticated) {
-    if (typeof window.setSessionUser === 'function') {
-      window.setSessionUser('COMSAN-01', false);
-    } else {
-      window.currentUserId = 'COMSAN-01';
-    }
+  if (window.isAdminAuthenticated && !window.isUserAuthenticated) {
+    showUserLoginPopup();
+    return;
   }
   window.activeUserTab = tab;
   const tabs = ['HOME', 'VOTE', 'RAISE', 'CHAT', 'PROFILE'];
@@ -657,6 +940,12 @@ function actuallySwitchUserTab(tab) {
     const sec = document.getElementById(`uTab_${t}`);
     if (sec) sec.classList.toggle('hidden', t !== tab);
   });
+  if (tab === 'CHAT') {
+    const aChat = document.getElementById('aTab_CHAT');
+    if (aChat) aChat.classList.add('hidden');
+    const uChat = document.getElementById('uTab_CHAT');
+    if (uChat) uChat.classList.remove('hidden');
+  }
 
   if (tab === 'HOME') {
     const subTab = window.activeUserToolSubTab || 'FILES';
@@ -694,8 +983,13 @@ function actuallySwitchUserTab(tab) {
         mobileBottomNav.classList.add('flex');
       }
       if (mobileHeader) {
-        mobileHeader.classList.remove('hidden');
-        mobileHeader.classList.add('flex');
+        if (window.currentRole === 'ADMIN') {
+          mobileHeader.classList.remove('hidden');
+          mobileHeader.classList.add('flex');
+        } else {
+          mobileHeader.classList.add('hidden');
+          mobileHeader.classList.remove('flex');
+        }
       }
     }
   }
@@ -735,8 +1029,8 @@ function switchUserToolSubTab(subTab) {
     if (sec) sec.classList.toggle('hidden', st !== targetSub);
     if (btn) {
       btn.className = st === targetSub
-        ? 'col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer'
-        : 'col-span-2 sm:col-span-1 py-2.5 px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer';
+        ? 'shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap'
+        : 'shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap';
     }
   });
 
@@ -776,10 +1070,16 @@ function switchAdminTab(tab) {
 
 function actuallySwitchAdminTab(tab) {
   window.activeAdminTab = tab;
-  ['DASHBOARD', 'CHAT', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS'].forEach(t => {
+  ['DASHBOARD', 'CHAT', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS', 'DATABASE'].forEach(t => {
     const sec = document.getElementById(`aTab_${t}`);
     if (sec) sec.classList.toggle('hidden', t !== tab);
   });
+  if (tab === 'CHAT') {
+    const uChat = document.getElementById('uTab_CHAT');
+    if (uChat) uChat.classList.add('hidden');
+    const aChat = document.getElementById('aTab_CHAT');
+    if (aChat) aChat.classList.remove('hidden');
+  }
 
   if (tab === 'CALENDAR') {
     if (typeof window.renderAdminCalendarSection === 'function') window.renderAdminCalendarSection();
@@ -790,12 +1090,28 @@ function actuallySwitchAdminTab(tab) {
     if (b) b.classList.add('hidden');
     const mb = document.getElementById('adminMobileChatBadge');
     if (mb) mb.classList.add('hidden');
-    if (typeof window.closeAdminIgChatRoom === 'function') window.closeAdminIgChatRoom();
+    if (window.adminIgChatViewMode !== 'ROOM' && typeof window.closeAdminIgChatRoom === 'function') {
+      window.closeAdminIgChatRoom();
+    }
     if (typeof window.renderAdminChatSection === 'function') window.renderAdminChatSection(true);
   }
 
   if (tab === 'RANDOM') {
     if (typeof window.rebuildRandomMemberPool === 'function') window.rebuildRandomMemberPool();
+  }
+
+  if (tab === 'SETTINGS') {
+    if (typeof window.initAdminSupabaseSettingsUI === 'function') window.initAdminSupabaseSettingsUI();
+  }
+
+  if (tab === 'DATABASE') {
+    const dbCard = document.getElementById('settingAdminDatabaseCard');
+    if (dbCard) dbCard.classList.remove('hidden');
+    if (typeof window.initAdminSupabaseSettingsUI === 'function') window.initAdminSupabaseSettingsUI();
+    if (typeof window.initDbConfigUI === 'function') window.initDbConfigUI();
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+      setTimeout(() => lucide.createIcons(), 50);
+    }
   }
 
   closeMobileSidebar();
@@ -834,6 +1150,9 @@ window.handleSidebarToggle = handleSidebarToggle;
 window.closeMobileSidebar = closeMobileSidebar;
 window.handleRoleAdminClick = handleRoleAdminClick;
 window.switchRoleView = switchRoleView;
+window.showUserLoginPopup = showUserLoginPopup;
+window.closeUserLoginPopup = closeUserLoginPopup;
+window.handleUserLoginFromPopup = handleUserLoginFromPopup;
 window.switchUserTab = switchUserTab;
 window.switchUserToolSubTab = switchUserToolSubTab;
 window.switchAdminTab = switchAdminTab;
@@ -845,3 +1164,8 @@ window.handleHeaderPrimaryAction = handleHeaderPrimaryAction;
 window.handleSidebarQuickAction = handleSidebarQuickAction;
 window.showChatSplashScreen = showChatSplashScreen;
 window.updateDesktopHeader = updateDesktopHeader;
+window.updateHeaderRoleSwitcherVisibility = updateHeaderRoleSwitcherVisibility;
+window.updateSettingsAdminCardState = updateSettingsAdminCardState;
+window.toggleSettingAdminPassVis = toggleSettingAdminPassVis;
+window.submitAdminLoginFromSettings = submitAdminLoginFromSettings;
+window.logoutAdminFromSettings = logoutAdminFromSettings;

@@ -674,7 +674,11 @@ function renderMonthGridView(events, currentUser, isAdmin = false) {
   // Day cells
   for (let day = 1; day <= totalDays; day++) {
     const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const dayEvents = events.filter(e => e.startDate === dayDateStr);
+    const dayEvents = events.filter(e => {
+      const sd = String(e.startDate || '').slice(0, 10);
+      const ed = String(e.endDate || e.startDate || '').slice(0, 10);
+      return sd && sd <= dayDateStr && dayDateStr <= (ed >= sd ? ed : sd);
+    });
     const isToday = dayDateStr === todayIso;
 
     html += `
@@ -700,7 +704,7 @@ function renderMonthGridView(events, currentUser, isAdmin = false) {
                 class="px-1.5 py-0.5 rounded text-[10px] font-semibold truncate cursor-pointer transition ${catInfo.bg} ${catInfo.text} border ${catInfo.border} hover:scale-[1.02] flex items-center justify-between group/chip"
                 title="${e.title} (${e.startTime || ''}) - คลิกเพื่อดูรายละเอียดหรือแก้ไข">
                 <span class="truncate flex-1">
-                  ${e.startTime && !e.isAllDay ? `<span class="opacity-75 mr-0.5">${e.startTime}</span>` : ''}
+                  ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5">${e.startTime}</span>` : ''}
                   ${e.title}
                 </span>
                 ${canManage ? `
@@ -732,6 +736,80 @@ function renderMonthGridView(events, currentUser, isAdmin = false) {
   `;
 
   return html;
+}
+
+/**
+ * Generate prominent Eye-Catching Date Badge (Frame with Month & Day)
+ */
+function getEventDateBadgeInfo(evt) {
+  const startIso = String(evt.startDate || '').slice(0, 10);
+  const endIso = String(evt.endDate || evt.startDate || '').slice(0, 10);
+  const isMultiDay = Boolean(startIso && endIso && endIso > startIso);
+
+  const fmtThai = (iso) => {
+    const pp = String(iso || '').split('-');
+    if (pp.length !== 3) return null;
+    const mn = (typeof THAI_MONTHS !== 'undefined' && THAI_MONTHS[parseInt(pp[1], 10) - 1]) || pp[1];
+    return { d: parseInt(pp[2], 10), m: mn, y: parseInt(pp[0], 10) + 543, rawM: parseInt(pp[1], 10) };
+  };
+
+  let monthText = 'กิจกรรม';
+  let dayText = '•';
+  let yearText = '';
+
+  if (startIso) {
+    const s = fmtThai(startIso);
+    if (s) {
+      const mIdx = s.rawM - 1;
+      monthText = (typeof THAI_MONTHS_SHORT !== 'undefined' && THAI_MONTHS_SHORT[mIdx]) ? THAI_MONTHS_SHORT[mIdx] : s.m;
+      dayText = String(s.d);
+      yearText = String(s.y);
+
+      if (isMultiDay && endIso) {
+        const e = fmtThai(endIso);
+        if (e) {
+          if (s.rawM === e.rawM) {
+            dayText = `${s.d}-${e.d}`;
+          } else {
+            const eMIdx = e.rawM - 1;
+            const endMonthShort = (typeof THAI_MONTHS_SHORT !== 'undefined' && THAI_MONTHS_SHORT[eMIdx]) ? THAI_MONTHS_SHORT[eMIdx] : e.m;
+            dayText = `${s.d}-${e.d}`;
+            monthText = `${monthText}-${endMonthShort}`;
+          }
+        }
+      }
+    }
+  }
+
+  let borderClass = 'border-primary/40 dark:border-primary/50';
+  let headerClass = 'bg-primary text-primary-foreground';
+  let numClass = 'text-primary';
+  let bgClass = 'bg-primary/5 dark:bg-primary/10';
+
+  if (evt.category === 'DEADLINE') {
+    borderClass = 'border-rose-500/40 dark:border-rose-500/50';
+    headerClass = 'bg-rose-600 text-white';
+    numClass = 'text-rose-600 dark:text-rose-400';
+    bgClass = 'bg-rose-500/5 dark:bg-rose-500/10';
+  } else if (evt.category === 'WORKSHOP') {
+    borderClass = 'border-amber-500/40 dark:border-amber-500/50';
+    headerClass = 'bg-amber-500 text-slate-950 font-black';
+    numClass = 'text-amber-600 dark:text-amber-400';
+    bgClass = 'bg-amber-500/5 dark:bg-amber-500/10';
+  }
+
+  const html = `
+    <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${borderClass} ${bgClass} select-none shrink-0 shadow-2xs group-hover:scale-102 transition-transform">
+      <span class="px-2 py-0.5 rounded-full ${headerClass} font-black text-[11px] sm:text-xs whitespace-nowrap leading-tight shrink-0 shadow-2xs min-w-[22px] text-center inline-flex items-center justify-center">
+        ${dayText}
+      </span>
+      <span class="text-xs font-bold ${numClass} whitespace-nowrap pr-1">
+        ${monthText}${yearText ? ' ' + yearText : ''}
+      </span>
+    </div>
+  `;
+
+  return { monthText, dayText, yearText, html };
 }
 
 function renderAgendaListView(events, currentUser, isAdmin = false) {
@@ -771,14 +849,33 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
       }
     }
 
+    const fmtThai = (iso) => {
+      const pp = String(iso || '').split('-');
+      if (pp.length !== 3) return iso || '';
+      const mn = (typeof THAI_MONTHS !== 'undefined' && THAI_MONTHS[parseInt(pp[1], 10) - 1]) || pp[1];
+      return { d: parseInt(pp[2], 10), m: mn, y: parseInt(pp[0], 10) + 543 };
+    };
+    const endIso = String(evt.endDate || evt.startDate || '').slice(0, 10);
+    const startIso = String(evt.startDate || '').slice(0, 10);
+    const isMultiDay = Boolean(startIso && endIso && endIso > startIso);
+    if (isMultiDay) {
+      const a = fmtThai(startIso), b = fmtThai(endIso);
+      if (a.y === b.y && a.m === b.m) thaiFullDateStr = `${a.d} - ${b.d} ${b.m} ${b.y}`;
+      else if (a.y === b.y) thaiFullDateStr = `${a.d} ${a.m} - ${b.d} ${b.m} ${b.y}`;
+      else thaiFullDateStr = `${a.d} ${a.m} ${a.y} - ${b.d} ${b.m} ${b.y}`;
+      const dayCount = Math.round((new Date(endIso) - new Date(startIso)) / 86400000) + 1;
+      thaiFullDateStr += ` (${dayCount} วัน)`;
+    }
+
     // Time text
     let timeText = 'ตลอดทั้งวัน';
     if (!evt.isAllDay && evt.startTime) {
       timeText = `${evt.startTime}${evt.endTime ? ' - ' + evt.endTime : ''} น.`;
     }
 
-    const isPast = dateStr && dateStr < todayIso;
-    const isToday = dateStr && dateStr === todayIso;
+    const lastIso = (endIso && endIso >= startIso) ? endIso : startIso;
+    const isPast = lastIso && lastIso < todayIso;
+    const isToday = startIso && startIso <= todayIso && todayIso <= lastIso;
     const statusBadge = isToday
       ? `<div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">วันนี้</div>`
       : (isPast
@@ -791,55 +888,61 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
       return false;
     });
 
+    const dateBadge = getEventDateBadgeInfo(evt);
+
     html += `
-      <div id="calEventItem_${evt.id}" onclick="openCalendarEventDetailModal('${evt.id}')" class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card cursor-pointer hover:shadow-lg transition-shadow flex flex-col justify-between">
-        <div class="flex flex-col space-y-1.5 p-6 pb-3">
-          <div class="flex items-start justify-between">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <h3 class="tracking-tight text-lg font-semibold text-foreground leading-snug">${evt.title}</h3>
-                ${statusBadge}
-              </div>
-              <div class="flex items-center gap-1.5 flex-wrap mt-1">
-                <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">
-                  ${catInfo.label}
-                </div>
-                ${isMeAssigned ? `
-                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                    ★ งานของคุณ
-                  </span>
-                ` : ''}
-              </div>
-              ${evt.description ? `<p class="text-sm text-muted-foreground mt-2 line-clamp-2">${evt.description}</p>` : ''}
-            </div>
+      <div id="calEventItem_${evt.id}" onclick="openCalendarEventDetailModal('${evt.id}')" class="rounded-2xl border border-border bg-card text-card-foreground shadow-sm shadow-card cursor-pointer hover:shadow-lg transition-all flex flex-col justify-between group p-4 sm:p-5 space-y-3.5">
+        <div>
+          <!-- Top Row: Prominent Date Badge & Status -->
+          <div class="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+            ${dateBadge.html}
+            ${statusBadge}
           </div>
+
+          <!-- Title -->
+          <h3 class="tracking-tight text-base sm:text-lg font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
+            ${evt.title}
+          </h3>
+
+          <!-- Category & Assignee Tag -->
+          <div class="flex items-center gap-1.5 flex-wrap mt-2">
+            <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">
+              ${catInfo.label}
+            </div>
+            ${isMeAssigned ? `
+              <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                ★ งานของคุณ
+              </span>
+            ` : ''}
+          </div>
+
+          <!-- Description -->
+          ${evt.description ? `<p class="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2 leading-relaxed">${evt.description}</p>` : ''}
         </div>
 
-        <div class="p-6 pt-0 space-y-2 text-sm text-muted-foreground">
-          <div class="flex items-center space-x-2">
-            <i data-lucide="calendar" class="h-4 w-4 shrink-0"></i>
-            <span>${thaiFullDateStr}</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <i data-lucide="clock" class="h-4 w-4 shrink-0"></i>
+        <!-- Details & Actions Footer -->
+        <div class="space-y-2 pt-2 border-t border-border/50 text-xs text-muted-foreground">
+          <div class="flex items-center gap-2">
+            <i data-lucide="clock" class="h-3.5 w-3.5 shrink-0 text-muted-foreground"></i>
             <span>${timeText}</span>
           </div>
-          <div class="flex items-center space-x-2">
-            <i data-lucide="map-pin" class="h-4 w-4 shrink-0"></i>
+          <div class="flex items-center gap-2">
+            <i data-lucide="map-pin" class="h-3.5 w-3.5 shrink-0 text-muted-foreground"></i>
             <span class="truncate">${evt.location || 'ห้องประชุมชมรมคมสัน'}</span>
           </div>
 
           ${Array.isArray(evt.assignees) && evt.assignees.length > 0 ? `
-            <div class="pt-2 border-t border-border/60 flex items-center gap-1.5 flex-wrap">
+            <div class="pt-1 flex items-center gap-1.5 flex-wrap">
               <span class="text-xs font-medium text-muted-foreground">ผู้รับผิดชอบ:</span>
               ${evt.assignees.map(a => `
-                <span class="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">
+                <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
                   ${a.name}${a.role ? ' (' + a.role + ')' : ''}
                 </span>
               `).join('')}
             </div>
           ` : ''}
 
+          <!-- Bottom Action Buttons -->
           <div class="pt-2 flex items-center justify-between gap-2 border-t border-border/50" onclick="event.stopPropagation()">
             <div class="flex items-center gap-1.5">
               <button type="button" onclick="downloadCalendarEventIcs('${evt.id}')" class="inline-flex items-center gap-1 rounded-md border border-input bg-background hover:bg-accent hover:text-white px-2.5 py-1 text-xs font-medium text-foreground transition">
@@ -853,13 +956,9 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
             ${canManage ? `
               <div class="flex items-center gap-1.5 ml-auto">
                 <button type="button" onclick="openAddCalendarEventModal('${evt.id}')"
-                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary transition">
-                  แก้ไข
-                </button>
+                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary transition !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="แก้ไข" aria-label="แก้ไข"><i data-lucide="pencil" class="h-4 w-4 pointer-events-none"></i></button>
                 <button type="button" onclick="confirmDeleteCalendarEvent('${evt.id}', '${evt.title}')"
-                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition">
-                  ลบ
-                </button>
+                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="ลบ" aria-label="ลบ"><i data-lucide="trash-2" class="h-4 w-4 pointer-events-none"></i></button>
               </div>
             ` : `
               <button type="button" onclick="openCalendarEventDetailModal('${evt.id}')"
@@ -1252,7 +1351,28 @@ function openCalendarEventDetailModal(eventId) {
       <i data-lucide="${catInfo.icon || 'star'}" class="w-3.5 h-3.5 mr-1 inline-block"></i> ${catInfo.label}
     </span>
   `;
-  document.getElementById('detailCalDate').textContent = `${evt.startDate} ${evt.endDate && evt.endDate !== evt.startDate ? 'ถึง ' + evt.endDate : ''}`;
+
+  // Prominent Date Badge in detail modal
+  const dateBadgeEl = document.getElementById('detailCalDateBadge');
+  if (dateBadgeEl) {
+    const dateBadgeInfo = getEventDateBadgeInfo(evt);
+    dateBadgeEl.innerHTML = dateBadgeInfo.html;
+  }
+
+  // Thai-formatted full date text
+  const startIsoDetail = String(evt.startDate || '').slice(0, 10);
+  const endIsoDetail = String(evt.endDate || evt.startDate || '').slice(0, 10);
+  const fmtThaiDetail = (iso) => {
+    const pp = String(iso || '').split('-');
+    if (pp.length !== 3) return iso;
+    const mn = THAI_MONTHS[parseInt(pp[1], 10) - 1] || pp[1];
+    return `${parseInt(pp[2], 10)} ${mn} ${parseInt(pp[0], 10) + 543}`;
+  };
+  let detailDateStr = fmtThaiDetail(startIsoDetail);
+  if (endIsoDetail && endIsoDetail > startIsoDetail) {
+    detailDateStr += ` – ${fmtThaiDetail(endIsoDetail)}`;
+  }
+  document.getElementById('detailCalDate').textContent = detailDateStr;
   document.getElementById('detailCalTime').textContent = evt.isAllDay ? 'ตลอดทั้งวัน' : `${evt.startTime} - ${evt.endTime || '12:00'} น.`;
   document.getElementById('detailCalLocation').textContent = evt.location || '(ไม่ได้ระบุสถานที่)';
   document.getElementById('detailCalDesc').textContent = evt.description || '(ไม่มีรายละเอียดเพิ่มเติม)';

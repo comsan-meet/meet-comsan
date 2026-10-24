@@ -149,12 +149,23 @@ function openIgChatRoom(partnerId, openMediaPicker = false) {
     delete window.unreadChatPartners[partnerId];
   }
 
+  const isDesktop = window.innerWidth >= 768;
   const inboxView = document.getElementById('igChatInboxView');
   const roomView = document.getElementById('igChatRoomView');
-  if (inboxView) inboxView.classList.add('hidden');
+  if (inboxView) {
+    if (isDesktop) {
+      inboxView.classList.remove('hidden');
+    } else {
+      inboxView.classList.add('hidden');
+    }
+  }
   if (roomView) roomView.classList.remove('hidden');
 
   renderFloatingChat(true);
+
+  if (isDesktop) {
+    renderIgInboxList();
+  }
 
   if (openMediaPicker) {
     setTimeout(() => {
@@ -172,8 +183,21 @@ function closeIgChatRoom() {
   const roomView = document.getElementById('igChatRoomView');
   if (roomView) roomView.classList.add('hidden');
   if (inboxView) inboxView.classList.remove('hidden');
+  if (window.innerWidth >= 768) {
+    window.activeChatPartner = null;
+  }
 
   renderIgInboxView();
+}
+
+function handleChatPartnerHeaderClick() {
+  if (window.activeChatPartner && window.activeChatPartner !== 'ALL' && window.activeChatPartner !== 'ADMIN') {
+    if (typeof window.openMemberProfilePopup === 'function') {
+      window.openMemberProfilePopup(window.activeChatPartner);
+    }
+  } else {
+    closeIgChatRoom();
+  }
 }
 
 function selectChatRoom(partnerId) {
@@ -289,7 +313,7 @@ function renderIgNotesRow() {
             <div class="w-1 h-1 rounded-full bg-card border border-border mt-0.5"></div>
           </div>
         ` : ''}
-        <div class="relative w-14 h-14 rounded-full p-0.5 ${note ? 'bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600' : 'bg-muted/80 group-hover:bg-primary/40'} transition flex items-center justify-center shadow-xs">
+        <div class="relative w-14 h-14 rounded-full p-0.5 ${note ? 'bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600' : 'bg-muted/80 group-hover:bg-primary/40'} transition flex items-center justify-center shadow-xs cursor-pointer" onclick="event.stopPropagation(); openMemberProfilePopup('${u.id}')">
           <div class="w-full h-full rounded-full bg-card overflow-hidden flex items-center justify-center shadow-inner">
             <img loading="lazy" decoding="async" referrerpolicy="no-referrer" class="w-full h-full rounded-full object-cover select-none pointer-events-none" src="${getUserAvatarUrl(u)}" alt="${escapeHtmlSafe(u.nickname || u.firstName)}" />
           </div>
@@ -597,7 +621,9 @@ function renderIgInboxList() {
       `;
     } else {
       avatarHtml = `
-        <div class="relative w-12 h-12 rounded-full p-0.5 ${lastMsg ? 'bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600' : 'bg-border'} flex items-center justify-center shrink-0 shadow-xs">
+        <div onclick="event.stopPropagation(); openMemberProfilePopup('${item.user ? item.user.id : item.id}')"
+          class="relative w-12 h-12 rounded-full p-0.5 ${lastMsg ? 'bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600' : 'bg-border'} flex items-center justify-center shrink-0 shadow-xs cursor-pointer hover:scale-105 transition"
+          title="ดูโปรไฟล์">
           <div class="w-full h-full rounded-full bg-card overflow-hidden flex items-center justify-center shadow-inner">
             <img loading="lazy" decoding="async" referrerpolicy="no-referrer" class="w-full h-full rounded-full object-cover select-none pointer-events-none" src="${getUserAvatarUrl(item.user || item.id)}" alt="${escapeHtmlSafe(item.title)}" onerror="this.onerror=null; this.src='https://api.dicebear.com/10.x/gaze/svg?seed=user&backgroundColor=ff5d8f,ffb703,43aa8b,4d96ff,b57bff';" />
           </div>
@@ -606,9 +632,13 @@ function renderIgInboxList() {
       `;
     }
 
+    const isDesktop = window.innerWidth >= 768;
+    const isRoomMode = window.igChatViewMode === 'ROOM' || isDesktop;
+    const isActive = isRoomMode && window.activeChatPartner === item.id;
+
     return `
       <div onclick="openIgChatRoom('${item.id}')"
-        class="w-full px-2.5 py-2.5 rounded-2xl hover:bg-muted/60 active:bg-muted transition flex items-center justify-between gap-2.5 cursor-pointer select-none group">
+        class="w-full px-2.5 py-2.5 rounded-2xl ${isActive ? 'bg-primary/10 border border-primary/20 shadow-xs' : 'hover:bg-muted/60 active:bg-muted'} transition flex items-center justify-between gap-2.5 cursor-pointer select-none group">
         <div class="flex items-center gap-3 min-w-0 flex-1">
           ${avatarHtml}
           <div class="min-w-0 flex-1 space-y-0.5">
@@ -834,12 +864,18 @@ function previewStagedMediaFullscreen() {
   );
 }
 
-function openChatMediaLightboxByMsgId(msgId) {
+function openChatMediaLightboxByMsgId(msgId, fallbackUrl, fallbackType, fallbackCaption) {
   const state = window.appState;
-  if (!state || !state.chats) return;
-  const msg = state.chats.find(c => String(c.id) === String(msgId));
-  if (!msg || !msg.mediaUrl) return;
-  openChatMediaLightbox(msg.mediaUrl, msg.mediaType || 'image', msg.text || `ส่งโดย ${msg.sender}`);
+  let msg = null;
+  if (state && Array.isArray(state.chats)) {
+    msg = state.chats.find(c => String(c.id) === String(msgId));
+  }
+  const url = msg?.mediaUrl || fallbackUrl;
+  const type = msg?.mediaType || fallbackType || 'image';
+  const caption = msg?.text || fallbackCaption || (msg?.sender ? `ส่งโดย ${msg.sender}` : '');
+  if (url) {
+    openChatMediaLightbox(url, type, caption);
+  }
 }
 
 function openChatMediaLightbox(url, type = 'image', caption = '') {
@@ -852,12 +888,12 @@ function openChatMediaLightbox(url, type = 'image', caption = '') {
   if (type === 'video') {
     body.innerHTML = `
       <video src="${url}" controls autoplay playsinline onclick="event.stopPropagation()"
-        class="max-h-[78vh] max-w-full rounded-2xl shadow-2xl bg-black"></video>
+        class="max-h-[80vh] max-w-full rounded-2xl shadow-2xl bg-black object-contain"></video>
     `;
   } else {
     body.innerHTML = `
       <img src="${url}" alt="Fullscreen Preview" onclick="event.stopPropagation()"
-        class="max-h-[78vh] max-w-full object-contain rounded-2xl shadow-2xl" />
+        class="max-h-[80vh] max-w-full object-contain rounded-2xl shadow-2xl select-none" />
     `;
   }
 
@@ -868,35 +904,42 @@ function openChatMediaLightbox(url, type = 'image', caption = '') {
   }
 
   modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  modal.style.display = 'flex';
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
 }
 
 function closeChatMediaLightbox() {
   const modal = document.getElementById('chatMediaLightboxModal');
   const body = document.getElementById('chatLightboxBody');
-  if (modal) modal.classList.add('hidden');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.style.display = 'none';
+  }
   if (body) body.innerHTML = '';
 }
 
 function renderMessageMediaAttachmentHtml(c) {
   if (!c || !c.mediaUrl) return '';
   const isVideo = c.mediaType === 'video';
+  const safeUrl = (c.mediaUrl || '').replace(/'/g, "\\'");
+  const safeSender = (c.sender || '').replace(/'/g, "\\'");
   if (isVideo) {
     return `
       <div class="relative rounded-xl overflow-hidden bg-black/90 my-1 max-w-[260px] sm:max-w-[300px] border border-white/15">
         <video src="${c.mediaUrl}" controls playsinline preload="metadata" class="w-full max-h-60 object-cover"></video>
-        <button type="button" onclick="openChatMediaLightboxByMsgId('${c.id}')"
-          class="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/60 hover:bg-black/80 text-white text-[10px] font-semibold flex items-center gap-1 backdrop-blur-xs transition">
-          <i data-lucide="maximize-2" class="w-2.5 h-2.5"></i> เต็มจอ
-        </button>
+        <button type="button" onclick="openChatMediaLightboxByMsgId('${c.id}', '${safeUrl}', 'video', '${safeSender}')"
+          class="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/60 hover:bg-black/80 text-white text-[10px] font-semibold flex items-center gap-1 backdrop-blur-xs transition !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0 cursor-pointer" title="เต็มจอ" aria-label="เต็มจอ"><i data-lucide="maximize" class="h-4 w-4 pointer-events-none"></i></button>
       </div>
     `;
   }
   return `
-    <div onclick="openChatMediaLightboxByMsgId('${c.id}')"
-      class="relative rounded-xl overflow-hidden my-1 max-w-[240px] sm:max-w-[280px] cursor-pointer group/media border border-white/15">
-      <img src="${c.mediaUrl}" alt="${escapeHtmlSafe(c.mediaName || 'รูปภาพในแชท')}" class="w-full max-h-60 object-cover group-hover/media:scale-[1.02] transition duration-200" />
-      <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/55 text-white text-[10px] font-medium flex items-center gap-1 opacity-90 group-hover/media:opacity-100 transition">
-        <i data-lucide="search" class="w-3.5 h-3.5-plus text-[9px]"></i> ดูรูปเต็ม
+    <div role="button" tabindex="0" onclick="openChatMediaLightboxByMsgId('${c.id}', '${safeUrl}', 'image', '${safeSender}')"
+      class="relative rounded-xl overflow-hidden my-1 max-w-[240px] sm:max-w-[280px] cursor-pointer group/media border border-white/15 select-none active:scale-[0.98] transition touch-manipulation">
+      <img src="${c.mediaUrl}" alt="${escapeHtmlSafe(c.mediaName || 'รูปภาพในแชท')}" class="w-full max-h-60 object-cover group-hover/media:scale-[1.02] transition duration-200 pointer-events-none select-none" />
+      <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/55 text-white text-[10px] font-medium flex items-center gap-1 opacity-90 group-hover/media:opacity-100 transition pointer-events-none select-none">
+        <i data-lucide="search" class="w-3.5 h-3.5 text-[9px]"></i> ดูรูปเต็ม
       </span>
     </div>
   `;
@@ -1127,7 +1170,7 @@ function renderFloatingChat(forceScroll = false) {
           return `
             <div class="flex flex-col items-start ${isConsecutiveFromSameUser ? 'mt-1' : 'mt-2.5'} space-y-1 group max-w-[85%] sm:max-w-[75%]">
               ${showSenderHeader ? `
-                <div class="flex items-center gap-1.5 px-1">
+                <div class="flex items-center gap-1.5 px-1 ${c.senderId && c.senderId !== 'ADMIN' ? 'cursor-pointer hover:opacity-85' : ''}" ${c.senderId && c.senderId !== 'ADMIN' ? `onclick="openMemberProfilePopup('${c.senderId}')" title="ดูโปรไฟล์"` : ''}>
                   <span class="w-5 h-5 rounded-full overflow-hidden shrink-0 inline-flex items-center justify-center bg-primary/10"><img src="${getUserAvatarUrl(c.senderId || c.sender)}" class="w-full h-full object-cover select-none" alt="avatar" /></span>
                   <span class="text-[11px] font-bold text-foreground/90 truncate">${escapeHtmlSafe(c.sender)}</span>
                   ${isAdminSender ? '<span class="px-1.5 py-0.2 rounded-full bg-primary/15 text-primary text-[9px] font-bold">ADMIN</span>' : ''}
@@ -1151,12 +1194,23 @@ function openAdminIgChatRoom(partnerId) {
   window.adminSelectedChatPartner = partnerId || 'ALL';
   window.adminIgChatViewMode = 'ROOM';
 
+  const isDesktop = window.innerWidth >= 768;
   const inboxView = document.getElementById('adminIgChatInboxView');
   const roomView = document.getElementById('adminIgChatRoomView');
-  if (inboxView) inboxView.classList.add('hidden');
+  if (inboxView) {
+    if (isDesktop) {
+      inboxView.classList.remove('hidden');
+    } else {
+      inboxView.classList.add('hidden');
+    }
+  }
   if (roomView) roomView.classList.remove('hidden');
 
   renderAdminChatSection(true);
+
+  if (isDesktop) {
+    renderAdminIgInboxList();
+  }
 }
 
 function closeAdminIgChatRoom() {
@@ -1165,8 +1219,21 @@ function closeAdminIgChatRoom() {
   const roomView = document.getElementById('adminIgChatRoomView');
   if (roomView) roomView.classList.add('hidden');
   if (inboxView) inboxView.classList.remove('hidden');
+  if (window.innerWidth >= 768) {
+    window.adminSelectedChatPartner = null;
+  }
 
   renderAdminIgInboxView();
+}
+
+function handleAdminChatPartnerHeaderClick() {
+  if (window.adminSelectedChatPartner && window.adminSelectedChatPartner !== 'ALL') {
+    if (typeof window.openMemberProfilePopup === 'function') {
+      window.openMemberProfilePopup(window.adminSelectedChatPartner);
+    }
+  } else {
+    closeAdminIgChatRoom();
+  }
 }
 
 function selectAdminChatRoom(partnerId) {
@@ -1239,10 +1306,10 @@ function renderAdminIgNotesRow() {
               ${escapeHtmlSafe(note)}
             </div>
           ` : ''}
-          <div class="relative mb-1">
-            <div class="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-primary/30 to-muted flex items-center justify-center shadow-xs group-hover:scale-105 transition">
-              <div class="w-full h-full rounded-full bg-primary/10 text-primary flex items-center justify-center text-base font-bold">
-                ${escapeHtmlSafe(initial)}
+          <div class="relative mb-1" onclick="event.stopPropagation(); openMemberProfilePopup('${u.id}')" title="ดูโปรไฟล์">
+            <div class="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-primary/30 to-muted flex items-center justify-center shadow-xs group-hover:scale-105 transition overflow-hidden">
+              <div class="w-full h-full rounded-full bg-card flex items-center justify-center text-base font-bold overflow-hidden shadow-inner">
+                ${typeof window.getAvatarImageHtml === 'function' ? window.getAvatarImageHtml(u, 'w-full h-full rounded-full') : escapeHtmlSafe(initial)}
               </div>
             </div>
             ${(u.checkedIn && !u.isLeave) ? '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-card"></span>' : ''}
@@ -1284,11 +1351,11 @@ function renderAdminIgInboxList() {
     const dismissedAt = Number(dismissedMap['ALL'] || 0);
     const isDismissed = dismissedAt > 0 && lastTs <= dismissedAt;
 
-    if (window.adminIgInboxFilter !== 'ALL' || (!isDismissed && lastAll) || query) {
+    if (window.adminIgInboxFilter !== 'MEMBERS') {
       items.push({
         id: 'ALL',
         name: 'ห้องประชุมรวม (ทุกคน)',
-        sub: 'ห้องแชตกลาง • ประกาศและพูดคุย',
+        sub: lastAll ? `${(lastAll.sender || '').split(' ')[0]}: ${lastAll.text || ''}` : 'ห้องแชตกลาง • แตะเพื่อเริ่มพูดคุย',
         isRoom: true,
         lastMsg: lastAll,
         lastTs: lastTs,
@@ -1387,18 +1454,24 @@ function renderAdminIgInboxList() {
       const initial = (u.nickname || u.firstName || 'U').charAt(0);
       const isOnline = Boolean(u.checkedIn && !u.isLeave);
       avatarHtml = `
-        <div class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-primary/30 to-muted flex items-center justify-center shrink-0 shadow-xs">
+        <div onclick="event.stopPropagation(); openMemberProfilePopup('${(it.user && it.user.id) || it.id}')"
+          class="relative w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-primary/30 to-muted flex items-center justify-center shrink-0 shadow-xs cursor-pointer hover:scale-105 transition"
+          title="ดูโปรไฟล์">
           <div class="w-full h-full rounded-full bg-primary/10 text-primary flex items-center justify-center text-base font-bold overflow-hidden">
-            ${typeof window.getAvatarImageHtml === 'function' ? window.getAvatarImageHtml(u) : escapeHtmlSafe(initial)}
+            ${typeof window.getAvatarImageHtml === 'function' ? window.getAvatarImageHtml(u, 'w-full h-full rounded-full') : escapeHtmlSafe(initial)}
           </div>
           ${isOnline ? '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-card"></span>' : ''}
         </div>
       `;
     }
 
+    const isDesktop = window.innerWidth >= 768;
+    const isRoomMode = window.adminIgChatViewMode === 'ROOM' || isDesktop;
+    const isActive = isRoomMode && window.adminSelectedChatPartner === it.id;
+
     return `
       <div onclick="openAdminIgChatRoom('${it.id}')"
-        class="w-full p-3 flex items-center justify-between gap-3 hover:bg-muted/40 active:bg-muted/60 transition cursor-pointer group rounded-xl select-none">
+        class="w-full p-3 flex items-center justify-between gap-3 ${isActive ? 'bg-primary/10 border border-primary/20 shadow-xs' : 'hover:bg-muted/40 active:bg-muted/60'} transition cursor-pointer group rounded-xl select-none">
         <div class="flex items-center gap-3 min-w-0 flex-1">
           ${avatarHtml}
           <div class="flex-1 min-w-0">
@@ -1441,6 +1514,7 @@ function renderAdminChatSection(forceScroll = false) {
 
   renderAdminIgInboxView();
 
+  const isDesktop = window.innerWidth >= 768;
   const isRoomMode = window.adminIgChatViewMode === 'ROOM';
   const inboxView = document.getElementById('adminIgChatInboxView');
   const roomView = document.getElementById('adminIgChatRoomView');
@@ -1450,7 +1524,13 @@ function renderAdminChatSection(forceScroll = false) {
     if (roomView) roomView.classList.add('hidden');
     return;
   } else {
-    if (inboxView) inboxView.classList.add('hidden');
+    if (inboxView) {
+      if (isDesktop) {
+        inboxView.classList.remove('hidden');
+      } else {
+        inboxView.classList.add('hidden');
+      }
+    }
     if (roomView) roomView.classList.remove('hidden');
   }
 
@@ -1517,9 +1597,9 @@ function renderAdminChatSection(forceScroll = false) {
         return `
           <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isConsecutiveFromSameUser ? 'mt-1' : 'mt-2.5'} space-y-1">
             ${showSenderHeader ? `
-              <div class="flex items-center gap-1.5 px-1">
+              <div class="flex items-center gap-1.5 px-1 ${c.senderId && c.senderId !== 'ADMIN' ? 'cursor-pointer hover:opacity-85' : ''}" ${c.senderId && c.senderId !== 'ADMIN' ? `onclick="openMemberProfilePopup('${c.senderId}')" title="ดูโปรไฟล์"` : ''}>
                 <span class="w-5 h-5 rounded-full overflow-hidden shrink-0 inline-flex items-center justify-center bg-primary/10">
-                  ${typeof window.getAvatarImageHtml === 'function' ? window.getAvatarImageHtml(c.senderId || c.sender) : escapeHtmlSafe(initial)}
+                  ${typeof window.getAvatarImageHtml === 'function' ? window.getAvatarImageHtml(c.senderId || c.sender, 'w-full h-full rounded-full') : escapeHtmlSafe(initial)}
                 </span>
                 <span class="text-[11px] font-bold text-foreground">${escapeHtmlSafe(c.sender)}</span>
               </div>
@@ -1725,6 +1805,7 @@ window.toggleMemberChatDropdown = toggleMemberChatDropdown;
 window.toggleAdminMemberChatDropdown = toggleAdminMemberChatDropdown;
 window.openIgChatRoom = openIgChatRoom;
 window.closeIgChatRoom = closeIgChatRoom;
+window.handleChatPartnerHeaderClick = handleChatPartnerHeaderClick;
 window.setIgInboxFilter = setIgInboxFilter;
 window.clearIgInboxSearch = clearIgInboxSearch;
 window.clearIgConversation = clearIgConversation;
@@ -1749,6 +1830,7 @@ window.selectChatRoom = selectChatRoom;
 window.selectAdminChatRoom = selectAdminChatRoom;
 window.openAdminIgChatRoom = openAdminIgChatRoom;
 window.closeAdminIgChatRoom = closeAdminIgChatRoom;
+window.handleAdminChatPartnerHeaderClick = handleAdminChatPartnerHeaderClick;
 window.setAdminIgInboxFilter = setAdminIgInboxFilter;
 window.clearAdminIgInboxSearch = clearAdminIgInboxSearch;
 window.renderAdminIgNotesRow = renderAdminIgNotesRow;
@@ -1778,7 +1860,7 @@ window.renderFloatingChatStories = renderFloatingChatStories;
 let currentChatLogsFilter = 'ALL';
 
 function openChatLogsModal() {
-  if (window.currentRole !== 'ADMIN' || !window.isAdminAuthenticated) {
+  if (!window.isAdminAuthenticated) {
     if (typeof showToast === 'function') {
       showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถดู Log แชทได้', 'error');
     }
@@ -1789,6 +1871,8 @@ function openChatLogsModal() {
   if (modal) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   }
 
   if (window.socket && window.socket.connected) {
@@ -2002,3 +2086,45 @@ window.closeChatLogsModal = closeChatLogsModal;
 window.setChatLogsFilter = setChatLogsFilter;
 window.renderChatLogs = renderChatLogs;
 window.exportChatLogsToCSV = exportChatLogsToCSV;
+
+// Synchronize responsive chat layout on window resize
+window.addEventListener('resize', () => {
+  const isDesktop = window.innerWidth >= 768;
+  const userInbox = document.getElementById('igChatInboxView');
+  const userRoom = document.getElementById('igChatRoomView');
+  if (userInbox && userRoom) {
+    if (isDesktop) {
+      userInbox.classList.remove('hidden');
+      if (window.igChatViewMode === 'ROOM' && window.activeChatPartner) {
+        userRoom.classList.remove('hidden');
+      }
+    } else {
+      if (window.igChatViewMode === 'ROOM' && window.activeChatPartner) {
+        userInbox.classList.add('hidden');
+        userRoom.classList.remove('hidden');
+      } else {
+        userInbox.classList.remove('hidden');
+        userRoom.classList.add('hidden');
+      }
+    }
+  }
+
+  const adminInbox = document.getElementById('adminIgChatInboxView');
+  const adminRoom = document.getElementById('adminIgChatRoomView');
+  if (adminInbox && adminRoom) {
+    if (isDesktop) {
+      adminInbox.classList.remove('hidden');
+      if (window.adminIgChatViewMode === 'ROOM' && window.adminSelectedChatPartner) {
+        adminRoom.classList.remove('hidden');
+      }
+    } else {
+      if (window.adminIgChatViewMode === 'ROOM' && window.adminSelectedChatPartner) {
+        adminInbox.classList.add('hidden');
+        adminRoom.classList.remove('hidden');
+      } else {
+        adminInbox.classList.remove('hidden');
+        adminRoom.classList.add('hidden');
+      }
+    }
+  }
+});

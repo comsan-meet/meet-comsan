@@ -1,0 +1,8 @@
+# COMSAN Meeting System - Root Apache Configuration for InfinityFree
+DirectoryIndex index.php index.html
+
+# Prevent Directory Browsing errors
+Options -Indexes
+
+# UTF-8 Encoding
+AddDefaultCharset UTF-8

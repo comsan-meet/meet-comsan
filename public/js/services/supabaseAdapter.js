@@ -147,6 +147,12 @@
 
     async init(credentials) {
       if (!credentials || !credentials.url || !credentials.anonKey) {
+        if (typeof window.SupabaseConfigManager !== 'undefined') {
+          credentials = await window.SupabaseConfigManager.getCredentials();
+        }
+      }
+
+      if (!credentials || !credentials.url || !credentials.anonKey) {
         console.warn('Supabase credentials missing.');
         this.updateCloudStatusBadge(false, 'ยังไม่ได้เชื่อมต่อ Supabase');
         return false;

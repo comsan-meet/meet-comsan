@@ -1,0 +1,458 @@
+/* =========================================================================
+   COMSAN CHOICE DESIGN SYSTEM - DESIGN TOKENS & THEMING
+   Exact match to comsan-choice.vercel.app (Meeting by Comsan)
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 224 71% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 71% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 71% 4%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 13% 95%;
+  --secondary-foreground: 220 9% 46%;
+  --muted: 220 13% 95%;
+  --muted-foreground: 220 9% 46%;
+  --accent: 189 94% 43%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 239 84% 67%;
+  --radius: 1rem;
+
+  --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(250 84% 54%));
+  --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
+  --gradient-hero: linear-gradient(135deg, #312e81 0%, #4f46e5 48%, hsl(var(--primary)) 100%);
+  --shadow-card: 0 4px 6px -1px hsl(220 13% 91% / 0.3);
+  --shadow-2xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 2px 0 hsl(220 13% 91% / 0.5);
+  --shadow-md: 0 4px 6px -1px hsl(220 13% 91% / 0.3);
+  --shadow-lg: 0 10px 15px -3px hsl(220 13% 91% / 0.3);
+}
+
+.dark {
+  --background: 224 71% 4%;
+  --foreground: 0 0% 98%;
+  --card: 224 65% 8%;
+  --card-foreground: 0 0% 98%;
+  --popover: 224 65% 8%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 15% 20%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 220 15% 20%;
+  --muted-foreground: 220 9% 65%;
+  --accent: 189 94% 43%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 15% 20%;
+  --input: 220 15% 20%;
+  --ring: 239 84% 67%;
+
+  --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(250 84% 54%));
+  --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
+  --gradient-hero: linear-gradient(135deg, #0b1120 0%, #121c35 50%, #1a274a 100%);
+  --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
+  --shadow-2xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+  --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
+  --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3);
+}
+
+/* =========================================================================
+   6 COMSAN CHOICE COLOR PALETTES
+   ========================================================================= */
+:root[data-color-theme=default] {
+  --primary: 239 84% 67%;
+  --ring: 239 84% 67%;
+  --accent: 189 94% 43%;
+  --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(250 84% 54%));
+  --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
+  --gradient-hero: linear-gradient(135deg, #3730a3 0%, #4f46e5 48%, #6366f1 100%);
+}
+.dark[data-color-theme=default] {
+  --primary: 239 84% 67%;
+  --ring: 239 84% 67%;
+  --accent: 189 94% 43%;
+  --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(250 84% 54%));
+  --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
+  --gradient-hero: linear-gradient(135deg, #0b1020 0%, #121936 50%, #1a224a 100%);
+}
+
+:root[data-color-theme=ocean] {
+  --primary: 204 94% 46%;
+  --ring: 204 94% 46%;
+  --accent: 189 94% 43%;
+  --gradient-primary: linear-gradient(135deg, hsl(204 94% 46%), hsl(217 91% 60%));
+  --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
+  --gradient-hero: linear-gradient(135deg, #0369a1 0%, #0284c7 48%, #0ea5e9 100%);
+}
+.dark[data-color-theme=ocean] {
+  --primary: 199 89% 52%;
+  --ring: 199 89% 52%;
+  --accent: 189 94% 43%;
+  --gradient-primary: linear-gradient(135deg, hsl(199 89% 52%), hsl(217 91% 62%));
+  --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
+  --gradient-hero: linear-gradient(135deg, #06101a 0%, #0a1b2c 50%, #0f273f 100%);
+}
+
+:root[data-color-theme=emerald] {
+  --primary: 158 64% 42%;
+  --ring: 158 64% 42%;
+  --accent: 172 66% 45%;
+  --gradient-primary: linear-gradient(135deg, hsl(158 64% 42%), hsl(168 76% 36%));
+  --gradient-accent: linear-gradient(135deg, hsl(172 66% 45%), hsl(180 70% 40%));
+  --gradient-hero: linear-gradient(135deg, #065f46 0%, #059669 48%, #10b981 100%);
+}
+.dark[data-color-theme=emerald] {
+  --primary: 156 72% 48%;
+  --ring: 156 72% 48%;
+  --accent: 172 66% 45%;
+  --gradient-primary: linear-gradient(135deg, hsl(156 72% 48%), hsl(168 76% 40%));
+  --gradient-accent: linear-gradient(135deg, hsl(172 66% 45%), hsl(180 70% 40%));
+  --gradient-hero: linear-gradient(135deg, #05140e 0%, #0a2117 50%, #0f3022 100%);
+}
+
+:root[data-color-theme=violet] {
+  --primary: 262 83% 58%;
+  --ring: 262 83% 58%;
+  --accent: 291 70% 50%;
+  --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 75% 50%));
+  --gradient-accent: linear-gradient(135deg, hsl(291 70% 50%), hsl(310 75% 45%));
+  --gradient-hero: linear-gradient(135deg, #5b21b6 0%, #7c3aed 48%, #8b5cf6 100%);
+}
+.dark[data-color-theme=violet] {
+  --primary: 263 70% 64%;
+  --ring: 263 70% 64%;
+  --accent: 291 70% 50%;
+  --gradient-primary: linear-gradient(135deg, hsl(263 70% 64%), hsl(280 75% 55%));
+  --gradient-accent: linear-gradient(135deg, hsl(291 70% 50%), hsl(310 75% 45%));
+  --gradient-hero: linear-gradient(135deg, #0d081b 0%, #160f2d 50%, #231644 100%);
+}
+
+:root[data-color-theme=rose] {
+  --primary: 346 87% 58%;
+  --ring: 346 87% 58%;
+  --accent: 320 85% 55%;
+  --gradient-primary: linear-gradient(135deg, hsl(346 87% 58%), hsl(330 81% 52%));
+  --gradient-accent: linear-gradient(135deg, hsl(320 85% 55%), hsl(300 76% 50%));
+  --gradient-hero: linear-gradient(135deg, #9f1239 0%, #e11d48 48%, #f43f5e 100%);
+}
+.dark[data-color-theme=rose] {
+  --primary: 346 87% 65%;
+  --ring: 346 87% 65%;
+  --accent: 320 85% 55%;
+  --gradient-primary: linear-gradient(135deg, hsl(346 87% 65%), hsl(330 81% 56%));
+  --gradient-accent: linear-gradient(135deg, hsl(320 85% 55%), hsl(300 76% 50%));
+  --gradient-hero: linear-gradient(135deg, #170811 0%, #260e1d 50%, #38152a 100%);
+}
+
+:root[data-color-theme=amber] {
+  --primary: 28 92% 50%;
+  --ring: 28 92% 50%;
+  --accent: 16 90% 55%;
+  --gradient-primary: linear-gradient(135deg, hsl(28 92% 50%), hsl(38 92% 50%));
+  --gradient-accent: linear-gradient(135deg, hsl(16 90% 55%), hsl(350 85% 60%));
+  --gradient-hero: linear-gradient(135deg, #c2410c 0%, #ea580c 48%, #f59e0b 100%);
+}
+.dark[data-color-theme=amber] {
+  --primary: 32 95% 54%;
+  --ring: 32 95% 54%;
+  --accent: 16 90% 55%;
+  --gradient-primary: linear-gradient(135deg, hsl(32 95% 54%), hsl(42 95% 54%));
+  --gradient-accent: linear-gradient(135deg, hsl(16 90% 55%), hsl(350 85% 60%));
+  --gradient-hero: linear-gradient(135deg, #160d05 0%, #261609 50%, #39200d 100%);
+}
+
+/* =========================================================================
+   BASE STYLES & TYPOGRAPHY (Matching comsan-choice.vercel.app)
+   ========================================================================= */
+body, input, button, select, textarea {
+  margin: 0;
+  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: 'Prompt', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+.font-prompt {
+  font-family: 'Prompt', sans-serif !important;
+}
+
+.font-poppins {
+  font-family: 'Poppins', 'Prompt', sans-serif;
+}
+
+/* Horizontal scroll without scrollbar (Choice single-row mobile pills) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Custom scrollbars from Comsan Choice */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.45);
+}
+
+/* =========================================================================
+   UTILITY CLASSES (TAILWIND-COMPATIBLE FROM COMSAN CHOICE)
+   ========================================================================= */
+.bg-background { background-color: hsl(var(--background)); }
+.bg-foreground { background-color: hsl(var(--foreground)); }
+.text-foreground { color: hsl(var(--foreground)); }
+
+.bg-card { background-color: hsl(var(--card)); }
+.text-card-foreground { color: hsl(var(--card-foreground)); }
+
+.bg-popover { background-color: hsl(var(--popover)); }
+.text-popover-foreground { color: hsl(var(--popover-foreground)); }
+
+.bg-primary { background-color: hsl(var(--primary)); }
+.text-primary { color: hsl(var(--primary)); }
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
+
+.bg-secondary { background-color: hsl(var(--secondary)); }
+.text-secondary-foreground { color: hsl(var(--secondary-foreground)); }
+
+.bg-muted { background-color: hsl(var(--muted)); }
+.text-muted-foreground { color: hsl(var(--muted-foreground)); }
+
+.bg-accent { background-color: hsl(var(--accent)); }
+.text-accent { color: hsl(var(--accent)); }
+.text-accent-foreground { color: hsl(var(--accent-foreground)); }
+
+.bg-destructive { background-color: hsl(var(--destructive)); }
+.text-destructive { color: hsl(var(--destructive)); }
+.text-destructive-foreground { color: hsl(var(--destructive-foreground)); }
+
+.border-border { border-color: hsl(var(--border)); }
+.border-input { border-color: hsl(var(--input)); }
+.border-primary { border-color: hsl(var(--primary)); }
+
+/* Gradients */
+.gradient-primary {
+  background: var(--gradient-primary) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+.gradient-accent {
+  background: var(--gradient-accent) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+.gradient-hero {
+  background: var(--gradient-hero) !important;
+  color: #ffffff !important;
+}
+
+.dark .gradient-hero {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Shadows */
+.shadow-card {
+  box-shadow: var(--shadow-card) !important;
+}
+
+.shadow-2xs {
+  box-shadow: var(--shadow-2xs) !important;
+}
+
+/* =========================================================================
+   MOBILE SIDEBAR DRAWER (Choice Responsive Style)
+   ========================================================================= */
+@media (max-width: 767px) {
+  #appSidebar {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    width: 288px !important;
+    max-width: 85vw !important;
+    z-index: 50 !important;
+    background-color: hsl(var(--card)) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.35) !important;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s ease !important;
+    border-right: 1px solid hsl(var(--border)) !important;
+  }
+  #appSidebar.mobile-drawer-open {
+    display: flex !important;
+    transform: translateX(0) !important;
+  }
+  #sidebarBackdrop {
+    z-index: 45 !important;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: opacity 0.25s ease;
+  }
+}
+
+/* =========================================================================
+   HERO CARD FLOATING BUBBLE ANIMATION
+   ========================================================================= */
+.hero-bubble-wrapper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+  transition: opacity 0.4s ease;
+}
+
+.hero-bubble-wrapper.hidden {
+  display: none !important;
+}
+
+.hero-bubble {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(32px);
+  opacity: 0.65;
+  mix-blend-mode: screen;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.dark .hero-bubble {
+  opacity: 0.18;
+  filter: blur(44px);
+}
+
+/* Bubble 1: Large primary glowing orb - top left to center */
+.hero-bubble-1 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, hsl(var(--primary)) 65%, transparent 100%);
+  top: -60px;
+  left: -40px;
+  animation: floatBubble1 15s ease-in-out infinite alternate;
+}
+
+/* Bubble 2: Medium accent orb - bottom right to center */
+.hero-bubble-2 {
+  width: 210px;
+  height: 210px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, hsl(var(--accent)) 60%, transparent 100%);
+  bottom: -40px;
+  right: -30px;
+  animation: floatBubble2 13s ease-in-out infinite alternate;
+}
+
+/* Bubble 3: White glowing highlight orb - center top */
+.hero-bubble-3 {
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.15) 55%, transparent 100%);
+  top: 15%;
+  left: 42%;
+  animation: floatBubble3 18s ease-in-out infinite alternate;
+}
+
+/* Bubble 4: Subtle depth orb - bottom left */
+.hero-bubble-4 {
+  width: 190px;
+  height: 190px;
+  background: radial-gradient(circle, hsl(var(--primary)) 0%, rgba(255, 255, 255, 0.25) 60%, transparent 100%);
+  bottom: -40px;
+  left: 20%;
+  animation: floatBubble4 16s ease-in-out infinite alternate;
+}
+
+/* Bubble 5: Floating ambient orb - top right */
+.hero-bubble-5 {
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, hsl(var(--accent)) 70%, transparent 100%);
+  top: -30px;
+  right: 20%;
+  animation: floatBubble5 20s ease-in-out infinite alternate;
+}
+
+@keyframes floatBubble1 {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(50px, 30px, 0) scale(1.15); }
+  100% { transform: translate3d(90px, -20px, 0) scale(0.92); }
+}
+
+@keyframes floatBubble2 {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-55px, -30px, 0) scale(1.18); }
+  100% { transform: translate3d(-90px, 20px, 0) scale(0.9); }
+}
+
+@keyframes floatBubble3 {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(-35px, 35px, 0) scale(1.2); }
+  66% { transform: translate3d(40px, -20px, 0) scale(0.85); }
+  100% { transform: translate3d(-20px, -30px, 0) scale(1.05); }
+}
+
+@keyframes floatBubble4 {
+  0% { transform: translate3d(0, 0, 0) scale(0.95); }
+  50% { transform: translate3d(60px, -35px, 0) scale(1.12); }
+  100% { transform: translate3d(-25px, 20px, 0) scale(1.02); }
+}
+
+@keyframes floatBubble5 {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-40px, 30px, 0) scale(0.88); }
+  100% { transform: translate3d(35px, -15px, 0) scale(1.15); }
+}
+
+/* Settings Toggle Switch (Green when ON, Gray when OFF) */
+#settingBubbleAnimToggle + div,
+.toggle-switch-track {
+  background-color: #cbd5e1 !important; /* Slate-300: Gray when OFF in light mode */
+  transition: background-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.dark #settingBubbleAnimToggle + div,
+.dark .toggle-switch-track {
+  background-color: #475569 !important; /* Slate-600: Gray when OFF in dark mode */
+}
+
+#settingBubbleAnimToggle:checked + div,
+.toggle-switch-track.peer-checked,
+input[type="checkbox"]:checked + .toggle-switch-track {
+  background-color: #10b981 !important; /* Emerald-500: Vibrant green when ON */
+}

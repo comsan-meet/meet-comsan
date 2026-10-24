@@ -4,10 +4,15 @@
  */
 
 (function (root, factory) {
+  const mod = factory();
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory();
-  } else {
-    root.ActionReducer = factory();
+    module.exports = mod;
+  }
+  if (typeof root !== 'undefined') {
+    root.ActionReducer = mod;
+  }
+  if (typeof window !== 'undefined') {
+    window.ActionReducer = mod;
   }
 })(typeof self !== 'undefined' ? self : this, function () {
 
@@ -99,6 +104,7 @@
           state.meeting.onlinePasscode = info.onlinePasscode ? String(info.onlinePasscode).trim() : '';
           const platformLabel = platformDisplayNames[state.meeting.onlinePlatform] || state.meeting.onlinePlatform;
           state.meeting.location = platformLabel && platformLabel !== 'ออนไลน์' ? `ออนไลน์ (${platformLabel})` : 'ออนไลน์';
+          state.meeting.locationDetail = '';
           const randomDigits = Math.floor(100000 + Math.random() * 900000);
           state.meeting.checkinToken = `CS-${randomDigits}`;
         } else {
@@ -949,6 +955,10 @@
 
   return {
     applyAction,
+    reduce: function(state, actionObj, emitBroadcast) {
+      if (!actionObj) return { state, result: null, shouldPersist: false };
+      return applyAction(state, actionObj.type || actionObj.action, actionObj.payload, emitBroadcast);
+    },
     isCurrentlyAfterCutoff,
     resetAllUsersAttendance
   };

@@ -15,8 +15,8 @@ function setRandomizerMode(mode) {
     const btn = document.getElementById(`randMode_${m}`);
     if (btn) {
       btn.className = m === mode
-        ? 'py-2.5 px-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow-sm'
-        : 'py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+        ? 'py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-amber-500 text-slate-950 shadow-sm'
+        : 'py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
     }
   });
 }
@@ -25,16 +25,10 @@ function setRandomizerSource(src) {
   window.randomizerSource = src;
   const btnMem = document.getElementById('randSrc_MEMBERS');
   const btnCus = document.getElementById('randSrc_CUSTOM');
-  if (btnMem) {
-    btnMem.className = src === 'MEMBERS'
-      ? 'py-2 px-3 rounded-xl text-xs font-bold bg-indigo-600 text-white'
-      : 'py-2 px-3 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
-  }
-  if (btnCus) {
-    btnCus.className = src === 'CUSTOM'
-      ? 'py-2 px-3 rounded-xl text-xs font-bold bg-indigo-600 text-white'
-      : 'py-2 px-3 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
-  }
+  const on = 'py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-indigo-600 text-white shadow-sm';
+  const off = 'py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
+  if (btnMem) btnMem.className = src === 'MEMBERS' ? on : off;
+  if (btnCus) btnCus.className = src === 'CUSTOM' ? on : off;
 
   const memBox = document.getElementById('randomMembersFilterBox');
   const cusBox = document.getElementById('randomCustomBuilderBox');

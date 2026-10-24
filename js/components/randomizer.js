@@ -1,0 +1,334 @@
+/**
+ * COMSAN Meeting System - Randomizer Component (Lucky Wheel & Slot)
+ */
+
+function toggleSecretBiasPanel() {
+  window.isSecretBiasOpen = !window.isSecretBiasOpen;
+  const panel = document.getElementById('secretBiasPanel');
+  if (panel) panel.classList.toggle('hidden', !window.isSecretBiasOpen);
+  renderRandomizerPoolUI();
+}
+
+function setRandomizerMode(mode) {
+  window.randomizerMode = mode;
+  ['WHEEL', 'SLOT', 'CARD'].forEach(m => {
+    const btn = document.getElementById(`randMode_${m}`);
+    if (btn) {
+      btn.className = m === mode
+        ? 'py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-amber-500 text-slate-950 shadow-sm'
+        : 'py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
+    }
+  });
+}
+
+function setRandomizerSource(src) {
+  window.randomizerSource = src;
+  const btnMem = document.getElementById('randSrc_MEMBERS');
+  const btnCus = document.getElementById('randSrc_CUSTOM');
+  const on = 'py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-indigo-600 text-white shadow-sm';
+  const off = 'py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
+  if (btnMem) btnMem.className = src === 'MEMBERS' ? on : off;
+  if (btnCus) btnCus.className = src === 'CUSTOM' ? on : off;
+
+  const memBox = document.getElementById('randomMembersFilterBox');
+  const cusBox = document.getElementById('randomCustomBuilderBox');
+  if (memBox) memBox.classList.toggle('hidden', src !== 'MEMBERS');
+  if (cusBox) cusBox.classList.toggle('hidden', src !== 'CUSTOM');
+  rebuildRandomMemberPool();
+}
+
+function rebuildRandomMemberPool() {
+  const state = window.appState;
+  if (!state) return;
+
+  if (window.randomizerSource === 'CUSTOM') {
+    window.randomPool = window.customRandomItems;
+    renderRandomizerPoolUI();
+    drawWheelCanvas('adminPreviewWheelCanvas', getEnabledRandomItems(), 0);
+    return;
+  }
+
+  const allRoles = [...new Set((state.users || []).map(u => u.position || 'สมาชิก'))];
+  if (!window.selectedRolesForRandom) window.selectedRolesForRandom = new Set(allRoles);
+
+  const roleBox = document.getElementById('randomRoleCheckboxes');
+  if (roleBox) {
+    roleBox.innerHTML = allRoles.map(role => {
+      const checked = window.selectedRolesForRandom.has(role);
+      return `
+        <label class="px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer flex items-center gap-1.5 ${checked ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400'}">
+          <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleRandomRole('${role.replace(/'/g, "\\'")}')" class="accent-indigo-600 rounded" />
+          <span>${role}</span>
+        </label>
+      `;
+    }).join('');
+  }
+
+  const onlyCheckedIn = document.getElementById('randOnlyCheckedIn') && document.getElementById('randOnlyCheckedIn').checked;
+  const oldWeights = {};
+  (window.randomPool || []).forEach(item => { oldWeights[item.id] = item.weight; });
+
+  window.randomPool = (state.users || [])
+    .filter(u => {
+      const roleMatch = window.selectedRolesForRandom.has(u.position || 'สมาชิก');
+      const checkMatch = !onlyCheckedIn || (u.checkedIn && !u.isLeave);
+      return roleMatch && checkMatch;
+    })
+    .map(u => ({
+      id: u.id,
+      label: `${u.nickname} (${u.firstName})`,
+      sub: u.position,
+      weight: oldWeights[u.id] !== undefined ? oldWeights[u.id] : 1,
+      enabled: true
+    }));
+
+  renderRandomizerPoolUI();
+  drawWheelCanvas('adminPreviewWheelCanvas', getEnabledRandomItems(), 0);
+}
+
+function toggleRandomRole(role) {
+  if (!window.selectedRolesForRandom) window.selectedRolesForRandom = new Set();
+  if (window.selectedRolesForRandom.has(role)) window.selectedRolesForRandom.delete(role);
+  else window.selectedRolesForRandom.add(role);
+  rebuildRandomMemberPool();
+}
+
+function addRandomCustomItem() {
+  const input = document.getElementById('randomCustomItemInput');
+  const val = input ? input.value.trim() : '';
+  if (!val) return;
+  window.customRandomItems.push({ id: 'C-' + Date.now(), label: val, weight: 1, enabled: true });
+  if (input) input.value = '';
+  rebuildRandomMemberPool();
+}
+
+function removeRandomCustomItem(id) {
+  window.customRandomItems = window.customRandomItems.filter(i => i.id !== id);
+  rebuildRandomMemberPool();
+}
+
+function toggleRandomPoolItem(id) {
+  const item = (window.randomPool || []).find(i => i.id === id);
+  if (item) {
+    item.enabled = !item.enabled;
+    renderRandomizerPoolUI();
+    drawWheelCanvas('adminPreviewWheelCanvas', getEnabledRandomItems(), 0);
+  }
+}
+
+function updateRandomItemWeight(id, val) {
+  const item = (window.randomPool || []).find(i => i.id === id);
+  if (item) item.weight = Math.max(0, Number(val) || 0);
+}
+
+function getEnabledRandomItems() {
+  return (window.randomPool || []).filter(i => i.enabled);
+}
+
+function renderRandomizerPoolUI() {
+  const listEl = document.getElementById('randomPoolItemsList');
+  const countEl = document.getElementById('randomPoolCount');
+  const enabledItems = getEnabledRandomItems();
+  if (countEl) countEl.textContent = enabledItems.length;
+  if (!listEl) return;
+
+  if (!window.randomPool || window.randomPool.length === 0) {
+    listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">ไม่มีรายชื่อที่ตรงกับเงื่อนไข</p>`;
+    return;
+  }
+
+  listEl.innerHTML = window.randomPool.map(item => `
+    <div class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
+      <label class="flex items-center gap-2 cursor-pointer truncate flex-1">
+        <input type="checkbox" ${item.enabled ? 'checked' : ''} onchange="toggleRandomPoolItem('${item.id}')" class="accent-indigo-600 rounded" />
+        <span class="font-semibold ${item.enabled ? 'text-slate-900 dark:text-white' : 'line-through text-slate-400'} truncate">${item.label}</span>
+        ${item.sub ? `<span class="text-[10px] text-slate-400">(${item.sub})</span>` : ''}
+      </label>
+      <div class="flex items-center gap-1.5 shrink-0">
+        ${window.isSecretBiasOpen ? `
+          <span class="text-[10px] text-rose-400 font-bold">โอกาส:</span>
+          <input type="number" min="0" max="999" value="${item.weight}" oninput="updateRandomItemWeight('${item.id}', this.value)"
+            class="w-14 px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-rose-500/40 text-center text-xs font-bold text-rose-500" />
+        ` : ''}
+        ${window.randomizerSource === 'CUSTOM' ? `
+          <button type="button" onclick="removeRandomCustomItem('${item.id}')" class="text-rose-500 hover:bg-rose-500/10 p-1 rounded">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        ` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function pickWeightedIndex(items) {
+  const weights = items.map(i => Math.max(0, Number(i.weight ?? 1)));
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  if (totalWeight <= 0) return Math.floor(Math.random() * items.length);
+  let r = Math.random() * totalWeight;
+  for (let i = 0; i < items.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return i;
+  }
+  return items.length - 1;
+}
+
+function triggerAdminSpin() {
+  const items = getEnabledRandomItems();
+  if (items.length < 2) {
+    showToast('ต้องมีรายการอย่างน้อย 2 รายการเพื่อทำการสุ่ม!', 'error');
+    return;
+  }
+  const winnerIndex = pickWeightedIndex(items);
+  const winnerLabel = items[winnerIndex].label;
+  const spinPayload = {
+    mode: window.randomizerMode,
+    items: items.map(i => ({ id: i.id, label: i.label })),
+    winnerIndex,
+    winnerLabel
+  };
+
+  const record = {
+    id: Date.now(),
+    mode: window.randomizerMode,
+    winnerLabel,
+    time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  };
+  const state = window.appState;
+  if (!state.randomizer) state.randomizer = { lastWinner: null, history: [] };
+  state.randomizer.lastWinner = record;
+  state.randomizer.history.unshift(record);
+  state.randomizer.history = state.randomizer.history.slice(0, 15);
+  window.saveLocalState();
+
+  window.socket.emit('admin:startRandomSpin', spinPayload);
+  if (!window.socket.connected) playRandomizerPopupAnimation(spinPayload);
+}
+
+function drawWheelCanvas(canvasId, items, rotationRad = 0) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2;
+  const r = Math.min(cx, cy) - 6;
+
+  ctx.clearRect(0, 0, w, h);
+  if (!items || items.length === 0) {
+    ctx.fillStyle = '#334155';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+
+  const arc = (Math.PI * 2) / items.length;
+  items.forEach((item, i) => {
+    const startAngle = rotationRad + i * arc;
+    const endAngle = startAngle + arc;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = window.WHEEL_COLORS[i % window.WHEEL_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(startAngle + arc / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px Prompt, sans-serif';
+    ctx.fillText(String(item.label).slice(0, 16), r - 14, 4);
+    ctx.restore();
+  });
+}
+
+function playRandomizerPopupAnimation(payload) {
+  if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) return;
+  const modal = document.getElementById('randomPopupModal');
+  const wheelBox = document.getElementById('popupWheelBox');
+  const slotBox = document.getElementById('popupSlotBox');
+  const slotText = document.getElementById('popupSlotText');
+  const winnerBanner = document.getElementById('popupWinnerBanner');
+  const titleEl = document.getElementById('popupRandomTitle');
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+  if (winnerBanner) winnerBanner.classList.add('hidden');
+
+  const items = payload.items;
+  const n = items.length;
+  const winnerIdx = payload.winnerIndex;
+  const duration = 4200;
+  const startTime = performance.now();
+
+  if (payload.mode === 'WHEEL') {
+    if (titleEl) titleEl.textContent = '🎡 กำลังหมุนวงล้อสุ่ม...';
+    if (wheelBox) wheelBox.classList.remove('hidden');
+    if (slotBox) slotBox.classList.add('hidden');
+    const sliceAngle = (Math.PI * 2) / n;
+    const targetRotation = (Math.PI * 2 * 7) - (winnerIdx * sliceAngle + sliceAngle / 2);
+
+    function animateWheel(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      const easeOut = 1 - Math.pow(1 - t, 4);
+      drawWheelCanvas('popupWheelCanvas', items, targetRotation * easeOut);
+      if (t < 1) requestAnimationFrame(animateWheel);
+      else finishRandomSpin(payload.winnerLabel);
+    }
+    requestAnimationFrame(animateWheel);
+  } else {
+    if (titleEl) titleEl.textContent = payload.mode === 'SLOT' ? '🎰 กำลังหมุนสล็อตสุ่มชื่อ...' : '🎁 กำลังเปิดกล่องสุ่มปริศนา...';
+    if (wheelBox) wheelBox.classList.add('hidden');
+    if (slotBox) slotBox.classList.remove('hidden');
+    const stepInterval = setInterval(() => {
+      if (slotText) slotText.textContent = items[Math.floor(Math.random() * n)].label;
+    }, 85);
+    setTimeout(() => {
+      clearInterval(stepInterval);
+      if (slotText) slotText.textContent = payload.winnerLabel;
+      finishRandomSpin(payload.winnerLabel);
+    }, duration);
+  }
+}
+
+function finishRandomSpin(winnerLabel) {
+  playNotificationSound('hand');
+  const title = document.getElementById('popupRandomTitle');
+  const winner = document.getElementById('popupWinnerName');
+  const banner = document.getElementById('popupWinnerBanner');
+  if (title) title.textContent = '✨ การสุ่มเสร็จสิ้น!';
+  if (winner) winner.textContent = winnerLabel;
+  if (banner) banner.classList.remove('hidden');
+  if (typeof window.renderAll === 'function') window.renderAll();
+}
+
+function closeRandomPopup() {
+  const modal = document.getElementById('randomPopupModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+// Window attachments
+window.toggleSecretBiasPanel = toggleSecretBiasPanel;
+window.setRandomizerMode = setRandomizerMode;
+window.setRandomizerSource = setRandomizerSource;
+window.rebuildRandomMemberPool = rebuildRandomMemberPool;
+window.toggleRandomRole = toggleRandomRole;
+window.addRandomCustomItem = addRandomCustomItem;
+window.removeRandomCustomItem = removeRandomCustomItem;
+window.toggleRandomPoolItem = toggleRandomPoolItem;
+window.updateRandomItemWeight = updateRandomItemWeight;
+window.getEnabledRandomItems = getEnabledRandomItems;
+window.renderRandomizerPoolUI = renderRandomizerPoolUI;
+window.triggerAdminSpin = triggerAdminSpin;
+window.drawWheelCanvas = drawWheelCanvas;
+window.playRandomizerPopupAnimation = playRandomizerPopupAnimation;
+window.finishRandomSpin = finishRandomSpin;
+window.closeRandomPopup = closeRandomPopup;

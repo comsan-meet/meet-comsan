@@ -83,25 +83,33 @@ function populateSeatGrid(canvasEl, users, activeMotion, showRealtime, isAdminCl
     const isMySeat = !isAdminClickable && window.currentUserId && u.id === window.currentUserId;
     const myRing = isMySeat ? 'ring-4 ring-amber-400 scale-110' : '';
     const seatEl = document.createElement('div');
-    seatEl.className = `seat-circle w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border flex flex-col items-center justify-center text-[10px] sm:text-xs font-semibold select-none shadow-2xs transition-all duration-150 hover:scale-105 active:scale-95 ${isAdminClickable ? 'cursor-pointer hover:shadow-md' : ''} ${bgClass} ${myRing}`;
-    seatEl.title = `ที่นั่ง #${idx + 1}: ${u.nickname} (${u.firstName})`;
+    seatEl.className = `seat-circle w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border flex flex-col items-center justify-center text-[10px] sm:text-xs font-semibold select-none shadow-2xs transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer hover:shadow-md ${bgClass} ${myRing}`;
+    seatEl.title = `ที่นั่ง #${idx + 1}: ${u.nickname} (${u.firstName}) - คลิกดูข้อมูล`;
     seatEl.innerHTML = `<span class="truncate max-w-full px-0.5">${u.nickname}</span>`;
 
     if (isAdminClickable) {
       seatEl.onclick = () => {
         const state = window.appState;
-        if (!state || !state.meeting || !state.meeting.isStarted) {
-          if (typeof window.playNotificationSound === 'function') window.playNotificationSound('alert');
-          return window.showToast ? window.showToast('การประชุมยังไม่เริ่ม ไม่สามารถเช็คชื่อได้', 'warning') : alert('การประชุมยังไม่เริ่ม ไม่สามารถเช็คชื่อได้');
+        if (!state || !state.meeting || !state.meeting.isStarted || state.meeting.isEnded) {
+          if (typeof window.openMemberProfilePopup === 'function') window.openMemberProfilePopup(u.id);
+          return;
         }
-        if (state.meeting.isEnded) {
-          if (typeof window.playNotificationSound === 'function') window.playNotificationSound('alert');
-          return window.showToast ? window.showToast('การประชุมสิ้นสุดลงแล้ว ไม่สามารถเช็คชื่อได้', 'warning') : alert('การประชุมสิ้นสุดลงแล้ว ไม่สามารถเช็คชื่อได้');
-        }
-        if (!u.checkedIn && confirm(`เช็คชื่อเข้าประชุมให้ "${u.nickname} (${u.firstName})" ทันทีหรือไม่?`)) {
-          if (typeof window.processUserCheckIn === 'function') {
-            window.processUserCheckIn(u.id);
+        if (!u.checkedIn) {
+          if (confirm(`เช็คชื่อเข้าประชุมให้ "${u.nickname} (${u.firstName})" ทันทีหรือไม่?`)) {
+            if (typeof window.processUserCheckIn === 'function') {
+              window.processUserCheckIn(u.id);
+            }
           }
+        } else {
+          if (typeof window.openMemberProfilePopup === 'function') {
+            window.openMemberProfilePopup(u.id);
+          }
+        }
+      };
+    } else {
+      seatEl.onclick = () => {
+        if (typeof window.openMemberProfilePopup === 'function') {
+          window.openMemberProfilePopup(u.id);
         }
       };
     }
@@ -159,7 +167,7 @@ function renderHomeMembersRow() {
     const isMe = window.currentUserId && u.id === window.currentUserId;
     const meRing = isMe ? 'border-primary ring-2 ring-primary/20 bg-primary/[0.04]' : 'border-border bg-card';
     return `
-      <div onclick="switchUserToolSubTab('SEATS')" class="flex flex-col items-center justify-center p-3 rounded-2xl border ${meRing} hover:border-primary/50 hover:shadow-xs cursor-pointer transition shrink-0 w-24 sm:w-28 text-center group select-none">
+      <div onclick="openMemberProfilePopup('${u.id}')" class="flex flex-col items-center justify-center p-3 rounded-2xl border ${meRing} hover:border-primary/50 hover:shadow-xs cursor-pointer transition shrink-0 w-24 sm:w-28 text-center group select-none" title="คลิกดูข้อมูล ${u.nickname}">
         <div class="relative mb-2">
           <div class="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 text-primary font-bold flex items-center justify-center text-base group-hover:scale-105 transition shadow-2xs overflow-hidden">
             ${typeof window.getAvatarImageHtml === 'function' ? window.getAvatarImageHtml(u) : initial}

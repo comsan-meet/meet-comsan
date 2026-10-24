@@ -282,7 +282,7 @@ function renderStreamSection() {
             </span>
           </div>
           <div class="shrink-0">
-            ${st === 'APPROVED' ? `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'NONE')" class="px-2.5 py-1 rounded bg-rose-600 text-white font-bold">เสร็จสิ้น</button>` : st === 'PENDING' ? `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'APPROVED')" class="px-2.5 py-1 rounded bg-emerald-600 text-white font-bold">อนุญาต</button>` : `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'APPROVED')" class="px-2.5 py-1 rounded bg-slate-200 dark:bg-slate-800 font-bold">ให้สิทธิ์</button>`}
+            ${st === 'APPROVED' ? `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'NONE')" class="px-2.5 py-1 rounded bg-rose-600 text-white font-bold">เสร็จสิ้น</button>` : st === 'PENDING' ? `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'APPROVED')" class="px-2.5 py-1 rounded bg-emerald-600 text-white font-bold !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="อนุญาต" aria-label="อนุญาต"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button>` : `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'APPROVED')" class="px-2.5 py-1 rounded bg-slate-200 dark:bg-slate-800 font-bold !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="ให้สิทธิ์" aria-label="ให้สิทธิ์"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button>`}
           </div>
         </div>
       `;

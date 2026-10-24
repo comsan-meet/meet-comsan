@@ -12,6 +12,24 @@ function ensureDummyCheckinSpan() {
   }
 }
 
+function isMeetingBeforeScheduledTime(m) {
+  if (!m || !m.isStarted || m.isEnded) return false;
+  if (!m.startTime) return false;
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const meetingDate = m.date || todayStr;
+  if (meetingDate === todayStr) {
+    const [startHour, startMin] = m.startTime.split(':').map(Number);
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+    const currentTimeInMin = currentHour * 60 + currentMin;
+    const startTimeInMin = startHour * 60 + startMin;
+    return currentTimeInMin < startTimeInMin;
+  }
+  if (meetingDate > todayStr) return true;
+  return false;
+}
+
 function updateMeetingTimersAndBanners() {
   const state = window.appState;
   if (!state || !state.meeting) return;
@@ -36,6 +54,10 @@ function updateMeetingTimersAndBanners() {
   const userBannerLocation = document.getElementById('userBannerLocation');
   const homeBottomAgenda = document.getElementById('homeBottomAgendaText');
   const raiseBannerAgenda = document.getElementById('raiseBannerAgendaTitle');
+  const raiseBannerBox = document.getElementById('raiseTopBannerBox');
+  const raiseBannerIcon = document.getElementById('raiseTopBannerIcon');
+  const raiseBannerStatusSub = document.getElementById('raiseBannerStatusSub');
+  const raiseBannerCounterWrap = document.getElementById('raiseBannerCounterWrapper');
 
   // Top Header Branding & Greeting (Desktop Main Header)
   if (typeof window.updateDesktopHeader === 'function') {
@@ -55,6 +77,24 @@ function updateMeetingTimersAndBanners() {
     if (userBannerStatusPill) userBannerStatusPill.textContent = 'ยังไม่มีการประชุม';
     if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-slate-300';
     if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300';
+    if (raiseBannerBox) raiseBannerBox.className = 'bg-muted/40 border border-border rounded-2xl p-4 flex items-center justify-between gap-3';
+    if (raiseBannerIcon) {
+      if (typeof window.updateIcon === 'function') {
+        window.updateIcon(raiseBannerIcon, 'clock', 'text-muted-foreground text-lg shrink-0');
+      } else {
+        raiseBannerIcon.setAttribute('data-lucide', 'clock');
+        raiseBannerIcon.className = 'text-muted-foreground text-lg shrink-0';
+      }
+    }
+    if (raiseBannerStatusSub) {
+      raiseBannerStatusSub.textContent = 'การประชุมยังไม่เริ่ม';
+      raiseBannerStatusSub.className = 'text-[11px] font-bold text-muted-foreground';
+    }
+    if (raiseBannerAgenda) {
+      raiseBannerAgenda.textContent = 'ยังไม่มีวาระที่กำลังพิจารณา (รอเปิดประชุม)';
+      raiseBannerAgenda.className = 'text-xs sm:text-sm font-semibold text-muted-foreground truncate';
+    }
+    if (raiseBannerCounterWrap) raiseBannerCounterWrap.className = 'text-xs font-bold text-muted-foreground shrink-0';
   } else if (m.isEnded) {
     if (stateBadge) stateBadge.textContent = 'จบการประชุมแล้ว';
     if (pulseDot) pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
@@ -66,34 +106,142 @@ function updateMeetingTimersAndBanners() {
     if (userBannerStatusPill) userBannerStatusPill.textContent = 'จบการประชุมแล้ว';
     if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-rose-400';
     if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-rose-300';
+    if (raiseBannerBox) raiseBannerBox.className = 'bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex items-center justify-between gap-3';
+    if (raiseBannerIcon) {
+      if (typeof window.updateIcon === 'function') {
+        window.updateIcon(raiseBannerIcon, 'check-circle-2', 'text-rose-500 text-lg shrink-0');
+      } else {
+        raiseBannerIcon.setAttribute('data-lucide', 'check-circle-2');
+        raiseBannerIcon.className = 'text-rose-500 text-lg shrink-0';
+      }
+    }
+    if (raiseBannerStatusSub) {
+      raiseBannerStatusSub.textContent = 'จบการประชุมแล้ว';
+      raiseBannerStatusSub.className = 'text-[11px] font-bold text-rose-500';
+    }
+    if (raiseBannerAgenda) {
+      raiseBannerAgenda.textContent = m.title || 'การประชุมเสร็จสิ้นแล้ว';
+      raiseBannerAgenda.className = 'text-xs sm:text-sm font-semibold text-foreground truncate';
+    }
+    if (raiseBannerCounterWrap) raiseBannerCounterWrap.className = 'text-xs font-bold text-rose-600 dark:text-rose-400 shrink-0';
   } else {
     const startMs = m.startedAtMs || nowMs;
     const elapsedMin = Math.max(0, Math.floor((nowMs - startMs) / 60000));
-    if (stateBadge) stateBadge.textContent = 'กำลังดำเนินการประชุม';
-    if (pulseDot) pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
-    if (sbElapsed) sbElapsed.textContent = `${elapsedMin} นาที`;
-    if (uElapsed) uElapsed.textContent = `${elapsedMin} นาที`;
-    if (voteElapsed) voteElapsed.textContent = `${elapsedMin} นาที`;
-    if (adminSetupBadge) adminSetupBadge.textContent = 'กำลังดำเนินการประชุม';
-    if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
-    if (userBannerStatusPill) userBannerStatusPill.textContent = 'กำลังประชุม';
-    if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
+    const isBeforeTime = isMeetingBeforeScheduledTime(m);
+
+    if (isBeforeTime) {
+      if (stateBadge) stateBadge.textContent = 'ยังไม่ถึงเวลาการประชุม (เปิดห้องแล้ว)';
+      if (pulseDot) pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+      if (sbElapsed) sbElapsed.textContent = `${elapsedMin} นาที`;
+      if (uElapsed) uElapsed.textContent = `${elapsedMin} นาที`;
+      if (voteElapsed) voteElapsed.textContent = `${elapsedMin} นาที`;
+      if (adminSetupBadge) adminSetupBadge.textContent = 'เปิดห้องแล้ว (ยังไม่ถึงเวลา)';
+      if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
+      if (userBannerStatusPill) userBannerStatusPill.textContent = 'ยังไม่ถึงเวลาการประชุม';
+      if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+      if (heroStatusWrapper) {
+        heroStatusWrapper.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30';
+        heroStatusWrapper.innerHTML = '<span id="heroStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> <span>ยังไม่ถึงเวลาการประชุม</span>';
+      }
+    } else {
+      if (stateBadge) stateBadge.textContent = 'กำลังดำเนินการประชุม';
+      if (pulseDot) pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+      if (sbElapsed) sbElapsed.textContent = `${elapsedMin} นาที`;
+      if (uElapsed) uElapsed.textContent = `${elapsedMin} นาที`;
+      if (voteElapsed) voteElapsed.textContent = `${elapsedMin} นาที`;
+      if (adminSetupBadge) adminSetupBadge.textContent = 'กำลังดำเนินการประชุม';
+      if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
+      if (userBannerStatusPill) userBannerStatusPill.textContent = 'กำลังประชุม';
+      if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+      if (heroStatusWrapper) {
+        heroStatusWrapper.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
+        heroStatusWrapper.innerHTML = '<span id="heroStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> <span>กำลังประชุม</span>';
+      }
+    }
+
+    const activeMot = (state.motions || []).find(mot => mot.isOpen);
+    if (isBeforeTime) {
+      if (raiseBannerBox) raiseBannerBox.className = 'bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between gap-3';
+      if (raiseBannerIcon) {
+        if (typeof window.updateIcon === 'function') {
+          window.updateIcon(raiseBannerIcon, 'clock', 'text-amber-500 text-lg shrink-0');
+        } else {
+          raiseBannerIcon.setAttribute('data-lucide', 'clock');
+          raiseBannerIcon.className = 'text-amber-500 text-lg shrink-0';
+        }
+      }
+      if (raiseBannerStatusSub) {
+        raiseBannerStatusSub.textContent = 'ยังไม่ถึงเวลาการประชุม (เปิดห้องก่อนเวลา)';
+        raiseBannerStatusSub.className = 'text-[11px] font-bold text-amber-600 dark:text-amber-400';
+      }
+      if (raiseBannerAgenda) {
+        raiseBannerAgenda.textContent = activeMot ? `ญัตติ: ${activeMot.title}` : (m.title || 'การประชุมชมรมสันทนาการ (COMSAN)');
+        raiseBannerAgenda.className = 'text-xs sm:text-sm font-bold text-foreground truncate';
+      }
+      if (raiseBannerCounterWrap) raiseBannerCounterWrap.className = 'text-xs font-bold text-amber-600 dark:text-amber-400 shrink-0';
+    } else {
+      if (raiseBannerBox) raiseBannerBox.className = 'bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between gap-3';
+      if (raiseBannerIcon) {
+        if (typeof window.updateIcon === 'function') {
+          window.updateIcon(raiseBannerIcon, 'activity', 'text-emerald-600 dark:text-emerald-400 text-lg shrink-0');
+        } else {
+          raiseBannerIcon.setAttribute('data-lucide', 'activity');
+          raiseBannerIcon.className = 'text-emerald-600 dark:text-emerald-400 text-lg shrink-0';
+        }
+      }
+      if (raiseBannerStatusSub) {
+        raiseBannerStatusSub.textContent = activeMot ? 'กำลังพิจารณาในที่ประชุม' : 'กำลังดำเนินการประชุม';
+        raiseBannerStatusSub.className = 'text-[11px] font-bold text-emerald-600 dark:text-emerald-400';
+      }
+      if (raiseBannerAgenda) {
+        raiseBannerAgenda.textContent = activeMot ? `ญัตติ: ${activeMot.title}` : (m.title || 'การประชุมชมรมสันทนาการ (COMSAN)');
+        raiseBannerAgenda.className = 'text-xs sm:text-sm font-bold text-foreground truncate';
+      }
+      if (raiseBannerCounterWrap) raiseBannerCounterWrap.className = 'text-xs font-bold text-emerald-700 dark:text-emerald-300 shrink-0';
+    }
   }
 
-  // Online meeting UI elements
+  // Synchronize Admin Meeting Setup Toggle Switch & Label
+  const adminMeetingToggleSwitch = document.getElementById('adminMeetingToggleSwitch');
+  const adminMeetingToggleLabel = document.getElementById('adminMeetingToggleLabel');
+  if (adminMeetingToggleSwitch) {
+    adminMeetingToggleSwitch.checked = isMeetingActive;
+  }
+  if (adminMeetingToggleLabel) {
+    if (isMeetingActive) {
+      if (isMeetingBeforeScheduledTime(m)) {
+        adminMeetingToggleLabel.textContent = 'เปิดห้องแล้ว (ยังไม่ถึงเวลาประชุม)';
+        adminMeetingToggleLabel.className = 'text-xs font-bold text-amber-600 dark:text-amber-400 select-none';
+      } else {
+        adminMeetingToggleLabel.textContent = 'กำลังประชุม (เปิดอยู่)';
+        adminMeetingToggleLabel.className = 'text-xs font-bold text-emerald-600 dark:text-emerald-400 select-none';
+      }
+    } else if (m.isEnded) {
+      adminMeetingToggleLabel.textContent = 'จบการประชุมแล้ว';
+      adminMeetingToggleLabel.className = 'text-xs font-bold text-rose-500 select-none';
+    } else {
+      adminMeetingToggleLabel.textContent = 'เปิดการประชุม';
+      adminMeetingToggleLabel.className = 'text-xs font-bold text-foreground select-none';
+    }
+  }
+
+  // Hero Card UI elements (Unified for Online & On-site)
   const onlineContainer = document.getElementById('userBannerOnlineContainer');
   const onlineBtn = document.getElementById('userBannerOnlineBtn');
   const onlineIcon = document.getElementById('userBannerOnlineIcon');
   const onlineLabel = document.getElementById('userBannerOnlineLabel');
   const passcodeTag = document.getElementById('userBannerPasscodeTag');
   const passcodeText = document.getElementById('userBannerPasscodeText');
+  const onsiteLocationTag = document.getElementById('userBannerOnsiteLocationTag');
+  const onsiteLocationText = document.getElementById('userBannerOnsiteLocationText');
 
   const heroOnsiteQrWrapper = document.getElementById('heroOnsiteQrWrapper');
-  const heroOnlineCheckinWrapper = document.getElementById('heroOnlineCheckinWrapper');
+  const heroOnlineCheckinAction = document.getElementById('heroOnlineCheckinAction');
   const heroOnlineNotCheckedInBox = document.getElementById('heroOnlineNotCheckedInBox');
   const heroOnlineCheckedInBox = document.getElementById('heroOnlineCheckedInBox');
   const heroOnlineCheckinTime = document.getElementById('heroOnlineCheckinTime');
+  const heroOnlineCheckinBtn = document.getElementById('heroOnlineCheckinBtn');
+  const heroOnsiteCheckinBtn = document.getElementById('heroOnsiteCheckinBtn');
 
   function getOnlinePlatformInfo(platform) {
     switch (platform) {
@@ -120,72 +268,130 @@ function updateMeetingTimersAndBanners() {
     if (userBannerTitle) userBannerTitle.textContent = m.title || 'การประชุมชมรมสันทนาการ (COMSAN)';
     if (userBannerDateTime) userBannerDateTime.textContent = `${m.date || todayISO} • ${m.startTime || '17:00'}–${m.endTime || '19:00'} น. (ตัดสาย ${m.lateTime || '17:15'} น.)`;
 
+    const heroUserCheckinPill = document.getElementById('heroUserCheckinPill');
+    if (heroUserCheckinPill) heroUserCheckinPill.classList.remove('hidden');
+
     const heroOnlineBadge = document.getElementById('heroOnlineBadge');
     const heroOnlinePlatformLabel = document.getElementById('heroOnlinePlatformLabel');
 
+    // Show the bottom action container in both formats
+    if (onlineContainer) {
+      onlineContainer.classList.remove('hidden');
+      onlineContainer.classList.add('flex');
+    }
+
     if (m.format === 'ONLINE') {
-      if (userBannerLocation) userBannerLocation.classList.add('hidden');
-      if (onlineContainer) {
-        onlineContainer.classList.remove('hidden');
-        onlineContainer.classList.add('flex');
+      if (userBannerLocation) {
+        userBannerLocation.classList.add('hidden');
+        userBannerLocation.textContent = '';
+      }
+      if (onsiteLocationTag) onsiteLocationTag.classList.add('hidden');
+      if (onlineBtn) {
+        onlineBtn.classList.remove('hidden');
+        onlineBtn.classList.add('inline-flex');
         const pInfo = getOnlinePlatformInfo(m.onlinePlatform);
         if (onlineIcon) onlineIcon.innerHTML = pInfo.icon;
         if (onlineLabel) onlineLabel.textContent = `เข้าสู่การประชุม (${pInfo.name})`;
-        if (onlineBtn) {
-          onlineBtn.href = m.onlineUrl || '#';
-          onlineBtn.setAttribute('title', `เปิดลิงก์การประชุม: ${m.onlineUrl}`);
-        }
-        if (heroOnlineBadge) {
-          heroOnlineBadge.classList.remove('hidden');
-          heroOnlineBadge.classList.add('inline-flex');
-        }
-        if (heroOnlinePlatformLabel) heroOnlinePlatformLabel.textContent = pInfo.name;
-        if (m.onlinePasscode && passcodeTag && passcodeText) {
-          passcodeTag.classList.remove('hidden');
-          passcodeTag.classList.add('inline-flex');
-          passcodeText.textContent = m.onlinePasscode;
-        } else if (passcodeTag) {
-          passcodeTag.classList.add('hidden');
-          passcodeTag.classList.remove('inline-flex');
-        }
+        onlineBtn.href = m.onlineUrl || '#';
+        onlineBtn.setAttribute('title', `เปิดลิงก์การประชุม: ${m.onlineUrl}`);
       }
-
-      if (heroOnsiteQrWrapper) heroOnsiteQrWrapper.classList.add('hidden');
-
-      const meUser = (state.users || []).find(u => u.id === window.currentUserId);
-      if (meUser && meUser.checkedIn) {
-        if (heroOnlineNotCheckedInBox) heroOnlineNotCheckedInBox.classList.add('hidden');
-        if (heroOnlineCheckedInBox) {
-          heroOnlineCheckedInBox.classList.remove('hidden');
-          heroOnlineCheckedInBox.classList.add('inline-flex');
-        }
-        if (heroOnlineCheckinTime) heroOnlineCheckinTime.textContent = `(${meUser.checkInTimeStr} น. • ${meUser.isLate ? 'มาสาย' : 'ทันเวลา'})`;
-      } else {
-        if (heroOnlineNotCheckedInBox) heroOnlineNotCheckedInBox.classList.remove('hidden');
-        if (heroOnlineCheckedInBox) {
-          heroOnlineCheckedInBox.classList.add('hidden');
-          heroOnlineCheckedInBox.classList.remove('inline-flex');
-        }
+      if (heroOnlineBadge) {
+        heroOnlineBadge.classList.remove('hidden');
+        heroOnlineBadge.classList.add('inline-flex');
       }
+      if (heroOnlinePlatformLabel) {
+        const pInfo = getOnlinePlatformInfo(m.onlinePlatform);
+        heroOnlinePlatformLabel.textContent = pInfo.name;
+      }
+      if (m.onlinePasscode && passcodeTag && passcodeText) {
+        passcodeTag.classList.remove('hidden');
+        passcodeTag.classList.add('inline-flex');
+        passcodeText.textContent = m.onlinePasscode;
+      } else if (passcodeTag) {
+        passcodeTag.classList.add('hidden');
+        passcodeTag.classList.remove('inline-flex');
+      }
+      if (heroOnlineCheckinBtn) heroOnlineCheckinBtn.classList.remove('hidden');
+      if (heroOnsiteCheckinBtn) heroOnsiteCheckinBtn.classList.add('hidden');
     } else {
-      if (heroOnlineBadge) heroOnlineBadge.classList.add('hidden');
+      // On-site format: รายละเอียดสถานที่เต็มอยู่ใต้หัวข้อ ส่วนชื่อห้องอยู่บนปุ่มด้านล่าง
       if (userBannerLocation) {
         userBannerLocation.classList.remove('hidden');
-        userBannerLocation.textContent = `สถานที่: ${m.location || 'ห้องประชุมชมรมคมสัน'}`;
+        const fullDetail = (m.locationDetail || m.location || 'ห้องประชุมชมรมคมสัน').trim();
+        userBannerLocation.textContent = `สถานที่: ${fullDetail}`;
       }
-      if (onlineContainer) {
-        onlineContainer.classList.add('hidden');
-        onlineContainer.classList.remove('flex');
+      if (onlineBtn) {
+        onlineBtn.classList.add('hidden');
+        onlineBtn.classList.remove('inline-flex');
       }
-      if (heroOnsiteQrWrapper) heroOnsiteQrWrapper.classList.remove('hidden');
+      if (passcodeTag) {
+        passcodeTag.classList.add('hidden');
+        passcodeTag.classList.remove('inline-flex');
+      }
+      if (heroOnlineBadge) {
+        heroOnlineBadge.classList.add('hidden');
+        heroOnlineBadge.classList.remove('inline-flex');
+      }
+      if (onsiteLocationTag) {
+        onsiteLocationTag.classList.remove('hidden');
+        onsiteLocationTag.classList.add('inline-flex');
+        if (onsiteLocationText) {
+          const roomName = (m.location || 'ห้องประชุมชมรมคมสัน').trim();
+          onsiteLocationText.textContent = roomName.startsWith('ห้องประชุม') ? roomName : `ห้องประชุม: ${roomName}`;
+        }
+      }
+      if (heroOnlineCheckinBtn) heroOnlineCheckinBtn.classList.add('hidden');
+      if (heroOnsiteCheckinBtn) heroOnsiteCheckinBtn.classList.remove('hidden');
+    }
+
+    // Hide old large QR wrapper and quick actions row for onsite too
+    if (heroOnsiteQrWrapper) heroOnsiteQrWrapper.classList.add('hidden');
+    const heroQuickActionsRow = document.getElementById('heroQuickActionsRow');
+    if (heroQuickActionsRow) heroQuickActionsRow.classList.add('hidden');
+
+    // Show check-in action box
+    if (heroOnlineCheckinAction) {
+      heroOnlineCheckinAction.classList.remove('hidden');
+      heroOnlineCheckinAction.classList.add('flex');
+    }
+
+    // Check-in state evaluation (shared for both Online & On-site)
+    const meUser = (state.users || []).find(u => u.id === window.currentUserId);
+    if (meUser && meUser.checkedIn) {
+      if (heroOnlineNotCheckedInBox) heroOnlineNotCheckedInBox.classList.add('hidden');
+      if (heroOnlineCheckedInBox) {
+        heroOnlineCheckedInBox.classList.remove('hidden');
+        heroOnlineCheckedInBox.classList.add('inline-flex');
+      }
+      if (heroOnlineCheckinTime) heroOnlineCheckinTime.textContent = `(${meUser.checkInTimeStr} น. • ${meUser.isLate ? 'มาสาย' : 'ทันเวลา'})`;
+      if (heroUserCheckinPill) {
+        heroUserCheckinPill.textContent = 'เช็คชื่อแล้ว';
+        heroUserCheckinPill.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
+      }
+    } else {
+      if (heroOnlineNotCheckedInBox) {
+        heroOnlineNotCheckedInBox.classList.remove('hidden');
+        heroOnlineNotCheckedInBox.classList.add('flex');
+      }
+      if (heroOnlineCheckedInBox) {
+        heroOnlineCheckedInBox.classList.add('hidden');
+        heroOnlineCheckedInBox.classList.remove('inline-flex');
+      }
+      if (heroUserCheckinPill) {
+        heroUserCheckinPill.textContent = 'ยังไม่เช็คชื่อ';
+        heroUserCheckinPill.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/20 text-white backdrop-blur-xs';
+      }
     }
   } else {
+    // When no meeting is active
     if (heroCard) {
       heroCard.classList.remove('gradient-hero');
       heroCard.classList.add('hero-card-gray');
     }
     const heroOnlineBadge = document.getElementById('heroOnlineBadge');
     if (heroOnlineBadge) heroOnlineBadge.classList.add('hidden');
+    const heroUserCheckinPill = document.getElementById('heroUserCheckinPill');
+    if (heroUserCheckinPill) heroUserCheckinPill.classList.add('hidden');
     if (userBannerTitle) userBannerTitle.textContent = 'ยังไม่มีการประชุมในขณะนี้';
     if (userBannerDateTime) userBannerDateTime.textContent = `การประชุมล่าสุด: ${m.title || '-'}`;
     if (userBannerLocation) {
@@ -196,13 +402,15 @@ function updateMeetingTimersAndBanners() {
       onlineContainer.classList.add('hidden');
       onlineContainer.classList.remove('flex');
     }
-    if (heroOnsiteQrWrapper) heroOnsiteQrWrapper.classList.remove('hidden');
+    if (heroOnsiteQrWrapper) heroOnsiteQrWrapper.classList.add('hidden');
+    const heroQuickActionsRow = document.getElementById('heroQuickActionsRow');
+    if (heroQuickActionsRow) heroQuickActionsRow.classList.add('hidden');
+    if (heroOnlineCheckinAction) heroOnlineCheckinAction.classList.add('hidden');
   }
 
-  const latestMot = (state.motions && state.motions.length > 0) ? state.motions[state.motions.length - 1] : null;
-  const agendaLabel = latestMot ? `ญัตติ: ${latestMot.title}` : (m.title || 'การประชุมชมรมสันทนาการ (COMSAN)');
+  const openMot = (state.motions || []).find(mot => mot.isOpen);
+  const agendaLabel = openMot ? `ญัตติ: ${openMot.title}` : (m.title || 'การประชุมชมรมสันทนาการ (COMSAN)');
   if (homeBottomAgenda) homeBottomAgenda.textContent = agendaLabel;
-  if (raiseBannerAgenda) raiseBannerAgenda.textContent = agendaLabel;
 
   if (typeof updateUserActiveEventsBanner === 'function') {
     updateUserActiveEventsBanner(state);
@@ -230,15 +438,20 @@ function updateMeetingTimersAndBanners() {
       ? `<p class="text-xs text-muted-foreground text-center py-12"><i data-lucide="sticky-note" class="w-8 h-8 mb-2 text-muted-foreground/40 block mx-auto"></i>ยังไม่มีโน้ตที่บันทึกเข้ามา</p>`
       : usersWithNotes.map(u => `
           <div class="bg-card border border-border rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs hover:border-primary/40 transition">
-            <div class="overflow-hidden min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-foreground">${u.nickname}</span>
-                <span class="text-[11px] text-muted-foreground">(${u.firstName} ${u.lastName})</span>
-                <span class="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">${u.position}</span>
+            <div class="flex items-center gap-3 overflow-hidden min-w-0">
+              <div onclick="openMemberProfilePopup('${u.id}')" class="cursor-pointer shrink-0 hover:scale-105 transition" title="คลิกดูข้อมูล ${u.nickname}">
+                ${typeof window.getAvatarImageHtml === 'function' ? window.getAvatarImageHtml(u, 'w-10 h-10 rounded-full') : `<div class="w-10 h-10 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">${(u.nickname || u.firstName || 'U')[0]}</div>`}
               </div>
-              <p class="text-xs text-muted-foreground mt-1 line-clamp-2">${u.note}</p>
+              <div class="overflow-hidden min-w-0">
+                <div class="flex items-center gap-2">
+                  <span onclick="openMemberProfilePopup('${u.id}')" class="text-xs font-bold text-foreground cursor-pointer hover:underline">${u.nickname}</span>
+                  <span class="text-[11px] text-muted-foreground truncate">(${u.firstName} ${u.lastName})</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium shrink-0">${u.position}</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1 line-clamp-2">${u.note}</p>
+              </div>
             </div>
-            <button type="button" onclick="generatePDFForUser('${u.id}')" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shrink-0 shadow-xs transition active:scale-95 flex items-center gap-1.5">
+            <button type="button" onclick="generatePDFForUser('${u.id}')" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shrink-0 shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
               <i data-lucide="file-text" class="w-3.5 h-3.5"></i> <span>PDF</span>
             </button>
           </div>
@@ -364,6 +577,8 @@ function renderAll() {
 
     const titleIn = document.getElementById('cfgMeetingTitle');
     const locIn = document.getElementById('cfgMeetingLocation');
+    const locDetailIn = document.getElementById('cfgMeetingLocationDetail');
+    const onlineDetailIn = document.getElementById('cfgOnlineMeetingDetail');
     const dateIn = document.getElementById('cfgMeetingDate');
     const startIn = document.getElementById('cfgStartTime');
     const lateIn = document.getElementById('cfgLateTime');
@@ -371,6 +586,8 @@ function renderAll() {
 
     if (titleIn && document.activeElement !== titleIn) titleIn.value = m.title || '';
     if (locIn && document.activeElement !== locIn) locIn.value = m.location || '';
+    if (locDetailIn && document.activeElement !== locDetailIn) locDetailIn.value = m.locationDetail || '';
+    if (onlineDetailIn && document.activeElement !== onlineDetailIn) onlineDetailIn.value = m.locationDetail || '';
     if (dateIn && document.activeElement !== dateIn) dateIn.value = m.date || todayISO;
     if (startIn && document.activeElement !== startIn) startIn.value = m.startTime || '17:00';
     if (lateIn && document.activeElement !== lateIn) lateIn.value = m.lateTime || '17:15';
@@ -543,10 +760,10 @@ function renderAll() {
         ? `<p class="text-xs text-muted-foreground text-center py-10">ยังไม่มีสมาชิกเช็คชื่อเข้าประชุม</p>`
         : checkedInUsers.map(u => `
           <div class="p-2.5 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition" onclick="openMemberProfilePopup('${u.id}')" title="คลิกดูข้อมูล ${u.nickname}">
               ${typeof window.getAvatarImageHtml === 'function' ? window.getAvatarImageHtml(u, 'w-8 h-8 rounded-full shrink-0') : `<div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">${(u.nickname || u.firstName || 'U')[0]}</div>`}
               <div>
-                <p class="text-xs font-bold text-foreground">${u.nickname} <span class="text-muted-foreground font-normal">(${u.firstName} ${u.lastName})</span></p>
+                <p class="text-xs font-bold text-foreground hover:underline">${u.nickname} <span class="text-muted-foreground font-normal">(${u.firstName} ${u.lastName})</span></p>
                 <p class="text-[10px] text-muted-foreground">${u.position || 'สมาชิก'} • ${u.id}</p>
               </div>
             </div>
@@ -566,10 +783,10 @@ function renderAll() {
         ? `<p class="text-xs text-muted-foreground text-center py-8">ยังไม่มีรายชื่อสมาชิกในระบบ</p>`
         : users.map(u => `
           <div class="p-2.5 rounded-xl bg-muted/30 border border-border flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
+            <div class="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-80 transition" onclick="openMemberProfilePopup('${u.id}')" title="คลิกดูข้อมูล ${u.nickname}">
               ${typeof window.getAvatarImageHtml === 'function' ? window.getAvatarImageHtml(u, 'w-8 h-8 rounded-full shrink-0') : `<div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">${(u.nickname || u.firstName || 'U')[0]}</div>`}
               <div class="min-w-0 truncate">
-                <p class="text-xs font-bold text-foreground truncate">${u.id} • ${u.nickname} <span class="font-normal text-muted-foreground">(${u.firstName} ${u.lastName})</span></p>
+                <p class="text-xs font-bold text-foreground truncate hover:underline">${u.id} • ${u.nickname} <span class="font-normal text-muted-foreground">(${u.firstName} ${u.lastName})</span></p>
                 <p class="text-[10px] text-muted-foreground truncate">${u.position || 'สมาชิก'} | ${u.major || 'สาขา -'} ปี ${u.year || '-'}</p>
               </div>
             </div>
@@ -872,6 +1089,8 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof window.rebuildRandomMemberPool === 'function') window.rebuildRandomMemberPool();
   if (typeof window.populateCameraDeviceOptions === 'function') window.populateCameraDeviceOptions();
   if (typeof window.initRecommendedFeaturesCarousel === 'function') window.initRecommendedFeaturesCarousel();
+  if (typeof window.initAdminSupabaseSettingsUI === 'function') window.initAdminSupabaseSettingsUI();
+  if (typeof window.initDbConfigUI === 'function') window.initDbConfigUI();
   renderAll();
   setInterval(updateMeetingTimersAndBanners, 1000);
 

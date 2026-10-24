@@ -1,4 +1,4 @@
-/**
+﻿/**
  * COMSAN Meeting System - Application State Store
  */
 
@@ -158,6 +158,9 @@ function saveLocalState() {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
     if (localSyncChannel) localSyncChannel.postMessage({ type: 'SYNC', state: appState });
+    if (window.socket && window.socket.isHttpBridge) {
+      window.socket.syncStateToServer('saveLocalState');
+    }
   } catch (e) {}
 }
 

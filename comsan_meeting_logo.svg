@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960" width="960" height="960">
+  <!-- Outer Rounded Squircle Frame -->
+  <rect width="960" height="960" rx="220" ry="220" fill="#6961fb"/>
+  <!-- Inner White Squircle Card -->
+  <rect x="78" y="78" width="804" height="804" rx="150" ry="150" fill="#ffffff"/>
+  
+  <!-- Teal Figures (#0fd8be) -->
+  <g fill="#0fd8be">
+    <!-- Center Person Head -->
+    <circle cx="480" cy="362" r="87" />
+    <!-- Left Person Head -->
+    <circle cx="246" cy="435" r="87" />
+    <!-- Right Person Head -->
+    <circle cx="714" cy="435" r="87" />
+    
+    <!-- Center Person Body (Closed arch with bottom bar) -->
+    <path fill-rule="evenodd" d="M 350 710 V 582 C 350 510 408 467 480 467 C 552 467 610 510 610 582 V 710 H 350 Z M 387 674 H 573 V 582 C 573 531 531 503 480 503 C 429 503 387 531 387 582 V 674 Z" />
+  </g>
+  
+  <!-- Left and Right Shoulders -->
+  <g fill="none" stroke="#0fd8be" stroke-width="37" stroke-linecap="round">
+    <path d="M 156 710 V 650 C 156 612 195 582 328 582" />
+    <path d="M 804 710 V 650 C 804 612 765 582 632 582" />
+  </g>
+</svg>

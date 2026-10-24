@@ -15,7 +15,8 @@ const SupabaseConfigManager = {
    * Retrieves active Supabase credentials with precedence:
    * 1. Window config (if provided)
    * 2. LocalStorage (configured via Admin Settings UI)
-   * 3. Fetched from serverless /api/config
+   * 3. Shared server database config (api/db_config.php)
+   * 4. Serverless endpoint (/api/config)
    */
   async getCredentials() {
     let url = (window.COMSAN_SUPABASE_CONFIG && window.COMSAN_SUPABASE_CONFIG.url) ? window.COMSAN_SUPABASE_CONFIG.url.trim() : '';
@@ -33,16 +34,21 @@ const SupabaseConfigManager = {
     }
 
     if (!url || !anonKey) {
-      try {
-        const resp = await fetch('/api/config');
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data && data.supabaseUrl && data.supabaseAnonKey) {
-            url = data.supabaseUrl.trim();
-            anonKey = data.supabaseAnonKey.trim();
+      const endpoints = ['api/db_config.php', '/api/db_config.php', '../api/db_config.php', '/api/config'];
+      for (const ep of endpoints) {
+        try {
+          const resp = await fetch(ep);
+          if (resp.ok) {
+            const data = await resp.json();
+            const d = (data && data.data) ? data.data : data;
+            if (d && (d.supabase_url || d.supabaseUrl) && (d.supabase_key || d.supabaseAnonKey)) {
+              url = (d.supabase_url || d.supabaseUrl).trim();
+              anonKey = (d.supabase_key || d.supabaseAnonKey).trim();
+              if (url && anonKey) break;
+            }
           }
-        }
-      } catch (e) {}
+        } catch (e) {}
+      }
     }
 
     return {
@@ -52,10 +58,31 @@ const SupabaseConfigManager = {
     };
   },
 
-  saveCredentials(url, anonKey) {
+  async saveCredentials(url, anonKey) {
     if (url && anonKey) {
-      localStorage.setItem('comsan_supabase_url', url.trim());
-      localStorage.setItem('comsan_supabase_anon_key', anonKey.trim());
+      const cleanUrl = url.trim();
+      const cleanKey = anonKey.trim();
+      localStorage.setItem('comsan_supabase_url', cleanUrl);
+      localStorage.setItem('comsan_supabase_anon_key', cleanKey);
+
+      // Sync to shared PHP server config so all clients connect to same Supabase
+      const endpoints = ['api/db_config.php', '/api/db_config.php', '../api/db_config.php'];
+      for (const ep of endpoints) {
+        try {
+          // Try POST first
+          const r = await fetch(ep, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ supabase_url: cleanUrl, supabase_key: cleanKey })
+          });
+          if (r.ok) break;
+
+          // If POST blocked by 403 on InfinityFree, fallback to GET query
+          const getUrl = `${ep}?action=save&supabase_url=${encodeURIComponent(cleanUrl)}&supabase_key=${encodeURIComponent(cleanKey)}`;
+          const r2 = await fetch(getUrl);
+          if (r2.ok) break;
+        } catch (e) {}
+      }
       return true;
     }
     return false;

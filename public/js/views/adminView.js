@@ -49,6 +49,7 @@ function handleAdminLogin(e) {
     }
 
     closeAdminModal();
+    if (typeof window.closeSettingsModal === 'function') window.closeSettingsModal();
     const authScreen = document.getElementById('authScreen');
     const appLayout = document.getElementById('appLayout');
     if (authScreen) authScreen.classList.add('hidden');
@@ -94,11 +95,11 @@ function setMeetingFormat(format) {
     if (onsiteBox) onsiteBox.classList.add('hidden');
     if (onlineBox) onlineBox.classList.remove('hidden');
     if (badge) {
-      badge.textContent = '🌐 ออนไลน์ (Online)';
+      badge.textContent = 'ออนไลน์ (Online)';
       badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
     }
     if (note) {
-      note.textContent = '🌐 Online: สมาชิกสแกน QR Code หรือกรอกรหัสเช็คชื่อของผู้ดูแลระบบ';
+      note.textContent = 'Online: สมาชิกสแกน QR Code หรือกรอกรหัสเช็คชื่อของผู้ดูแลระบบ';
     }
   } else {
     if (btnOnsite) {
@@ -110,11 +111,11 @@ function setMeetingFormat(format) {
     if (onsiteBox) onsiteBox.classList.remove('hidden');
     if (onlineBox) onlineBox.classList.add('hidden');
     if (badge) {
-      badge.textContent = '🏢 ในสถานที่ (On-site)';
+      badge.textContent = 'ในสถานที่ (On-site)';
       badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20';
     }
     if (note) {
-      note.textContent = '🏢 On-site: ผู้ดูแลระบบสแกน QR Code ประจำตัวสมาชิก';
+      note.textContent = 'On-site: ผู้ดูแลระบบสแกน QR Code ประจำตัวสมาชิก';
     }
   }
 }
@@ -158,7 +159,7 @@ function startOfficialMeeting(e) {
 
   if (!title) {
     showToast('กรุณากรอก "หัวข้อการประชุม" ก่อนเปิดการประชุม!', 'error');
-    return;
+    return false;
   }
 
   let payload = {
@@ -173,21 +174,25 @@ function startOfficialMeeting(e) {
   if (currentMeetingFormat === 'ONLINE') {
     const onlineUrl = (document.getElementById('cfgOnlineMeetingUrl')?.value || '').trim();
     const onlinePasscode = (document.getElementById('cfgOnlineMeetingPasscode')?.value || '').trim();
+    const onlineDetail = (document.getElementById('cfgOnlineMeetingDetail')?.value || '').trim();
     if (!onlineUrl) {
       showToast('กรุณากรอก "ลิงก์ห้องประชุมออนไลน์" ก่อนเปิดการประชุม!', 'error');
-      return;
+      return false;
     }
     payload.onlinePlatform = currentOnlinePlatform;
     payload.onlineUrl = onlineUrl;
     payload.onlinePasscode = onlinePasscode;
     payload.location = `ออนไลน์ (${currentOnlinePlatform})`;
+    payload.locationDetail = onlineDetail || `ออนไลน์ (${currentOnlinePlatform})`;
   } else {
     const location = (document.getElementById('cfgMeetingLocation')?.value || '').trim();
+    const locationDetail = (document.getElementById('cfgMeetingLocationDetail')?.value || '').trim();
     if (!location) {
-      showToast('กรุณากรอก "สถานที่ประชุม" ก่อนเปิดการประชุม!', 'error');
-      return;
+      showToast('กรุณากรอก "สถานที่ประชุม (ชื่อห้องประชุม)" ก่อนเปิดการประชุม!', 'error');
+      return false;
     }
     payload.location = location;
+    payload.locationDetail = locationDetail || location;
   }
 
   window.appState.meeting = {
@@ -203,6 +208,8 @@ function startOfficialMeeting(e) {
   window.saveLocalState();
   window.socket.emit('admin:startMeeting', payload);
   if (typeof window.renderAll === 'function') window.renderAll();
+  showToast('เปิดการประชุมเรียบร้อยแล้ว', 'success');
+  return true;
 }
 
 function resetMeetingToNotStarted() {
@@ -217,11 +224,14 @@ function resetMeetingToNotStarted() {
   window.appState.raiseHandQueue = [];
   window.saveLocalState();
   window.socket.emit('admin:resetMeetingStatus');
+  const toggleSwitch = document.getElementById('adminMeetingToggleSwitch');
+  if (toggleSwitch) toggleSwitch.checked = false;
   if (typeof window.renderAll === 'function') window.renderAll();
+  showToast('รีเซ็ตสถานะการประชุมเรียบร้อยแล้ว', 'info');
 }
 
-function endMeetingNow() {
-  if (confirm('ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?')) {
+function endMeetingNow(skipConfirm = false) {
+  if (skipConfirm || confirm('ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?')) {
     window.appState.meeting.isEnded = true;
     (window.appState.motions || []).forEach(m => {
       m.isOpen = false;
@@ -248,6 +258,32 @@ function endMeetingNow() {
     window.socket.emit('admin:endMeeting');
     if (typeof window.switchAdminTab === 'function') window.switchAdminTab('SUMMARY');
     if (typeof window.renderAll === 'function') window.renderAll();
+    showToast('จบการประชุมเรียบร้อยแล้ว', 'info');
+  }
+}
+
+function handleAdminMeetingToggle(isChecked) {
+  const toggleSwitch = document.getElementById('adminMeetingToggleSwitch');
+  const state = window.appState;
+  const isMeetingActive = Boolean(state?.meeting?.isStarted && !state?.meeting?.isEnded);
+
+  if (isChecked) {
+    if (!isMeetingActive) {
+      const success = startOfficialMeeting();
+      if (!success && toggleSwitch) {
+        toggleSwitch.checked = false;
+      }
+    }
+  } else {
+    if (isMeetingActive) {
+      if (confirm('ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?')) {
+        endMeetingNow(true);
+      } else {
+        if (toggleSwitch) toggleSwitch.checked = true;
+      }
+    } else {
+      if (toggleSwitch) toggleSwitch.checked = false;
+    }
   }
 }
 
@@ -904,6 +940,535 @@ function copyAdminCheckinLink() {
   });
 }
 
+// =========================================================================
+// ADMIN CLOUD DATABASE (SUPABASE) SETTINGS CONTROLLER
+// =========================================================================
+
+function updateSupabaseStatusBadge(isConnected, message) {
+  const badges = document.querySelectorAll('.supabase-status-badge');
+  badges.forEach(badge => {
+    if (isConnected) {
+      badge.className = 'supabase-status-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+      badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>Supabase เชื่อมต่อแล้ว</span>';
+      badge.title = message || 'เชื่อมต่อ Supabase Realtime & Database เรียบร้อย';
+    } else {
+      badge.className = 'supabase-status-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
+      badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>ออฟไลน์</span>';
+      badge.title = message || 'ยังไม่ได้เชื่อมต่อ Supabase';
+    }
+  });
+}
+
+async function initAdminSupabaseSettingsUI() {
+  const urlInput = document.getElementById('settingSupabaseUrl');
+  const keyInput = document.getElementById('settingSupabaseKey');
+  if (!urlInput || !keyInput) return;
+
+  let url = '';
+  let anonKey = '';
+  let isConfigured = false;
+
+  if (typeof window.SupabaseConfigManager !== 'undefined') {
+    const creds = await window.SupabaseConfigManager.getCredentials();
+    if (creds) {
+      url = creds.url || '';
+      anonKey = creds.anonKey || '';
+      isConfigured = Boolean(creds.isConfigured);
+    }
+  } else {
+    try {
+      url = localStorage.getItem('comsan_supabase_url') || '';
+      anonKey = localStorage.getItem('comsan_supabase_anon_key') || '';
+      isConfigured = Boolean(url && anonKey);
+    } catch (e) {}
+  }
+
+  if (url && !urlInput.value) urlInput.value = url;
+  if (anonKey && !keyInput.value) keyInput.value = anonKey;
+
+  updateSupabaseStatusBadge(isConfigured, isConfigured ? 'เชื่อมต่อ Supabase สำเร็จ' : 'ออฟไลน์');
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+async function saveSupabaseSettingsFromModal() {
+  const urlInput = document.getElementById('settingSupabaseUrl');
+  const keyInput = document.getElementById('settingSupabaseKey');
+  const url = urlInput ? urlInput.value.trim() : '';
+  const key = keyInput ? keyInput.value.trim() : '';
+
+  if (!url || !key) {
+    if (typeof window.showToast === 'function') {
+      window.showToast('กรุณากรอก Supabase URL และ Anon Key ให้ครบถ้วน', 'warning');
+    }
+    return;
+  }
+
+  if (typeof window.SupabaseConfigManager !== 'undefined') {
+    await window.SupabaseConfigManager.saveCredentials(url, key);
+  } else {
+    localStorage.setItem('comsan_supabase_url', url);
+    localStorage.setItem('comsan_supabase_anon_key', key);
+  }
+
+  if (window.SupabaseSocketAdapter) {
+    try {
+      const adapter = new window.SupabaseSocketAdapter();
+      const ok = await adapter.init({ url, anonKey: key });
+      if (ok) {
+        if (window.socket && typeof window.socket.pollInterval === 'number') {
+          clearInterval(window.socket.pollInterval);
+        }
+        window.socket = adapter;
+      }
+    } catch (e) {
+      console.warn('Supabase adapter reinit failed:', e);
+    }
+  }
+
+  updateSupabaseStatusBadge(true, 'บันทึกและเชื่อมต่อแล้ว');
+  if (typeof window.showToast === 'function') {
+    window.showToast('บันทึกการตั้งค่า Supabase เรียบร้อยแล้ว', 'success');
+  }
+}
+
+async function testSupabaseConnectionFromModal() {
+  const urlInput = document.getElementById('settingSupabaseUrl');
+  const keyInput = document.getElementById('settingSupabaseKey');
+  const url = urlInput ? urlInput.value.trim() : '';
+  const key = keyInput ? keyInput.value.trim() : '';
+
+  if (!url || !key) {
+    if (typeof window.showToast === 'function') {
+      window.showToast('กรุณากรอก Supabase URL และ Anon Key ก่อนทดสอบ', 'warning');
+    }
+    return;
+  }
+
+  if (typeof window.showToast === 'function') {
+    window.showToast('กำลังทดสอบการเชื่อมต่อกับ Supabase...', 'info');
+  }
+
+  try {
+    const cleanUrl = url.replace(/\/+$/, '');
+    const testEndpoint = `${cleanUrl}/rest/v1/`;
+    const resp = await fetch(testEndpoint, {
+      method: 'GET',
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`
+      }
+    });
+
+    if (resp.status === 401) {
+      updateSupabaseStatusBadge(false, 'Anon Key ไม่ถูกต้อง');
+      if (typeof window.showToast === 'function') {
+        window.showToast('Anon Key ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง', 'error');
+      }
+      return;
+    }
+
+    updateSupabaseStatusBadge(true, 'เชื่อมต่อ Supabase สำเร็จ');
+    if (typeof window.showToast === 'function') {
+      window.showToast('ทดสอบการเชื่อมต่อ Supabase สำเร็จ พร้อมใช้งาน!', 'success');
+    }
+  } catch (err) {
+    console.error('Supabase test connection error:', err);
+    updateSupabaseStatusBadge(false, 'เชื่อมต่อไม่สำเร็จ');
+    if (typeof window.showToast === 'function') {
+      window.showToast('ไม่สามารถเชื่อมต่อ Supabase ได้: ' + (err.message || 'Network error'), 'error');
+    }
+  }
+}
+
+async function uploadLocalStateToSupabase() {
+  const urlInput = document.getElementById('settingSupabaseUrl');
+  const keyInput = document.getElementById('settingSupabaseKey');
+  const url = urlInput ? urlInput.value.trim() : '';
+  const key = keyInput ? keyInput.value.trim() : '';
+
+  if (!url || !key) {
+    if (typeof window.showToast === 'function') {
+      window.showToast('กรุณากรอกและบันทึกการตั้งค่า Supabase ก่อนซิงค์', 'warning');
+    }
+    return;
+  }
+
+  if (!window.appState) {
+    if (typeof window.showToast === 'function') {
+      window.showToast('ไม่พบข้อมูลสถานะการประชุมที่จะซิงค์', 'warning');
+    }
+    return;
+  }
+
+  if (typeof window.showToast === 'function') {
+    window.showToast('กำลังซิงค์ข้อมูลขึ้น Supabase Cloud...', 'info');
+  }
+
+  try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      const client = window.supabase.createClient(url, key);
+      const { error } = await client
+        .from('comsan_meeting_state')
+        .upsert({
+          id: 'active_state',
+          state: window.appState,
+          updated_at: new Date().toISOString()
+        });
+      if (error) throw error;
+    } else {
+      const cleanUrl = url.replace(/\/+$/, '');
+      const endpoint = `${cleanUrl}/rest/v1/comsan_meeting_state`;
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'apikey': key,
+          'Authorization': `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          id: 'active_state',
+          state: window.appState,
+          updated_at: new Date().toISOString()
+        })
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(errText || `HTTP status ${resp.status}`);
+      }
+    }
+
+    updateSupabaseStatusBadge(true, 'ซิงค์ข้อมูลสำเร็จ');
+    if (typeof window.showToast === 'function') {
+      window.showToast('ซิงค์ข้อมูลขึ้น Supabase Cloud เรียบร้อยแล้ว', 'success');
+    }
+  } catch (err) {
+    console.error('Upload to Supabase error:', err);
+    if (typeof window.showToast === 'function') {
+      window.showToast('การซิงค์ข้อมูลล้มเหลว: ' + (err.message || 'Error'), 'error');
+    }
+  }
+}
+
+function disconnectSupabaseFromModal() {
+  if (typeof window.SupabaseConfigManager !== 'undefined') {
+    window.SupabaseConfigManager.clearCredentials();
+  } else {
+    localStorage.removeItem('comsan_supabase_url');
+    localStorage.removeItem('comsan_supabase_anon_key');
+  }
+
+  const urlInput = document.getElementById('settingSupabaseUrl');
+  const keyInput = document.getElementById('settingSupabaseKey');
+  if (urlInput) urlInput.value = '';
+  if (keyInput) keyInput.value = '';
+
+  updateSupabaseStatusBadge(false, 'ออฟไลน์');
+  if (typeof window.showToast === 'function') {
+    window.showToast('ตัดการเชื่อมต่อ Supabase เรียบร้อยแล้ว', 'info');
+  }
+}
+
+// ========================================================
+// MySQL / MariaDB Database Connection Settings
+// ========================================================
+async function initDbConfigUI() {
+  const hostInput = document.getElementById('dbCfgHost');
+  const portInput = document.getElementById('dbCfgPort');
+  const nameInput = document.getElementById('dbCfgName');
+  const userInput = document.getElementById('dbCfgUser');
+  const passInput = document.getElementById('dbCfgPass');
+  if (!hostInput) return;
+
+  // Set default InfinityFree credentials if inputs are default/empty
+  if (!hostInput.value || hostInput.value === 'localhost') {
+    hostInput.value = 'sql204.infinityfree.com';
+    if (portInput) portInput.value = '3306';
+    if (nameInput) nameInput.value = 'if0_43235981_meet';
+    if (userInput) userInput.value = 'if0_43235981';
+    if (passInput) passInput.value = 'meet2026';
+  }
+
+  const saved = localStorage.getItem('comsan_db_config');
+  if (saved) {
+    try {
+      const cfg = JSON.parse(saved);
+      if (cfg.host) hostInput.value = cfg.host;
+      if (cfg.port) portInput.value = cfg.port;
+      if (cfg.dbname) nameInput.value = cfg.dbname;
+      if (cfg.user) userInput.value = cfg.user;
+      if (cfg.pass !== undefined) passInput.value = cfg.pass;
+      if (cfg.lastStatus) {
+        updateDbStatusBadge(cfg.lastStatus === 'success', cfg.lastStatusText || 'บันทึกไว้แล้ว');
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved DB config', e);
+    }
+  }
+
+  // Fetch shared config from server so other devices get the same config
+  try {
+    const endpoints = ['api/db_config.php', '/api/db_config.php', '../api/db_config.php'];
+    for (const ep of endpoints) {
+      try {
+        const r = await fetch(ep);
+        if (r.ok) {
+          const res = await r.json();
+          if (res && res.data) {
+            if (res.data.host) hostInput.value = res.data.host;
+            if (res.data.port) portInput.value = res.data.port;
+            if (res.data.dbname) nameInput.value = res.data.dbname;
+            if (res.data.user) userInput.value = res.data.user;
+            if (res.data.pass !== undefined) passInput.value = res.data.pass;
+            updateDbStatusBadge(true, 'ซิงค์จากเซิร์ฟเวอร์');
+          }
+          break;
+        }
+      } catch (err) {}
+    }
+  } catch (e) {}
+}
+
+async function saveDbConfig() {
+  const host = document.getElementById('dbCfgHost')?.value.trim() || 'localhost';
+  const port = document.getElementById('dbCfgPort')?.value.trim() || '3306';
+  const dbname = document.getElementById('dbCfgName')?.value.trim() || 'comsan_meeting';
+  const user = document.getElementById('dbCfgUser')?.value.trim() || 'root';
+  const pass = document.getElementById('dbCfgPass')?.value ?? '';
+
+  const cfg = {
+    host,
+    port,
+    dbname,
+    user,
+    pass,
+    updatedAt: new Date().toISOString()
+  };
+
+  localStorage.setItem('comsan_db_config', JSON.stringify(cfg));
+
+  // Sync to server via PHP API so all devices share the configuration
+  // Supports POST with seamless GET fallback if InfinityFree blocks POST with 403
+  try {
+    const endpoints = ['api/db_config.php', '/api/db_config.php', '../api/db_config.php'];
+    for (const ep of endpoints) {
+      let saved = false;
+      // 1. Try POST
+      try {
+        const r = await fetch(ep, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cfg)
+        });
+        if (r.ok) {
+          saved = true;
+          break;
+        }
+      } catch (err) {}
+
+      // 2. Fallback to GET query parameters
+      if (!saved) {
+        try {
+          const getUrl = `${ep}?action=save&host=${encodeURIComponent(host)}&port=${encodeURIComponent(port)}&dbname=${encodeURIComponent(dbname)}&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}&_t=${Date.now()}`;
+          const r2 = await fetch(getUrl);
+          if (r2.ok) {
+            saved = true;
+            break;
+          }
+        } catch (err2) {}
+      }
+    }
+  } catch (e) {}
+
+  if (typeof window.showToast === 'function') {
+    window.showToast('บันทึกการตั้งค่าฐานข้อมูลสำเร็จ (ซิงค์ทุกอุปกรณ์)!', 'success');
+  }
+}
+
+function updateDbStatusBadge(isSuccess, text) {
+  const badge = document.getElementById('dbConnStatusBadge');
+  if (!badge) return;
+  badge.className = isSuccess
+    ? 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 whitespace-nowrap'
+    : 'px-3 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 whitespace-nowrap';
+  badge.textContent = text || (isSuccess ? 'เชื่อมต่อสำเร็จ' : 'เชื่อมต่อล้มเหลว');
+}
+
+function toggleDbPassVisibility() {
+  const passInput = document.getElementById('dbCfgPass');
+  const eyeIcon = document.getElementById('dbPassEyeIcon');
+  if (!passInput) return;
+  if (passInput.type === 'password') {
+    passInput.type = 'text';
+    if (eyeIcon) eyeIcon.setAttribute('data-lucide', 'eye-off');
+  } else {
+    passInput.type = 'password';
+    if (eyeIcon) eyeIcon.setAttribute('data-lucide', 'eye');
+  }
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
+  }
+}
+
+async function testDbConnection() {
+  const host = document.getElementById('dbCfgHost')?.value.trim() || 'localhost';
+  const port = document.getElementById('dbCfgPort')?.value.trim() || '3306';
+  const dbname = document.getElementById('dbCfgName')?.value.trim() || 'comsan_meeting';
+  const user = document.getElementById('dbCfgUser')?.value.trim() || 'root';
+  const pass = document.getElementById('dbCfgPass')?.value ?? '';
+
+  const resultBox = document.getElementById('dbTestResultBox');
+  const badge = document.getElementById('dbConnStatusBadge');
+  if (badge) {
+    badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap animate-pulse';
+    badge.textContent = 'กำลังทดสอบ...';
+  }
+
+  if (resultBox) {
+    resultBox.className = 'p-3.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-xs text-indigo-700 dark:text-indigo-300 font-medium flex items-start gap-2.5';
+    resultBox.innerHTML = '<span>⏳ กำลังส่งคำขอทดสอบการเชื่อมต่อไปยังฐานข้อมูล...</span>';
+    resultBox.classList.remove('hidden');
+  }
+
+  try {
+    const testEndpoints = ['/api/test_db.php', 'api/test_db.php', '../api/test_db.php'];
+    let data = null;
+    let lastError = null;
+
+    for (const ep of testEndpoints) {
+      // 1. Try POST
+      try {
+        const r = await fetch(ep, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ host, port, dbname, user, pass })
+        });
+        if (r.ok || r.status === 500 || r.status === 400) {
+          data = await r.json();
+          break;
+        }
+      } catch (err) {
+        lastError = err;
+      }
+
+      // 2. If POST fails or blocked with 403 on InfinityFree, fallback to GET query
+      if (!data) {
+        try {
+          const getUrl = `${ep}?host=${encodeURIComponent(host)}&port=${encodeURIComponent(port)}&dbname=${encodeURIComponent(dbname)}&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}&_t=${Date.now()}`;
+          const r2 = await fetch(getUrl);
+          if (r2.ok || r2.status === 500 || r2.status === 400) {
+            data = await r2.json();
+            break;
+          }
+        } catch (err2) {
+          lastError = err2;
+        }
+      }
+    }
+
+    if (data && data.status === 'success') {
+      updateDbStatusBadge(true, 'เชื่อมต่อสำเร็จ');
+      if (resultBox) {
+        resultBox.className = 'p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300 font-medium flex items-start gap-2.5';
+        resultBox.innerHTML = `<div>
+          <b class="text-emerald-600 dark:text-emerald-400">✓ ${data.message || 'เชื่อมต่อสำเร็จ!'}</b>
+          <div class="mt-1 text-[11px] opacity-90 space-y-0.5">
+            <div>• Database: <span class="font-mono font-bold">${data.data?.database || dbname}</span></div>
+            <div>• Host: <span class="font-mono">${data.data?.host || host}:${data.data?.port || port}</span></div>
+            <div>• Version: <span class="font-mono">${data.data?.version || 'N/A'}</span></div>
+          </div>
+        </div>`;
+      }
+      if (typeof window.showToast === 'function') {
+        window.showToast('เชื่อมต่อฐานข้อมูล MySQL สำเร็จ!', 'success');
+      }
+      const saved = localStorage.getItem('comsan_db_config');
+      const cfg = saved ? JSON.parse(saved) : {};
+      cfg.lastStatus = 'success';
+      cfg.lastStatusText = 'เชื่อมต่อสำเร็จ';
+      localStorage.setItem('comsan_db_config', JSON.stringify(cfg));
+    } else {
+      const errMsg = data?.message || lastError?.message || 'ไม่สามารถติดต่อ PHP API เพื่อทดสอบการเชื่อมต่อได้';
+      updateDbStatusBadge(false, 'เชื่อมต่อไม่สำเร็จ');
+      if (resultBox) {
+        resultBox.className = 'p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-300 font-medium flex items-start gap-2.5';
+        resultBox.innerHTML = `<div>
+          <b class="text-rose-600 dark:text-rose-400">✕ การเชื่อมต่อล้มเหลว</b>
+          <p class="mt-1 text-[11px]">${errMsg}</p>
+          <p class="mt-1.5 text-[11px] opacity-80">💡 ตรวจสอบว่าได้อัปโหลดไฟล์ <code class="font-mono bg-rose-500/20 px-1 rounded">config.php</code> และ <code class="font-mono bg-rose-500/20 px-1 rounded">api/test_db.php</code> ไปยัง Hosting หรือ XAMPP หรือยัง</p>
+        </div>`;
+      }
+      if (typeof window.showToast === 'function') {
+        window.showToast('การเชื่อมต่อล้มเหลว ตรวจสอบข้อมูลอีกครั้ง', 'error');
+      }
+    }
+  } catch (err) {
+    updateDbStatusBadge(false, 'ข้อผิดพลาด');
+    if (resultBox) {
+      resultBox.className = 'p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-300 font-medium flex items-start gap-2.5';
+      resultBox.innerHTML = `<div>
+        <b class="text-rose-600 dark:text-rose-400">✕ ข้อผิดพลาดในการเชื่อมต่อ</b>
+        <p class="mt-1 text-[11px]">${err.message || 'Network Error'}</p>
+      </div>`;
+    }
+  }
+}
+
+function generateConfigPhp() {
+  const host = document.getElementById('dbCfgHost')?.value.trim() || 'localhost';
+  const port = document.getElementById('dbCfgPort')?.value.trim() || '3306';
+  const dbname = document.getElementById('dbCfgName')?.value.trim() || 'comsan_meeting';
+  const user = document.getElementById('dbCfgUser')?.value.trim() || 'root';
+  const pass = document.getElementById('dbCfgPass')?.value ?? '';
+
+  const phpCode = `<?php
+/**
+ * Database Configuration (config.php)
+ * ระบบจัดการฐานข้อมูล COMSAN Meeting System
+ */
+
+date_default_timezone_set('Asia/Bangkok');
+
+define('DB_HOST', '${host}');
+define('DB_PORT', '${port}');
+define('DB_NAME', '${dbname}');
+define('DB_USER', '${user}');
+define('DB_PASS', '${pass}');
+define('DB_CHARSET', 'utf8mb4');
+
+try {
+    $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET
+    ];
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+    $conn = $pdo;
+} catch (PDOException $e) {
+    error_log("Database Connection Error: " . $e->getMessage());
+    die(json_encode([
+        'status' => 'error',
+        'message' => 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' . $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE));
+}
+`;
+
+  navigator.clipboard.writeText(phpCode).then(() => {
+    if (typeof window.showToast === 'function') {
+      window.showToast('คัดลอกโค้ด config.php ลงคลิปบอร์ดแล้ว!', 'success');
+    } else {
+      alert('คัดลอกโค้ด config.php ลงคลิปบอร์ดแล้ว!');
+    }
+  }).catch(() => {
+    prompt('คัดลอกโค้ด config.php ด้านล่างนี้:', phpCode);
+  });
+}
+
 // Window attachments
 window.setMeetingFormat = setMeetingFormat;
 window.selectOnlinePlatform = selectOnlinePlatform;
@@ -918,6 +1483,7 @@ window.handleAdminLogin = handleAdminLogin;
 window.startOfficialMeeting = startOfficialMeeting;
 window.resetMeetingToNotStarted = resetMeetingToNotStarted;
 window.endMeetingNow = endMeetingNow;
+window.handleAdminMeetingToggle = handleAdminMeetingToggle;
 window.toggleShowSeatsSetting = toggleShowSeatsSetting;
 window.processUserCheckIn = processUserCheckIn;
 window.handleManualCheckIn = handleManualCheckIn;
@@ -928,3 +1494,15 @@ window.clearRaiseHandQueue = clearRaiseHandQueue;
 window.handleExcelImport = handleExcelImport;
 window.setSummaryFilter = setSummaryFilter;
 window.renderSummarySection = renderSummarySection;
+window.updateSupabaseStatusBadge = updateSupabaseStatusBadge;
+window.initAdminSupabaseSettingsUI = initAdminSupabaseSettingsUI;
+window.saveSupabaseSettingsFromModal = saveSupabaseSettingsFromModal;
+window.testSupabaseConnectionFromModal = testSupabaseConnectionFromModal;
+window.uploadLocalStateToSupabase = uploadLocalStateToSupabase;
+window.disconnectSupabaseFromModal = disconnectSupabaseFromModal;
+window.initDbConfigUI = initDbConfigUI;
+window.saveDbConfig = saveDbConfig;
+window.testDbConnection = testDbConnection;
+window.toggleDbPassVisibility = toggleDbPassVisibility;
+window.generateConfigPhp = generateConfigPhp;
+

@@ -49,12 +49,14 @@ module.exports = function registerMeetingHandlers(io, socket) {
       state.meeting.onlinePasscode = (info && info.onlinePasscode) ? String(info.onlinePasscode).trim() : '';
       const platformLabel = platformDisplayNames[state.meeting.onlinePlatform] || state.meeting.onlinePlatform;
       state.meeting.location = platformLabel && platformLabel !== 'ออนไลน์' ? `ออนไลน์ (${platformLabel})` : 'ออนไลน์';
+      state.meeting.locationDetail = (info && info.locationDetail) ? String(info.locationDetail).trim() : state.meeting.location;
       // สร้าง Check-in Token ประจำการประชุมรอบนี้ เช่น CS-742918
       const randomDigits = Math.floor(100000 + Math.random() * 900000);
       state.meeting.checkinToken = `CS-${randomDigits}`;
     } else {
       state.meeting.format = 'ONSITE';
       state.meeting.location = (info && info.location) ? String(info.location).trim() : 'ห้องประชุมชมรมคมสัน';
+      state.meeting.locationDetail = (info && info.locationDetail) ? String(info.locationDetail).trim() : state.meeting.location;
       state.meeting.onlinePlatform = 'GOOGLE_MEET';
       state.meeting.onlineUrl = '';
       state.meeting.onlinePasscode = '';

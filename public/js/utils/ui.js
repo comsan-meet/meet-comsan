@@ -38,15 +38,45 @@ function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container || !message) return;
 
-  const now = Date.now();
-  if (_recentToasts.has(message) && (now - _recentToasts.get(message) < 1200)) {
-    return;
-  }
-  _recentToasts.set(message, now);
-  if (_recentToasts.size > 20) {
-    for (const [k, t] of _recentToasts.entries()) {
-      if (now - t > 5000) _recentToasts.delete(k);
+  const cleanMsg = String(message).replace(/\n/g, ' • ');
+
+  // 1. Anti-duplication: If this exact toast is already visible on screen, shake it instead of creating duplicates!
+  const existingToast = Array.from(container.children).find(el => {
+    return el.dataset && el.dataset.toastMsg === cleanMsg && !el.dataset.isDismissing;
+  });
+
+  if (existingToast) {
+    existingToast.classList.remove('toast-shake');
+    void existingToast.offsetWidth; // Force CSS reflow to restart animation immediately
+    existingToast.classList.add('toast-shake');
+
+    let count = parseInt(existingToast.dataset.repeatCount || '1', 10) + 1;
+    existingToast.dataset.repeatCount = String(count);
+
+    let countBadge = existingToast.querySelector('.toast-repeat-badge');
+    if (!countBadge) {
+      countBadge = document.createElement('span');
+      countBadge.className = 'toast-repeat-badge px-2 py-0.5 rounded-full text-[10px] font-black bg-white/25 text-white border border-white/30 shrink-0 shadow-xs animate-pulse';
+      const closeBtn = existingToast.querySelector('button');
+      if (closeBtn) {
+        existingToast.insertBefore(countBadge, closeBtn);
+      } else {
+        existingToast.appendChild(countBadge);
+      }
     }
+    countBadge.textContent = `×${count}`;
+
+    // Reset dismiss timer so it stays on screen long enough to read
+    if (existingToast._dismissTimer) {
+      clearTimeout(existingToast._dismissTimer);
+    }
+    existingToast._dismissTimer = setTimeout(() => {
+      if (typeof existingToast._dismissFn === 'function') {
+        existingToast._dismissFn();
+      }
+    }, 3800);
+
+    return;
   }
 
   const configs = {
@@ -83,9 +113,10 @@ function showToast(message, type = 'info') {
   };
 
   const cfg = configs[type] || configs.info;
-  const cleanMsg = String(message).replace(/\n/g, ' • ');
 
   const toast = document.createElement('div');
+  toast.dataset.toastMsg = cleanMsg;
+  toast.dataset.repeatCount = '1';
   toast.className = `px-4 py-3 rounded-2xl shadow-xl border text-xs font-semibold flex items-center gap-3 transition-all duration-300 pointer-events-auto select-none w-full max-w-sm sm:max-w-md ${cfg.cardClass}`;
   toast.style.transform = 'translateY(-10px) scale(0.96)';
   toast.style.opacity = '0';
@@ -100,17 +131,30 @@ function showToast(message, type = 'info') {
     </button>
   `;
 
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons({ root: toast });
+  }
+
   const closeBtn = toast.querySelector('button');
   let isRemoved = false;
   const dismiss = () => {
     if (isRemoved) return;
     isRemoved = true;
+    toast.dataset.isDismissing = 'true';
+    if (toast._dismissTimer) clearTimeout(toast._dismissTimer);
     toast.style.transform = 'translateY(-10px) scale(0.96)';
     toast.style.opacity = '0';
     setTimeout(() => {
       if (toast.parentElement) toast.remove();
     }, 250);
   };
+
+  toast._dismissFn = dismiss;
+  toast._dismissTimer = setTimeout(dismiss, 3800);
+
+  toast.addEventListener('animationend', () => {
+    toast.classList.remove('toast-shake');
+  });
 
   if (closeBtn) {
     closeBtn.addEventListener('click', (e) => {
@@ -125,8 +169,6 @@ function showToast(message, type = 'info') {
     toast.style.transform = 'translateY(0) scale(1)';
     toast.style.opacity = '1';
   });
-
-  setTimeout(dismiss, 3800);
 }
 
 function initTheme() {
@@ -191,18 +233,23 @@ function applyTheme(mode) {
   }
 
   // Update theme icons: Light = Sun (พระอาทิตย์), Dark = Moon (พระจันทร์) matching Comsan Choice monochrome style
-  const themeIcons = document.querySelectorAll('.theme-toggle-icon, #themeIcon, #themeToggleIcon, #sidebarThemeIcon');
+  const themeIcons = document.querySelectorAll(
+    '#themeToggleBtn i, #themeToggleBtn svg, #sidebarThemeBtn i, #sidebarThemeBtn svg, #userHeaderThemeBtn i, #userHeaderThemeBtn svg, .theme-toggle-icon, #themeIcon, #themeToggleIcon, #sidebarThemeIcon, #userHeaderThemeIcon'
+  );
   themeIcons.forEach(icon => {
     const iconName = isDark ? 'moon' : 'sun';
+    const colorClass = isDark ? 'text-sky-400' : 'text-amber-500';
+    const isUserHeader = Boolean(icon.closest('#userHeaderThemeBtn'));
+    const sizeClass = isUserHeader ? 'h-5 w-5' : 'h-4 w-4';
     if (typeof window.updateIcon === 'function') {
-      window.updateIcon(icon, iconName, 'theme-toggle-icon h-4 w-4');
+      window.updateIcon(icon, iconName, `theme-toggle-icon ${sizeClass} ${colorClass}`);
     } else {
       icon.setAttribute('data-lucide', iconName);
-      icon.className = 'theme-toggle-icon h-4 w-4';
+      icon.className = `theme-toggle-icon ${sizeClass} ${colorClass}`;
     }
   });
 
-  const themeBtns = document.querySelectorAll('#themeToggleBtn, #sidebarThemeBtn');
+  const themeBtns = document.querySelectorAll('#themeToggleBtn, #sidebarThemeBtn, #userHeaderThemeBtn');
   themeBtns.forEach(btn => {
     btn.setAttribute('title', isDark ? 'ธีมมืด (คลิกเพื่อเปลี่ยนเป็นธีมสว่าง)' : 'ธีมสว่าง (คลิกเพื่อเปลี่ยนเป็นธีมมืด)');
   });
@@ -211,6 +258,105 @@ function applyTheme(mode) {
   localStorage.setItem('COMSAN_THEME', mode);
   if (typeof window.renderAdminAnalyticsChart === 'function' && window.currentRole === 'ADMIN') {
     setTimeout(window.renderAdminAnalyticsChart, 50);
+  }
+}
+
+function openMemberProfilePopup(userId) {
+  if (!userId) return;
+  const state = window.appState;
+  const user = (state?.users || []).find(u => u.id === userId);
+  if (!user) return;
+
+  const modal = document.getElementById('memberProfileDetailModal');
+  if (!modal) return;
+
+  const avEl = document.getElementById('mpAvatarContainer');
+  const nameEl = document.getElementById('mpFullName');
+  const nickEl = document.getElementById('mpNickname');
+  const idEl = document.getElementById('mpStudentId');
+  const codeEl = document.getElementById('mpMemberCode');
+  const posEl = document.getElementById('mpPosition');
+  const facultyEl = document.getElementById('mpFacultyMajor');
+  const checkinStatusEl = document.getElementById('mpCheckinStatus');
+  const checkinTimeEl = document.getElementById('mpCheckinTime');
+  const raiseCountEl = document.getElementById('mpRaiseCount');
+  const noteEl = document.getElementById('mpUserNote');
+  const noteWrap = document.getElementById('mpNoteWrapper');
+  const dmBtn = document.getElementById('mpSendDmBtn');
+
+  if (avEl) {
+    if (typeof window.getAvatarImageHtml === 'function') {
+      avEl.innerHTML = window.getAvatarImageHtml(user, 'w-20 h-20 rounded-full shadow-md');
+    } else {
+      avEl.innerHTML = `<div class="w-20 h-20 rounded-full bg-primary/10 text-primary font-bold text-2xl flex items-center justify-center">${(user.nickname || user.firstName || 'U')[0]}</div>`;
+    }
+  }
+
+  if (nameEl) nameEl.textContent = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.nickname || user.id;
+  if (nickEl) nickEl.textContent = user.nickname ? `"${user.nickname}"` : '';
+  if (idEl) idEl.textContent = user.studentId || '-';
+  if (codeEl) codeEl.textContent = user.id;
+  if (posEl) posEl.textContent = user.position || 'สมาชิก';
+  if (facultyEl) facultyEl.textContent = `${user.faculty || ''} ${user.major ? 'สาขา ' + user.major : ''} (ชั้นปีที่ ${user.year || '-'})`.trim();
+
+  // Attendance status
+  if (checkinStatusEl) {
+    if (user.isLeave) {
+      checkinStatusEl.textContent = '📋 แจ้งลาประชุม';
+      checkinStatusEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400';
+    } else if (user.checkedIn) {
+      checkinStatusEl.textContent = user.isLate ? '⚠️ มาสาย' : '✔ มาทันเวลา';
+      checkinStatusEl.className = user.isLate 
+        ? 'px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400'
+        : 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
+    } else {
+      checkinStatusEl.textContent = '❌ ยังไม่เช็คชื่อ';
+      checkinStatusEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-muted-foreground';
+    }
+  }
+
+  if (checkinTimeEl) {
+    checkinTimeEl.textContent = user.checkInTimeStr ? `${user.checkInTimeStr} น.` : '-';
+  }
+
+  if (raiseCountEl) {
+    raiseCountEl.textContent = `${user.raiseHandCount || 0} ครั้ง`;
+  }
+
+  if (noteWrap && noteEl) {
+    if (user.note && user.note.trim()) {
+      noteWrap.classList.remove('hidden');
+      noteEl.textContent = user.note;
+    } else {
+      noteWrap.classList.add('hidden');
+    }
+  }
+
+  // DM Button
+  if (dmBtn) {
+    dmBtn.onclick = () => {
+      closeMemberProfilePopup();
+      if (window.currentRole === 'ADMIN') {
+        if (typeof window.switchAdminTab === 'function') window.switchAdminTab('CHAT');
+        if (typeof window.openAdminIgChatRoom === 'function') window.openAdminIgChatRoom(user.id);
+      } else {
+        if (typeof window.switchUserTab === 'function') window.switchUserTab('CHAT');
+        if (typeof window.openIgChatRoom === 'function') window.openIgChatRoom(user.id);
+      }
+    };
+  }
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+  else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+}
+
+function closeMemberProfilePopup() {
+  const modal = document.getElementById('memberProfileDetailModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
   }
 }
 
@@ -379,6 +525,10 @@ function updateSettingsModalUI() {
   const isBubbleEnabled = localStorage.getItem('heroBubbleAnimation') !== 'false';
   const toggle = document.getElementById('settingBubbleAnimToggle');
   if (toggle) toggle.checked = isBubbleEnabled;
+
+  if (typeof window.updateSettingsAdminCardState === 'function') {
+    window.updateSettingsAdminCardState();
+  }
 }
 
 function setAppearance(mode) {
@@ -1040,5 +1190,7 @@ window.closeUserVersionNotesModal = closeUserVersionNotesModal;
 window.initHeroBubbleAnimation = initHeroBubbleAnimation;
 window.applyHeroBubbleAnimation = applyHeroBubbleAnimation;
 window.toggleHeroBubbleAnimation = toggleHeroBubbleAnimation;
+window.openMemberProfilePopup = openMemberProfilePopup;
+window.closeMemberProfilePopup = closeMemberProfilePopup;
 
 

@@ -88,6 +88,16 @@ function deleteSharedFile(fileId) {
   renderFileDropSection();
 }
 
+function formatFileUploadStamp(f) {
+  if (f && f.uploadedAt) {
+    const d = new Date(f.uploadedAt);
+    const date = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+    const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    return `${date} ${time} น.`;
+  }
+  return `${(f && f.time) || '-'} น.`;
+}
+
 function escapeFileHtml(str) {
   if (typeof str !== 'string') return str || '';
   return str.replace(/[&<>"']/g, function (m) {
@@ -232,7 +242,7 @@ function previewSharedFile(fileId) {
 
   const visual = getFileVisualInfo(f.name, f.type);
   if (titleEl) titleEl.textContent = f.name;
-  if (metaEl) metaEl.textContent = `${visual.label} • ${formatFileSize(f.size)} • อัปโหลดโดย ${f.uploaderName || '-'} • ${f.time} น.`;
+  if (metaEl) metaEl.textContent = `${visual.label} • ${formatFileSize(f.size)} • อัปโหลดโดย ${f.uploaderName || '-'} • ${formatFileUploadStamp(f)}`;
   if (typeLabelEl) typeLabelEl.textContent = `ไฟล์ประเภท: ${visual.label} (${formatFileSize(f.size)})`;
 
   if (iconWrap && visual.colorClass) {
@@ -428,7 +438,7 @@ function buildCards(files, isAdmin) {
               </p>
             </div>
             <p class="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">
-              <span class="font-semibold text-foreground/80">${formatFileSize(f.size)}</span> • โดย ${escapeFileHtml(f.uploaderName || '')} • <span class="text-emerald-600 dark:text-emerald-400 font-medium">${f.time} น.</span>
+              <span class="font-semibold text-foreground/80">${formatFileSize(f.size)}</span> • โดย ${escapeFileHtml(f.uploaderName || '')} • <span class="text-emerald-600 dark:text-emerald-400 font-medium">${formatFileUploadStamp(f)}</span>
             </p>
           </div>
         </div>
@@ -441,20 +451,14 @@ function buildCards(files, isAdmin) {
             <span class="sm:hidden text-[11px] font-semibold whitespace-nowrap">${isPinned ? 'เลิกหมุด' : 'ปักหมุด'}</span>
           </button>
           <button type="button" onclick="event.stopPropagation(); previewSharedFile('${f.id}')" title="ดูตัวอย่างไฟล์ (${visual.label})"
-            class="h-8 sm:w-9 sm:h-9 px-2 sm:px-0 rounded-xl border border-border bg-muted/40 sm:bg-card hover:bg-primary/10 hover:text-primary hover:border-primary/30 text-muted-foreground flex items-center justify-center gap-1 transition shadow-2xs cursor-pointer">
-            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-            <span class="sm:hidden text-[11px] font-semibold whitespace-nowrap">ดูไฟล์</span>
-          </button>
+            class="h-8 sm:w-9 sm:h-9 px-2 sm:px-0 rounded-xl border border-border bg-muted/40 sm:bg-card hover:bg-primary/10 hover:text-primary hover:border-primary/30 text-muted-foreground flex items-center justify-center gap-1 transition shadow-2xs cursor-pointer !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" aria-label="ดูไฟล์"><i data-lucide="eye" class="h-4 w-4 pointer-events-none"></i></button>
           <button type="button" onclick="event.stopPropagation(); downloadSharedFile('${f.id}')" title="ดาวน์โหลดไฟล์ (${visual.label})"
             class="h-8 sm:w-9 sm:h-9 px-2 sm:px-0 rounded-xl border border-border bg-muted/40 sm:bg-card hover:bg-muted text-foreground flex items-center justify-center gap-1 transition shadow-2xs cursor-pointer">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
             <span class="sm:hidden text-[11px] font-semibold whitespace-nowrap">โหลด</span>
           </button>
           <button type="button" onclick="event.stopPropagation(); deleteSharedFile('${f.id}')" title="ลบไฟล์"
-            class="h-8 sm:w-9 sm:h-9 px-2 sm:px-0 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive hover:text-white flex items-center justify-center gap-1 transition cursor-pointer">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            <span class="sm:hidden text-[11px] font-semibold whitespace-nowrap">ลบ</span>
-          </button>
+            class="h-8 sm:w-9 sm:h-9 px-2 sm:px-0 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive hover:text-white flex items-center justify-center gap-1 transition cursor-pointer !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" aria-label="ลบ"><i data-lucide="trash-2" class="h-4 w-4 pointer-events-none"></i></button>
         </div>
       </div>
       `;
@@ -481,7 +485,7 @@ function buildCards(files, isAdmin) {
               <i data-lucide="eye" class="w-3 h-3"></i> ดูตัวอย่าง
             </span>
           </div>
-          <p class="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">${formatFileSize(f.size)} • โดย ${escapeFileHtml(f.uploaderName || '')} • <span class="text-emerald-600 dark:text-emerald-400 font-medium">${f.time} น.</span></p>
+          <p class="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">${formatFileSize(f.size)} • โดย ${escapeFileHtml(f.uploaderName || '')} • <span class="text-emerald-600 dark:text-emerald-400 font-medium">${formatFileUploadStamp(f)}</span></p>
         </div>
       </div>
       <div class="flex items-center gap-1.5 shrink-0">
@@ -573,7 +577,7 @@ function renderFileDropSection() {
             <div class="min-w-0">
               <p class="font-bold text-foreground truncate">${escapeFileHtml(u.nickname || '')}</p>
               <p class="text-[10px] truncate ${st === 'PENDING' ? 'text-amber-600 dark:text-amber-400 font-bold' : st === 'APPROVED' ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground'}">
-                ${st === 'PENDING' ? '🔔 ขออนุญาตอัปโหลดไฟล์!' : st === 'APPROVED' ? '✅ กำลังได้รับสิทธิ์อัปโหลด' : 'ลำดับปกติ'}
+                ${st === 'PENDING' ? 'ขออนุญาตอัปโหลดไฟล์' : st === 'APPROVED' ? 'กำลังได้รับสิทธิ์อัปโหลด' : 'ลำดับปกติ'}
               </p>
             </div>
           </div>
@@ -581,8 +585,8 @@ function renderFileDropSection() {
             ${st === 'APPROVED'
               ? `<button type="button" onclick="adminSetFilePermission('${u.id}', 'NONE')" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold transition shadow-2xs whitespace-nowrap">เสร็จสิ้น</button>`
               : st === 'PENDING'
-              ? `<button type="button" onclick="adminSetFilePermission('${u.id}', 'APPROVED')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition shadow-2xs whitespace-nowrap">อนุญาต</button>`
-              : `<button type="button" onclick="adminSetFilePermission('${u.id}', 'APPROVED')" class="px-3 py-1.5 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary border border-border text-foreground text-[11px] font-semibold transition whitespace-nowrap">ให้สิทธิ์</button>`
+              ? `<div class="flex items-center gap-1.5"><button type="button" onclick="adminSetFilePermission('${u.id}', 'NONE')" class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-600 border border-rose-500/30 text-[11px] font-bold transition whitespace-nowrap !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="ไม่อนุญาต" aria-label="ไม่อนุญาต"><i data-lucide="x" class="h-4 w-4 pointer-events-none"></i></button><button type="button" onclick="adminSetFilePermission('${u.id}', 'APPROVED')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition shadow-2xs whitespace-nowrap !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="อนุญาต" aria-label="อนุญาต"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button></div>`
+              : `<button type="button" onclick="adminSetFilePermission('${u.id}', 'APPROVED')" class="px-3 py-1.5 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary border border-border text-foreground text-[11px] font-semibold transition whitespace-nowrap !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="ให้สิทธิ์" aria-label="ให้สิทธิ์"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button>`
             }
           </div>
         </div>
@@ -598,6 +602,7 @@ window.closeFilePreview = closeFilePreview;
 window.formatFileSize = formatFileSize;
 window.requestFileDropPermission = requestFileDropPermission;
 window.adminSetFilePermission = adminSetFilePermission;
+window.formatFileUploadStamp = formatFileUploadStamp;
 window.handleFileUpload = handleFileUpload;
 window.togglePinSharedFile = togglePinSharedFile;
 window.deleteSharedFile = deleteSharedFile;

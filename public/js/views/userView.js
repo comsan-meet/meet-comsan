@@ -232,6 +232,16 @@ function triggerRaiseHand() {
     return;
   }
 
+  const m = state.meeting || {};
+  if (!m.isStarted) {
+    if (typeof showToast === 'function') showToast('การประชุมยังไม่เริ่ม ไม่สามารถยกมือได้ในขณะนี้', 'warning');
+    return;
+  }
+  if (m.isEnded) {
+    if (typeof showToast === 'function') showToast('การประชุมเสร็จสิ้นแล้ว ไม่สามารถยกมือได้', 'warning');
+    return;
+  }
+
   const me = (state.users || []).find(u => u.id === userId);
   if (me && !window.socket.connected) {
     me.raiseHandCount = (me.raiseHandCount || 0) + 1;

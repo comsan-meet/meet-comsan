@@ -60,7 +60,7 @@
 
   --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(250 84% 54%));
   --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
-  --gradient-hero: linear-gradient(135deg, #1e1b4b 0%, #312e81 48%, hsl(var(--primary)) 100%);
+  --gradient-hero: linear-gradient(135deg, #0b1120 0%, #121c35 50%, #1a274a 100%);
   --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
   --shadow-2xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
@@ -85,7 +85,7 @@
   --accent: 189 94% 43%;
   --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(250 84% 54%));
   --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
-  --gradient-hero: linear-gradient(135deg, #1e1b4b 0%, #312e81 48%, #4338ca 100%);
+  --gradient-hero: linear-gradient(135deg, #0b1020 0%, #121936 50%, #1a224a 100%);
 }
 
 :root[data-color-theme=ocean] {
@@ -102,7 +102,7 @@
   --accent: 189 94% 43%;
   --gradient-primary: linear-gradient(135deg, hsl(199 89% 52%), hsl(217 91% 62%));
   --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%), hsl(200 94% 50%));
-  --gradient-hero: linear-gradient(135deg, #082f49 0%, #0c4a6e 48%, #0284c7 100%);
+  --gradient-hero: linear-gradient(135deg, #06101a 0%, #0a1b2c 50%, #0f273f 100%);
 }
 
 :root[data-color-theme=emerald] {
@@ -119,7 +119,7 @@
   --accent: 172 66% 45%;
   --gradient-primary: linear-gradient(135deg, hsl(156 72% 48%), hsl(168 76% 40%));
   --gradient-accent: linear-gradient(135deg, hsl(172 66% 45%), hsl(180 70% 40%));
-  --gradient-hero: linear-gradient(135deg, #064e3b 0%, #065f46 48%, #059669 100%);
+  --gradient-hero: linear-gradient(135deg, #05140e 0%, #0a2117 50%, #0f3022 100%);
 }
 
 :root[data-color-theme=violet] {
@@ -136,7 +136,7 @@
   --accent: 291 70% 50%;
   --gradient-primary: linear-gradient(135deg, hsl(263 70% 64%), hsl(280 75% 55%));
   --gradient-accent: linear-gradient(135deg, hsl(291 70% 50%), hsl(310 75% 45%));
-  --gradient-hero: linear-gradient(135deg, #2e1065 0%, #4c1d95 48%, #6d28d9 100%);
+  --gradient-hero: linear-gradient(135deg, #0d081b 0%, #160f2d 50%, #231644 100%);
 }
 
 :root[data-color-theme=rose] {
@@ -153,7 +153,7 @@
   --accent: 320 85% 55%;
   --gradient-primary: linear-gradient(135deg, hsl(346 87% 65%), hsl(330 81% 56%));
   --gradient-accent: linear-gradient(135deg, hsl(320 85% 55%), hsl(300 76% 50%));
-  --gradient-hero: linear-gradient(135deg, #4c0519 0%, #881337 48%, #be123c 100%);
+  --gradient-hero: linear-gradient(135deg, #170811 0%, #260e1d 50%, #38152a 100%);
 }
 
 :root[data-color-theme=amber] {
@@ -170,7 +170,7 @@
   --accent: 16 90% 55%;
   --gradient-primary: linear-gradient(135deg, hsl(32 95% 54%), hsl(42 95% 54%));
   --gradient-accent: linear-gradient(135deg, hsl(16 90% 55%), hsl(350 85% 60%));
-  --gradient-hero: linear-gradient(135deg, #7c2d12 0%, #9a3412 48%, #ea580c 100%);
+  --gradient-hero: linear-gradient(135deg, #160d05 0%, #261609 50%, #39200d 100%);
 }
 
 /* =========================================================================
@@ -178,7 +178,7 @@
    ========================================================================= */
 body, input, button, select, textarea {
   margin: 0;
-  font-family: 'Prompt', 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   -webkit-tap-highlight-color: transparent;
@@ -187,15 +187,25 @@ body, input, button, select, textarea {
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {
-  font-family: 'Prompt', 'Poppins', sans-serif;
-}
-
-.font-poppins {
-  font-family: 'Poppins', 'Prompt', sans-serif !important;
+  font-family: 'Prompt', sans-serif !important;
+  font-weight: 700 !important;
 }
 
 .font-prompt {
-  font-family: 'Prompt', sans-serif;
+  font-family: 'Prompt', sans-serif !important;
+}
+
+.font-poppins {
+  font-family: 'Poppins', 'Prompt', sans-serif;
+}
+
+/* Horizontal scroll without scrollbar (Choice single-row mobile pills) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* Custom scrollbars from Comsan Choice */
@@ -270,6 +280,11 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   color: #ffffff !important;
 }
 
+.dark .gradient-hero {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
 /* Shadows */
 .shadow-card {
   box-shadow: var(--shadow-card) !important;
@@ -339,8 +354,8 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 .dark .hero-bubble {
-  opacity: 0.55;
-  filter: blur(38px);
+  opacity: 0.18;
+  filter: blur(44px);
 }
 
 /* Bubble 1: Large primary glowing orb - top left to center */

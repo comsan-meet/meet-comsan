@@ -270,3 +270,23 @@ button.gradient-primary.rounded-full {
 .animate-shake {
   animation: shake-card 0.5s cubic-bezier(.36,.07,.19,.97) both;
 }
+
+/* Toast Notification Shake / Vibrate on Repeated Trigger */
+@keyframes toastShake {
+  0%, 100% {
+    transform: translateX(0) scale(1);
+  }
+  15%, 55% {
+    transform: translateX(-12px) scale(1.03);
+  }
+  35%, 75% {
+    transform: translateX(12px) scale(1.03);
+  }
+  90% {
+    transform: translateX(-4px) scale(1.01);
+  }
+}
+
+.toast-shake {
+  animation: toastShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+}

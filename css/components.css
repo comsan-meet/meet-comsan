@@ -1,0 +1,292 @@
+/* =========================================================================
+   COMSAN CHOICE UI COMPONENTS STYLING
+   Exact match to comsan-choice.vercel.app component architecture
+   ========================================================================= */
+
+/* Cards matching Comsan Choice Card primitive */
+.comsan-card, .choice-card {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border));
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.comsan-card:hover, .choice-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: hsl(var(--border) / 0.8);
+}
+
+/* Inactive Meeting Hero Card (Gray instead of gradient) */
+.hero-card-gray {
+  background: #475569 !important;
+}
+.dark .hero-card-gray {
+  background: #1e293b !important;
+}
+
+/* Primary Gradient Button */
+.btn-primary-gradient, button.gradient-primary {
+  background: var(--gradient-primary) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 14px -1px rgba(99, 102, 241, 0.35);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button.rounded-full,
+.btn-primary-gradient.rounded-full,
+button.gradient-primary.rounded-full {
+  border-radius: 9999px !important;
+}
+
+.btn-primary-gradient:hover, button.gradient-primary:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -2px rgba(99, 102, 241, 0.45);
+}
+
+.btn-primary-gradient:active, button.gradient-primary:active {
+  transform: scale(0.98);
+}
+
+/* Outline Button */
+.btn-outline {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.btn-outline:hover {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.btn-outline:active {
+  transform: scale(0.98);
+}
+
+/* Choice Badges & Tags */
+.badge-primary {
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.2);
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge-accent {
+  background-color: hsl(var(--accent) / 0.1);
+  color: hsl(var(--accent));
+  border: 1px solid hsl(var(--accent) / 0.2);
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge-emerald {
+  background-color: rgb(16 185 129 / 0.1);
+  color: rgb(16 185 129);
+  border: 1px solid rgb(16 185 129 / 0.2);
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge-rose {
+  background-color: rgb(244 63 94 / 0.1);
+  color: rgb(244 63 94);
+  border: 1px solid rgb(244 63 94 / 0.2);
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Form Controls */
+.comsan-input, input.choice-input {
+  width: 100%;
+  height: 2.75rem; /* 44px (h-11) */
+  padding: 0 0.875rem;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--input));
+  background-color: hsl(var(--background) / 0.5);
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+}
+
+.comsan-input:focus, input.choice-input:focus {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+}
+
+/* Voting Option Choice Cards (Comsan Choice Option Card Style) */
+.vote-choice-card {
+  border-radius: 1rem;
+  border: 1.5px solid hsl(var(--border));
+  background-color: hsl(var(--card));
+  padding: 1rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+}
+
+.vote-choice-card:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow: var(--shadow-md);
+}
+
+.vote-choice-card.selected {
+  border-color: hsl(var(--primary));
+  background-color: hsl(var(--primary) / 0.05);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+/* Seating Chart Nodes */
+.seat-circle {
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.seat-circle:hover {
+  transform: scale(1.15);
+  z-index: 20;
+}
+
+/* Modals & Dialogs matching Choice Dialog */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: opacity 0.2s ease;
+}
+
+.modal-dialog-box {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border) / 0.8);
+  border-radius: 1.25rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Toast Notifications */
+#toastContainer {
+  position: fixed;
+  bottom: 5rem;
+  right: 1.25rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.comsan-toast {
+  pointer-events: auto;
+  border-radius: 1rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.15);
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  animation: toastSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chat Message Bubbles */
+.chat-bubble-me {
+  background: var(--gradient-primary);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-bubble-other {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  border-bottom-left-radius: 4px;
+  border: 1px solid hsl(var(--border) / 0.6);
+}
+
+/* Easter Egg Shake Animation */
+@keyframes shake-card {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-10px); }
+  40%, 80% { transform: translateX(10px); }
+}
+.animate-shake {
+  animation: shake-card 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Toast Notification Shake / Vibrate on Repeated Trigger */
+@keyframes toastShake {
+  0%, 100% {
+    transform: translateX(0) scale(1);
+  }
+  15%, 55% {
+    transform: translateX(-12px) scale(1.03);
+  }
+  35%, 75% {
+    transform: translateX(12px) scale(1.03);
+  }
+  90% {
+    transform: translateX(-4px) scale(1.01);
+  }
+}
+
+.toast-shake {
+  animation: toastShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+}

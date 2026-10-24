@@ -1,0 +1,10 @@
+{
+  "host": "sql204.infinityfree.com",
+  "port": "3306",
+  "dbname": "if0_43235981_meet",
+  "user": "if0_43235981",
+  "pass": "meet2026",
+  "supabase_url": "",
+  "supabase_key": "",
+  "updated_at": "2026-10-22 05:40:00"
+}

@@ -3,7 +3,6 @@
 /* Universal Hidden Utility */
 .hidden {
   display: none !important;
-  pointer-events: none !important;
 }
 
 /* Responsive display overrides taking precedence over universal .hidden */
@@ -88,3 +87,12 @@ input[type="number"] {
   justify-content: center !important;
 }
 
+
+/* Icon click fix: icons are re-rendered by lucide.createIcons(), which replaces the
+   <svg> under the cursor between mousedown/mouseup and swallows the click.
+   Make icons transparent to pointer events so the button itself always receives the click. */
+button svg, button i, a svg, a i,
+[onclick] svg, [onclick] i,
+label svg, label i {
+  pointer-events: none;
+}
