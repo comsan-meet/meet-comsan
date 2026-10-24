@@ -233,10 +233,6 @@ function triggerRaiseHand() {
   }
 
   const m = state.meeting || {};
-  if (!m.isStarted) {
-    if (typeof showToast === 'function') showToast('การประชุมยังไม่เริ่ม ไม่สามารถยกมือได้ในขณะนี้', 'warning');
-    return;
-  }
   if (m.isEnded) {
     if (typeof showToast === 'function') showToast('การประชุมเสร็จสิ้นแล้ว ไม่สามารถยกมือได้', 'warning');
     return;
@@ -820,6 +816,7 @@ window.toggleUserCameraScanner = toggleUserCameraScanner;
 window.submitUserAdminCheckinCode = submitUserAdminCheckinCode;
 window.processUserAdminQrToken = processUserAdminQrToken;
 window.copyOnlinePasscode = copyOnlinePasscode;
+window.triggerRaiseHand = triggerRaiseHand;
 
 
 

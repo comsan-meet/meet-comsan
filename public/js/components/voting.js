@@ -356,8 +356,8 @@ function createMotion(e) {
     isOpen: true,
     votes: {}
   };
-  window.appState.motions.push(newMotion);
-  window.saveLocalState();
+
+  // Emit to socket which runs ActionReducer.applyAction cleanly without duplicate push
   window.socket.emit('admin:createMotion', newMotion);
   titleInput.value = '';
   document.getElementById('motionSecretCheckbox').checked = false;

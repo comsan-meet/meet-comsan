@@ -947,40 +947,149 @@ function setupSocketListeners() {
     if (chatEl) chatEl.textContent = count;
   });
 
-  socket.on('state:update', (newState) => {
-    if (newState) {
-      window.setAppState(newState);
-      window.saveLocalState();
-      renderAll();
+  let lastHandledQueueIds = new Set();
+  let lastHandledChatIds = new Set();
+  let lastHandledWinnerId = null;
+
+  // Initialize tracking with current state
+  if (window.appState) {
+    (window.appState.raiseHandQueue || []).forEach(q => lastHandledQueueIds.add(String(q.queueId || q.userId)));
+    (window.appState.chats || []).forEach(c => lastHandledChatIds.add(String(c.id)));
+    if (window.appState.randomizer && window.appState.randomizer.lastWinner) {
+      lastHandledWinnerId = window.appState.randomizer.lastWinner.id;
     }
+  }
+
+  socket.on('state:update', (newState) => {
+    if (!newState) return;
+
+    // 1. Deduplicate motions to guarantee no duplicate votes appear
+    if (Array.isArray(newState.motions)) {
+      const uniqueM = [];
+      const seenM = new Set();
+      newState.motions.forEach(m => {
+        if (m && m.id && !seenM.has(m.id)) {
+          seenM.add(m.id);
+          uniqueM.push(m);
+        }
+      });
+      newState.motions = uniqueM;
+    }
+
+    // 2. Detect and trigger new Raise Hand events across devices
+    const newQueue = Array.isArray(newState.raiseHandQueue) ? newState.raiseHandQueue : [];
+    newQueue.forEach(item => {
+      const qKey = String(item.queueId || item.userId);
+      if (!lastHandledQueueIds.has(qKey)) {
+        lastHandledQueueIds.add(qKey);
+        // Fire raise hand notification & popup for Admin!
+        socket.trigger('alert:raiseHand', item);
+      }
+    });
+
+    // 3. Detect and trigger new Chat messages across devices
+    const newChats = Array.isArray(newState.chats) ? newState.chats : [];
+    newChats.forEach(msg => {
+      const cKey = String(msg.id);
+      if (!lastHandledChatIds.has(cKey)) {
+        lastHandledChatIds.add(cKey);
+        // Trigger notify:chat
+        socket.trigger('notify:chat', msg);
+      }
+    });
+
+    // 4. Detect new random spin across devices
+    if (newState.randomizer && newState.randomizer.lastWinner && newState.randomizer.lastWinner.id !== lastHandledWinnerId) {
+      lastHandledWinnerId = newState.randomizer.lastWinner.id;
+      const spinModal = document.getElementById('randomPopupModal');
+      if (!spinModal || spinModal.classList.contains('hidden')) {
+        if (typeof window.finishRandomSpin === 'function') {
+          window.finishRandomSpin(newState.randomizer.lastWinner.winnerLabel);
+        }
+      }
+    }
+
+    window.setAppState(newState);
+    window.saveLocalState();
+    renderAll();
   });
 
   socket.on('alert:raiseHand', (alertData) => {
+    if (!alertData) return;
+    const state = window.appState;
+    if (state) {
+      state.raiseHandQueue = Array.isArray(state.raiseHandQueue) ? state.raiseHandQueue : [];
+      if (!state.raiseHandQueue.some(q => q.userId === alertData.userId)) {
+        state.raiseHandQueue.push(alertData);
+      }
+      const user = (state.users || []).find(u => u.id === alertData.userId);
+      if (user) {
+        user.raiseHandCount = (user.raiseHandCount || 0) + 1;
+      }
+      if (typeof window.saveLocalState === 'function') window.saveLocalState();
+      renderAll();
+    }
+
     if (window.currentRole === 'ADMIN' && window.isAdminAuthenticated) {
       playNotificationSound('hand');
       const nameEl = document.getElementById('popupRaiseHandName');
       const detEl = document.getElementById('popupRaiseHandDetail');
-      if (nameEl) nameEl.textContent = `${alertData.nickname} (${alertData.fullName})`;
-      if (detEl) detEl.textContent = `ตำแหน่ง: ${alertData.position} • เวลา ${alertData.time}`;
+      if (nameEl) nameEl.textContent = `${alertData.nickname || 'สมาชิก'} (${alertData.fullName || ''})`.trim();
+      if (detEl) detEl.textContent = `ตำแหน่ง: ${alertData.position || 'สมาชิก'} • เวลา ${alertData.time || ''}`;
       const popup = document.getElementById('raiseHandPopup');
       if (popup) {
         popup.classList.remove('hidden');
         popup.classList.add('flex');
       }
+      showToast(`✋ ${alertData.nickname || 'สมาชิก'} ส่งคำขอยกมือขอพูด`, 'warning');
     } else if (window.currentUserId && alertData.userId !== window.currentUserId) {
-      showToast(`✋ ${alertData.nickname} ส่งคำขอยกมือขอพูด`, 'warning');
+      showToast(`✋ ${alertData.nickname || 'สมาชิก'} ส่งคำขอยกมือขอพูด`, 'warning');
     }
   });
 
   socket.on('notify:chat', (msg) => {
     if (!msg) return;
+    const state = window.appState;
+    if (state) {
+      state.chats = Array.isArray(state.chats) ? state.chats : [];
+      if (!state.chats.some(c => String(c.id) === String(msg.id))) {
+        state.chats.push(msg);
+      }
+      state.chatLogs = Array.isArray(state.chatLogs) ? state.chatLogs : [];
+      if (!state.chatLogs.some(l => String(l.msgId) === String(msg.id))) {
+        state.chatLogs.push({
+          id: 'LOG-' + msg.id,
+          msgId: String(msg.id),
+          timestamp: msg.timestamp || Date.now(),
+          sender: msg.sender,
+          senderId: msg.senderId || null,
+          target: msg.target || 'ALL',
+          text: msg.text || '',
+          mediaUrl: msg.mediaUrl || null,
+          mediaType: msg.mediaType || null,
+          mediaName: msg.mediaName || null,
+          time: msg.time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+          dateStr: new Date(msg.timestamp || Date.now()).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }),
+          deleted: false,
+          deletedAt: null
+        });
+      }
+      if (typeof window.saveLocalState === 'function') window.saveLocalState();
+    }
+
     const isAdminMode = window.currentRole === 'ADMIN' && window.isAdminAuthenticated;
     const myViewerId = isAdminMode ? 'ADMIN' : window.currentUserId;
-    if (!myViewerId) return;
 
-    if (msg.senderId !== myViewerId && (msg.target === 'ALL' || msg.target === myViewerId)) {
+    // Immediately re-render chat sections so message appears in live view!
+    if (typeof window.renderFloatingChat === 'function') window.renderFloatingChat(true);
+    if (isAdminMode && typeof window.renderAdminChatSection === 'function') {
+      window.renderAdminChatSection(true);
+    }
+
+    if (myViewerId && msg.senderId !== myViewerId && (msg.target === 'ALL' || msg.target === myViewerId)) {
       playNotificationSound('chat');
-      showToast(`💬 ${msg.sender}: "${msg.text}"`, 'info');
+      const textPreview = msg.text ? `"${msg.text}"` : (msg.mediaType ? '[รูปภาพแนบ]' : '');
+      showToast(`💬 ${msg.sender}: ${textPreview}`, 'info');
       if (isAdminMode && window.activeAdminTab !== 'CHAT') {
         const b = document.getElementById('aBadge_CHAT');
         if (b) b.classList.remove('hidden');

@@ -539,7 +539,13 @@
           isOpen: true,
           votes: {}
         };
-        state.motions.push(newMotion);
+        state.motions = Array.isArray(state.motions) ? state.motions : [];
+        const existingIdx = state.motions.findIndex(m => m.id === newMotion.id);
+        if (existingIdx !== -1) {
+          state.motions[existingIdx] = newMotion;
+        } else {
+          state.motions.push(newMotion);
+        }
         notify('notify:event', {
           type: 'motion',
           text: `🗳️ เปิดญัตติโหวตใหม่${newMotion.isSecret ? ' (โหวตลับ)' : ''}: "${newMotion.title}"`
