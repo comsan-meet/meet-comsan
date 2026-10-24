@@ -2,6 +2,15 @@
  * COMSAN Meeting System - Randomizer Component (Lucky Wheel & Slot)
  */
 
+const DEFAULT_WHEEL_COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#EF4444', '#06B6D4', '#F97316'];
+
+// Initialize globals safely
+window.randomizerMode = window.randomizerMode || 'WHEEL';
+window.randomizerSource = window.randomizerSource || 'MEMBERS';
+window.customRandomItems = window.customRandomItems || [];
+window.WHEEL_COLORS = (window.WHEEL_COLORS && window.WHEEL_COLORS.length > 0) ? window.WHEEL_COLORS : DEFAULT_WHEEL_COLORS;
+window.randomPool = window.randomPool || [];
+
 function toggleSecretBiasPanel() {
   window.isSecretBiasOpen = !window.isSecretBiasOpen;
   const panel = document.getElementById('secretBiasPanel');
@@ -10,11 +19,11 @@ function toggleSecretBiasPanel() {
 }
 
 function setRandomizerMode(mode) {
-  window.randomizerMode = mode;
+  window.randomizerMode = (mode || 'WHEEL').toUpperCase();
   ['WHEEL', 'SLOT', 'CARD'].forEach(m => {
     const btn = document.getElementById(`randMode_${m}`);
     if (btn) {
-      btn.className = m === mode
+      btn.className = m === window.randomizerMode
         ? 'py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-amber-500 text-slate-950 shadow-sm'
         : 'py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
     }
@@ -49,7 +58,9 @@ function rebuildRandomMemberPool() {
   }
 
   const allRoles = [...new Set((state.users || []).map(u => u.position || 'สมาชิก'))];
-  if (!window.selectedRolesForRandom) window.selectedRolesForRandom = new Set(allRoles);
+  if (!window.selectedRolesForRandom || window.selectedRolesForRandom.size === 0) {
+    window.selectedRolesForRandom = new Set(allRoles);
+  }
 
   const roleBox = document.getElementById('randomRoleCheckboxes');
   if (roleBox) {
@@ -68,16 +79,17 @@ function rebuildRandomMemberPool() {
   const oldWeights = {};
   (window.randomPool || []).forEach(item => { oldWeights[item.id] = item.weight; });
 
-  window.randomPool = (state.users || [])
+  const rawUsers = Array.isArray(state.users) ? state.users : [];
+  window.randomPool = rawUsers
     .filter(u => {
-      const roleMatch = window.selectedRolesForRandom.has(u.position || 'สมาชิก');
+      const roleMatch = !window.selectedRolesForRandom || window.selectedRolesForRandom.size === 0 || window.selectedRolesForRandom.has(u.position || 'สมาชิก');
       const checkMatch = !onlyCheckedIn || (u.checkedIn && !u.isLeave);
       return roleMatch && checkMatch;
     })
     .map(u => ({
       id: u.id,
-      label: `${u.nickname} (${u.firstName})`,
-      sub: u.position,
+      label: `${u.nickname || u.firstName || 'สมาชิก'} (${u.firstName || ''})`.trim(),
+      sub: u.position || 'สมาชิก',
       weight: oldWeights[u.id] !== undefined ? oldWeights[u.id] : 1,
       enabled: true
     }));
@@ -161,6 +173,7 @@ function renderRandomizerPoolUI() {
 }
 
 function pickWeightedIndex(items) {
+  if (!Array.isArray(items) || items.length === 0) return 0;
   const weights = items.map(i => Math.max(0, Number(i.weight ?? 1)));
   const totalWeight = weights.reduce((a, b) => a + b, 0);
   if (totalWeight <= 0) return Math.floor(Math.random() * items.length);
@@ -174,14 +187,17 @@ function pickWeightedIndex(items) {
 
 function triggerAdminSpin() {
   const items = getEnabledRandomItems();
-  if (items.length < 2) {
-    showToast('ต้องมีรายการอย่างน้อย 2 รายการเพื่อทำการสุ่ม!', 'error');
+  if (!items || items.length < 2) {
+    if (typeof showToast === 'function') {
+      showToast('ต้องมีรายชื่ออย่างน้อย 2 รายการเพื่อทำการสุ่ม!', 'error');
+    }
     return;
   }
+  const mode = (window.randomizerMode || 'WHEEL').toUpperCase();
   const winnerIndex = pickWeightedIndex(items);
   const winnerLabel = items[winnerIndex].label;
   const spinPayload = {
-    mode: window.randomizerMode,
+    mode: mode,
     items: items.map(i => ({ id: i.id, label: i.label })),
     winnerIndex,
     winnerLabel
@@ -189,26 +205,34 @@ function triggerAdminSpin() {
 
   const record = {
     id: Date.now(),
-    mode: window.randomizerMode,
+    mode: mode,
     winnerLabel,
     time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   };
   const state = window.appState;
-  if (!state.randomizer) state.randomizer = { lastWinner: null, history: [] };
-  state.randomizer.lastWinner = record;
-  state.randomizer.history.unshift(record);
-  state.randomizer.history = state.randomizer.history.slice(0, 15);
-  window.saveLocalState();
+  if (state) {
+    if (!state.randomizer) state.randomizer = { lastWinner: null, history: [] };
+    state.randomizer.lastWinner = record;
+    state.randomizer.history.unshift(record);
+    state.randomizer.history = state.randomizer.history.slice(0, 15);
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+  }
 
-  window.socket.emit('admin:startRandomSpin', spinPayload);
-  if (!window.socket.connected) playRandomizerPopupAnimation(spinPayload);
+  // 1. Send over socket to broadcast to all other clients
+  if (window.socket && typeof window.socket.emit === 'function') {
+    window.socket.emit('admin:startRandomSpin', spinPayload);
+  }
+
+  // 2. ALWAYS play popup animation for Admin immediately (zero lag)
+  playRandomizerPopupAnimation(spinPayload);
 }
 
 function drawWheelCanvas(canvasId, items, rotationRad = 0) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2;
+  const w = canvas.width || 300, h = canvas.height || 300;
+  const cx = w / 2, cy = h / 2;
   const r = Math.min(cx, cy) - 6;
 
   ctx.clearRect(0, 0, w, h);
@@ -220,7 +244,9 @@ function drawWheelCanvas(canvasId, items, rotationRad = 0) {
     return;
   }
 
+  const palette = (window.WHEEL_COLORS && window.WHEEL_COLORS.length > 0) ? window.WHEEL_COLORS : DEFAULT_WHEEL_COLORS;
   const arc = (Math.PI * 2) / items.length;
+
   items.forEach((item, i) => {
     const startAngle = rotationRad + i * arc;
     const endAngle = startAngle + arc;
@@ -228,7 +254,7 @@ function drawWheelCanvas(canvasId, items, rotationRad = 0) {
     ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, r, startAngle, endAngle);
     ctx.closePath();
-    ctx.fillStyle = window.WHEEL_COLORS[i % window.WHEEL_COLORS.length];
+    ctx.fillStyle = palette[i % palette.length];
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
@@ -240,7 +266,7 @@ function drawWheelCanvas(canvasId, items, rotationRad = 0) {
     ctx.textAlign = 'right';
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 12px Prompt, sans-serif';
-    ctx.fillText(String(item.label).slice(0, 16), r - 14, 4);
+    ctx.fillText(String(item.label || '').slice(0, 16), r - 14, 4);
     ctx.restore();
   });
 }
@@ -262,11 +288,12 @@ function playRandomizerPopupAnimation(payload) {
 
   const items = payload.items;
   const n = items.length;
-  const winnerIdx = payload.winnerIndex;
+  const winnerIdx = (typeof payload.winnerIndex === 'number' && payload.winnerIndex >= 0) ? payload.winnerIndex : 0;
   const duration = 4200;
   const startTime = performance.now();
+  const mode = (payload.mode || 'WHEEL').toUpperCase();
 
-  if (payload.mode === 'WHEEL') {
+  if (mode === 'WHEEL') {
     if (titleEl) titleEl.textContent = '🎡 กำลังหมุนวงล้อสุ่ม...';
     if (wheelBox) wheelBox.classList.remove('hidden');
     if (slotBox) slotBox.classList.add('hidden');
@@ -277,12 +304,15 @@ function playRandomizerPopupAnimation(payload) {
       const t = Math.min(1, (now - startTime) / duration);
       const easeOut = 1 - Math.pow(1 - t, 4);
       drawWheelCanvas('popupWheelCanvas', items, targetRotation * easeOut);
-      if (t < 1) requestAnimationFrame(animateWheel);
-      else finishRandomSpin(payload.winnerLabel);
+      if (t < 1) {
+        requestAnimationFrame(animateWheel);
+      } else {
+        finishRandomSpin(payload.winnerLabel);
+      }
     }
     requestAnimationFrame(animateWheel);
   } else {
-    if (titleEl) titleEl.textContent = payload.mode === 'SLOT' ? '🎰 กำลังหมุนสล็อตสุ่มชื่อ...' : '🎁 กำลังเปิดกล่องสุ่มปริศนา...';
+    if (titleEl) titleEl.textContent = mode === 'SLOT' ? '🎰 กำลังหมุนสล็อตสุ่มชื่อ...' : '🎁 กำลังเปิดกล่องสุ่มปริศนา...';
     if (wheelBox) wheelBox.classList.add('hidden');
     if (slotBox) slotBox.classList.remove('hidden');
     const stepInterval = setInterval(() => {
@@ -297,7 +327,11 @@ function playRandomizerPopupAnimation(payload) {
 }
 
 function finishRandomSpin(winnerLabel) {
-  playNotificationSound('hand');
+  try {
+    if (typeof playNotificationSound === 'function') {
+      playNotificationSound('hand');
+    }
+  } catch (e) {}
   const title = document.getElementById('popupRandomTitle');
   const winner = document.getElementById('popupWinnerName');
   const banner = document.getElementById('popupWinnerBanner');

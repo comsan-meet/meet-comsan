@@ -38,6 +38,9 @@
     }
 
     triggerLocal(event, payload) {
+      if (this.hub && typeof this.hub.trigger === 'function') {
+        this.hub.trigger(event, payload);
+      }
       const handlers = this.listeners.get(event);
       if (Array.isArray(handlers)) {
         handlers.forEach(fn => {
@@ -176,6 +179,9 @@
         // 3. Start client-side attendance timer
         this.startAttendanceTimer();
 
+        // 4. Start active background state sync polling (every 1.5s - guarantees auto-updates without refresh)
+        this.startPolling();
+
         this.updateCloudStatusBadge(true, 'เชื่อมต่อ Supabase สำเร็จ');
         return true;
       } catch (err) {
@@ -183,6 +189,58 @@
         this.connected = false;
         this.updateCloudStatusBadge(false, 'เชื่อมต่อ Supabase ล้มเหลว');
         return false;
+      }
+    }
+
+    startPolling() {
+      if (this.pollInterval) return;
+      this.pollInterval = setInterval(() => this.pollRemoteState(), 1500);
+    }
+
+    stopPolling() {
+      if (this.pollInterval) {
+        clearInterval(this.pollInterval);
+        this.pollInterval = null;
+      }
+    }
+
+    async pollRemoteState() {
+      if (this.isPolling || this.isSaving || !this.supabase) return;
+      this.isPolling = true;
+      try {
+        const { data, error } = await this.supabase
+          .from(this.tableName)
+          .select('updated_at')
+          .eq('id', 'current')
+          .maybeSingle();
+
+        if (!error && data && data.updated_at) {
+          const serverTime = new Date(data.updated_at).getTime();
+          // If remote update is newer than our last synced timestamp
+          if (serverTime > (this.lastSyncTimestamp || 0) + 100) {
+            const { data: full, error: fullErr } = await this.supabase
+              .from(this.tableName)
+              .select('state, updated_at')
+              .eq('id', 'current')
+              .maybeSingle();
+
+            if (!fullErr && full && full.state) {
+              this.lastSyncTimestamp = new Date(full.updated_at).getTime();
+              if (typeof window.normalizeState === 'function') {
+                window.appState = window.normalizeState(full.state);
+              } else {
+                window.appState = full.state;
+              }
+              if (typeof window.saveLocalState === 'function') window.saveLocalState();
+              this.triggerLocal('state:update', window.appState);
+              if (typeof window.renderAll === 'function') window.renderAll();
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore background polling glitches
+      } finally {
+        this.isPolling = false;
       }
     }
 
@@ -201,6 +259,7 @@
         }
 
         if (data && data.state) {
+          this.lastSyncTimestamp = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
           if (typeof window.normalizeState === 'function') {
             window.appState = window.normalizeState(data.state);
           } else {
@@ -212,6 +271,7 @@
         } else {
           // If no state exists in database yet, seed with current local state
           const stateToSeed = window.appState || {};
+          this.lastSyncTimestamp = Date.now();
           await this.supabase.from(this.tableName).upsert({
             id: 'current',
             state: stateToSeed,

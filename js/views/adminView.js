@@ -1018,10 +1018,11 @@ async function saveSupabaseSettingsFromModal() {
       const adapter = new window.SupabaseSocketAdapter();
       const ok = await adapter.init({ url, anonKey: key });
       if (ok) {
-        if (window.socket && typeof window.socket.pollInterval === 'number') {
-          clearInterval(window.socket.pollInterval);
+        if (window.socket && typeof window.socket.setEngine === 'function') {
+          window.socket.setEngine(adapter);
+        } else {
+          window.socket = adapter;
         }
-        window.socket = adapter;
       }
     } catch (e) {
       console.warn('Supabase adapter reinit failed:', e);

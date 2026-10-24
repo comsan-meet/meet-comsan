@@ -32,6 +32,9 @@ class HttpSocketBridge {
   }
 
   trigger(event, payload) {
+    if (this.hub && typeof this.hub.trigger === 'function') {
+      this.hub.trigger(event, payload);
+    }
     const handlers = this.listeners.get(event);
     if (Array.isArray(handlers)) {
       handlers.forEach(fn => {
@@ -194,15 +197,107 @@ class HttpSocketBridge {
   }
 }
 
+/**
+ * UnifiedSocketHub
+ * Ensures window.socket reference NEVER changes, preserving all event listeners
+ * registered by app.js or any component across engine switches (Local Socket.io -> HTTP Bridge -> Supabase)
+ */
+class UnifiedSocketHub {
+  constructor(initialEngine) {
+    this.listeners = new Map();
+    this.engine = null;
+    this.isUnifiedHub = true;
+    if (initialEngine) this.setEngine(initialEngine);
+  }
+
+  get connected() {
+    return this.engine ? Boolean(this.engine.connected) : true;
+  }
+
+  setEngine(newEngine) {
+    if (!newEngine) return;
+    if (this.engine === newEngine) return;
+
+    // Stop polling on old engine if needed
+    if (this.engine && typeof this.engine.stopPolling === 'function') {
+      this.engine.stopPolling();
+    } else if (this.engine && typeof this.engine.pollInterval === 'number') {
+      clearInterval(this.engine.pollInterval);
+    }
+
+    this.engine = newEngine;
+    this.engine.hub = this;
+
+    // Mirror all registered listeners to newEngine so engine can notify directly if needed
+    this.listeners.forEach((fns, evt) => {
+      fns.forEach(fn => {
+        if (typeof this.engine.on === 'function') {
+          this.engine.on(evt, fn);
+        }
+      });
+    });
+
+    console.info(`[SocketHub] Engine switched to: ${newEngine.constructor ? newEngine.constructor.name : 'CustomEngine'}`);
+  }
+
+  on(event, callback) {
+    if (typeof callback !== 'function') return;
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, []);
+    }
+    const arr = this.listeners.get(event);
+    if (!arr.includes(callback)) {
+      arr.push(callback);
+    }
+    if (this.engine && typeof this.engine.on === 'function') {
+      this.engine.on(event, callback);
+    }
+  }
+
+  off(event, callback) {
+    if (!this.listeners.has(event)) return;
+    if (!callback) {
+      this.listeners.delete(event);
+    } else {
+      const arr = this.listeners.get(event).filter(fn => fn !== callback);
+      this.listeners.set(event, arr);
+    }
+    if (this.engine && typeof this.engine.off === 'function') {
+      this.engine.off(event, callback);
+    }
+  }
+
+  trigger(event, payload) {
+    const handlers = this.listeners.get(event);
+    if (Array.isArray(handlers)) {
+      handlers.forEach(fn => {
+        try {
+          fn(payload);
+        } catch (e) {
+          console.error(`[SocketHub] Error in handler for '${event}':`, e);
+        }
+      });
+    }
+  }
+
+  emit(event, ...args) {
+    if (this.engine && typeof this.engine.emit === 'function') {
+      return this.engine.emit(event, ...args);
+    } else {
+      console.warn(`[SocketHub] emit called with no active engine for event: ${event}`);
+    }
+  }
+}
+
 // Socket Connection Initialization
-let activeSocket = null;
+let activeEngine = null;
 
 // If running in local Node.js environment with active Socket.io
 if (typeof io !== 'undefined') {
   const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   if (isLocalHost) {
     try {
-      activeSocket = io({ autoConnect: true, reconnectionAttempts: 2, timeout: 2000 });
+      activeEngine = io({ autoConnect: true, reconnectionAttempts: 2, timeout: 2000 });
     } catch (e) {
       console.info('Local Socket.io error, falling back to HTTP sync bridge');
     }
@@ -210,12 +305,13 @@ if (typeof io !== 'undefined') {
 }
 
 // Fallback to HTTP Socket Bridge for InfinityFree / Shared Hosting
-if (!activeSocket) {
-  activeSocket = new HttpSocketBridge();
-  activeSocket.startPolling();
+if (!activeEngine) {
+  activeEngine = new HttpSocketBridge();
+  activeEngine.startPolling();
 }
 
-window.socket = activeSocket;
+// Global permanent socket hub
+window.socket = new UnifiedSocketHub(activeEngine);
 
 // Auto-check and upgrade to Supabase Realtime if credentials exist
 (async function initSupabaseCloudIfAvailable() {
@@ -227,10 +323,11 @@ window.socket = activeSocket;
         const supabaseSocket = new window.SupabaseSocketAdapter();
         const ok = await supabaseSocket.init(creds);
         if (ok) {
-          if (window.socket && typeof window.socket.pollInterval === 'number') {
-            clearInterval(window.socket.pollInterval);
+          if (window.socket && typeof window.socket.setEngine === 'function') {
+            window.socket.setEngine(supabaseSocket);
+          } else {
+            window.socket = supabaseSocket;
           }
-          window.socket = supabaseSocket;
           console.info('Switched active socket to Supabase Realtime WebSockets.');
         }
       }
