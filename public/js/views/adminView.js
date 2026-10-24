@@ -1113,7 +1113,7 @@ async function uploadLocalStateToSupabase() {
       const { error } = await client
         .from('comsan_meeting_state')
         .upsert({
-          id: 'active_state',
+          id: 'current',
           state: window.appState,
           updated_at: new Date().toISOString()
         });
@@ -1130,7 +1130,7 @@ async function uploadLocalStateToSupabase() {
           'Prefer': 'resolution=merge-duplicates'
         },
         body: JSON.stringify({
-          id: 'active_state',
+          id: 'current',
           state: window.appState,
           updated_at: new Date().toISOString()
         })
