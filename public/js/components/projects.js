@@ -47,6 +47,12 @@
 
   let isSavingProject = false;
 
+  // Google Drive Photo Folder Catalog State
+  let currentPhotoFolderUrl = '';
+  let drivePhotoCatalog = []; // array of { id, name, url, size }
+  let driveBridgeScriptUrl = (typeof localStorage !== 'undefined' ? localStorage.getItem('comsan_drive_bridge_url') : '') || '';
+  let activeCatalogPickerContext = null; // { type, index } when selecting from catalog modal
+
   // ========================================================
   // AVATARS & GOOGLE DRIVE RESOLVER & IMAGE CROPPER
   // ========================================================
@@ -458,6 +464,596 @@
     if (typeof window.showToast === 'function') {
       window.showToast('คืนค่าเป็นรูปโปรไฟล์น่ารัก (DiceBear) เรียบร้อยแล้ว', 'info');
     }
+  }
+
+  // ========================================================
+  // GOOGLE DRIVE PHOTO FOLDER CATALOG & AUTO-MATCHER
+  // ========================================================
+
+  /**
+   * Extracts Google Drive Folder ID from a URL or raw folder ID string
+   */
+  function extractDriveFolderId(input) {
+    if (!input || typeof input !== 'string') return '';
+    const trimmed = input.trim();
+    if (!trimmed) return '';
+
+    // /drive/folders/FOLDER_ID or /folders/FOLDER_ID
+    const folderMatch = trimmed.match(/\/folders\/([a-zA-Z0-9_-]{15,})/);
+    if (folderMatch && folderMatch[1]) return folderMatch[1];
+
+    // id=FOLDER_ID
+    const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
+    if (idMatch && idMatch[1]) return idMatch[1];
+
+    // Raw alphanumeric ID if length >= 15
+    if (/^[a-zA-Z0-9_-]{15,70}$/.test(trimmed)) {
+      return trimmed;
+    }
+    return '';
+  }
+
+  /**
+   * Search for a photo in drivePhotoCatalog matching the given query (filename or nickname/name)
+   */
+  function findPhotoInCatalog(query) {
+    if (!query || !Array.isArray(drivePhotoCatalog) || drivePhotoCatalog.length === 0) return null;
+    const q = String(query).trim().toLowerCase();
+    if (!q) return null;
+
+    // 1. Exact match with extension
+    let found = drivePhotoCatalog.find(f => (f.name || '').toLowerCase() === q);
+    if (found) return found;
+
+    // 2. Exact match without extension (e.g. "บอม" matches "บอม.jpg" or "บอม.png")
+    found = drivePhotoCatalog.find(f => {
+      const baseName = (f.name || '').replace(/\.[^/.]+$/, '').toLowerCase();
+      return baseName === q;
+    });
+    if (found) return found;
+
+    // 3. Substring match (e.g. "บอม" matches "นายอิทธิพัทธ์_บอม.jpg")
+    found = drivePhotoCatalog.find(f => {
+      const baseName = (f.name || '').replace(/\.[^/.]+$/, '').toLowerCase();
+      return baseName.includes(q) || (q.length > 2 && q.includes(baseName));
+    });
+    if (found) return found;
+
+    return null;
+  }
+
+  /**
+   * Scroll and focus to the Drive Photo Folder toolbar
+   */
+  function focusDrivePhotoFolderInput() {
+    const input = document.getElementById('prjFormPhotoFolderUrl');
+    const toolbar = document.getElementById('prjDrivePhotoFolderToolbar');
+    if (toolbar && typeof toolbar.scrollIntoView === 'function') {
+      toolbar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    if (input) {
+      setTimeout(() => input.focus(), 250);
+    }
+  }
+
+  /**
+   * Listener when user types in Folder URL input
+   */
+  function onDrivePhotoFolderInputChanged(val) {
+    currentPhotoFolderUrl = (val || '').trim();
+    const clearBtn = document.getElementById('prjFormPhotoFolderClearBtn');
+    if (clearBtn) {
+      if (currentPhotoFolderUrl) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
+    }
+  }
+
+  function clearDrivePhotoFolder() {
+    currentPhotoFolderUrl = '';
+    drivePhotoCatalog = [];
+    const input = document.getElementById('prjFormPhotoFolderUrl');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('prjFormPhotoFolderClearBtn');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    updateDrivePhotoFolderStatusUi();
+    if (typeof window.showToast === 'function') {
+      window.showToast('ล้างลิงก์และคลังรูปภาพแล้ว', 'info');
+    }
+  }
+
+  function updateDrivePhotoFolderStatusUi() {
+    const badge = document.getElementById('prjDriveCatalogBadge');
+    const viewBtn = document.getElementById('prjDriveCatalogViewBtn');
+    const countSpan = document.getElementById('prjDriveCatalogCount');
+    const statusText = document.getElementById('prjDriveFolderStatusText');
+    const clearBtn = document.getElementById('prjFormPhotoFolderClearBtn');
+
+    if (clearBtn) {
+      if (currentPhotoFolderUrl) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
+    }
+
+    const count = Array.isArray(drivePhotoCatalog) ? drivePhotoCatalog.length : 0;
+
+    if (count > 0) {
+      if (badge) {
+        badge.textContent = `เชื่อมต่อแล้ว (${count} รูป)`;
+        badge.classList.remove('hidden');
+      }
+      if (viewBtn) viewBtn.classList.remove('hidden');
+      if (countSpan) countSpan.textContent = count;
+      if (statusText) {
+        statusText.innerHTML = `
+          <i data-lucide="check-circle" class="h-3.5 w-3.5 text-emerald-500 shrink-0"></i>
+          <span class="text-emerald-600 dark:text-emerald-400 font-medium">เชื่อมต่อแล้ว พบรูปภาพ ${count} รูปในโฟลเดอร์ พร้อมใช้งานจับคู่ชื่อรูปในการ์ดแต่ละคน</span>
+        `;
+      }
+    } else {
+      if (badge) badge.classList.add('hidden');
+      if (viewBtn) viewBtn.classList.add('hidden');
+      if (countSpan) countSpan.textContent = '0';
+      if (statusText) {
+        statusText.innerHTML = `
+          <i data-lucide="info" class="h-3.5 w-3.5 text-blue-500 shrink-0"></i>
+          <span>วางลิงก์โฟลเดอร์ Drive รวมรูปภาพ แล้วกด <b>"สแกนอ่านรูปในโฟลเดอร์"</b> เพื่อให้ระบบดึงรูปตามชื่อไฟล์ให้อัตโนมัติ</span>
+        `;
+      }
+    }
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  /**
+   * Scans Google Drive Folder using the GAS bridge Web App or guides the user
+   */
+  async function scanDrivePhotoFolder() {
+    const input = document.getElementById('prjFormPhotoFolderUrl');
+    const url = input ? input.value.trim() : currentPhotoFolderUrl;
+    if (!url) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('กรุณาวางลิงก์โฟลเดอร์ Google Drive ก่อนกดสแกน', 'warning');
+      }
+      if (input) input.focus();
+      return;
+    }
+
+    const folderId = extractDriveFolderId(url);
+    if (!folderId) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('ไม่พบรหัสโฟลเดอร์ในลิงก์ที่ระบุ กรุณาตรวจสอบลิงก์โฟลเดอร์ Google Drive', 'error');
+      }
+      return;
+    }
+
+    currentPhotoFolderUrl = url;
+
+    // Check if Google Apps Script Bridge URL is configured
+    if (!driveBridgeScriptUrl) {
+      // Guide user to set up script bridge or choose files locally
+      openDriveScriptHelpModal();
+      return;
+    }
+
+    const scanBtn = document.getElementById('prjDriveScanBtn');
+    const scanBtnText = document.getElementById('prjDriveScanBtnText');
+    if (scanBtn) scanBtn.disabled = true;
+    if (scanBtnText) scanBtnText.textContent = 'กำลังสแกนรูป...';
+
+    try {
+      const fetchUrl = `${driveBridgeScriptUrl}${driveBridgeScriptUrl.includes('?') ? '&' : '?'}folderId=${encodeURIComponent(folderId)}`;
+      const res = await fetch(fetchUrl, { method: 'GET' });
+      const data = await res.json();
+
+      if (data && data.status === 'success' && Array.isArray(data.files)) {
+        drivePhotoCatalog = data.files.map(f => ({
+          id: f.id,
+          name: f.name || 'untitled',
+          url: f.url || `https://lh3.googleusercontent.com/d/${f.id}`,
+          size: f.size || 0
+        }));
+        updateDrivePhotoFolderStatusUi();
+        // Re-render repeaters to show suggestions
+        renderRepeater('LEADERS');
+        renderRepeater('MEMBERS');
+        renderRepeater('ADVISORS');
+        renderRepeater('SMO');
+
+        if (typeof window.showToast === 'function') {
+          window.showToast(`สแกนพบรูปภาพทั้งหมด ${drivePhotoCatalog.length} รูปในโฟลเดอร์ Google Drive เรียบร้อยแล้ว`, 'success');
+        }
+      } else {
+        throw new Error(data && data.message ? data.message : 'ไม่สามารถดึงรายชื่อไฟล์จาก Google Apps Script ได้');
+      }
+    } catch (err) {
+      console.error('Scan Drive Folder Error:', err);
+      if (typeof window.showToast === 'function') {
+        window.showToast(`การเชื่อมต่อสคริปต์ขัดข้อง: ${err.message || 'กรุณาตรวจสอบการตั้งค่าสคริปต์'}`, 'error');
+      }
+      openDriveScriptHelpModal();
+    } finally {
+      if (scanBtn) scanBtn.disabled = false;
+      if (scanBtnText) scanBtnText.textContent = 'สแกนอ่านรูปในโฟลเดอร์';
+    }
+  }
+
+  /**
+   * Handle local batch photo select as instant offline catalog
+   */
+  function handleLocalBatchPhotoSelect(event) {
+    const files = event && event.target && event.target.files;
+    if (!files || files.length === 0) return;
+
+    const list = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type && file.type.startsWith('image/')) {
+        list.push({
+          id: `local_${Date.now()}_${i}`,
+          name: file.name,
+          url: URL.createObjectURL(file),
+          localFile: file,
+          size: file.size
+        });
+      }
+    }
+
+    if (list.length === 0) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('ไม่พบไฟล์รูปภาพที่เลือก', 'warning');
+      }
+      return;
+    }
+
+    drivePhotoCatalog = list;
+    updateDrivePhotoFolderStatusUi();
+    closeDriveScriptHelpModal();
+
+    // Re-render repeaters
+    renderRepeater('LEADERS');
+    renderRepeater('MEMBERS');
+    renderRepeater('ADVISORS');
+    renderRepeater('SMO');
+
+    if (typeof window.showToast === 'function') {
+      window.showToast(`นำเข้ารูปภาพจากเครื่องสำเร็จ ${list.length} รูป พร้อมจับคู่ชื่อไฟล์แล้ว`, 'success');
+    }
+  }
+
+  /**
+   * Auto Match All photos from catalog to all persons in all repeaters
+   */
+  function autoMatchAllPhotosFromCatalog() {
+    if (!Array.isArray(drivePhotoCatalog) || drivePhotoCatalog.length === 0) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('ยังไม่มีคลังรูปภาพ กรุณาสแกนโฟลเดอร์ Google Drive หรือเลือกรูปภาพก่อน', 'warning');
+      }
+      focusDrivePhotoFolderInput();
+      return;
+    }
+
+    let matchedCount = 0;
+    const repeaters = [
+      { type: 'LEADERS', list: prjFormLeaders },
+      { type: 'MEMBERS', list: prjFormMembers },
+      { type: 'ADVISORS', list: prjFormAdvisors },
+      { type: 'SMO', list: prjFormSmoOfficers }
+    ];
+
+    repeaters.forEach(({ list }) => {
+      if (!Array.isArray(list)) return;
+      list.forEach(person => {
+        // Try matching query
+        const query = person.driveFileName || person.nickname || person.name || '';
+        if (!query) return;
+
+        let photo = findPhotoInCatalog(query);
+        // If not found, try nickname alone
+        if (!photo && person.nickname) {
+          photo = findPhotoInCatalog(person.nickname);
+        }
+        // If not found, try first token of full name (e.g. surname stripped)
+        if (!photo && person.name) {
+          const parts = person.name.trim().split(/\s+/);
+          if (parts[0]) photo = findPhotoInCatalog(parts[0]);
+          if (!photo && parts[1]) photo = findPhotoInCatalog(parts[1]);
+        }
+
+        if (photo) {
+          person.driveFileName = photo.name;
+          person.avatar = photo.url || `https://lh3.googleusercontent.com/d/${photo.id}`;
+          matchedCount++;
+        }
+      });
+    });
+
+    renderRepeater('LEADERS');
+    renderRepeater('MEMBERS');
+    renderRepeater('ADVISORS');
+    renderRepeater('SMO');
+
+    if (typeof window.showToast === 'function') {
+      window.showToast(`⚡ จับคู่รูปภาพสำเร็จ ${matchedCount} คน จากทั้งหมดในโครงการ`, 'success');
+    }
+  }
+
+  /**
+   * Single Person Drive Filename Handler
+   */
+  function handlePersonDriveFileNameInput(type, index, value) {
+    const list = getRepeaterList(type);
+    if (!list || !list[index]) return;
+    list[index].driveFileName = (value || '').trim();
+
+    // If input is an exact URL or ID, resolve directly
+    if (value && (value.includes('http') || value.includes('drive.google') || value.length > 25)) {
+      const resolved = resolveGoogleDriveImageUrl(value);
+      if (resolved && resolved !== value) {
+        list[index].avatar = resolved;
+        const preview = document.getElementById(`avatar_preview_${type}_${index}`);
+        if (preview) preview.src = resolved;
+      }
+    }
+  }
+
+  /**
+   * Match single person photo by filename or nickname
+   */
+  function matchPersonPhotoByFileName(type, index) {
+    const list = getRepeaterList(type);
+    const person = list && list[index];
+    if (!person) return;
+
+    const input = document.getElementById(`avatar_drive_filename_${type}_${index}`);
+    const query = (input ? input.value.trim() : '') || person.driveFileName || person.nickname || person.name || '';
+
+    if (!query) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('กรุณาระบุชื่อไฟล์รูปภาพ (เช่น บอม.jpg) หรือชื่อเล่นก่อนกดค้นหา', 'info');
+      }
+      if (input) input.focus();
+      return;
+    }
+
+    // If query is a direct Drive link or file ID
+    const driveId = extractDriveFileId(query);
+    if (driveId && (query.includes('http') || query.length >= 25)) {
+      const resolved = `https://lh3.googleusercontent.com/d/${driveId}`;
+      updateRepeaterField(type, index, 'avatar', resolved);
+      renderRepeater(type);
+      if (typeof window.showToast === 'function') {
+        window.showToast('เชื่อมต่อรูปภาพจาก Google Drive สำเร็จ', 'success');
+      }
+      return;
+    }
+
+    // Look in catalog
+    const photo = findPhotoInCatalog(query) || (person.nickname ? findPhotoInCatalog(person.nickname) : null);
+    if (photo) {
+      person.driveFileName = photo.name;
+      const avatarUrl = photo.url || `https://lh3.googleusercontent.com/d/${photo.id}`;
+      updateRepeaterField(type, index, 'avatar', avatarUrl);
+      renderRepeater(type);
+      if (typeof window.showToast === 'function') {
+        window.showToast(`จับคู่รูปภาพ "${photo.name}" สำเร็จ!`, 'success');
+      }
+    } else {
+      if (Array.isArray(drivePhotoCatalog) && drivePhotoCatalog.length > 0) {
+        if (typeof window.showToast === 'function') {
+          window.showToast(`ไม่พบไฟล์รูปที่ตรงกับ "${query}" ในคลังรูป (${drivePhotoCatalog.length} รูป)`, 'warning');
+        }
+        openDriveCatalogPickerForPerson(type, index);
+      } else {
+        if (typeof window.showToast === 'function') {
+          window.showToast(`ยังไม่ได้สแกนโฟลเดอร์ Google Drive กรุณากด "สแกนอ่านรูปในโฟลเดอร์" ด้านบน`, 'warning');
+        }
+        focusDrivePhotoFolderInput();
+      }
+    }
+  }
+
+  function selectPhotoFromCatalogForPerson(type, index, fileId, fileName) {
+    const list = getRepeaterList(type);
+    if (!list || !list[index]) return;
+
+    list[index].driveFileName = fileName;
+    const photo = Array.isArray(drivePhotoCatalog) ? drivePhotoCatalog.find(p => p.id === fileId || p.name === fileName) : null;
+    const avatarUrl = (photo && photo.url) ? photo.url : `https://lh3.googleusercontent.com/d/${fileId}`;
+    updateRepeaterField(type, index, 'avatar', avatarUrl);
+    renderRepeater(type);
+    closeDriveCatalogListModal();
+    if (typeof window.showToast === 'function') {
+      window.showToast(`เลือกรูป "${fileName}" เรียบร้อยแล้ว`, 'success');
+    }
+  }
+
+  function openDriveCatalogPickerForPerson(type, index) {
+    activeCatalogPickerContext = { type, index };
+    openDriveCatalogListModal();
+  }
+
+  /**
+   * Modals & UI Controls for Drive Apps Script & Catalog Browser
+   */
+  function openDriveScriptHelpModal() {
+    const input = document.getElementById('prjDriveBridgeUrlInput');
+    if (input) input.value = driveBridgeScriptUrl;
+    const modal = document.getElementById('driveScriptHelpModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function closeDriveScriptHelpModal() {
+    const modal = document.getElementById('driveScriptHelpModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  }
+
+  function saveDriveBridgeUrlFromModal() {
+    const input = document.getElementById('prjDriveBridgeUrlInput');
+    const val = input ? input.value.trim() : '';
+    if (!val) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('กรุณาระบุ URL ของเว็บแอปพลิเคชัน Google Apps Script', 'warning');
+      }
+      return;
+    }
+    driveBridgeScriptUrl = val;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('comsan_drive_bridge_url', val);
+    }
+    closeDriveScriptHelpModal();
+    if (typeof window.showToast === 'function') {
+      window.showToast('บันทึกการตั้งค่าสคริปต์ Google Apps Script เรียบร้อยแล้ว', 'success');
+    }
+    scanDrivePhotoFolder();
+  }
+
+  function copyGasScriptToClipboard() {
+    const code = `function doGet(e) {
+  try {
+    var folderId = e.parameter.folderId;
+    if (!folderId && e.parameter.url) {
+      var match = e.parameter.url.match(/folders\\/([a-zA-Z0-9_-]+)/);
+      if (match) folderId = match[1];
+    }
+    if (!folderId) {
+      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Missing folderId parameter" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    var folder = DriveApp.getFolderById(folderId);
+    var files = [];
+    var fileIterator = folder.getFiles();
+    while (fileIterator.hasNext()) {
+      var file = fileIterator.next();
+      var mime = file.getMimeType();
+      if (mime.indexOf("image/") === 0) {
+        files.push({
+          id: file.getId(),
+          name: file.getName(),
+          url: "https://lh3.googleusercontent.com/d/" + file.getId(),
+          size: file.getSize()
+        });
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      folderName: folder.getName(),
+      files: files
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(() => {
+        if (typeof window.showToast === 'function') {
+          window.showToast('คัดลอกโค้ดสคริปต์ Google Apps Script แล้ว! นำไปวางใน script.google.com ได้เลย', 'success');
+        }
+      });
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = code;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if (typeof window.showToast === 'function') {
+        window.showToast('คัดลอกโค้ดสคริปต์ Google Apps Script แล้ว', 'success');
+      }
+    }
+  }
+
+  function openDriveCatalogListModal() {
+    const modal = document.getElementById('driveCatalogListModal');
+    if (!modal) return;
+    const countEl = document.getElementById('driveCatalogListModalCount');
+    if (countEl) countEl.textContent = Array.isArray(drivePhotoCatalog) ? drivePhotoCatalog.length : 0;
+    filterDriveCatalogGrid('');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function closeDriveCatalogListModal() {
+    const modal = document.getElementById('driveCatalogListModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    activeCatalogPickerContext = null;
+  }
+
+  function filterDriveCatalogGrid(searchVal) {
+    const grid = document.getElementById('driveCatalogPhotosGrid');
+    if (!grid) return;
+
+    if (!Array.isArray(drivePhotoCatalog) || drivePhotoCatalog.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full py-8 text-center text-xs text-muted-foreground space-y-2">
+          <i data-lucide="image-off" class="h-8 w-8 mx-auto text-muted-foreground/50"></i>
+          <p>ยังไม่มีรูปภาพในคลัง</p>
+          <button type="button" onclick="closeDriveCatalogListModal(); focusDrivePhotoFolderInput();" class="text-blue-500 font-semibold underline cursor-pointer">
+            วางลิงก์โฟลเดอร์แล้วกดสแกน
+          </button>
+        </div>
+      `;
+      if (typeof window.refreshIcons === 'function') window.refreshIcons();
+      return;
+    }
+
+    const q = (searchVal || '').trim().toLowerCase();
+    const filtered = drivePhotoCatalog.filter(item => {
+      if (!q) return true;
+      return (item.name || '').toLowerCase().includes(q);
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full py-8 text-center text-xs text-muted-foreground">
+          ไม่พบรูปภาพที่ชื่อตรงกับ "${escapeHtml(q)}"
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(item => {
+      const isPicking = Boolean(activeCatalogPickerContext);
+      const url = item.url || `https://lh3.googleusercontent.com/d/${item.id}`;
+      return `
+        <div class="p-2 rounded-xl bg-card border border-border hover:border-primary/50 transition flex flex-col items-center gap-1.5 group text-center">
+          <div class="w-full aspect-square rounded-lg overflow-hidden bg-muted relative">
+            <img src="${escapeHtml(url)}" alt="${escapeHtml(item.name)}"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+              onerror="this.onerror=null; this.src='https://api.dicebear.com/10.x/shapes/svg?seed=${escapeHtml(item.name)}';" />
+          </div>
+          <span class="text-[11px] font-semibold text-foreground truncate w-full" title="${escapeHtml(item.name)}">
+            ${escapeHtml(item.name)}
+          </span>
+          ${isPicking ? `
+            <button type="button" onclick="selectPhotoFromCatalogForPerson('${activeCatalogPickerContext.type}', ${activeCatalogPickerContext.index}, '${item.id}', '${escapeHtml(item.name)}')"
+              class="w-full py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] font-bold transition cursor-pointer">
+              เลือกรูปนี้
+            </button>
+          ` : `
+            <span class="text-[9px] text-muted-foreground">รหัส: ${escapeHtml(item.id.slice(0, 10))}...</span>
+          `}
+        </div>
+      `;
+    }).join('');
+
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   }
 
   function getProjectsList() {
@@ -2007,6 +2603,13 @@
     // For members: KEEP ALL COLLAPSED by default so 50+ members appear as a tidy list!
     expandedMembersIndices.clear();
 
+    // Google Drive Photo Folder & Catalog
+    currentPhotoFolderUrl = (isEdit && p && p.photoFolderUrl) ? p.photoFolderUrl : '';
+    drivePhotoCatalog = (isEdit && p && Array.isArray(p.photoCatalog)) ? JSON.parse(JSON.stringify(p.photoCatalog)) : [];
+    const photoFolderInput = document.getElementById('prjFormPhotoFolderUrl');
+    if (photoFolderInput) photoFolderInput.value = currentPhotoFolderUrl;
+    updateDrivePhotoFolderStatusUi();
+
     // Render repeaters
     renderRepeater('LEADERS');
     renderRepeater('MEMBERS');
@@ -2332,7 +2935,7 @@
                 </label>
                 ${item.avatar ? `
                   <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${item.avatar.startsWith('data:image') ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20' : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'}">
-                    ${item.avatar.startsWith('data:image') ? '✓ รูปอัปโหลด / ครอบตัดแล้ว' : (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? '✓ เชื่อมรูปจาก Google Drive' : '✓ ลิงก์รูปกำหนดเอง'}
+                    ${item.avatar.startsWith('data:image') ? '✓ รูปอัปโหลด / ครอบตัดแล้ว' : (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? `✓ รูปจาก Google Drive${item.driveFileName ? ` (${escapeHtml(item.driveFileName)})` : ''}` : '✓ ลิงก์รูปกำหนดเอง'}
                   </span>
                 ` : `
                   <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
@@ -2378,6 +2981,15 @@
                       <span>ครอบตัดรูป (Crop)</span>
                     </button>
 
+                    ${Array.isArray(drivePhotoCatalog) && drivePhotoCatalog.length > 0 ? `
+                      <button type="button" onclick="openDriveCatalogPickerForPerson('${type}', ${idx})"
+                        class="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[11px] font-semibold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                        title="เปิดดูและเลือกรูปจากคลังภาพ Google Drive ที่สแกนแล้ว">
+                        <i data-lucide="images" class="h-3.5 w-3.5"></i>
+                        <span>เลือกจากคลัง Drive</span>
+                      </button>
+                    ` : ''}
+
                     ${item.avatar ? `
                       <button type="button" onclick="resetRepeaterAvatarToCute('${type}', ${idx})"
                         class="px-2.5 py-1.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 text-[11px] font-semibold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
@@ -2388,26 +3000,47 @@
                     ` : ''}
                   </div>
 
-                  <!-- Google Drive Input -->
+                  <!-- Google Drive Photo Input (by filename in folder or direct ID/link) -->
                   <div class="space-y-1">
                     <div class="relative flex items-center">
                       <div class="absolute left-2.5 flex items-center pointer-events-none text-blue-500">
                         <i data-lucide="hard-drive" class="h-3.5 w-3.5"></i>
                       </div>
                       <input type="text"
-                        id="avatar_drive_input_${type}_${idx}"
-                        value="${escapeHtml(item.avatar && (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? item.avatar : '')}"
-                        oninput="handlePersonDriveAvatarInput('${type}', ${idx}, this.value)"
-                        placeholder="วางรหัสรูปใน Drive (เช่น 1AbCd...) หรือลิงก์แชร์..."
-                        class="w-full pl-8 pr-22 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
-                      <button type="button" onclick="applyDriveAvatarForRepeater('${type}', ${idx})"
-                        class="absolute right-1 px-2 py-0.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold transition cursor-pointer">
-                        ดึงรูป Drive
+                        id="avatar_drive_filename_${type}_${idx}"
+                        value="${escapeHtml(item.driveFileName || (item.avatar && !item.avatar.startsWith('data:image') && !item.avatar.includes('dicebear') ? item.avatar : ''))}"
+                        oninput="handlePersonDriveFileNameInput('${type}', ${idx}, this.value)"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); matchPersonPhotoByFileName('${type}', ${idx});}"
+                        placeholder="พิมพ์ชื่อรูปใน Drive เช่น ${escapeHtml(item.nickname || 'บอม')}.jpg หรือรหัสรูป..."
+                        class="w-full pl-8 pr-20 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+                      <button type="button" onclick="matchPersonPhotoByFileName('${type}', ${idx})"
+                        class="absolute right-1 px-2.5 py-0.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold transition cursor-pointer shadow-2xs">
+                        ดึงรูป
                       </button>
                     </div>
+
+                    ${(() => {
+                      if (!item.avatar && Array.isArray(drivePhotoCatalog) && drivePhotoCatalog.length > 0) {
+                        const suggest = findPhotoInCatalog(item.nickname || item.name);
+                        if (suggest) {
+                          return `
+                            <div class="flex items-center gap-1.5 pt-0.5">
+                              <span class="text-[10px] text-muted-foreground">พบรูปตรงกับชื่อ:</span>
+                              <button type="button" onclick="selectPhotoFromCatalogForPerson('${type}', ${idx}, '${suggest.id}', '${escapeHtml(suggest.name)}')"
+                                class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/25 transition cursor-pointer">
+                                <i data-lucide="sparkles" class="h-3 w-3"></i>
+                                <span>คลิกใช้รูป "${escapeHtml(suggest.name)}"</span>
+                              </button>
+                            </div>
+                          `;
+                        }
+                      }
+                      return '';
+                    })()}
+
                     <p class="text-[10px] text-muted-foreground flex items-center gap-1">
                       <i data-lucide="info" class="h-3 w-3 shrink-0 text-blue-500"></i>
-                      <span>ใส่รหัสรูปในไดรฟ์ (รหัสรูปคือชื่อรูป) หรือลิงก์แชร์ Google Drive ได้โดยตรง</span>
+                      <span>พิมพ์ชื่อรูปในไดรฟ์ (เช่น บอม.jpg หรือชื่อเล่น) หรือใส่รหัสรูปในไดรฟ์ แล้วกด <b>"ดึงรูป"</b></span>
                     </p>
                   </div>
 
@@ -2571,6 +3204,8 @@
     const todayISO = new Date().toISOString().slice(0, 10);
     const nowISO = new Date().toISOString();
 
+    const photoFolderUrl = currentPhotoFolderUrl || (document.getElementById('prjFormPhotoFolderUrl') ? document.getElementById('prjFormPhotoFolderUrl').value.trim() : '');
+
     const projectPayload = {
       id: id || undefined,
       title,
@@ -2584,6 +3219,8 @@
       summary,
       description,
       googleDriveUrl,
+      photoFolderUrl,
+      photoCatalog: Array.isArray(drivePhotoCatalog) ? drivePhotoCatalog : [],
       projectDocument: {
         title: docTitle || 'เล่มโครงการ.pdf',
         url: docUrl,
@@ -2739,6 +3376,26 @@
     }
   }
 
+  if (typeof window !== 'undefined') {
+    window.focusDrivePhotoFolderInput = focusDrivePhotoFolderInput;
+    window.onDrivePhotoFolderInputChanged = onDrivePhotoFolderInputChanged;
+    window.clearDrivePhotoFolder = clearDrivePhotoFolder;
+    window.scanDrivePhotoFolder = scanDrivePhotoFolder;
+    window.handleLocalBatchPhotoSelect = handleLocalBatchPhotoSelect;
+    window.autoMatchAllPhotosFromCatalog = autoMatchAllPhotosFromCatalog;
+    window.handlePersonDriveFileNameInput = handlePersonDriveFileNameInput;
+    window.matchPersonPhotoByFileName = matchPersonPhotoByFileName;
+    window.selectPhotoFromCatalogForPerson = selectPhotoFromCatalogForPerson;
+    window.openDriveCatalogPickerForPerson = openDriveCatalogPickerForPerson;
+    window.openDriveScriptHelpModal = openDriveScriptHelpModal;
+    window.closeDriveScriptHelpModal = closeDriveScriptHelpModal;
+    window.saveDriveBridgeUrlFromModal = saveDriveBridgeUrlFromModal;
+    window.copyGasScriptToClipboard = copyGasScriptToClipboard;
+    window.openDriveCatalogListModal = openDriveCatalogListModal;
+    window.closeDriveCatalogListModal = closeDriveCatalogListModal;
+    window.filterDriveCatalogGrid = filterDriveCatalogGrid;
+  }
+
   return {
     renderUserProjectsSection,
     renderAdminProjectsSection,
@@ -2776,6 +3433,7 @@
     exportCurrentProjectMembersToExcel,
     confirmDeleteProjectMember,
     getActiveDetailProjectId: () => activeDetailProjectId,
+    getProjectsList,
     // Avatar, Google Drive & Cropper methods
     getCuteAvatarUrl,
     extractDriveFileId,
@@ -2791,6 +3449,27 @@
     handlePersonDriveAvatarInput,
     applyDriveAvatarForRepeater,
     triggerCropForRepeater,
-    resetRepeaterAvatarToCute
+    resetRepeaterAvatarToCute,
+    // Drive Photo Folder & Catalog methods
+    focusDrivePhotoFolderInput,
+    onDrivePhotoFolderInputChanged,
+    clearDrivePhotoFolder,
+    updateDrivePhotoFolderStatusUi,
+    scanDrivePhotoFolder,
+    handleLocalBatchPhotoSelect,
+    autoMatchAllPhotosFromCatalog,
+    handlePersonDriveFileNameInput,
+    matchPersonPhotoByFileName,
+    selectPhotoFromCatalogForPerson,
+    openDriveCatalogPickerForPerson,
+    openDriveScriptHelpModal,
+    closeDriveScriptHelpModal,
+    saveDriveBridgeUrlFromModal,
+    copyGasScriptToClipboard,
+    openDriveCatalogListModal,
+    closeDriveCatalogListModal,
+    filterDriveCatalogGrid,
+    extractDriveFolderId,
+    findPhotoInCatalog
   };
 });

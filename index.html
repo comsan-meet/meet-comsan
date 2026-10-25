@@ -1038,7 +1038,9 @@ input[type="number"] {
 #calendarEventDetailModal:not(.hidden),
 #projectDetailModal:not(.hidden),
 #adminProjectEditModal:not(.hidden),
-#projectAvatarCropperModal:not(.hidden) {
+#projectAvatarCropperModal:not(.hidden),
+#driveScriptHelpModal:not(.hidden),
+#driveCatalogListModal:not(.hidden) {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -2944,6 +2946,72 @@ label svg, label i {
           </div>
         </div>
 
+        <!-- ======================================================== -->
+        <!-- GOOGLE DRIVE PHOTO FOLDER TOOLBAR                        -->
+        <!-- ======================================================== -->
+        <div id="prjDrivePhotoFolderToolbar" class="border-t border-border pt-3.5 pb-1 space-y-3">
+          <div class="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-500/8 via-indigo-500/8 to-cyan-500/8 border border-blue-500/25 space-y-3">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="folder-git-2" class="h-4 w-4"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-foreground flex items-center gap-2">
+                    โฟลเดอร์ Google Drive รวมรูปภาพคนในโครงการ (Photo Folder)
+                    <span id="prjDriveCatalogBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20"></span>
+                  </h4>
+                  <p class="text-[11px] text-muted-foreground">แปะลิงก์โฟลเดอร์ Drive รวมรูปทั้งหมดที่นี่ จากนั้นสามารถพิมพ์แค่ชื่อไฟล์รูป (เช่น บอม.jpg) ในการ์ดแต่ละคนได้ทันที</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button type="button" onclick="openDriveScriptHelpModal()"
+                  class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-card hover:bg-muted text-foreground border border-border transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="วิธีตั้งค่าสะพานเชื่อม Google Apps Script ฟรี หรือเลือกรูปจากเครื่อง">
+                  <i data-lucide="help-circle" class="h-3.5 w-3.5 text-blue-500"></i>
+                  <span>วิธีตั้งค่าสคริปต์ฟรี / นำเข้ารูป</span>
+                </button>
+                <button type="button" id="prjDriveCatalogViewBtn" onclick="openDriveCatalogListModal()"
+                  class="hidden px-2.5 py-1.5 rounded-xl text-xs font-bold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="images" class="h-3.5 w-3.5"></i>
+                  <span>ดูคลังรูป (<span id="prjDriveCatalogCount">0</span>)</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <div class="relative flex-1 min-w-[200px]">
+                <i data-lucide="link" class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"></i>
+                <input type="text" id="prjFormPhotoFolderUrl"
+                  oninput="onDrivePhotoFolderInputChanged(this.value)"
+                  placeholder="วางลิงก์โฟลเดอร์ Google Drive รวมรูป เช่น https://drive.google.com/drive/folders/..."
+                  class="w-full pl-8 pr-8 py-2 rounded-xl bg-card border border-border text-xs focus:border-primary focus:outline-hidden" />
+                <button type="button" id="prjFormPhotoFolderClearBtn" onclick="clearDrivePhotoFolder()"
+                  class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  title="ล้างลิงก์">
+                  <i data-lucide="x" class="h-3.5 w-3.5"></i>
+                </button>
+              </div>
+              <button type="button" id="prjDriveScanBtn" onclick="scanDrivePhotoFolder()"
+                class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95">
+                <i data-lucide="scan-line" class="h-3.5 w-3.5"></i>
+                <span id="prjDriveScanBtnText">สแกนอ่านรูปในโฟลเดอร์</span>
+              </button>
+              <button type="button" id="prjDriveAutoMatchAllBtn" onclick="autoMatchAllPhotosFromCatalog()"
+                class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95"
+                title="ค้นหาและจับคู่รูปภาพกับรายชื่อคนทั้งหมดให้อัตโนมัติตามชื่อเล่นและชื่อ-สกุล">
+                <i data-lucide="wand-2" class="h-3.5 w-3.5"></i>
+                <span>⚡ จับคู่รูปทั้งหมดอัตโนมัติ</span>
+              </button>
+            </div>
+
+            <div id="prjDriveFolderStatusText" class="text-[11px] text-muted-foreground flex items-center gap-1.5">
+              <i data-lucide="info" class="h-3.5 w-3.5 text-blue-500 shrink-0"></i>
+              <span>วางลิงก์โฟลเดอร์ Drive รวมรูปภาพ แล้วกด <b>"สแกนอ่านรูปในโฟลเดอร์"</b> เพื่อให้ระบบดึงรูปตามชื่อไฟล์ให้อัตโนมัติ</span>
+            </div>
+          </div>
+        </div>
+
         <!-- 4 Stakeholder Repeaters -->
         <!-- 1. Leaders -->
         <div class="border-t border-border pt-3 space-y-2.5">
@@ -2952,10 +3020,17 @@ label svg, label i {
               <i data-lucide="crown" class="h-3.5 w-3.5 text-primary"></i>
               ผู้รับผิดชอบโครงการ (Project Leaders)
             </h4>
-            <button type="button" onclick="addRepeaterItem('LEADERS')"
-              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้รับผิดชอบ
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="focusDrivePhotoFolderInput()"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition flex items-center gap-1 cursor-pointer"
+                title="ตั้งค่าหรือเชื่อมต่อโฟลเดอร์รูป Google Drive สำหรับโครงการนี้">
+                <i data-lucide="folder-search" class="h-3 w-3"></i> โฟลเดอร์รูป Drive
+              </button>
+              <button type="button" onclick="addRepeaterItem('LEADERS')"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้รับผิดชอบ
+              </button>
+            </div>
           </div>
           <div id="prjFormLeadersContainer" class="space-y-2 max-h-[320px] overflow-y-auto pr-1"></div>
         </div>
@@ -2984,6 +3059,11 @@ label svg, label i {
                 class="px-2 py-1 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
                 title="ดาวน์โหลดไฟล์ตัวอย่าง Excel สำหรับกรอกรายชื่อ">
                 <i data-lucide="download" class="h-3 w-3"></i> โหลด Template
+              </button>
+              <button type="button" onclick="focusDrivePhotoFolderInput()"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition flex items-center gap-1 cursor-pointer"
+                title="ตั้งค่าหรือเชื่อมต่อโฟลเดอร์รูป Google Drive สำหรับโครงการนี้">
+                <i data-lucide="folder-search" class="h-3 w-3"></i> โฟลเดอร์รูป Drive
               </button>
               <button type="button" onclick="addRepeaterItem('MEMBERS')"
                 class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 transition flex items-center gap-1 cursor-pointer">
@@ -3023,10 +3103,17 @@ label svg, label i {
               <i data-lucide="graduation-cap" class="h-3.5 w-3.5 text-emerald-500"></i>
               อาจารย์ที่ปรึกษาโครงการ
             </h4>
-            <button type="button" onclick="addRepeaterItem('ADVISORS')"
-              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มอาจารย์ที่ปรึกษา
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="focusDrivePhotoFolderInput()"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition flex items-center gap-1 cursor-pointer"
+                title="ตั้งค่าหรือเชื่อมต่อโฟลเดอร์รูป Google Drive สำหรับโครงการนี้">
+                <i data-lucide="folder-search" class="h-3 w-3"></i> โฟลเดอร์รูป Drive
+              </button>
+              <button type="button" onclick="addRepeaterItem('ADVISORS')"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มอาจารย์ที่ปรึกษา
+              </button>
+            </div>
           </div>
           <div id="prjFormAdvisorsContainer" class="space-y-2 max-h-[320px] overflow-y-auto pr-1"></div>
         </div>
@@ -3038,10 +3125,17 @@ label svg, label i {
               <i data-lucide="landmark" class="h-3.5 w-3.5 text-amber-500"></i>
               สโมสรนักศึกษาที่ดูแล
             </h4>
-            <button type="button" onclick="addRepeaterItem('SMO')"
-              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้ดูแลจากสโมสร
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="focusDrivePhotoFolderInput()"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition flex items-center gap-1 cursor-pointer"
+                title="ตั้งค่าหรือเชื่อมต่อโฟลเดอร์รูป Google Drive สำหรับโครงการนี้">
+                <i data-lucide="folder-search" class="h-3 w-3"></i> โฟลเดอร์รูป Drive
+              </button>
+              <button type="button" onclick="addRepeaterItem('SMO')"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้ดูแลจากสโมสร
+              </button>
+            </div>
           </div>
           <div id="prjFormSmoContainer" class="space-y-2 max-h-[320px] overflow-y-auto pr-1"></div>
         </div>
@@ -3168,6 +3262,192 @@ label svg, label i {
           class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
           <i data-lucide="check" class="h-4 w-4"></i>
           <span>ใช้รูปนี้ (บันทึก)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- GOOGLE DRIVE SCRIPT & FOLDER SETUP MODAL                 -->
+  <!-- ======================================================== -->
+  <div id="driveScriptHelpModal" class="fixed inset-0 bg-background/85 backdrop-blur-md hidden flex items-center justify-center z-[105] p-3 sm:p-4 select-none">
+    <div class="bg-card text-card-foreground border border-border rounded-3xl p-5 sm:p-7 max-w-2xl w-full shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto m-auto">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between gap-3 border-b border-border pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <i data-lucide="folder-git-2" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-foreground">เชื่อมต่อโฟลเดอร์ Google Drive รวมรูปภาพ</h3>
+            <p class="text-xs text-muted-foreground">ตั้งค่าสะพานเชื่อม Google Apps Script ฟรี เพื่อให้เว็บอ่านชื่อรูปในโฟลเดอร์ Drive ได้ทันที</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeDriveScriptHelpModal()"
+          class="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer shrink-0">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <!-- Quick Steps Guide -->
+      <div class="space-y-3 text-xs text-foreground">
+        <div class="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+          <div class="space-y-1">
+            <p class="font-bold">สร้างสคริปต์ Google Apps Script (ทำครั้งเดียว ไม่เกิน 1 นาที)</p>
+            <p class="text-muted-foreground">
+              เข้าเว็บไซต์ <a href="https://script.google.com" target="_blank" class="text-blue-600 dark:text-blue-400 underline font-semibold">script.google.com</a> (ใช้ Gmail หรือ KKU Mail) > กดปุ่ม <b>"โครงการใหม่ (New project)"</b>
+            </p>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+          <div class="space-y-2 w-full">
+            <div class="flex items-center justify-between">
+              <p class="font-bold">วางโค้ดสคริปต์เชื่อมต่อ Drive ด้านล่างนี้</p>
+              <button type="button" onclick="copyGasScriptToClipboard()"
+                class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition active:scale-95 cursor-pointer">
+                <i data-lucide="copy" class="h-3 w-3"></i>
+                <span id="btnCopyGasScriptLabel">คัดลอกโค้ดสคริปต์</span>
+              </button>
+            </div>
+            <pre class="p-3 rounded-xl bg-slate-900 text-slate-100 font-mono text-[11px] overflow-x-auto max-h-40 border border-slate-700 leading-relaxed select-all" id="gasScriptCodeBlock">function doGet(e) {
+  var folderId = e.parameter.folderId;
+  if (!folderId) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: "Missing folderId parameter" })).setMimeType(ContentService.MimeType.JSON);
+  }
+  try {
+    var folder = DriveApp.getFolderById(folderId);
+    var files = folder.getFiles();
+    var list = [];
+    while (files.hasNext()) {
+      var file = files.next();
+      var name = file.getName();
+      var id = file.getId();
+      var mime = file.getMimeType();
+      if (mime.indexOf("image/") === 0 || name.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i)) {
+        list.push({
+          id: id,
+          name: name,
+          size: file.getSize(),
+          url: "https://lh3.googleusercontent.com/d/" + id
+        });
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: true,
+      folderName: folder.getName(),
+      totalFiles: list.length,
+      files: list
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+          <div class="space-y-1">
+            <p class="font-bold">กด "ทำให้ใช้งานได้ (Deploy)" > "การทำให้ใช้งานได้ใหม่ (New deployment)"</p>
+            <ul class="list-disc list-inside space-y-0.5 text-muted-foreground ml-1">
+              <li>เลือกประเภท: <b>เว็บแอป (Web app)</b></li>
+              <li>ดำเนินการในฐานะ: <b>ฉัน (Me)</b></li>
+              <li>ผู้ที่มีสิทธิ์เข้าถึง: <b>ทุกคน (Anyone)</b></li>
+              <li>กด <b>"ทำให้ใช้งานได้"</b> แล้วคัดลอก URL เว็บแอป (ลงท้ายด้วย <code>/exec</code>)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Bridge URL Input -->
+      <div class="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-2">
+        <label class="block text-xs font-bold text-foreground">
+          วาง URL เว็บแอป (Web App URL) ของคุณที่นี่:
+        </label>
+        <div class="flex items-center gap-2">
+          <input type="url" id="prjDriveBridgeScriptUrlInput"
+            placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+            class="flex-1 px-3 py-2 rounded-xl bg-card border border-border text-xs focus:border-primary font-mono" />
+          <button type="button" onclick="saveDriveBridgeUrlFromModal()"
+            class="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition shadow-xs cursor-pointer shrink-0">
+            บันทึกการตั้งค่า
+          </button>
+        </div>
+        <p class="text-[11px] text-muted-foreground">
+          💡 ตั้งค่าครั้งเดียว ระบบจะจำค่านี้ไว้ตลอดไปในอุปกรณ์ของคุณ
+        </p>
+      </div>
+
+      <!-- Alternative: Local Batch Select -->
+      <div class="pt-2 border-t border-border flex items-center justify-between flex-wrap gap-2 text-xs">
+        <div class="space-y-0.5">
+          <p class="font-bold text-foreground">หรือเลือกไฟล์รูปทั้งหมดจากคอมพิวเตอร์พร้อมกัน</p>
+          <p class="text-muted-foreground text-[11px]">หากดาวน์โหลดโฟลเดอร์ Drive มาไว้ในเครื่องแล้ว สามารถเลือกรูปทั้งหมดได้ทันที</p>
+        </div>
+        <input type="file" id="localBatchPhotoInput" multiple accept="image/*" class="hidden" onchange="handleLocalBatchPhotoSelect(event)" />
+        <button type="button" onclick="document.getElementById('localBatchPhotoInput').click()"
+          class="px-3 py-1.5 rounded-xl border border-border hover:bg-muted text-foreground text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
+          <i data-lucide="hard-drive-download" class="h-3.5 w-3.5 text-blue-500"></i>
+          <span>เลือกรูปภาพจากเครื่อง</span>
+        </button>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-3 border-t border-border flex items-center justify-end">
+        <button type="button" onclick="closeDriveScriptHelpModal()"
+          class="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold transition cursor-pointer">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- DRIVE PHOTO CATALOG BROWSER MODAL                        -->
+  <!-- ======================================================== -->
+  <div id="driveCatalogListModal" class="fixed inset-0 bg-background/85 backdrop-blur-md hidden flex items-center justify-center z-[105] p-3 sm:p-4 select-none">
+    <div class="bg-card text-card-foreground border border-border rounded-3xl p-5 sm:p-6 max-w-2xl w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto m-auto">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-border pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <i data-lucide="images" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-foreground">รายชื่อรูปภาพทั้งหมดในโฟลเดอร์ Google Drive</h3>
+            <p class="text-xs text-muted-foreground">พบทั้งหมด <span id="driveCatalogListModalCount" class="font-bold text-primary">0</span> รูป</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeDriveCatalogListModal()"
+          class="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer shrink-0">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <!-- Quick Search inside Catalog -->
+      <div class="relative">
+        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"></i>
+        <input type="text" id="driveCatalogSearchInput" oninput="filterDriveCatalogGrid(this.value)"
+          placeholder="ค้นหาชื่อรูปภาพในโฟลเดอร์..."
+          class="w-full pl-8 pr-4 py-2 rounded-xl bg-muted/40 border border-border text-xs focus:border-primary focus:outline-hidden" />
+      </div>
+
+      <!-- Grid of Photos -->
+      <div id="driveCatalogPhotosGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[50vh] overflow-y-auto pr-1"></div>
+
+      <!-- Modal Footer -->
+      <div class="pt-3 border-t border-border flex items-center justify-between text-xs">
+        <button type="button" onclick="autoMatchAllPhotosFromCatalog(); closeDriveCatalogListModal();"
+          class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="wand-2" class="h-3.5 w-3.5"></i>
+          <span>⚡ จับคู่รูปทั้งหมดอัตโนมัติตามชื่อ</span>
+        </button>
+        <button type="button" onclick="closeDriveCatalogListModal()"
+          class="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-semibold transition cursor-pointer">
+          ปิด
         </button>
       </div>
     </div>
