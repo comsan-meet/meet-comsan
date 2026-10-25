@@ -1,5 +1,6 @@
 /**
  * Default Sample Projects for COMSAN Club
+ * Enhanced with Departments (ฝ่าย) and Roles (หน้าที่) for all members
  */
 const defaultProjects = [
   {
@@ -42,6 +43,7 @@ const defaultProjects = [
     members: [
       {
         id: 'MBR-1',
+        department: 'ฝ่ายกิจกรรมและสันทนาการ',
         name: 'นางสาวพิมพ์ชนก รัตนสุวรรณ',
         nickname: 'พลอย',
         role: 'หัวหน้าฝ่ายกิจกรรมและเกม',
@@ -53,14 +55,75 @@ const defaultProjects = [
       },
       {
         id: 'MBR-2',
+        department: 'ฝ่ายกิจกรรมและสันทนาการ',
+        name: 'นายธนกฤต มั่นคง',
+        nickname: 'เจมส์',
+        role: 'สตาฟฟ์นันทนาการและเพลง',
+        details: 'ดูแลกิจกรรมร้องเพลง เต้นประกอบจังหวะ และนำเกมกลุ่มย่อย',
+        phone: '085-111-2233',
+        kkuMail: 'thanakrit.m@kkumail.com',
+        contactLink: 'https://facebook.com/james.comsan',
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'
+      },
+      {
+        id: 'MBR-3',
+        department: 'ฝ่ายสถานที่และสวัสดิการ',
         name: 'นายกิตติศักดิ์ พรหมดี',
         nickname: 'ฟีฟ่า',
         role: 'หัวหน้าฝ่ายสถานที่และสวัสดิการ',
-        details: 'จัดเตรียมอุปกรณ์ค่าย อาหาร น้ำดื่ม และการปฐมพยาบาลเบื้องต้น',
+        details: 'จัดเตรียมอุปกรณ์ค่าย อาหาร น้ำดื่ม และการประสานงานพื้นที่กางเต็นท์',
         phone: '082-345-6789',
         kkuMail: 'kittisak.p@kkumail.com',
         contactLink: 'https://line.me/ti/p/~fifa_cs',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
+      },
+      {
+        id: 'MBR-4',
+        department: 'ฝ่ายสถานที่และสวัสดิการ',
+        name: 'นายชินวัตร วิเศษศักดิ์',
+        nickname: 'อาร์ม',
+        role: 'สตาฟฟ์ฝ่ายสถานที่และยานพาหนะ',
+        details: 'ดูแลการเดินทาง การจัดเต็นท์พักแรม และระบบไฟฟ้าส่องสว่าง',
+        phone: '084-999-8877',
+        kkuMail: 'chinawat.w@kkumail.com',
+        contactLink: 'https://line.me/ti/p/~arm_cs',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'
+      },
+      {
+        id: 'MBR-5',
+        department: 'ฝ่ายพยาบาลและสุขอนามัย',
+        name: 'นางสาวสุชาวดี มีสุข',
+        nickname: 'ฟ้า',
+        role: 'เจ้าหน้าที่พยาบาลประจำค่าย',
+        details: 'จัดเตรียมกระเป๋ายา เวชภัณฑ์ และดูแลความปลอดภัยด้านสุขภาพของชาวค่าย',
+        phone: '086-444-5566',
+        kkuMail: 'suchawadee.m@kkumail.com',
+        contactLink: 'https://instagram.com/fah_care',
+        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150'
+      },
+      {
+        id: 'MBR-6',
+        department: 'ฝ่ายสื่อและประชาสัมพันธ์',
+        name: 'นายวรเมธ ศรีสวัสดิ์',
+        nickname: 'นิว',
+        role: 'หัวหน้าฝ่ายสื่อและบันทึกภาพ',
+        details: 'บันทึกภาพนิ่ง วิดีโอกิจกรรม และผลิตสื่อสรุปผลโครงการสำหรับเผยแพร่',
+        phone: '087-333-2211',
+        kkuMail: 'worameth.s@kkumail.com',
+        contactLink: 'https://instagram.com/new_photo',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
+      },
+      {
+        id: 'MBR-7',
+        department: 'ฝ่ายทะเบียนและประเมินผล',
+        name: 'นางสาวกานดา นวลจันทร์',
+        nickname: 'มายด์',
+        role: 'เจ้าหน้าที่ทะเบียนและประเมินผล',
+        details: 'รับลงทะเบียน แจกป้ายชื่อ รวบรวมแบบประเมินและสรุปรายงานสถิติ',
+        phone: '083-222-1100',
+        kkuMail: 'kanda.n@kkumail.com',
+        contactLink: 'https://line.me/ti/p/~mind_kanda',
+        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150'
       }
     ],
     advisors: [
@@ -131,7 +194,8 @@ const defaultProjects = [
     ],
     members: [
       {
-        id: 'MBR-3',
+        id: 'MBR-201',
+        department: 'ฝ่ายการแสดงและเวที',
         name: 'นายกิตติศักดิ์ พรหมดี',
         nickname: 'ฟีฟ่า',
         role: 'ผู้ควบคุมขบวนและเวที',
@@ -140,6 +204,42 @@ const defaultProjects = [
         kkuMail: 'kittisak.p@kkumail.com',
         contactLink: 'https://line.me/ti/p/~fifa_cs',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
+      },
+      {
+        id: 'MBR-202',
+        department: 'ฝ่ายการแสดงและเวที',
+        name: 'นายภาณุพงศ์ เด่นดวง',
+        nickname: 'ท็อป',
+        role: 'ผู้ช่วยผู้กำกับการแสดง',
+        details: 'ควบคุมคิวซ้อมเต้นสันทนาการและประสานงานฝ่ายเทคนิคเวที',
+        phone: '081-998-8776',
+        kkuMail: 'panupong.d@kkumail.com',
+        contactLink: 'https://facebook.com/top.dance',
+        avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150'
+      },
+      {
+        id: 'MBR-203',
+        department: 'ฝ่ายเครื่องแต่งกายและพร็อพ',
+        name: 'นางสาววรรณภา สดใส',
+        nickname: 'วิว',
+        role: 'หัวหน้าฝ่ายเครื่องแต่งกาย',
+        details: 'จัดหา จัดทำชุดขบวนสันทนาการ และอุปกรณ์ประกอบฉากแสดง',
+        phone: '089-665-5443',
+        kkuMail: 'wannapa.s@kkumail.com',
+        contactLink: 'https://instagram.com/view_fashion',
+        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150'
+      },
+      {
+        id: 'MBR-204',
+        department: 'ฝ่ายประชาสัมพันธ์และสื่อ',
+        name: 'นายอานนท์ ใจกล้า',
+        nickname: 'นนท์',
+        role: 'เจ้าหน้าที่บันทึกภาพและสื่อ',
+        details: 'ถ่ายภาพนิ่ง ถ่ายวิดีโอสตอรี่สด และประสานงานสื่อมวลชนภายในงาน',
+        phone: '085-776-6554',
+        kkuMail: 'arnon.j@kkumail.com',
+        contactLink: 'https://instagram.com/non_lens',
+        avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150'
       }
     ],
     advisors: [
@@ -181,16 +281,16 @@ const defaultProjects = [
     endDate: '2027-01-16',
     location: 'ห้องประชุมวิทยวิภาส 1 คณะวิทยาศาสตร์ มหาวิทยาลัยขอนแก่น',
     budget: '18,000 บาท',
-    summary: 'อบรมเทคนิคการเป็นพิธีกรนันทนาการ การใช้ไมโครโฟน และการควบคุมบรรยากาศในเวทีระดับมหาวิทยาลัย',
-    description: 'โครงการส่งเสริมศักยภาพสมาชิกด้านการพูดในที่สาธารณะ การเป็น MC กิจกรรม และการเป็นวิทยากรสันทนาการ โดยเชิญวิทยากรผู้ทรงคุณวุฒิภายนอกมาให้ความรู้และฝึกปฏิบัติจริง',
-    googleDriveUrl: 'https://drive.google.com/drive/folders/1mc_recreation_2027',
+    summary: 'เวิร์กช็อปพัฒนาทักษะพิธีกร นักจัดกิจกรรมนันทนาการ และจิตวิทยาการละลายพฤติกรรม',
+    description: 'โครงการเตรียมความพร้อมและยกระดับศักยภาพสมาชิกชมรมในการเป็นพิธีกรและผู้นำกิจกรรมนันทนาการมืออาชีพ มีการฝึกปฏิบัติจริงหน้าเวที การใช้ไมโครโฟน การแก้ปัญหาเฉพาะหน้า และการออกแบบกิจกรรมตามกลุ่มเป้าหมาย',
+    googleDriveUrl: 'https://drive.google.com/drive/folders/1mc_workshop_2027',
     projectDocument: {
-      title: 'ร่างข้อเสนอโครงการ_MC_Recreation_Leader_2027.pdf',
+      title: 'แบบร่างโครงการอบรม_MC_Leader_2027.pdf',
       url: 'https://drive.google.com/file/d/1mc_doc/view',
       updatedAt: '2026-10-18'
     },
     budgetDocument: {
-      title: 'ประมาณการงบประมาณ_MC_Recreation_Leader_2027.pdf',
+      title: 'ประมาณการค่าใช้จ่าย_MC_Leader_2027.pdf',
       url: 'https://drive.google.com/file/d/1mc_budget/view',
       totalBudget: '18,000 บาท',
       updatedAt: '2026-10-18'
@@ -198,36 +298,49 @@ const defaultProjects = [
     leaders: [
       {
         id: 'LDR-3',
-        name: 'นางสาวพิมพ์ชนก รัตนสุวรรณ',
-        nickname: 'พลอย',
-        role: 'ผู้รับผิดชอบโครงการ',
-        details: 'ประสานงานวิทยากร จัดทำหลักสูตรอบรม และจัดการลงทะเบียน',
-        phone: '089-876-5432',
-        kkuMail: 'pimchanok.r@kkumail.com',
-        contactLink: 'https://instagram.com/ploy_cs',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150'
+        name: 'นายกิตติศักดิ์ พรหมดี',
+        nickname: 'ฟีฟ่า',
+        role: 'ประธานโครงการ',
+        details: 'ผู้ริเริ่มโครงการและประสานงานวิทยากรผู้เชี่ยวชาญด้านการพูด',
+        phone: '082-345-6789',
+        kkuMail: 'kittisak.p@kkumail.com',
+        contactLink: 'https://line.me/ti/p/~fifa_cs',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
       }
     ],
     members: [
       {
-        id: 'MBR-4',
-        name: 'นายอิทธิพัทธ์ พืชผักหวาน',
-        nickname: 'บอม',
-        role: 'ผู้ช่วยวิทยากรและฝ่ายเทคนิค',
-        details: 'ดูแลระบบเครื่องเสียง สื่อการสอน และอุปกรณ์การฝึกปฏิบัติ',
-        phone: '081-234-5678',
-        kkuMail: 'ittipat.p@kkumail.com',
-        contactLink: 'https://instagram.com/ittipat_bom',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+        id: 'MBR-301',
+        department: 'ฝ่ายวิชาการและวิทยากร',
+        name: 'นางสาวพิมพ์ชนก รัตนสุวรรณ',
+        nickname: 'พลอย',
+        role: 'ผู้ประสานงานวิทยากร',
+        details: 'ติดต่อประสานงานวิทยากรผู้เชี่ยวชาญ และจัดทำเอกสารประกอบการเรียนรู้',
+        phone: '089-876-5432',
+        kkuMail: 'pimchanok.r@kkumail.com',
+        contactLink: 'https://instagram.com/ploy_cs',
+        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150'
+      },
+      {
+        id: 'MBR-302',
+        department: 'ฝ่ายสถานที่และโสตทัศนูปกรณ์',
+        name: 'นายชินวัตร วิเศษศักดิ์',
+        nickname: 'อาร์ม',
+        role: 'ผู้ควบคุมระบบเสียงและไมโครโฟน',
+        details: 'จัดเตรียมห้องปฏิบัติการ เครื่องเสียง ไมโครโฟนไร้สาย และระบบบันทึกเสียง',
+        phone: '084-999-8877',
+        kkuMail: 'chinawat.w@kkumail.com',
+        contactLink: 'https://line.me/ti/p/~arm_cs',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'
       }
     ],
     advisors: [
       {
         id: 'ADV-3',
         name: 'ผศ.ดร.สมชาย ใจดี',
-        role: 'อาจารย์ที่ปรึกษาโครงการ',
-        department: 'วิทยาลัยการคอมพิวเตอร์ มหาวิทยาลัยขอนแก่น',
-        details: 'ที่ปรึกษาโครงการและการเชิญวิทยากร',
+        role: 'อาจารย์ที่ปรึกษา',
+        department: 'วิทยาลัยการคอมพิวเตอร์',
+        details: 'ให้คำปรึกษาหลักสูตรอบรมและการวัดผลทักษะ',
         phone: '043-009700 ต่อ 44521',
         kkuMail: 'somchai.j@kku.ac.th',
         contactLink: 'https://computing.kku.ac.th',

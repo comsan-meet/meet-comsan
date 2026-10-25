@@ -1,6 +1,6 @@
 /**
  * COMSAN Meeting System - Projects Component
- * Manages Club Projects, Stakeholders, Documents, and Google Drive Links
+ * Manages Club Projects, Stakeholders, Divisions/Departments, Table View, and XLSX Import/Export
  */
 
 (function (root, factory) {
@@ -23,6 +23,11 @@
   let adminProjectFilter = 'ALL';
   let adminProjectSearch = '';
   let adminProjectYear = 'ALL';
+
+  // Detail Modal State
+  let activeDetailProjectId = null;
+  let detailMemberDeptFilter = 'ALL';
+  let detailMemberSearch = '';
 
   // Temporary arrays for admin edit modal repeaters
   let prjFormLeaders = [];
@@ -108,6 +113,34 @@
     return `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`;
   }
 
+  // Get visually distinct Tailwind color class based on department name
+  function getDepartmentBadgeClass(deptName) {
+    if (!deptName) return 'bg-muted text-muted-foreground border-border';
+    const d = deptName.toLowerCase();
+    if (d.includes('กิจกรรม') || d.includes('สันทนาการ') || d.includes('เกม')) {
+      return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
+    }
+    if (d.includes('สถานที่') || d.includes('ยานพาหนะ') || d.includes('สวัสดิการ') || d.includes('ค่าย')) {
+      return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+    }
+    if (d.includes('พยาบาล') || d.includes('สุขอนามัย') || d.includes('ดูแล')) {
+      return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+    }
+    if (d.includes('สื่อ') || d.includes('ประชาสัมพันธ์') || d.includes('ภาพ') || d.includes('ถ่าย')) {
+      return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
+    }
+    if (d.includes('ทะเบียน') || d.includes('ประเมิน') || d.includes('สถิติ')) {
+      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
+    }
+    if (d.includes('วิชาการ') || d.includes('วิทยากร') || d.includes('อบรม')) {
+      return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+    }
+    if (d.includes('เครื่องแต่งกาย') || d.includes('พร็อพ') || d.includes('การแสดง')) {
+      return 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20';
+    }
+    return 'bg-primary/10 text-primary border-primary/20';
+  }
+
   // ========================================================
   // 1. USER VIEW RENDERING
   // ========================================================
@@ -117,14 +150,12 @@
 
     const allProjects = getProjectsList();
 
-    // Collect available academic years
     const yearSet = new Set();
     allProjects.forEach(p => {
       if (p.academicYear) yearSet.add(p.academicYear);
     });
     const sortedYears = Array.from(yearSet).sort((a, b) => b.localeCompare(a));
 
-    // Filter projects
     const q = userProjectSearch.trim().toLowerCase();
     const filtered = allProjects.filter(p => {
       if (userProjectFilter !== 'ALL' && p.status !== userProjectFilter) return false;
@@ -137,7 +168,7 @@
           (l.name || '').toLowerCase().includes(q) || (l.nickname || '').toLowerCase().includes(q)
         );
         const memberMatch = (p.members || []).some(m =>
-          (m.name || '').toLowerCase().includes(q) || (m.nickname || '').toLowerCase().includes(q)
+          (m.name || '').toLowerCase().includes(q) || (m.nickname || '').toLowerCase().includes(q) || (m.department || '').toLowerCase().includes(q) || (m.role || '').toLowerCase().includes(q)
         );
         if (!titleMatch && !codeMatch && !yearMatch && !leaderMatch && !memberMatch) return false;
       }
@@ -166,7 +197,7 @@
               </span>
             </div>
             <p class="text-xs text-muted-foreground mt-0.5">
-              ติดตามโครงการ กิจกรรม เล่มโครงการ งบประมาณ และผู้รับผิดชอบของชมรมสันทนาการ
+              ติดตามโครงการ กิจกรรม โครงสร้างฝ่ายงาน เล่มโครงการ และงบประมาณของชมรมสันทนาการ
             </p>
           </div>
         </div>
@@ -223,7 +254,7 @@
                 id="userProjectSearchInput"
                 value="${escapeHtml(userProjectSearch)}"
                 oninput="setUserProjectSearch(this.value)"
-                placeholder="ค้นหาชื่อโครงการ, รหัส, หรือชื่อผู้รับผิดชอบ..."
+                placeholder="ค้นหาชื่อโครงการ, รหัส, ฝ่ายงาน, หรือชื่อผู้เกี่ยวข้อง..."
                 class="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-muted/40 border border-border focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
               />
               ${userProjectSearch ? `
@@ -275,10 +306,17 @@
   function renderProjectCardHtml(p, isAdmin = false) {
     const statusMeta = getStatusMeta(p.status);
     const leaders = Array.isArray(p.leaders) ? p.leaders : [];
+    const members = Array.isArray(p.members) ? p.members : [];
     const primaryLeader = leaders[0] || null;
     const hasDrive = Boolean(p.googleDriveUrl);
     const hasDoc = Boolean(p.projectDocument && p.projectDocument.url);
     const hasBudgetDoc = Boolean(p.budgetDocument && p.budgetDocument.url);
+
+    // Count unique departments
+    const depts = new Set();
+    members.forEach(m => {
+      if (m.department && m.department.trim()) depts.add(m.department.trim());
+    });
 
     return `
       <div class="bg-card border border-border/80 hover:border-primary/40 rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 shadow-xs hover:shadow-md group relative">
@@ -308,7 +346,7 @@
             </h4>
           </div>
 
-          <!-- Meta Pills: Dates & Location -->
+          <!-- Meta Pills: Dates, Location, Budget -->
           <div class="space-y-1.5 text-xs text-muted-foreground">
             <div class="flex items-center gap-2">
               <i data-lucide="calendar" class="h-3.5 w-3.5 text-primary shrink-0"></i>
@@ -326,6 +364,18 @@
                 <span class="font-semibold text-foreground">${escapeHtml(p.budget)}</span>
               </div>
             ` : ''}
+          </div>
+
+          <!-- Departments & Team Count Chip -->
+          <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+              <i data-lucide="layers" class="h-3 w-3"></i>
+              ${depts.size} ฝ่ายงาน
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-semibold bg-muted text-foreground border border-border">
+              <i data-lucide="users" class="h-3 w-3"></i>
+              ${members.length} สมาชิก
+            </span>
           </div>
 
           <!-- Short Summary -->
@@ -362,7 +412,7 @@
           <div class="flex items-center gap-1.5 flex-wrap pt-1">
             ${hasDrive ? `
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                <i data-lucide="hard-drive" class="h-3 w-3"></i> Google Drive
+                <i data-lucide="hard-drive" class="h-3 w-3"></i> Drive
               </span>
             ` : ''}
             ${hasDoc ? `
@@ -389,12 +439,12 @@
           ${isAdmin ? `
             <div class="flex items-center gap-1 shrink-0">
               <button type="button" onclick="openAdminProjectEditModal('${p.id}')"
-                class="w-8 h-8 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border flex items-center justify-center transition"
+                class="w-8 h-8 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border flex items-center justify-center transition cursor-pointer"
                 title="แก้ไขโครงการ">
                 <i data-lucide="square-pen" class="h-3.5 w-3.5"></i>
               </button>
               <button type="button" onclick="confirmDeleteProject('${p.id}', '${escapeHtml(p.title)}')"
-                class="w-8 h-8 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center justify-center transition"
+                class="w-8 h-8 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center justify-center transition cursor-pointer"
                 title="ลบโครงการ">
                 <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
               </button>
@@ -414,7 +464,6 @@
 
     const allProjects = getProjectsList();
 
-    // Collect available academic years
     const yearSet = new Set();
     allProjects.forEach(p => {
       if (p.academicYear) yearSet.add(p.academicYear);
@@ -432,7 +481,10 @@
         const leaderMatch = (p.leaders || []).some(l => 
           (l.name || '').toLowerCase().includes(q) || (l.nickname || '').toLowerCase().includes(q)
         );
-        if (!titleMatch && !codeMatch && !yearMatch && !leaderMatch) return false;
+        const memberMatch = (p.members || []).some(m =>
+          (m.name || '').toLowerCase().includes(q) || (m.nickname || '').toLowerCase().includes(q) || (m.department || '').toLowerCase().includes(q)
+        );
+        if (!titleMatch && !codeMatch && !yearMatch && !leaderMatch && !memberMatch) return false;
       }
       return true;
     });
@@ -452,12 +504,17 @@
               </span>
               <div>
                 <h3 class="text-lg sm:text-xl font-extrabold text-foreground">จัดการโครงการของชมรม (Projects)</h3>
-                <p class="text-xs text-muted-foreground">สร้าง แก้ไข ติดตามสถานะ เล่มโครงการ งบประมาณ และผู้เกี่ยวข้องทั้งหมด</p>
+                <p class="text-xs text-muted-foreground">สร้าง แก้ไข ติดตามสถานะ โครงสร้างฝ่ายงาน เล่มโครงการ งบประมาณ และนำเข้ารายชื่อจาก Excel</p>
               </div>
             </div>
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="downloadProjectMembersTemplate()"
+              class="px-3.5 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="download" class="h-4 w-4"></i>
+              <span>โหลด Template Excel</span>
+            </button>
             <button type="button" onclick="openAdminProjectEditModal()"
               class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-md transition active:scale-95 flex items-center gap-2 cursor-pointer">
               <i data-lucide="plus-circle" class="h-4 w-4"></i>
@@ -544,7 +601,7 @@
               <input type="text"
                 value="${escapeHtml(adminProjectSearch)}"
                 oninput="setAdminProjectSearch(this.value)"
-                placeholder="ค้นหาชื่อโครงการ, รหัส, หรือผู้รับผิดชอบ..."
+                placeholder="ค้นหาชื่อโครงการ, รหัส, ฝ่ายงาน, หรือผู้รับผิดชอบ..."
                 class="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-muted/40 border border-border focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
               />
               ${adminProjectSearch ? `
@@ -574,7 +631,7 @@
               <p class="text-xs text-muted-foreground">สามารถกดปุ่ม "สร้างโครงการใหม่" ด้านบนเพื่อเพิ่มโครงการ</p>
             </div>
             <button type="button" onclick="openAdminProjectEditModal()"
-              class="px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-primary-foreground shadow-xs transition">
+              class="px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-primary-foreground shadow-xs transition cursor-pointer">
               + สร้างโครงการใหม่
             </button>
           </div>
@@ -625,7 +682,7 @@
   }
 
   // ========================================================
-  // 3. FULL PROJECT DETAIL MODAL
+  // 3. FULL PROJECT DETAIL MODAL WITH TABLE & DIVISIONS
   // ========================================================
   function openProjectDetailModal(projectId) {
     const allProjects = getProjectsList();
@@ -634,6 +691,10 @@
       if (typeof showToast === 'function') showToast('ไม่พบข้อมูลโครงการที่ระบุ', 'warning');
       return;
     }
+
+    activeDetailProjectId = projectId;
+    detailMemberDeptFilter = 'ALL';
+    detailMemberSearch = '';
 
     const modal = document.getElementById('projectDetailModal');
     if (!modal) return;
@@ -731,9 +792,13 @@
       descEl.textContent = p.description || p.summary || 'ยังไม่มีการระบุรายละเอียดโครงการ';
     }
 
-    // 4 Stakeholder Sections
+    // Render Leaders (Cards)
     renderPersonCardsList('prjDetailLeadersList', p.leaders, 'ผู้รับผิดชอบโครงการ');
-    renderPersonCardsList('prjDetailMembersList', p.members, 'ผู้ที่เกี่ยวข้องกับโครงการ');
+
+    // Render Members (TABLE with Departments & Search & XLSX Action)
+    renderProjectMembersTableView(p);
+
+    // Render Advisors & SMO (Cards)
     renderPersonCardsList('prjDetailAdvisorsList', p.advisors, 'อาจารย์ที่ปรึกษา');
     renderPersonCardsList('prjDetailSmoOfficersList', p.smoOfficers, 'ตัวแทนสโมสรนักศึกษา');
 
@@ -770,9 +835,604 @@
       modal.classList.add('hidden');
       modal.classList.remove('flex');
     }
+    activeDetailProjectId = null;
   }
 
-  // Helper to render personnel cards in detail modal
+  // ========================================================
+  // 3.1 MEMBERS TABLE & DEPARTMENT BREAKDOWN LOGIC
+  // ========================================================
+  function renderProjectMembersTableView(p) {
+    if (!p) return;
+    const members = Array.isArray(p.members) ? p.members : [];
+    const isAdmin = window.currentRole === 'ADMIN';
+
+    // Show/hide Import button based on role
+    const importBtn = document.getElementById('prjDetailBtnImportXlsx');
+    if (importBtn) importBtn.classList.toggle('hidden', !isAdmin);
+
+    // Show/hide Table Action Header
+    const actionTh = document.getElementById('prjDetailTableActionTh');
+    if (actionTh) actionTh.classList.toggle('hidden', !isAdmin);
+
+    // Count departments
+    const deptMap = {};
+    members.forEach(m => {
+      const dept = (m.department && m.department.trim()) ? m.department.trim() : 'ฝ่ายดำเนินงานทั่วไป';
+      deptMap[dept] = (deptMap[dept] || 0) + 1;
+    });
+    const depts = Object.keys(deptMap);
+
+    // Update Counter Badges
+    const countBadge = document.getElementById('prjDetailMembersCountBadge');
+    if (countBadge) countBadge.textContent = `${members.length} คน`;
+
+    const deptCountText = document.getElementById('prjDetailDeptCountText');
+    if (deptCountText) deptCountText.textContent = `ทั้งหมด ${depts.length} ฝ่ายงาน`;
+
+    // Department Pills
+    const deptSummary = document.getElementById('prjDetailDeptSummary');
+    if (deptSummary) {
+      if (depts.length === 0) {
+        deptSummary.innerHTML = `<span class="text-xs text-muted-foreground italic">ยังไม่มีข้อมูลฝ่ายงาน</span>`;
+      } else {
+        const allBtn = `
+          <button type="button" onclick="setProjectDetailDeptFilter('ALL')"
+            class="px-2.5 py-1 rounded-xl text-xs font-semibold transition cursor-pointer ${
+              detailMemberDeptFilter === 'ALL'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-card hover:bg-muted text-muted-foreground hover:text-foreground border border-border/80'
+            }">
+            ทุกฝ่าย (${members.length})
+          </button>
+        `;
+
+        const deptBtns = depts.map(dept => {
+          const isActive = detailMemberDeptFilter === dept;
+          const badgeClass = getDepartmentBadgeClass(dept);
+          return `
+            <button type="button" onclick="setProjectDetailDeptFilter('${escapeHtml(dept)}')"
+              class="px-2.5 py-1 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                isActive
+                  ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-400/50'
+                  : `${badgeClass} hover:opacity-80`
+              }">
+              <span>${escapeHtml(dept)}</span>
+              <span class="px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-white/20 text-white' : 'bg-black/10 dark:bg-white/10'}">${deptMap[dept]}</span>
+            </button>
+          `;
+        }).join('');
+
+        deptSummary.innerHTML = allBtn + deptBtns;
+      }
+    }
+
+    // Reset/Sync search input
+    const searchInput = document.getElementById('prjMembersTableSearch');
+    if (searchInput && searchInput.value !== detailMemberSearch) {
+      searchInput.value = detailMemberSearch;
+    }
+    const clearBtn = document.getElementById('prjMembersTableSearchClear');
+    if (clearBtn) clearBtn.classList.toggle('hidden', !detailMemberSearch);
+
+    // Render Table Body
+    renderProjectMembersTableRows(p);
+  }
+
+  function renderProjectMembersTableRows(p) {
+    const tbody = document.getElementById('prjDetailMembersTableBody');
+    if (!tbody || !p) return;
+
+    const members = Array.isArray(p.members) ? p.members : [];
+    const isAdmin = window.currentRole === 'ADMIN';
+
+    const q = detailMemberSearch.trim().toLowerCase();
+    const filtered = members.filter(m => {
+      const dept = (m.department && m.department.trim()) ? m.department.trim() : 'ฝ่ายดำเนินงานทั่วไป';
+      if (detailMemberDeptFilter !== 'ALL' && dept !== detailMemberDeptFilter) return false;
+      if (q) {
+        const nameMatch = (m.name || '').toLowerCase().includes(q);
+        const nickMatch = (m.nickname || '').toLowerCase().includes(q);
+        const deptMatch = dept.toLowerCase().includes(q);
+        const roleMatch = (m.role || '').toLowerCase().includes(q);
+        const detailMatch = (m.details || '').toLowerCase().includes(q);
+        const phoneMatch = (m.phone || '').toLowerCase().includes(q);
+        const mailMatch = (m.kkuMail || '').toLowerCase().includes(q);
+        if (!nameMatch && !nickMatch && !deptMatch && !roleMatch && !detailMatch && !phoneMatch && !mailMatch) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      const colSpan = isAdmin ? 9 : 8;
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="${colSpan}" class="py-8 px-4 text-center text-muted-foreground text-xs bg-muted/10">
+            <div class="flex flex-col items-center justify-center space-y-2">
+              <i data-lucide="users-round" class="h-6 w-6 text-muted-foreground/60"></i>
+              <p class="font-medium text-foreground">ไม่พบรายชื่อในเงื่อนไขที่เลือก</p>
+              ${detailMemberSearch || detailMemberDeptFilter !== 'ALL' ? `
+                <button type="button" onclick="clearProjectMembersTableFilters()" class="text-xs text-primary hover:underline font-semibold cursor-pointer">
+                  ล้างตัวกรองและคำค้นหา
+                </button>
+              ` : `
+                ${isAdmin ? `
+                  <div class="flex items-center gap-2 pt-1">
+                    <button type="button" onclick="triggerImportProjectMembersXlsx()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold cursor-pointer">
+                      <i data-lucide="file-spreadsheet" class="h-3.5 w-3.5 mr-1 inline"></i> นำเข้ารายชื่อจาก Excel (.xlsx)
+                    </button>
+                  </div>
+                ` : ''}
+              `}
+            </div>
+          </td>
+        </tr>
+      `;
+      if (typeof window.refreshIcons === 'function') window.refreshIcons();
+      else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+      return;
+    }
+
+    tbody.innerHTML = filtered.map((m, idx) => {
+      const dept = (m.department && m.department.trim()) ? m.department.trim() : 'ฝ่ายดำเนินงานทั่วไป';
+      const deptBadge = getDepartmentBadgeClass(dept);
+      const name = m.name || 'ไม่ระบุชื่อ';
+      const nickname = m.nickname ? `(${m.nickname})` : '';
+      const avatarUrl = m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4f46e5&color=fff`;
+
+      return `
+        <tr class="hover:bg-muted/40 transition-colors">
+          <!-- # -->
+          <td class="py-3 px-3 text-center font-mono font-medium text-muted-foreground text-[11px]">
+            ${idx + 1}
+          </td>
+
+          <!-- Member / Name -->
+          <td class="py-3 px-3">
+            <div class="flex items-center gap-2.5">
+              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}"
+                class="w-8 h-8 rounded-full object-cover ring-1 ring-border shrink-0"
+                onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4f46e5&color=fff';" />
+              <div class="min-w-0">
+                <p class="font-bold text-foreground text-xs truncate" title="${escapeHtml(name)} ${escapeHtml(nickname)}">
+                  ${escapeHtml(name)} ${nickname ? `<span class="font-normal text-muted-foreground">${escapeHtml(nickname)}</span>` : ''}
+                </p>
+              </div>
+            </div>
+          </td>
+
+          <!-- Department (ฝ่าย) -->
+          <td class="py-3 px-3">
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${deptBadge}">
+              <i data-lucide="tag" class="h-3 w-3 shrink-0"></i>
+              <span class="truncate max-w-[140px]" title="${escapeHtml(dept)}">${escapeHtml(dept)}</span>
+            </span>
+          </td>
+
+          <!-- Role (หน้าที่ในโครงการ) -->
+          <td class="py-3 px-3">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-foreground border border-border">
+              <span class="truncate max-w-[130px]" title="${escapeHtml(m.role || 'ทีมงาน')}">${escapeHtml(m.role || 'ทีมงาน')}</span>
+            </span>
+          </td>
+
+          <!-- Details (รายละเอียดหน้าที่) -->
+          <td class="py-3 px-3 text-muted-foreground text-[11px] leading-relaxed">
+            <span class="line-clamp-2" title="${escapeHtml(m.details || '-')}">${escapeHtml(m.details || '-')}</span>
+          </td>
+
+          <!-- Phone -->
+          <td class="py-3 px-3 whitespace-nowrap">
+            ${m.phone ? `
+              <a href="tel:${escapeHtml(m.phone)}" class="inline-flex items-center gap-1 text-xs text-foreground hover:text-primary transition font-medium" title="โทร: ${escapeHtml(m.phone)}">
+                <i data-lucide="phone" class="h-3 w-3 text-emerald-500"></i>
+                <span>${escapeHtml(m.phone)}</span>
+              </a>
+            ` : `<span class="text-muted-foreground text-[11px]">-</span>`}
+          </td>
+
+          <!-- KKUMAIL -->
+          <td class="py-3 px-3 whitespace-nowrap">
+            ${m.kkuMail ? `
+              <a href="mailto:${escapeHtml(m.kkuMail)}" class="inline-flex items-center gap-1 text-xs text-foreground hover:text-primary transition font-mono" title="อีเมล: ${escapeHtml(m.kkuMail)}">
+                <i data-lucide="mail" class="h-3 w-3 text-primary"></i>
+                <span class="truncate max-w-[150px]">${escapeHtml(m.kkuMail)}</span>
+              </a>
+            ` : `<span class="text-muted-foreground text-[11px]">-</span>`}
+          </td>
+
+          <!-- Contact Link Button -->
+          <td class="py-3 px-3 text-center">
+            ${m.contactLink ? `
+              <a href="${escapeHtml(m.contactLink)}" target="_blank" rel="noopener noreferrer"
+                class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition" title="เปิดช่องทางติดต่อ">
+                <i data-lucide="external-link" class="h-3.5 w-3.5"></i>
+              </a>
+            ` : `<span class="text-muted-foreground text-[11px]">-</span>`}
+          </td>
+
+          <!-- Admin Actions -->
+          ${isAdmin ? `
+            <td class="py-3 px-3 text-center">
+              <button type="button" onclick="confirmDeleteProjectMember('${escapeHtml(m.id || m.name)}')"
+                class="w-7 h-7 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition inline-flex items-center justify-center cursor-pointer"
+                title="ลบสมาชิกคนนี้ออกจากโครงการ">
+                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+              </button>
+            </td>
+          ` : ''}
+        </tr>
+      `;
+    }).join('');
+
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function setProjectDetailDeptFilter(dept) {
+    detailMemberDeptFilter = dept;
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (p) renderProjectMembersTableView(p);
+  }
+
+  function handleProjectMembersTableSearch(query) {
+    detailMemberSearch = query || '';
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (p) {
+      const clearBtn = document.getElementById('prjMembersTableSearchClear');
+      if (clearBtn) clearBtn.classList.toggle('hidden', !detailMemberSearch);
+      renderProjectMembersTableRows(p);
+    }
+  }
+
+  function clearProjectMembersTableSearch() {
+    detailMemberSearch = '';
+    const searchInput = document.getElementById('prjMembersTableSearch');
+    if (searchInput) searchInput.value = '';
+    const clearBtn = document.getElementById('prjMembersTableSearchClear');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (p) renderProjectMembersTableRows(p);
+  }
+
+  function clearProjectMembersTableFilters() {
+    detailMemberDeptFilter = 'ALL';
+    detailMemberSearch = '';
+    const searchInput = document.getElementById('prjMembersTableSearch');
+    if (searchInput) searchInput.value = '';
+    const clearBtn = document.getElementById('prjMembersTableSearchClear');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (p) renderProjectMembersTableView(p);
+  }
+
+  // ========================================================
+  // 3.2 EXCEL (.XLSX) IMPORT & EXPORT ENGINE
+  // ========================================================
+  function triggerImportProjectMembersXlsx() {
+    if (window.currentRole !== 'ADMIN') {
+      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถนำเข้ารายชื่อได้', 'warning');
+      return;
+    }
+    const input = document.getElementById('prjDetailMembersExcelInput');
+    if (input) {
+      input.value = '';
+      input.click();
+    }
+  }
+
+  function triggerImportProjectMembersXlsxForForm() {
+    const input = document.getElementById('prjFormMembersExcelInput');
+    if (input) {
+      input.value = '';
+      input.click();
+    }
+  }
+
+  // Parse Excel ArrayBuffer into standardized member objects
+  function parseMembersFromExcelBuffer(arrayBuffer) {
+    if (typeof XLSX === 'undefined') {
+      throw new Error('ไม่พบไลบรารี XLSX กรุณารีเฟรชหน้าจอ');
+    }
+    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) return [];
+
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    if (!Array.isArray(rows) || rows.length === 0) return [];
+
+    return rows.map((r, idx) => {
+      // Extract department
+      const department = String(
+        r['ฝ่าย'] || r['ฝ่ายงาน'] || r['แผนก'] || r['หมวด'] || r['Department'] || r['Dept'] || r['Team'] || 'ฝ่ายดำเนินงานทั่วไป'
+      ).trim();
+
+      // Extract Name
+      let name = String(r['ชื่อ-นามสกุล'] || r['ชื่อ - นามสกุล'] || r['ชื่อ-สกุล'] || r['ชื่อ นามสกุล'] || r['ชื่อ'] || r['Name'] || r['Full Name'] || '').trim();
+      const lastName = String(r['นามสกุล'] || r['Last Name'] || '').trim();
+      if (lastName && !name.includes(lastName)) {
+        name = `${name} ${lastName}`.trim();
+      }
+
+      // Extract Nickname
+      const nickname = String(r['ชื่อเล่น'] || r['Nickname'] || r['Nick Name'] || '').trim();
+
+      // Extract Role
+      const role = String(r['หน้าที่'] || r['ตำแหน่ง'] || r['บทบาท'] || r['หน้าที่ในโครงการ'] || r['Role'] || r['Position'] || 'ทีมงาน').trim();
+
+      // Extract Details
+      const details = String(r['รายละเอียด'] || r['รายละเอียดหน้าที่'] || r['หน้าที่ความรับผิดชอบ'] || r['ความรับผิดชอบ'] || r['Details'] || r['Description'] || '').trim();
+
+      // Extract Phone
+      const phone = String(r['เบอร์ติดต่อ'] || r['เบอร์โทร'] || r['เบอร์โทรศัพท์'] || r['เบอร์'] || r['Phone'] || r['Tel'] || '').trim();
+
+      // Extract KKU-MAIL
+      const kkuMail = String(r['KKU-MAIL'] || r['KKUMAIL'] || r['KKU Mail'] || r['อีเมล'] || r['Email'] || '').trim();
+
+      // Extract Contact Link
+      const contactLink = String(r['ลิงก์ติดต่อ'] || r['ช่องทางติดต่อ'] || r['โซเชียล'] || r['Contact Link'] || r['Social'] || '').trim();
+
+      // Extract Avatar URL
+      const avatar = String(r['รูปหน้า'] || r['ลิงก์รูปหน้า'] || r['รูป'] || r['Avatar'] || '').trim();
+
+      return {
+        id: `MBR-${Date.now()}-${idx + 1}`,
+        department,
+        name: name || `สมาชิก #${idx + 1}`,
+        nickname,
+        role,
+        details,
+        phone,
+        kkuMail,
+        contactLink,
+        avatar
+      };
+    }).filter(m => m.name && m.name.trim());
+  }
+
+  // Handle Excel Import inside Project Detail Modal
+  async function handleProjectMembersExcelImport(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    if (!activeDetailProjectId) {
+      if (typeof showToast === 'function') showToast('ไม่พบรหัสโครงการที่กำลังเปิดอยู่', 'error');
+      return;
+    }
+
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p) return;
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async function (e) {
+        try {
+          const parsed = parseMembersFromExcelBuffer(e.target.result);
+          if (parsed.length === 0) {
+            if (typeof showToast === 'function') showToast('ไม่พบข้อมูลรายชื่อสมาชิกในไฟล์ Excel', 'warning');
+            return;
+          }
+
+          // Count unique depts
+          const depts = new Set(parsed.map(m => m.department));
+
+          const confirmed = typeof window.showConfirmDialog === 'function'
+            ? await window.showConfirmDialog({
+                title: 'ยืนยันการนำเข้ารายชื่อจาก Excel',
+                message: `พบรายชื่อสมาชิกในไฟล์จำนวน ${parsed.length} คน จาก ${depts.size} ฝ่ายงาน\nต้องการเพิ่มรายชื่อเข้าสู่โครงการ "${p.title}" ใช่หรือไม่?`,
+                confirmText: 'เพิ่มรายชื่อสู่โครงการ',
+                cancelText: 'ยกเลิก',
+                isDanger: false,
+                icon: 'file-spreadsheet'
+              })
+            : true;
+
+          if (!confirmed) return;
+
+          // Merge into project members
+          if (!Array.isArray(p.members)) p.members = [];
+          p.members.push(...parsed);
+
+          // Emit to server
+          if (window.socket && typeof window.socket.emit === 'function') {
+            window.socket.emit('admin:updateProject', p);
+          }
+
+          if (typeof saveLocalState === 'function') saveLocalState();
+
+          renderProjectMembersTableView(p);
+          if (typeof showToast === 'function') {
+            showToast(`นำเข้ารายชื่อสำเร็จ ${parsed.length} คน (${depts.size} ฝ่ายงาน)`, 'success');
+          }
+        } catch (err) {
+          console.error('Error importing Excel:', err);
+          if (typeof showToast === 'function') showToast('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel: ' + err.message, 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Handle Excel Import inside Admin Project Edit Form Repeater
+  function handleFormMembersExcelImport(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    try {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const parsed = parseMembersFromExcelBuffer(e.target.result);
+          if (parsed.length === 0) {
+            if (typeof showToast === 'function') showToast('ไม่พบข้อมูลรายชื่อในไฟล์ Excel', 'warning');
+            return;
+          }
+
+          prjFormMembers.push(...parsed);
+          renderRepeater('MEMBERS');
+          if (typeof showToast === 'function') {
+            showToast(`นำเข้ารายชื่อเข้าสู่แบบฟอร์มแล้ว ${parsed.length} คน`, 'success');
+          }
+        } catch (err) {
+          console.error(err);
+          if (typeof showToast === 'function') showToast('เกิดข้อผิดพลาดในการนำเข้า: ' + err.message, 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Download Sample Excel Template
+  function downloadProjectMembersTemplate() {
+    if (typeof XLSX === 'undefined') {
+      if (typeof showToast === 'function') showToast('กำลังโหลดไลบรารี Excel กรุณาลองใหม่อีกครั้ง', 'warning');
+      return;
+    }
+
+    const templateData = [
+      ['ฝ่าย', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'หน้าที่', 'รายละเอียดหน้าที่', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ติดต่อ', 'ลิงก์รูปหน้า'],
+      ['ฝ่ายกิจกรรมและสันทนาการ', 'นางสาวพิมพ์ชนก รัตนสุวรรณ', 'พลอย', 'หัวหน้าฝ่ายกิจกรรมและเกม', 'ออกแบบฐานกิจกรรม กลุ่มสัมพันธ์ และเกมสันทนาการ', '089-876-5432', 'pimchanok.r@kkumail.com', 'https://instagram.com/ploy_cs', ''],
+      ['ฝ่ายกิจกรรมและสันทนาการ', 'นายธนกฤต มั่นคง', 'เจมส์', 'สตาฟฟ์นันทนาการและเพลง', 'ดูแลกิจกรรมร้องเพลง เต้นประกอบจังหวะ และนำเกมกลุ่มย่อย', '085-111-2233', 'thanakrit.m@kkumail.com', 'https://facebook.com/james.comsan', ''],
+      ['ฝ่ายสถานที่และสวัสดิการ', 'นายกิตติศักดิ์ พรหมดี', 'ฟีฟ่า', 'หัวหน้าฝ่ายสถานที่และสวัสดิการ', 'จัดเตรียมอุปกรณ์ค่าย อาหาร น้ำดื่ม และการประสานงานพื้นที่', '082-345-6789', 'kittisak.p@kkumail.com', 'https://line.me/ti/p/~fifa_cs', ''],
+      ['ฝ่ายสถานที่และสวัสดิการ', 'นายชินวัตร วิเศษศักดิ์', 'อาร์ม', 'สตาฟฟ์ฝ่ายสถานที่และยานพาหนะ', 'ดูแลการเดินทาง การจัดเต็นท์พักแรม และระบบไฟฟ้าส่องสว่าง', '084-999-8877', 'chinawat.w@kkumail.com', 'https://line.me/ti/p/~arm_cs', ''],
+      ['ฝ่ายพยาบาลและสุขอนามัย', 'นางสาวสุชาวดี มีสุข', 'ฟ้า', 'เจ้าหน้าที่พยาบาลประจำค่าย', 'จัดเตรียมกระเป๋ายา เวชภัณฑ์ และดูแลสุขภาพของชาวค่าย', '086-444-5566', 'suchawadee.m@kkumail.com', 'https://instagram.com/fah_care', ''],
+      ['ฝ่ายสื่อและประชาสัมพันธ์', 'นายวรเมธ ศรีสวัสดิ์', 'นิว', 'หัวหน้าฝ่ายสื่อและบันทึกภาพ', 'บันทึกภาพนิ่ง วิดีโอกิจกรรม และผลิตสื่อสรุปผลโครงการ', '087-333-2211', 'worameth.s@kkumail.com', 'https://instagram.com/new_photo', ''],
+      ['ฝ่ายทะเบียนและประเมินผล', 'นางสาวกานดา นวลจันทร์', 'มายด์', 'เจ้าหน้าที่ทะเบียนและประเมินผล', 'รับลงทะเบียน แจกป้ายชื่อ รวบรวมแบบประเมินและสรุปรายงานสถิติ', '083-222-1100', 'kanda.n@kkumail.com', 'https://line.me/ti/p/~mind_kanda', '']
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(templateData);
+
+    // Auto-fit column widths
+    ws['!cols'] = [
+      { wch: 25 }, // ฝ่าย
+      { wch: 30 }, // ชื่อ-นามสกุล
+      { wch: 12 }, // ชื่อเล่น
+      { wch: 28 }, // หน้าที่
+      { wch: 45 }, // รายละเอียดหน้าที่
+      { wch: 16 }, // เบอร์ติดต่อ
+      { wch: 28 }, // KKU-MAIL
+      { wch: 35 }, // ลิงก์ติดต่อ
+      { wch: 25 }  // ลิงก์รูปหน้า
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'รายชื่อผู้เกี่ยวข้องในโครงการ');
+    XLSX.writeFile(wb, 'COMSAN_Template_รายชื่อผู้เกี่ยวข้องในโครงการ.xlsx');
+
+    if (typeof showToast === 'function') {
+      showToast('ดาวน์โหลดไฟล์ตัวอย่าง Excel เรียบร้อยแล้ว', 'success');
+    }
+  }
+
+  // Export current project members to Excel
+  function exportCurrentProjectMembersToExcel() {
+    if (typeof XLSX === 'undefined') {
+      if (typeof showToast === 'function') showToast('กำลังโหลดไลบรารี Excel กรุณาลองใหม่อีกครั้ง', 'warning');
+      return;
+    }
+
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p) {
+      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลโครงการ', 'warning');
+      return;
+    }
+
+    const members = Array.isArray(p.members) ? p.members : [];
+    if (members.length === 0) {
+      if (typeof showToast === 'function') showToast('ยังไม่มีรายชื่อผู้เกี่ยวข้องในโครงการนี้สำหรับส่งออก', 'info');
+      return;
+    }
+
+    const rows = [
+      ['ลำดับ', 'ฝ่ายงาน', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'หน้าที่ / บทบาท', 'รายละเอียดหน้าที่', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ช่องทางติดต่อ']
+    ];
+
+    members.forEach((m, idx) => {
+      rows.push([
+        idx + 1,
+        m.department || 'ฝ่ายดำเนินงานทั่วไป',
+        m.name || '',
+        m.nickname || '',
+        m.role || 'ทีมงาน',
+        m.details || '',
+        m.phone || '',
+        m.kkuMail || '',
+        m.contactLink || ''
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 8 },  // ลำดับ
+      { wch: 26 }, // ฝ่ายงาน
+      { wch: 30 }, // ชื่อ-นามสกุล
+      { wch: 12 }, // ชื่อเล่น
+      { wch: 26 }, // หน้าที่
+      { wch: 45 }, // รายละเอียดหน้าที่
+      { wch: 16 }, // เบอร์ติดต่อ
+      { wch: 28 }, // KKU-MAIL
+      { wch: 35 }  // ลิงก์ช่องทางติดต่อ
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'รายชื่อผู้เกี่ยวข้อง');
+    const safeTitle = (p.code || p.title || 'Project').replace(/[^a-zA-Z0-9ก-๙_-]/g, '_');
+    XLSX.writeFile(wb, `รายชื่อผู้เกี่ยวข้อง_${safeTitle}.xlsx`);
+
+    if (typeof showToast === 'function') {
+      showToast(`ส่งออกรายชื่อ ${members.length} คน เป็นไฟล์ Excel สำเร็จ`, 'success');
+    }
+  }
+
+  // Delete a single member from active project
+  async function confirmDeleteProjectMember(memberIdOrName) {
+    if (window.currentRole !== 'ADMIN') return;
+
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p || !Array.isArray(p.members)) return;
+
+    const member = p.members.find(m => m.id === memberIdOrName || m.name === memberIdOrName);
+    const memberName = member ? member.name : 'สมาชิกรายนี้';
+
+    const confirmed = typeof window.showConfirmDialog === 'function'
+      ? await window.showConfirmDialog({
+          title: 'ยืนยันการลบสมาชิกออกจากโครงการ',
+          message: `คุณต้องการลบ "${memberName}" ออกจากรายชื่อผู้เกี่ยวข้องในโครงการนี้หรือไม่?`,
+          confirmText: 'ลบสมาชิก',
+          cancelText: 'ยกเลิก',
+          isDanger: true,
+          icon: 'trash-2'
+        })
+      : false;
+
+    if (!confirmed) return;
+
+    p.members = p.members.filter(m => m.id !== memberIdOrName && m.name !== memberIdOrName);
+
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('admin:updateProject', p);
+    }
+    if (typeof saveLocalState === 'function') saveLocalState();
+
+    renderProjectMembersTableView(p);
+    if (typeof showToast === 'function') {
+      showToast(`ลบ "${memberName}" ออกจากโครงการแล้ว`, 'info');
+    }
+  }
+
+  // Helper to render personnel cards for Leaders, Advisors, SMO
   function renderPersonCardsList(containerId, list, emptyLabel) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -944,7 +1604,7 @@
     if (!list || list.length === 0) {
       container.innerHTML = `
         <div class="p-3 rounded-xl bg-muted/20 border border-border/40 text-center text-xs text-muted-foreground">
-          ยังไม่มีรายการ${typeLabel} (กดปุ่มด้านล่างเพื่อเพิ่ม)
+          ยังไม่มีรายการ${typeLabel} (กดปุ่มด้านบนเพื่อเพิ่มหรือนำเข้า Excel)
         </div>
       `;
       return;
@@ -966,6 +1626,18 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+          ${type === 'MEMBERS' ? `
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] font-bold text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-1">
+                <i data-lucide="tag" class="h-3 w-3"></i> ฝ่ายงานที่สังกัด (Department / Division) *
+              </label>
+              <input type="text" value="${escapeHtml(item.department || '')}"
+                oninput="updateRepeaterField('${type}', ${idx}, 'department', this.value)"
+                placeholder="เช่น ฝ่ายกิจกรรมและสันทนาการ, ฝ่ายสถานที่และสวัสดิการ, ฝ่ายพยาบาล ฯลฯ"
+                class="w-full px-3 py-1.5 rounded-lg bg-card border border-indigo-500/30 focus:border-indigo-500 text-xs font-semibold" />
+            </div>
+          ` : ''}
+
           <div>
             <label class="block text-[11px] font-medium text-muted-foreground mb-1">ชื่อ - สกุล *</label>
             <input type="text" value="${escapeHtml(item.name || '')}"
@@ -983,10 +1655,10 @@
           </div>
 
           <div>
-            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ตำแหน่ง / หน้าที่ในโครงการ</label>
+            <label class="block text-[11px] font-medium text-muted-foreground mb-1">หน้าที่ / ตำแหน่งในโครงการ</label>
             <input type="text" value="${escapeHtml(item.role || '')}"
               oninput="updateRepeaterField('${type}', ${idx}, 'role', this.value)"
-              placeholder="เช่น ประธานโครงการ / หัวหน้าฝ่ายสถานที่"
+              placeholder="เช่น หัวหน้าฝ่ายกิจกรรม / สตาฟฟ์นันทนาการ / MC"
               class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
           </div>
 
@@ -1018,7 +1690,7 @@
             <label class="block text-[11px] font-medium text-muted-foreground mb-1">ลิงก์รูปหน้า (Avatar URL)</label>
             <input type="url" value="${escapeHtml(item.avatar || '')}"
               oninput="updateRepeaterField('${type}', ${idx}, 'avatar', this.value)"
-              placeholder="https://... (หากว่างระบบจะใช้รูปอักษรย่อ)"
+              placeholder="https://... (หากว่างระบบจะใช้รูปอักษรย่ออัตโนมัติ)"
               class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
           </div>
 
@@ -1040,6 +1712,7 @@
   function addRepeaterItem(type) {
     const newItem = {
       id: `p_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      department: type === 'MEMBERS' ? 'ฝ่ายกิจกรรมและสันทนาการ' : '',
       name: '',
       nickname: '',
       role: '',
@@ -1146,7 +1819,6 @@
       if (window.socket && typeof window.socket.emit === 'function') {
         window.socket.emit('admin:updateProject', projectPayload);
       }
-      // Optimistic local update
       if (window.appState && Array.isArray(window.appState.projects)) {
         const idx = window.appState.projects.findIndex(p => p.id === id);
         if (idx !== -1) {
@@ -1241,6 +1913,18 @@
     resetUserProjectFilters,
     setAdminProjectFilter,
     setAdminProjectSearch,
-    setAdminProjectYear
+    setAdminProjectYear,
+    // Table, Divisions, and Excel (.xlsx) methods
+    setProjectDetailDeptFilter,
+    handleProjectMembersTableSearch,
+    clearProjectMembersTableSearch,
+    clearProjectMembersTableFilters,
+    triggerImportProjectMembersXlsx,
+    triggerImportProjectMembersXlsxForForm,
+    handleProjectMembersExcelImport,
+    handleFormMembersExcelImport,
+    downloadProjectMembersTemplate,
+    exportCurrentProjectMembersToExcel,
+    confirmDeleteProjectMember
   };
 });

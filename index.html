@@ -2664,15 +2664,96 @@ label svg, label i {
         <div id="prjDetailLeadersList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
       </div>
 
-      <!-- Category 2: รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด -->
-      <div class="space-y-2.5">
-        <h4 class="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-          <span class="p-1 rounded-lg bg-indigo-500/10 text-indigo-500">
-            <i data-lucide="users" class="h-3.5 w-3.5"></i>
-          </span>
-          รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด
-        </h4>
-        <div id="prjDetailMembersList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      <!-- Category 2: รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด (รูปแบบตาราง และฝ่ายงาน) -->
+      <div class="space-y-3.5 pt-3 border-t border-border/80">
+        <!-- Section Header with Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-0.5">
+            <h4 class="text-xs sm:text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+              <span class="p-1 rounded-lg bg-indigo-500/10 text-indigo-500">
+                <i data-lucide="users" class="h-4 w-4"></i>
+              </span>
+              รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด
+              <span id="prjDetailMembersCountBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"></span>
+            </h4>
+            <p class="text-xs text-muted-foreground">โครงสร้างฝ่ายงาน บทบาทหน้าที่ความรับผิดชอบ และช่องทางติดต่อ</p>
+          </div>
+
+          <!-- Action Buttons (Import XLSX, Template, Export) -->
+          <div class="flex items-center gap-1.5 flex-wrap shrink-0">
+            <button type="button" id="prjDetailBtnImportXlsx" onclick="triggerImportProjectMembersXlsx()"
+              class="hidden px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+              title="นำเข้ารายชื่อสมาชิกจากไฟล์ Excel (.xlsx)">
+              <i data-lucide="file-spreadsheet" class="h-3.5 w-3.5"></i>
+              <span>นำเข้าจาก Excel (.xlsx)</span>
+            </button>
+
+            <button type="button" onclick="downloadProjectMembersTemplate()"
+              class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border shadow-2xs transition flex items-center gap-1 cursor-pointer"
+              title="ดาวน์โหลดไฟล์ตัวอย่าง Excel สำหรับกรอกรายชื่อ">
+              <i data-lucide="download" class="h-3.5 w-3.5 text-muted-foreground"></i>
+              <span class="hidden sm:inline">โหลด Template</span>
+            </button>
+
+            <button type="button" onclick="exportCurrentProjectMembersToExcel()"
+              class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border shadow-2xs transition flex items-center gap-1 cursor-pointer"
+              title="ส่งออกรายชื่อทั้งหมดเป็นไฟล์ Excel">
+              <i data-lucide="share" class="h-3.5 w-3.5 text-muted-foreground"></i>
+              <span class="hidden sm:inline">ส่งออก (.xlsx)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hidden Excel File Input for Project Detail Modal -->
+        <input type="file" id="prjDetailMembersExcelInput" accept=".xlsx,.xls" class="hidden" onchange="handleProjectMembersExcelImport(event)">
+
+        <!-- ฝ่ายต่างๆ ในโครงการ (Department Badges / Summary & Filter Bar) -->
+        <div class="bg-muted/30 border border-border/70 rounded-2xl p-3 sm:p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <i data-lucide="layers" class="h-3.5 w-3.5 text-indigo-500"></i>
+              ฝ่ายงานในโครงการนี้:
+            </span>
+            <span id="prjDetailDeptCountText" class="text-[11px] text-muted-foreground font-medium"></span>
+          </div>
+          <!-- Department Filter Pills -->
+          <div id="prjDetailDeptSummary" class="flex items-center gap-1.5 flex-wrap"></div>
+        </div>
+
+        <!-- Search Bar within Members Table -->
+        <div class="relative">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"></i>
+          <input type="text"
+            id="prjMembersTableSearch"
+            oninput="handleProjectMembersTableSearch(this.value)"
+            placeholder="ค้นหาชื่อ, ฝ่ายงาน, หรือหน้าที่ในโครงการนี้..."
+            class="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-muted/40 border border-border focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary transition" />
+          <button type="button" id="prjMembersTableSearchClear" onclick="clearProjectMembersTableSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            <i data-lucide="x" class="h-3.5 w-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Table of Project Members -->
+        <div class="rounded-2xl border border-border/80 overflow-hidden shadow-2xs bg-card">
+          <div class="overflow-x-auto max-h-[460px] overflow-y-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead class="sticky top-0 z-10 bg-muted/90 backdrop-blur-xs text-muted-foreground uppercase text-[11px] font-bold border-b border-border select-none">
+                <tr>
+                  <th scope="col" class="py-3 px-3 text-center w-12 shrink-0">#</th>
+                  <th scope="col" class="py-3 px-3 min-w-[190px]">สมาชิก / ผู้เกี่ยวข้อง</th>
+                  <th scope="col" class="py-3 px-3 min-w-[160px]">ฝ่ายที่สังกัด</th>
+                  <th scope="col" class="py-3 px-3 min-w-[150px]">หน้าที่ / บทบาท</th>
+                  <th scope="col" class="py-3 px-3 min-w-[220px]">รายละเอียดหน้าที่</th>
+                  <th scope="col" class="py-3 px-3 min-w-[130px]">เบอร์ติดต่อ</th>
+                  <th scope="col" class="py-3 px-3 min-w-[170px]">KKU-MAIL</th>
+                  <th scope="col" class="py-3 px-3 text-center w-20 shrink-0">ติดต่อ</th>
+                  <th scope="col" id="prjDetailTableActionTh" class="hidden py-3 px-3 text-center w-16 shrink-0">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="prjDetailMembersTableBody" class="divide-y divide-border/60"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- Category 3: รายชื่ออาจารย์ที่ปรึกษา -->
@@ -2878,18 +2959,32 @@ label svg, label i {
           <div id="prjFormLeadersContainer" class="space-y-2"></div>
         </div>
 
-        <!-- 2. Members -->
+        <!-- 2. Members (รายชื่อผู้เกี่ยวข้องในโครงการ + นำเข้า Excel) -->
         <div class="border-t border-border pt-3 space-y-2.5">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between flex-wrap gap-2">
             <h4 class="text-xs font-bold text-foreground flex items-center gap-1.5">
               <i data-lucide="users" class="h-3.5 w-3.5 text-indigo-500"></i>
               รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด
             </h4>
-            <button type="button" onclick="addRepeaterItem('MEMBERS')"
-              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้เกี่ยวข้อง
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="triggerImportProjectMembersXlsxForForm()"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                title="นำเข้ารายชื่อจาก Excel (.xlsx) เข้าสู่แบบฟอร์ม">
+                <i data-lucide="file-spreadsheet" class="h-3 w-3"></i> นำเข้า (.xlsx)
+              </button>
+              <button type="button" onclick="downloadProjectMembersTemplate()"
+                class="px-2 py-1 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
+                title="ดาวน์โหลดไฟล์ตัวอย่าง Excel สำหรับกรอกรายชื่อ">
+                <i data-lucide="download" class="h-3 w-3"></i> โหลด Template
+              </button>
+              <button type="button" onclick="addRepeaterItem('MEMBERS')"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 transition flex items-center gap-1 cursor-pointer">
+                <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้เกี่ยวข้อง
+              </button>
+            </div>
           </div>
+          <!-- Hidden Excel File Input for Admin Edit Form -->
+          <input type="file" id="prjFormMembersExcelInput" accept=".xlsx,.xls" class="hidden" onchange="handleFormMembersExcelImport(event)">
           <div id="prjFormMembersContainer" class="space-y-2"></div>
         </div>
 
