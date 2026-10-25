@@ -1,6 +1,22 @@
 const stateService = require('../services/stateService');
 
 /**
+ * Helper to deduplicate projects array by project id
+ */
+function deduplicateProjects(projects) {
+  if (!Array.isArray(projects)) return [];
+  const unique = [];
+  const seen = new Set();
+  projects.forEach(p => {
+    if (p && p.id && !seen.has(p.id)) {
+      seen.add(p.id);
+      unique.push(p);
+    }
+  });
+  return unique;
+}
+
+/**
  * Socket handlers for Club Projects Management
  */
 function registerProjectHandlers(io, socket) {
@@ -11,8 +27,11 @@ function registerProjectHandlers(io, socket) {
       if (!Array.isArray(state.projects)) state.projects = [];
 
       const todayISO = new Date().toISOString().slice(0, 10);
+      const targetId = (data && data.id ? String(data.id).trim() : '') || `PRJ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      const nowISO = new Date().toISOString();
+
       const newProject = {
-        id: data.id || `PRJ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: targetId,
         title: (data.title || 'โครงการใหม่').trim(),
         code: (data.code || '').trim(),
         academicYear: (data.academicYear || '').trim(),
@@ -30,13 +49,28 @@ function registerProjectHandlers(io, socket) {
         members: Array.isArray(data.members) ? data.members : [],
         advisors: Array.isArray(data.advisors) ? data.advisors : [],
         smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: data.createdAt || nowISO,
+        updatedAt: nowISO
       };
 
-      state.projects.unshift(newProject);
-      stateService.persistAndBroadcast();
-      socket.emit('admin:projectCreated', { success: true, project: newProject });
+      // Guard: if project with this ID already exists, update in place instead of duplicating!
+      const existingIdx = state.projects.findIndex(p => p.id === targetId);
+      if (existingIdx !== -1) {
+        state.projects[existingIdx] = {
+          ...state.projects[existingIdx],
+          ...newProject,
+          createdAt: state.projects[existingIdx].createdAt || nowISO,
+          updatedAt: nowISO
+        };
+        state.projects = deduplicateProjects(state.projects);
+        stateService.persistAndBroadcast();
+        socket.emit('admin:projectUpdated', { success: true, project: state.projects[existingIdx] });
+      } else {
+        state.projects.unshift(newProject);
+        state.projects = deduplicateProjects(state.projects);
+        stateService.persistAndBroadcast();
+        socket.emit('admin:projectCreated', { success: true, project: newProject });
+      }
     } catch (err) {
       console.error('Error creating project:', err);
       socket.emit('admin:projectError', { message: 'เกิดข้อผิดพลาดในการสร้างโครงการ' });
@@ -49,9 +83,43 @@ function registerProjectHandlers(io, socket) {
       const state = stateService.getState();
       if (!Array.isArray(state.projects)) state.projects = [];
 
-      const index = state.projects.findIndex(p => p.id === data.id);
+      const targetId = data && data.id ? String(data.id).trim() : '';
+      if (!targetId) {
+        return socket.emit('admin:projectError', { message: 'ไม่พบรหัสโครงการที่ต้องการแก้ไข' });
+      }
+
+      const nowISO = new Date().toISOString();
+      const index = state.projects.findIndex(p => p.id === targetId);
+
       if (index === -1) {
-        return socket.emit('admin:projectError', { message: 'ไม่พบโครงการที่ต้องการแก้ไข' });
+        // If not found, gracefully create it so edits are never lost
+        const todayISO = nowISO.slice(0, 10);
+        const fallbackProject = {
+          id: targetId,
+          title: (data.title || 'โครงการใหม่').trim(),
+          code: (data.code || '').trim(),
+          academicYear: (data.academicYear || '').trim(),
+          status: data.status || 'IN_PROGRESS',
+          startDate: data.startDate || todayISO,
+          endDate: data.endDate || data.startDate || todayISO,
+          location: (data.location || '').trim(),
+          budget: (data.budget || '').trim(),
+          summary: (data.summary || '').trim(),
+          description: (data.description || '').trim(),
+          googleDriveUrl: (data.googleDriveUrl || '').trim(),
+          projectDocument: data.projectDocument || { title: '', url: '', updatedAt: todayISO },
+          budgetDocument: data.budgetDocument || { title: '', url: '', totalBudget: '', updatedAt: todayISO },
+          leaders: Array.isArray(data.leaders) ? data.leaders : [],
+          members: Array.isArray(data.members) ? data.members : [],
+          advisors: Array.isArray(data.advisors) ? data.advisors : [],
+          smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
+          createdAt: data.createdAt || nowISO,
+          updatedAt: nowISO
+        };
+        state.projects.unshift(fallbackProject);
+        state.projects = deduplicateProjects(state.projects);
+        stateService.persistAndBroadcast();
+        return socket.emit('admin:projectCreated', { success: true, project: fallbackProject });
       }
 
       state.projects[index] = {
@@ -73,9 +141,10 @@ function registerProjectHandlers(io, socket) {
         members: Array.isArray(data.members) ? data.members : state.projects[index].members,
         advisors: Array.isArray(data.advisors) ? data.advisors : state.projects[index].advisors,
         smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : state.projects[index].smoOfficers,
-        updatedAt: new Date().toISOString()
+        updatedAt: nowISO
       };
 
+      state.projects = deduplicateProjects(state.projects);
       stateService.persistAndBroadcast();
       socket.emit('admin:projectUpdated', { success: true, project: state.projects[index] });
     } catch (err) {
@@ -85,16 +154,21 @@ function registerProjectHandlers(io, socket) {
   });
 
   // 3. Admin deletes a project
-  socket.on('admin:deleteProject', ({ projectId }) => {
+  socket.on('admin:deleteProject', (data) => {
     try {
       const state = stateService.getState();
       if (!Array.isArray(state.projects)) return;
 
+      const targetId = (data && typeof data === 'object') ? data.projectId : data;
+      if (!targetId) return;
+
       const beforeLen = state.projects.length;
-      state.projects = state.projects.filter(p => p.id !== projectId);
+      state.projects = state.projects.filter(p => p && p.id !== targetId);
+      state.projects = deduplicateProjects(state.projects);
+
       if (state.projects.length !== beforeLen) {
         stateService.persistAndBroadcast();
-        socket.emit('admin:projectDeleted', { success: true, projectId });
+        socket.emit('admin:projectDeleted', { success: true, projectId: targetId });
       }
     } catch (err) {
       console.error('Error deleting project:', err);

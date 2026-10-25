@@ -190,6 +190,18 @@ function normalizeState(raw) {
     }
   });
 
+  const rawProjects = Array.isArray(raw.projects)
+    ? raw.projects
+    : ((typeof defaultProjects !== 'undefined') ? defaultProjects : (defaultState.projects || []));
+  const uniqueProjects = [];
+  const seenPrjIds = new Set();
+  rawProjects.forEach(p => {
+    if (p && p.id && !seenPrjIds.has(p.id)) {
+      seenPrjIds.add(p.id);
+      uniqueProjects.push(p);
+    }
+  });
+
   return {
     meeting,
     users: rawUsers,
@@ -203,7 +215,7 @@ function normalizeState(raw) {
     lastMeetingSummary: raw.lastMeetingSummary || null,
     meetingHistory: Array.isArray(raw.meetingHistory) ? raw.meetingHistory : [],
     calendarEvents: Array.isArray(raw.calendarEvents) ? raw.calendarEvents : (defaultState.calendarEvents || []),
-    projects: Array.isArray(raw.projects) ? raw.projects : ((typeof defaultProjects !== 'undefined') ? defaultProjects : (defaultState.projects || [])),
+    projects: uniqueProjects,
     systemVersion: raw.systemVersion || defaultState.systemVersion || '2.0.1',
     versionNotes: raw.versionNotes || defaultState.versionNotes || null
   };
@@ -221,8 +233,13 @@ function saveLocalState() {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
     if (localSyncChannel) localSyncChannel.postMessage({ type: 'SYNC', state: appState });
-    if (window.socket && window.socket.isHttpBridge) {
-      window.socket.syncStateToServer('saveLocalState');
+    const isBridge = window.socket && (window.socket.isHttpBridge || (window.socket.engine && window.socket.engine.isHttpBridge));
+    if (isBridge) {
+      if (typeof window.socket.syncStateToServer === 'function') {
+        window.socket.syncStateToServer('saveLocalState', appState);
+      } else if (window.socket.engine && typeof window.socket.engine.syncStateToServer === 'function') {
+        window.socket.engine.syncStateToServer('saveLocalState', appState);
+      }
     }
   } catch (e) {}
 }

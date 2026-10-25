@@ -45,14 +45,25 @@
   let formMembersSearch = '';
   let formMembersDeptFilter = 'ALL';
 
+  let isSavingProject = false;
+
   function getProjectsList() {
+    let list = [];
     if (window.appState && Array.isArray(window.appState.projects)) {
-      return window.appState.projects;
+      list = window.appState.projects;
+    } else if (typeof window.defaultProjects !== 'undefined' && Array.isArray(window.defaultProjects)) {
+      list = window.defaultProjects;
     }
-    if (typeof window.defaultProjects !== 'undefined' && Array.isArray(window.defaultProjects)) {
-      return window.defaultProjects;
-    }
-    return [];
+    // Deduplicate by ID to guarantee no duplicate cards ever render
+    const unique = [];
+    const seen = new Set();
+    list.forEach(p => {
+      if (p && p.id && !seen.has(p.id)) {
+        seen.add(p.id);
+        unique.push(p);
+      }
+    });
+    return unique;
   }
 
   function escapeHtml(str) {
@@ -1514,6 +1525,9 @@
     const isEdit = Boolean(projectId);
     const p = isEdit ? allProjects.find(item => item.id === projectId) : null;
 
+    // Reset saving lock
+    isSavingProject = false;
+
     // Reset repeater collapse/expand and search state
     expandedLeadersIndices = new Set();
     expandedMembersIndices = new Set();
@@ -1529,34 +1543,34 @@
 
     // Set modal title
     const modalTitle = document.getElementById('adminPrjModalTitle');
-    if (modalTitle) modalTitle.textContent = isEdit ? 'แก้ไขข้อมูลโครงการ' : 'สร้างโครงการใหม่';
+    if (modalTitle) modalTitle.textContent = (isEdit && p) ? 'แก้ไขข้อมูลโครงการ' : 'สร้างโครงการใหม่';
 
-    // Populate basic fields
-    document.getElementById('prjFormId').value = isEdit ? p.id : '';
-    document.getElementById('prjFormTitle').value = isEdit ? (p.title || '') : '';
-    document.getElementById('prjFormCode').value = isEdit ? (p.code || '') : '';
-    document.getElementById('prjFormAcademicYear').value = isEdit ? (p.academicYear || '') : '2569';
-    document.getElementById('prjFormStatus').value = isEdit ? (p.status || 'IN_PROGRESS') : 'IN_PROGRESS';
-    document.getElementById('prjFormStartDate').value = isEdit ? (p.startDate || '') : (new Date().toISOString().slice(0, 10));
-    document.getElementById('prjFormEndDate').value = isEdit ? (p.endDate || '') : (new Date().toISOString().slice(0, 10));
-    document.getElementById('prjFormLocation').value = isEdit ? (p.location || '') : '';
-    document.getElementById('prjFormBudget').value = isEdit ? (p.budget || '') : '';
-    document.getElementById('prjFormSummary').value = isEdit ? (p.summary || '') : '';
-    document.getElementById('prjFormDescription').value = isEdit ? (p.description || '') : '';
-    document.getElementById('prjFormGoogleDriveUrl').value = isEdit ? (p.googleDriveUrl || '') : '';
+    // Populate basic fields safely
+    document.getElementById('prjFormId').value = (isEdit && p) ? p.id : '';
+    document.getElementById('prjFormTitle').value = (isEdit && p) ? (p.title || '') : '';
+    document.getElementById('prjFormCode').value = (isEdit && p) ? (p.code || '') : '';
+    document.getElementById('prjFormAcademicYear').value = (isEdit && p) ? (p.academicYear || '') : '2569';
+    document.getElementById('prjFormStatus').value = (isEdit && p) ? (p.status || 'IN_PROGRESS') : 'IN_PROGRESS';
+    document.getElementById('prjFormStartDate').value = (isEdit && p) ? (p.startDate || '') : (new Date().toISOString().slice(0, 10));
+    document.getElementById('prjFormEndDate').value = (isEdit && p) ? (p.endDate || '') : (new Date().toISOString().slice(0, 10));
+    document.getElementById('prjFormLocation').value = (isEdit && p) ? (p.location || '') : '';
+    document.getElementById('prjFormBudget').value = (isEdit && p) ? (p.budget || '') : '';
+    document.getElementById('prjFormSummary').value = (isEdit && p) ? (p.summary || '') : '';
+    document.getElementById('prjFormDescription').value = (isEdit && p) ? (p.description || '') : '';
+    document.getElementById('prjFormGoogleDriveUrl').value = (isEdit && p) ? (p.googleDriveUrl || '') : '';
 
     // Document & Budget Document
-    document.getElementById('prjFormDocTitle').value = isEdit && p.projectDocument ? (p.projectDocument.title || '') : '';
-    document.getElementById('prjFormDocUrl').value = isEdit && p.projectDocument ? (p.projectDocument.url || '') : '';
-    document.getElementById('prjFormBudgetDocTitle').value = isEdit && p.budgetDocument ? (p.budgetDocument.title || '') : '';
-    document.getElementById('prjFormBudgetDocAmount').value = isEdit && p.budgetDocument ? (p.budgetDocument.totalBudget || '') : '';
-    document.getElementById('prjFormBudgetDocUrl').value = isEdit && p.budgetDocument ? (p.budgetDocument.url || '') : '';
+    document.getElementById('prjFormDocTitle').value = isEdit && p && p.projectDocument ? (p.projectDocument.title || '') : '';
+    document.getElementById('prjFormDocUrl').value = isEdit && p && p.projectDocument ? (p.projectDocument.url || '') : '';
+    document.getElementById('prjFormBudgetDocTitle').value = isEdit && p && p.budgetDocument ? (p.budgetDocument.title || '') : '';
+    document.getElementById('prjFormBudgetDocAmount').value = isEdit && p && p.budgetDocument ? (p.budgetDocument.totalBudget || '') : '';
+    document.getElementById('prjFormBudgetDocUrl').value = isEdit && p && p.budgetDocument ? (p.budgetDocument.url || '') : '';
 
-    // Clone stakeholder arrays
-    prjFormLeaders = isEdit && Array.isArray(p.leaders) ? JSON.parse(JSON.stringify(p.leaders)) : [];
-    prjFormMembers = isEdit && Array.isArray(p.members) ? JSON.parse(JSON.stringify(p.members)) : [];
-    prjFormAdvisors = isEdit && Array.isArray(p.advisors) ? JSON.parse(JSON.stringify(p.advisors)) : [];
-    prjFormSmoOfficers = isEdit && Array.isArray(p.smoOfficers) ? JSON.parse(JSON.stringify(p.smoOfficers)) : [];
+    // Clone stakeholder arrays safely
+    prjFormLeaders = isEdit && p && Array.isArray(p.leaders) ? JSON.parse(JSON.stringify(p.leaders)) : [];
+    prjFormMembers = isEdit && p && Array.isArray(p.members) ? JSON.parse(JSON.stringify(p.members)) : [];
+    prjFormAdvisors = isEdit && p && Array.isArray(p.advisors) ? JSON.parse(JSON.stringify(p.advisors)) : [];
+    prjFormSmoOfficers = isEdit && p && Array.isArray(p.smoOfficers) ? JSON.parse(JSON.stringify(p.smoOfficers)) : [];
 
     // By default, for leaders, advisors, smo (small arrays), keep them expanded
     prjFormLeaders.forEach((_, idx) => expandedLeadersIndices.add(idx));
@@ -1989,9 +2003,13 @@
   function saveProjectFromAdminForm(e) {
     if (e && e.preventDefault) e.preventDefault();
 
+    if (isSavingProject) return;
+    isSavingProject = true;
+
     const id = document.getElementById('prjFormId').value.trim();
     const title = document.getElementById('prjFormTitle').value.trim();
     if (!title) {
+      isSavingProject = false;
       if (typeof showToast === 'function') showToast('กรุณากรอกชื่อโครงการ', 'error');
       document.getElementById('prjFormTitle').focus();
       return;
@@ -2016,6 +2034,7 @@
     const budgetDocUrl = document.getElementById('prjFormBudgetDocUrl').value.trim();
 
     const todayISO = new Date().toISOString().slice(0, 10);
+    const nowISO = new Date().toISOString();
 
     const projectPayload = {
       id: id || undefined,
@@ -2049,18 +2068,25 @@
 
     if (id) {
       // Update
+      projectPayload.id = id;
+      projectPayload.updatedAt = nowISO;
       if (window.socket && typeof window.socket.emit === 'function') {
         window.socket.emit('admin:updateProject', projectPayload);
       }
       if (window.appState && Array.isArray(window.appState.projects)) {
-        const idx = window.appState.projects.findIndex(p => p.id === id);
+        const idx = window.appState.projects.findIndex(p => p && p.id === id);
         if (idx !== -1) {
           window.appState.projects[idx] = {
             ...window.appState.projects[idx],
             ...projectPayload,
-            updatedAt: new Date().toISOString()
+            updatedAt: nowISO
           };
-          if (typeof saveLocalState === 'function') saveLocalState();
+        } else {
+          window.appState.projects.unshift({
+            ...projectPayload,
+            createdAt: nowISO,
+            updatedAt: nowISO
+          });
         }
       }
       if (typeof showToast === 'function') showToast('บันทึกการแก้ไขโครงการสำเร็จ', 'success');
@@ -2068,21 +2094,44 @@
       // Create
       const newId = `PRJ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
       projectPayload.id = newId;
+      projectPayload.createdAt = nowISO;
+      projectPayload.updatedAt = nowISO;
+
       if (window.socket && typeof window.socket.emit === 'function') {
         window.socket.emit('admin:createProject', projectPayload);
       }
+
       if (window.appState && Array.isArray(window.appState.projects)) {
-        window.appState.projects.unshift({
-          ...projectPayload,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
-        if (typeof saveLocalState === 'function') saveLocalState();
+        const alreadyAdded = window.appState.projects.some(p => p && p.id === newId);
+        if (!alreadyAdded) {
+          window.appState.projects.unshift(projectPayload);
+        }
       }
       if (typeof showToast === 'function') showToast('สร้างโครงการใหม่เรียบร้อยแล้ว', 'success');
     }
 
+    // Always deduplicate window.appState.projects
+    if (window.appState && Array.isArray(window.appState.projects)) {
+      const uPrjs = [];
+      const sIds = new Set();
+      window.appState.projects.forEach(p => {
+        if (p && p.id && !sIds.has(p.id)) {
+          sIds.add(p.id);
+          uPrjs.push(p);
+        }
+      });
+      window.appState.projects = uPrjs;
+      if (typeof saveLocalState === 'function') saveLocalState();
+    }
+
     closeAdminProjectEditModal();
+    isSavingProject = false;
+
+    // If detail modal is currently showing the updated project, refresh it immediately
+    if (activeDetailProjectId && (activeDetailProjectId === id || activeDetailProjectId === projectPayload.id)) {
+      openProjectDetailModal(activeDetailProjectId);
+    }
+
     if (typeof window.renderAll === 'function') window.renderAll();
     else {
       renderUserProjectsSection();
@@ -2115,8 +2164,13 @@
     }
 
     if (window.appState && Array.isArray(window.appState.projects)) {
-      window.appState.projects = window.appState.projects.filter(p => p.id !== projectId);
+      window.appState.projects = window.appState.projects.filter(p => p && p.id !== projectId);
       if (typeof saveLocalState === 'function') saveLocalState();
+    }
+
+    // If detail modal is currently showing the deleted project, close it!
+    if (activeDetailProjectId === projectId) {
+      closeProjectDetailModal();
     }
 
     if (typeof showToast === 'function') showToast(`ลบโครงการ "${title}" เรียบร้อยแล้ว`, 'info');
@@ -2163,6 +2217,7 @@
     handleFormMembersExcelImport,
     downloadProjectMembersTemplate,
     exportCurrentProjectMembersToExcel,
-    confirmDeleteProjectMember
+    confirmDeleteProjectMember,
+    getActiveDetailProjectId: () => activeDetailProjectId
   };
 });

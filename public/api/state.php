@@ -79,6 +79,7 @@ function loadStateData($stateFile, $rootStateFile) {
         'chatLogs' => [],
         'files' => [],
         'calendarEvents' => [],
+        'projects' => [],
         'randomizer' => ['lastWinner' => null, 'history' => []]
     ];
     $record = [
@@ -418,7 +419,92 @@ function applyServerAction(&$state, $action, $payload, $userId = null, $role = '
             }
             break;
 
-        // --- 9. FULL OR PARTIAL STATE UPDATE ---
+        // --- 9. PROJECTS MANAGEMENT ---
+        case 'admin:createProject':
+            if (is_array($payload)) {
+                if (!isset($state['projects']) || !is_array($state['projects'])) {
+                    $state['projects'] = [];
+                }
+                $targetId = !empty($payload['id']) ? trim(strval($payload['id'])) : ('PRJ-' . $nowMs . '-' . substr(md5(uniqid(mt_rand(), true)), 0, 4));
+                $payload['id'] = $targetId;
+                if (empty($payload['createdAt'])) {
+                    $payload['createdAt'] = date('c');
+                }
+                $payload['updatedAt'] = date('c');
+
+                $found = false;
+                foreach ($state['projects'] as &$p) {
+                    if (strval($p['id'] ?? '') === $targetId) {
+                        $p = array_merge($p, $payload);
+                        $found = true;
+                        break;
+                    }
+                }
+                unset($p);
+                if (!$found) {
+                    array_unshift($state['projects'], $payload);
+                }
+
+                // Deduplicate
+                $uniquePrjs = [];
+                $seenPIds = [];
+                foreach ($state['projects'] as $prj) {
+                    $pid = strval($prj['id'] ?? '');
+                    if ($pid && !isset($seenPIds[$pid])) {
+                        $seenPIds[$pid] = true;
+                        $uniquePrjs[] = $prj;
+                    }
+                }
+                $state['projects'] = $uniquePrjs;
+            }
+            break;
+
+        case 'admin:updateProject':
+            if (is_array($payload) && !empty($payload['id'])) {
+                if (!isset($state['projects']) || !is_array($state['projects'])) {
+                    $state['projects'] = [];
+                }
+                $targetId = trim(strval($payload['id']));
+                $payload['updatedAt'] = date('c');
+
+                $found = false;
+                foreach ($state['projects'] as &$p) {
+                    if (strval($p['id'] ?? '') === $targetId) {
+                        $p = array_merge($p, $payload);
+                        $found = true;
+                        break;
+                    }
+                }
+                unset($p);
+                if (!$found) {
+                    array_unshift($state['projects'], $payload);
+                }
+
+                // Deduplicate
+                $uniquePrjs = [];
+                $seenPIds = [];
+                foreach ($state['projects'] as $prj) {
+                    $pid = strval($prj['id'] ?? '');
+                    if ($pid && !isset($seenPIds[$pid])) {
+                        $seenPIds[$pid] = true;
+                        $uniquePrjs[] = $prj;
+                    }
+                }
+                $state['projects'] = $uniquePrjs;
+            }
+            break;
+
+        case 'admin:deleteProject':
+            $targetId = is_array($payload) ? ($payload['projectId'] ?? $payload['id'] ?? '') : $payload;
+            if ($targetId && isset($state['projects']) && is_array($state['projects'])) {
+                $targetId = trim(strval($targetId));
+                $state['projects'] = array_values(array_filter($state['projects'], function ($p) use ($targetId) {
+                    return strval($p['id'] ?? '') !== $targetId;
+                }));
+            }
+            break;
+
+        // --- 10. FULL OR PARTIAL STATE UPDATE ---
         case 'state:update':
         case 'state:save':
         case 'saveLocalState':

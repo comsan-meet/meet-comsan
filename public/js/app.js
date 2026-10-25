@@ -1040,6 +1040,19 @@ function setupSocketListeners() {
       newState.motions = uniqueM;
     }
 
+    // 1.1 Deduplicate projects to guarantee no duplicate project cards appear
+    if (Array.isArray(newState.projects)) {
+      const uniqueP = [];
+      const seenP = new Set();
+      newState.projects.forEach(p => {
+        if (p && p.id && !seenP.has(p.id)) {
+          seenP.add(p.id);
+          uniqueP.push(p);
+        }
+      });
+      newState.projects = uniqueP;
+    }
+
     // 2. Track seen Raise Hand items
     const newQueue = Array.isArray(newState.raiseHandQueue) ? newState.raiseHandQueue : [];
     newQueue.forEach(item => {
@@ -1319,6 +1332,42 @@ function setupSocketListeners() {
     }
     if (typeof window.renderAll === 'function') window.renderAll();
     if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
+  });
+
+  // Project Management Realtime Events
+  socket.on('admin:projectCreated', (res) => {
+    if (res && res.project) {
+      if (typeof window.renderAll === 'function') window.renderAll();
+    }
+  });
+
+  socket.on('admin:projectUpdated', (res) => {
+    if (res && res.project) {
+      if (typeof window.getActiveDetailProjectId === 'function' && window.getActiveDetailProjectId() === res.project.id) {
+        if (typeof window.openProjectDetailModal === 'function') {
+          window.openProjectDetailModal(res.project.id);
+        }
+      }
+      if (typeof window.renderAll === 'function') window.renderAll();
+    }
+  });
+
+  socket.on('admin:projectDeleted', (res) => {
+    if (res && res.projectId) {
+      if (typeof window.getActiveDetailProjectId === 'function' && window.getActiveDetailProjectId() === res.projectId) {
+        if (typeof window.closeProjectDetailModal === 'function') {
+          window.closeProjectDetailModal();
+        }
+      }
+    }
+    if (typeof window.renderAll === 'function') window.renderAll();
+  });
+
+  socket.on('admin:projectError', (err) => {
+    const msg = (err && err.message) ? err.message : 'เกิดข้อผิดพลาดเกี่ยวกับโครงการ';
+    if (typeof window.showToast === 'function') {
+      window.showToast(msg, 'error');
+    }
   });
 }
 

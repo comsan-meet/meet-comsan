@@ -164,6 +164,17 @@
           return l;
         });
       }
+      if (Array.isArray(clone.projects)) {
+        const u = [];
+        const s = new Set();
+        clone.projects.forEach(p => {
+          if (p && p.id && !s.has(p.id)) {
+            s.add(p.id);
+            u.push(p);
+          }
+        });
+        clone.projects = u;
+      }
       return clone;
     }
 
@@ -200,7 +211,7 @@
         } finally {
           this.isSaving = false;
         }
-      }, 350);
+      }, delay);
     }
 
     async init(credentials) {

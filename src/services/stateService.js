@@ -7,6 +7,8 @@ class StateService {
     this.state = this.loadState();
     this.timer = null;
     this.io = null;
+    // Ensure state file on disk is immediately synchronized with valid structure
+    this.scheduleSave();
   }
 
   loadState() {
@@ -52,12 +54,24 @@ class StateService {
         parsed.versionNotes = parsed.versionNotes || defaultState.versionNotes;
         parsed.lastMeetingSummary = parsed.lastMeetingSummary || null;
         parsed.meetingHistory = Array.isArray(parsed.meetingHistory) ? parsed.meetingHistory : [];
-        parsed.calendarEvents = (Array.isArray(parsed.calendarEvents) && parsed.calendarEvents.length > 0)
+        parsed.calendarEvents = Array.isArray(parsed.calendarEvents)
           ? parsed.calendarEvents
           : (defaultState.calendarEvents || []);
-        parsed.projects = (Array.isArray(parsed.projects) && parsed.projects.length > 0)
+
+        const rawProjects = Array.isArray(parsed.projects)
           ? parsed.projects
           : (defaultState.projects || []);
+
+        // Deduplicate projects to guarantee no duplicate cards ever exist on server
+        const uniqueProjects = [];
+        const seenPrjIds = new Set();
+        rawProjects.forEach(p => {
+          if (p && p.id && !seenPrjIds.has(p.id)) {
+            seenPrjIds.add(p.id);
+            uniqueProjects.push(p);
+          }
+        });
+        parsed.projects = uniqueProjects;
         return parsed;
       }
     } catch (err) {

@@ -1052,8 +1052,10 @@
       // ==========================================
       case 'admin:createProject': {
         const data = payload || {};
+        const targetId = (data.id ? String(data.id).trim() : '') || `PRJ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        const nowISO = new Date().toISOString();
         const newProject = {
-          id: data.id || `PRJ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          id: targetId,
           title: (data.title || 'โครงการใหม่').trim(),
           code: (data.code || '').trim(),
           academicYear: (data.academicYear || '').trim(),
@@ -1071,18 +1073,43 @@
           members: Array.isArray(data.members) ? data.members : [],
           advisors: Array.isArray(data.advisors) ? data.advisors : [],
           smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          createdAt: data.createdAt || nowISO,
+          updatedAt: nowISO
         };
 
-        state.projects.unshift(newProject);
-        result = { success: true, project: newProject };
+        const existingIdx = state.projects.findIndex(p => p && p.id === targetId);
+        if (existingIdx !== -1) {
+          state.projects[existingIdx] = {
+            ...state.projects[existingIdx],
+            ...newProject,
+            createdAt: state.projects[existingIdx].createdAt || nowISO,
+            updatedAt: nowISO
+          };
+          result = { success: true, project: state.projects[existingIdx] };
+        } else {
+          state.projects.unshift(newProject);
+          result = { success: true, project: newProject };
+        }
+
+        // Deduplicate projects to guarantee integrity
+        const uniquePrjs = [];
+        const seenIds = new Set();
+        state.projects.forEach(p => {
+          if (p && p.id && !seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            uniquePrjs.push(p);
+          }
+        });
+        state.projects = uniquePrjs;
         break;
       }
 
       case 'admin:updateProject': {
         const data = payload || {};
-        const idx = state.projects.findIndex(p => p.id === data.id);
+        const targetId = data.id ? String(data.id).trim() : '';
+        const nowISO = new Date().toISOString();
+        const idx = state.projects.findIndex(p => p && p.id === targetId);
+
         if (idx !== -1) {
           state.projects[idx] = {
             ...state.projects[idx],
@@ -1103,20 +1130,55 @@
             members: Array.isArray(data.members) ? data.members : state.projects[idx].members,
             advisors: Array.isArray(data.advisors) ? data.advisors : state.projects[idx].advisors,
             smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : state.projects[idx].smoOfficers,
-            updatedAt: new Date().toISOString()
+            updatedAt: nowISO
           };
           result = { success: true, project: state.projects[idx] };
         } else {
-          result = { success: false, message: 'ไม่พบโครงการที่ต้องการแก้ไข' };
-          shouldPersist = false;
+          // If not found, create it so updates are never lost
+          const fallbackPrj = {
+            id: targetId || `PRJ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            title: (data.title || 'โครงการใหม่').trim(),
+            code: (data.code || '').trim(),
+            academicYear: (data.academicYear || '').trim(),
+            status: data.status || 'IN_PROGRESS',
+            startDate: data.startDate || todayISO,
+            endDate: data.endDate || data.startDate || todayISO,
+            location: (data.location || '').trim(),
+            budget: (data.budget || '').trim(),
+            summary: (data.summary || '').trim(),
+            description: (data.description || '').trim(),
+            googleDriveUrl: (data.googleDriveUrl || '').trim(),
+            projectDocument: data.projectDocument || { title: '', url: '', updatedAt: todayISO },
+            budgetDocument: data.budgetDocument || { title: '', url: '', totalBudget: '', updatedAt: todayISO },
+            leaders: Array.isArray(data.leaders) ? data.leaders : [],
+            members: Array.isArray(data.members) ? data.members : [],
+            advisors: Array.isArray(data.advisors) ? data.advisors : [],
+            smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
+            createdAt: nowISO,
+            updatedAt: nowISO
+          };
+          state.projects.unshift(fallbackPrj);
+          result = { success: true, project: fallbackPrj };
         }
+
+        // Deduplicate projects
+        const uniquePrjs = [];
+        const seenIds = new Set();
+        state.projects.forEach(p => {
+          if (p && p.id && !seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            uniquePrjs.push(p);
+          }
+        });
+        state.projects = uniquePrjs;
         break;
       }
 
       case 'admin:deleteProject': {
-        const { projectId } = payload || {};
-        state.projects = state.projects.filter(p => p.id !== projectId);
-        result = { success: true, projectId };
+        const targetId = (payload && typeof payload === 'object') ? payload.projectId : payload;
+        const beforeLen = state.projects.length;
+        state.projects = state.projects.filter(p => p && p.id !== targetId);
+        result = { success: state.projects.length !== beforeLen, projectId: targetId };
         break;
       }
 
