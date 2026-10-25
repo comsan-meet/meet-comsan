@@ -2465,81 +2465,113 @@ label svg, label i {
     </div>
   </div>
 
-  <div id="authScreen" class="min-h-screen pb-20 bg-background text-foreground flex items-center justify-center p-4 transition-colors select-none relative overflow-hidden">
+  <div id="authScreen" class="min-h-screen pb-16 bg-slate-50 dark:bg-slate-950 text-foreground flex items-center justify-center p-4 transition-colors select-none relative overflow-hidden">
     <!-- Ambient decorative backdrop glows -->
     <div class="absolute -top-32 -right-32 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="w-full max-w-md relative z-10">
-      <!-- Centered Choice Brand Header -->
+    <div class="w-full max-w-[420px] relative z-10">
+      <!-- Centered Meeting Brand Header (Exact Choice Style) -->
       <div class="text-center mb-6 flex flex-col items-center">
-        <div class="w-16 h-16 rounded-2xl bg-indigo-600/10 dark:bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center mb-3 shadow-lg shadow-indigo-500/10">
-          <img src="comsan_meeting_logo.svg" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 960 960\'%3E%3Crect width=\'960\' height=\'960\' rx=\'220\' ry=\'220\' fill=\'%236961fb\'/%3E%3Crect x=\'78\' y=\'78\' width=\'804\' height=\'804\' rx=\'150\' ry=\'150\' fill=\'%23ffffff\'/%3E%3Cg fill=\'%230fd8be\'%3E%3Ccircle cx=\'480\' cy=\'362\' r=\'87\'/%3E%3Ccircle cx=\'246\' cy=\'435\' r=\'87\'/%3E%3Ccircle cx=\'714\' cy=\'435\' r=\'87\'/%3E%3Cpath fill-rule=\'evenodd\' d=\'M 350 710 V 582 C 350 510 408 467 480 467 C 552 467 610 510 610 582 V 710 H 350 Z M 387 674 H 573 V 582 C 573 531 531 503 480 503 C 429 503 387 531 387 582 V 674 Z\'/%3E%3C/g%3E%3Cg fill=\'none\' stroke=\'%230fd8be\' stroke-width=\'37\' stroke-linecap=\'round\'%3E%3Cpath d=\'M 156 710 V 650 C 156 612 195 582 328 582\'/%3E%3Cpath d=\'M 804 710 V 650 C 804 612 765 582 632 582\'/%3E%3C/g%3E%3C/svg%3E';" alt="Meeting Logo" class="w-10 h-10 object-contain" />
+        <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center mb-3 shadow-md shadow-indigo-500/5">
+          <img src="comsan_meeting_logo.svg" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 960 960\'%3E%3Crect width=\'960\' height=\'960\' rx=\'220\' ry=\'220\' fill=\'%234338ca\'/%3E%3Crect x=\'78\' y=\'78\' width=\'804\' height=\'804\' rx=\'150\' ry=\'150\' fill=\'%23ffffff\'/%3E%3Cg fill=\'%234338ca\'%3E%3Ccircle cx=\'480\' cy=\'362\' r=\'87\'/%3E%3Ccircle cx=\'246\' cy=\'435\' r=\'87\'/%3E%3Ccircle cx=\'714\' cy=\'435\' r=\'87\'/%3E%3Cpath fill-rule=\'evenodd\' d=\'M 350 710 V 582 C 350 510 408 467 480 467 C 552 467 610 510 610 582 V 710 H 350 Z M 387 674 H 573 V 582 C 573 531 531 503 480 503 C 429 503 387 531 387 582 V 674 Z\'/%3E%3C/g%3E%3Cg fill=\'none\' stroke=\'%234338ca\' stroke-width=\'37\' stroke-linecap=\'round\'%3E%3Cpath d=\'M 156 710 V 650 C 156 612 195 582 328 582\'/%3E%3Cpath d=\'M 804 710 V 650 C 804 612 765 582 632 582\'/%3E%3C/g%3E%3C/svg%3E';" alt="Meeting Logo" class="w-10 h-10 object-contain" />
         </div>
-        <h1 class="text-3xl sm:text-4xl font-extrabold font-['Poppins'] tracking-tight text-foreground">Meeting</h1>
-        <p class="text-xs sm:text-sm text-muted-foreground mt-1">ยินดีต้อนรับกลับสู่ระบบการประชุม COMSAN</p>
+        <h1 class="text-3xl sm:text-4xl font-extrabold font-['Poppins'] tracking-tight text-slate-900 dark:text-white">Meeting</h1>
+        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">ยินดีต้อนรับกลับสู่ Meeting</p>
       </div>
 
-      <!-- Auth Card -->
-      <div class="rounded-3xl border border-border/80 bg-card text-card-foreground shadow-2xl shadow-indigo-500/5 p-6 sm:p-8 backdrop-blur-md transition-all">
-        <div class="mb-6 space-y-1">
-          <h3 class="text-xl sm:text-2xl font-bold leading-tight text-foreground">เข้าสู่ระบบบัญชีของคุณ</h3>
-          <p class="text-xs sm:text-sm text-muted-foreground">กรอกข้อมูลสมาชิกเพื่อเข้าสู่ห้องประชุม</p>
+      <!-- Auth Card (Exact Choice Card Layout) -->
+      <div id="userLoginCard" class="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-card-foreground shadow-xl shadow-slate-200/50 dark:shadow-none p-6 sm:p-8 backdrop-blur-md transition-all">
+        <div class="mb-5 space-y-1">
+          <h3 class="text-xl sm:text-2xl font-bold leading-tight text-slate-900 dark:text-white">เข้าสู่ระบบบัญชีของคุณ</h3>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">กรอกข้อมูลเพื่อเข้าสู่ระบบ</p>
         </div>
 
         <div>
           <form onsubmit="handleUserLogin(event)" class="space-y-4">
             <div class="space-y-1.5">
-              <label class="text-xs font-semibold text-foreground flex items-center justify-between" for="userLoginName">
-                <span>ชื่อเล่น / รหัสสมาชิก</span>
-                <span class="text-[11px] text-muted-foreground font-normal">เช่น บอม, พลอย</span>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200" for="userLoginName">
+                ชื่อผู้ใช้งาน
               </label>
               <div class="relative flex items-center">
                 <i data-lucide="user" class="absolute left-3.5 text-muted-foreground w-4 h-4 pointer-events-none"></i>
-                <input type="text" id="userLoginName" placeholder="เช่น บอม หรือ COMSAN-01" required
-                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-input bg-background/80 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition shadow-2xs font-medium" />
+                <input type="text" id="userLoginName" placeholder="เช่น บอม, พลอย, ฟีฟ่า" required autocomplete="username"
+                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#4338ca] transition shadow-2xs font-medium" />
               </div>
             </div>
 
             <div class="space-y-1.5">
-              <label class="text-xs font-semibold text-foreground flex items-center justify-between" for="userLoginPass">
-                <span>รหัสผ่าน</span>
-                <span class="text-[11px] text-muted-foreground font-normal">รหัสผ่าน 4-8 หลัก</span>
+              <label class="block text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200" for="userLoginPass">
+                รหัสผ่าน
               </label>
               <div class="relative flex items-center">
                 <i data-lucide="lock" class="absolute left-3.5 text-muted-foreground w-4 h-4 pointer-events-none"></i>
-                <input type="password" id="userLoginPass" placeholder="••••••••" required
-                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-input bg-background/80 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition shadow-2xs font-medium" />
+                <input type="password" id="userLoginPass" placeholder="••••••••" autocomplete="current-password"
+                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#4338ca] transition shadow-2xs font-medium" />
               </div>
             </div>
 
-            <p id="userLoginError" class="text-xs text-destructive hidden font-medium flex items-center gap-1.5 p-2 rounded-lg bg-destructive/10 border border-destructive/20">
-              <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0"></i>
+            <p id="userLoginError" class="text-xs text-rose-600 dark:text-rose-400 hidden font-medium flex items-center gap-1.5 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 mt-1">
+              <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
               <span>ไม่พบชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง!</span>
             </p>
 
-            <button type="submit" class="w-full py-3.5 px-4 rounded-xl gradient-primary text-white font-bold text-sm shadow-lg shadow-indigo-600/25 hover:opacity-95 active:scale-[0.99] transition cursor-pointer flex items-center justify-center gap-2">
+            <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-[#4338ca] hover:bg-[#3730a3] text-white font-bold text-sm shadow-md transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2 mt-2">
               <span>เข้าสู่ระบบ</span>
-              <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </button>
+
+            <!-- Centered Forgot Password Link matching Choice -->
+            <div class="pt-1 text-center">
+              <button type="button" onclick="showLoginHelpModal()" class="text-xs sm:text-sm text-[#4338ca] dark:text-indigo-400 hover:underline font-semibold cursor-pointer">
+                ลืมรหัสผ่าน?
+              </button>
+            </div>
           </form>
 
-          <div class="mt-5 pt-4 border-t border-border/60 text-center">
-            <button type="button" onclick="requestAdminAccess()" class="w-full py-2.5 px-4 rounded-xl border border-border/80 hover:bg-muted/60 text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer flex items-center justify-center gap-2">
-              <i data-lucide="shield" class="w-3.5 h-3.5 text-primary"></i>
+          <div class="mt-5 pt-4 border-t border-slate-200/80 dark:border-slate-800 text-center">
+            <button type="button" onclick="requestAdminAccess()" class="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer flex items-center justify-center gap-2">
+              <i data-lucide="shield" class="w-3.5 h-3.5 text-[#4338ca] dark:text-indigo-400"></i>
               <span>ผู้ดูแลระบบ? เข้าสู่ระบบผู้ดำเนินการ (ADMIN)</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Auth Footer (Exact Choice /auth Footer) -->
-      <footer class="mt-8 text-center text-sm text-muted-foreground space-y-2">
-        <div class="pt-4 border-t border-border/40 text-xs">
-          <p>หากพบปัญหาในการใช้งาน ติดต่อที่ <a href="mailto:comsan.choice@gmail.com" class="text-primary hover:underline font-medium">comsan.choice@gmail.com</a> หรือพี่แมทธิว</p>
-          <p class="mt-1 opacity-70">© 2026 Meeting by Comsan. สงวนลิขสิทธิ์.</p>
-        </div>
+      <!-- Auth Footer (Exact Choice /auth Footer customized for Meeting) -->
+      <footer class="mt-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1.5">
+        <p>หากพบปัญหาในการเข้าใช้งาน ติดต่อที่ <a href="mailto:comsan.meet@gmail.com" class="text-[#4338ca] dark:text-indigo-400 font-semibold hover:underline">comsan.meet@gmail.com</a></p>
+        <p class="opacity-70">© 2026 Meeting by Comsan. สงวนลิขสิทธิ์</p>
       </footer>
+    </div>
+  </div>
+
+  <!-- Modal ช่วยเหลือลืมรหัสผ่าน -->
+  <div id="loginHelpModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h4 class="font-bold text-base text-foreground flex items-center gap-2">
+          <i data-lucide="help-circle" class="w-5 h-5 text-[#4338ca] dark:text-indigo-400"></i>
+          <span>ช่วยเหลือการเข้าสู่ระบบ</span>
+        </h4>
+        <button type="button" onclick="closeLoginHelpModal()" class="w-8 h-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="space-y-3 text-xs text-muted-foreground leading-relaxed">
+        <div class="p-3 rounded-xl bg-muted/50 border border-border/60">
+          <p class="font-semibold text-foreground mb-1">สำหรับสมาชิกชมรม:</p>
+          <p>กรอกชื่อเล่น เช่น <span class="font-bold text-[#4338ca] dark:text-indigo-400">บอม, พลอย, ฟีฟ่า, แมทธิว, เจมส์</span></p>
+          <p class="mt-0.5">รหัสผ่านเริ่มต้น: <span class="font-mono font-bold text-foreground">123</span></p>
+        </div>
+        <div class="p-3 rounded-xl bg-muted/50 border border-border/60">
+          <p class="font-semibold text-foreground mb-1">สำหรับผู้ดูแลระบบ (Admin):</p>
+          <p>กรอกอีเมล <span class="font-mono font-semibold text-foreground">comsan.meet@gmail.com</span> หรือชื่อ <span class="font-mono font-semibold text-foreground">admin</span></p>
+        </div>
+        <p>หากยังพบปัญหา ติดต่อฝ่ายสนับสนุนได้ที่ <a href="mailto:comsan.meet@gmail.com" class="text-[#4338ca] dark:text-indigo-400 font-semibold hover:underline">comsan.meet@gmail.com</a></p>
+      </div>
+      <button type="button" onclick="closeLoginHelpModal()" class="w-full py-2.5 rounded-xl bg-[#4338ca] hover:bg-[#3730a3] text-white font-semibold text-xs shadow-xs cursor-pointer">
+        เข้าใจแล้ว
+      </button>
     </div>
   </div>
 
@@ -3016,7 +3048,7 @@ label svg, label i {
     </header>
 
     <!-- SIDEBAR (<aside> - Exact Comsan Choice Sidebar Layout) -->
-    <aside id="appSidebar" class="hidden md:flex flex-col w-64 lg:w-72 shrink-0 border-r border-border bg-card/60 backdrop-blur-sm sticky top-0 h-screen z-40 select-none justify-between transition-colors">
+    <aside id="appSidebar" class="hidden md:flex flex-col md:w-56 lg:w-64 xl:w-72 shrink-0 border-r border-border bg-card/60 backdrop-blur-sm sticky top-0 h-screen z-40 select-none justify-between transition-colors">
       <!-- Logo & Brand Header (Pinned at top - Never scrolls away) -->
       <div class="p-4 pb-3 border-b border-border/40 select-none shrink-0">
         <div class="flex items-center justify-between px-2">
@@ -3181,7 +3213,7 @@ label svg, label i {
       <div class="min-h-screen pb-20 md:pb-10 bg-background text-foreground flex-1 flex flex-col">
         <!-- Unified Page Title & Top Actions Header (Exact Choice pt-6 pb-2 header on Mobile & Desktop) -->
         <!-- Unified Page Title & Top Actions Header (Exact Choice Image 2 header on Mobile & Desktop) -->
-        <div id="desktopMainHeader" class="flex pt-6 pb-2 px-4 md:px-6 lg:px-8 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full items-center justify-between gap-3">
+        <div id="desktopMainHeader" class="flex pt-6 pb-2 px-3 sm:px-4 md:px-5 lg:px-8 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full items-center justify-between gap-3">
           <div class="min-w-0 flex-1">
             <button type="button" id="mobilePageBackBtn" onclick="switchUserTab('HOME')" class="hidden inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-sm font-medium hover:bg-accent hover:!text-white h-9 rounded-md px-3 md:hidden mb-3 -ml-2 text-muted-foreground transition-colors cursor-pointer">
               <i data-lucide="arrow-left" class="h-4 w-4"></i>
@@ -3220,7 +3252,7 @@ label svg, label i {
         </div>
 
         <!-- MAIN SCROLLABLE CONTENT WORKSPACE -->
-        <div class="main-content-container flex-1 px-4 md:px-6 lg:px-8 pt-2 pb-24 md:pb-10">
+        <div class="main-content-container flex-1 px-3 sm:px-4 md:px-5 lg:px-8 pt-2 pb-24 md:pb-10">
           <main id="userView" class="max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full">
             <!-- User Dashboard -->
             <div id="userDashboard" class="space-y-6">
@@ -3480,30 +3512,30 @@ label svg, label i {
                 </div>
               </div>
 
-              <!-- SEGMENTED CONTROL PILL BAR (เอกสาร | แชร์หน้าจอ | สมุดจด | ปฏิทินงาน | สมาชิกชมรม | วงล้อสุ่ม - แถวเดียวบนมือถือตามภาพที่ 3) -->
-              <div class="bg-muted/60 p-1.5 rounded-2xl flex items-center gap-1.5 overflow-x-auto no-scrollbar sm:grid sm:grid-cols-6 border border-border/50 select-none">
+              <!-- SEGMENTED CONTROL PILL BAR (เอกสาร | แชร์หน้าจอ | สมุดจด | ปฏิทินงาน | สมาชิกชมรม | วงล้อสุ่ม - สวยงาม รองรับมือถือ ไอแพต และคอม) -->
+              <div class="bg-muted/60 p-1.5 rounded-2xl flex items-center gap-2 overflow-x-auto no-scrollbar xl:grid xl:grid-cols-6 border border-border/50 select-none scroll-smooth">
                 <button type="button" onclick="switchUserToolSubTab('FILES')" id="uToolBtn_FILES"
-                  class="shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap">
+                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap">
                   <i data-lucide="file-text" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">เอกสาร</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('STREAM')" id="uToolBtn_STREAM"
-                  class="shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
                   <i data-lucide="monitor" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">แชร์หน้าจอ</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('NOTE')" id="uToolBtn_NOTE"
-                  class="shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
                   <i data-lucide="square-pen" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">สมุดจด</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('CALENDAR')" id="uToolBtn_CALENDAR"
-                  class="shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
                   <i data-lucide="calendar-days" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">ปฏิทินงาน</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('SEATS')" id="uToolBtn_SEATS"
-                  class="shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
                   <i data-lucide="users" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">สมาชิกชมรม</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('RANDOM')" id="uToolBtn_RANDOM"
-                  class="shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
                   <i data-lucide="dices" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">วงล้อสุ่ม</span>
                 </button>
               </div>
@@ -5166,7 +5198,7 @@ label svg, label i {
       class="relative w-12 h-12 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-primary active:scale-90 hover:scale-105 transition-all duration-200 cursor-pointer"
       title="เปิดแชทห้องประชุม (ผู้ดูแลระบบ)">
       <i data-lucide="message-circle" class="h-5 w-5 text-primary"></i>
-      <span id="adminMobileChatBadge" class="hidden absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-rose-500 ring-2 ring-card animate-pulse shadow-xs"></span>
+      <span id="adminMobileChatBadge" class="hidden absolute -top-1 -right-1 z-30 w-3.5 h-3.5 rounded-full bg-rose-500 ring-2 ring-background shadow-md animate-pulse"></span>
     </button>
   </div>
 
@@ -5176,7 +5208,7 @@ label svg, label i {
       class="relative w-12 h-12 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-primary active:scale-90 hover:scale-105 transition-all duration-200 cursor-pointer"
       title="เปิดแชทห้องประชุม">
       <i data-lucide="message-circle" class="h-5 w-5 text-primary"></i>
-      <span id="userDesktopChatBadge" class="hidden absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-rose-500 ring-2 ring-card animate-pulse shadow-xs"></span>
+      <span id="userDesktopChatBadge" class="hidden absolute -top-1 -right-1 z-30 w-3.5 h-3.5 rounded-full bg-rose-500 ring-2 ring-background shadow-md animate-pulse"></span>
     </button>
   </div>
 

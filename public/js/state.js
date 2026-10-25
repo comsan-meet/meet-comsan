@@ -105,6 +105,50 @@ const defaultState = {
       noteSubmitted: false,
       filePermission: 'NONE',
       streamPermission: 'NONE'
+    },
+    {
+      id: 'COMSAN-04',
+      firstName: 'ธนกฤต',
+      lastName: 'ยอดเยี่ยม',
+      nickname: 'บอม',
+      year: '2',
+      major: 'CS',
+      position: 'ฝ่ายกิจกรรม',
+      password: '123',
+      checkedIn: false,
+      checkInTimeStr: '-',
+      checkInTimestamp: null,
+      isLate: false,
+      isLeave: false,
+      leaveReason: '',
+      attendedMinutes: 0,
+      raiseHandCount: 0,
+      note: '',
+      noteSubmitted: false,
+      filePermission: 'NONE',
+      streamPermission: 'NONE'
+    },
+    {
+      id: 'COMSAN-05',
+      firstName: 'ศุภกร',
+      lastName: 'มีสุข',
+      nickname: 'ฟีฟ่า',
+      year: '1',
+      major: 'IT',
+      position: 'ฝ่ายเทคโนโลยีสารสนเทศ',
+      password: '123',
+      checkedIn: false,
+      checkInTimeStr: '-',
+      checkInTimestamp: null,
+      isLate: false,
+      isLeave: false,
+      leaveReason: '',
+      attendedMinutes: 0,
+      raiseHandCount: 0,
+      note: '',
+      noteSubmitted: false,
+      filePermission: 'NONE',
+      streamPermission: 'NONE'
     }
   ],
   raiseHandQueue: [],
@@ -129,15 +173,24 @@ function normalizeState(raw) {
     ? rawMotions.map(m => (m.isOpen ? { ...m, isOpen: false } : m))
     : rawMotions;
 
+  const rawUsers = (Array.isArray(raw.users) && raw.users.length > 0 ? raw.users : defaultState.users).map(u => ({
+    isLeave: false,
+    leaveReason: '',
+    filePermission: 'NONE',
+    streamPermission: 'NONE',
+    ...u
+  }));
+
+  // ตรวจสอบให้มั่นใจว่าสมาชิกพื้นฐาน (บอม, พลอย, ฟีฟ่า, แมทธิว, เจมส์) มีอยู่ในระบบเสมอ
+  defaultState.users.forEach(defU => {
+    if (!rawUsers.some(u => (u.nickname && u.nickname.trim() === defU.nickname) || u.id === defU.id)) {
+      rawUsers.push(JSON.parse(JSON.stringify(defU)));
+    }
+  });
+
   return {
     meeting,
-    users: (Array.isArray(raw.users) && raw.users.length > 0 ? raw.users : defaultState.users).map(u => ({
-      isLeave: false,
-      leaveReason: '',
-      filePermission: 'NONE',
-      streamPermission: 'NONE',
-      ...u
-    })),
+    users: rawUsers,
     raiseHandQueue: Array.isArray(raw.raiseHandQueue) ? raw.raiseHandQueue : [],
     motions,
     chats: Array.isArray(raw.chats) ? raw.chats : [],

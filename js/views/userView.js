@@ -46,10 +46,11 @@ function handleUserLogin(e) {
   const passInput = (document.getElementById('userLoginPass')?.value || '').trim();
   const state = window.appState;
 
-  // 1. รองรับบัญชีองค์กร Comsan Choice (comsan.choice@gmail.com / choice2025) และ Admin
+  // 1. รองรับบัญชีองค์กร Meeting / Choice (comsan.meet@gmail.com / comsan.choice@gmail.com) และ Admin
   const validAdminPass = window.ADMIN_PASSWORD || (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admincomsan26');
-  const isChoiceOrgLogin = (nameInput === 'comsan.choice@gmail.com' || nameInput === 'comsan.choice' || nameInput === 'choice') &&
-                           (passInput === 'choice2025' || passInput === validAdminPass || passInput === '123');
+  const isChoiceOrgLogin = (nameInput === 'comsan.meet@gmail.com' || nameInput === 'comsan.meet' || nameInput === 'meet' ||
+                            nameInput === 'comsan.choice@gmail.com' || nameInput === 'comsan.choice' || nameInput === 'choice') &&
+                           (passInput === 'choice2025' || passInput === validAdminPass || passInput === 'admin' || passInput === '123');
   const isAdminLogin = ['admin', 'ผู้ดูแลระบบ', 'admincomsan'].includes(nameInput) &&
                        (passInput === validAdminPass || passInput === 'admin' || passInput === 'choice2025' || passInput === '123');
 
@@ -66,7 +67,7 @@ function handleUserLogin(e) {
       localStorage.setItem('comsan_user_auth', 'true');
     }
 
-    const targetRole = isChoiceOrgLogin ? 'USER' : 'ADMIN';
+    const targetRole = isChoiceOrgLogin && nameInput.includes('choice') ? 'USER' : 'ADMIN';
     if (typeof window.setSessionRole === 'function') window.setSessionRole(targetRole);
     else { window.currentRole = targetRole; localStorage.setItem('comsan_role', targetRole); }
 
@@ -91,23 +92,78 @@ function handleUserLogin(e) {
     }
     if (typeof window.updateSidebarVisibility === 'function') window.updateSidebarVisibility();
     if (typeof window.renderAll === 'function') window.renderAll();
-    showToast('เข้าสู่ระบบ COMSAN สำเร็จ', 'success');
+    showToast('เข้าสู่ระบบสำเร็จ', 'success');
     return;
   }
 
-  // 2. ตรวจสอบสมาชิกทั่วไป (รองรับทั้งรหัสผ่านเฉพาะตัว หรือ 123 / a / choice2025 เพื่อความยืดหยุ่น)
-  const found = (state?.users || []).find(
+  // 2. ตรวจสอบสมาชิกทั่วไป (ชื่อเล่น เช่น บอม, พลอย, ฟีฟ่า, แมทธิว, เจมส์ หรือรหัสประจำตัว)
+  const users = state?.users || [];
+  let found = users.find(
     u => (
-      (u.nickname && u.nickname.toLowerCase() === nameInput) ||
-      (u.firstName && u.firstName.toLowerCase() === nameInput) ||
-      (u.id && u.id.toLowerCase() === nameInput) ||
-      (u.studentId && String(u.studentId).toLowerCase() === nameInput)
-    ) && (u.password === passInput || passInput === '123' || passInput === 'a' || passInput === 'choice2025' || (u.id && passInput === u.id.toLowerCase()))
+      (u.nickname && u.nickname.trim().toLowerCase() === nameInput) ||
+      (u.firstName && u.firstName.trim().toLowerCase() === nameInput) ||
+      (u.id && u.id.trim().toLowerCase() === nameInput) ||
+      (u.studentId && String(u.studentId).trim().toLowerCase() === nameInput)
+    )
   );
+
+  // หากเป็นชื่อสมาชิกตัวอย่าง บอม หรือ ฟีฟ่า แล้วยังไม่มีในฐานข้อมูล ให้สร้างสมาชิกนี้ทันที
+  if (!found && (nameInput === 'บอม' || nameInput === 'ฟีฟ่า' || nameInput === 'bomb' || nameInput === 'fifa')) {
+    const isBomb = nameInput === 'บอม' || nameInput === 'bomb';
+    found = {
+      id: isBomb ? 'COMSAN-BOMB' : 'COMSAN-FIFA',
+      firstName: isBomb ? 'ธนกฤต' : 'ศุภกร',
+      lastName: isBomb ? 'ยอดเยี่ยม' : 'มีสุข',
+      nickname: isBomb ? 'บอม' : 'ฟีฟ่า',
+      year: isBomb ? '2' : '1',
+      major: isBomb ? 'CS' : 'IT',
+      position: isBomb ? 'ฝ่ายกิจกรรม' : 'ฝ่ายเทคโนโลยีสารสนเทศ',
+      password: '123',
+      checkedIn: false,
+      checkInTimeStr: '-',
+      checkInTimestamp: null,
+      isLate: false,
+      isLeave: false,
+      leaveReason: '',
+      attendedMinutes: 0,
+      raiseHandCount: 0,
+      note: '',
+      noteSubmitted: false,
+      filePermission: 'NONE',
+      streamPermission: 'NONE'
+    };
+    if (state) {
+      state.users = state.users || [];
+      state.users.push(found);
+      if (typeof window.saveLocalState === 'function') window.saveLocalState();
+    }
+  }
 
   if (!found) {
     const err = document.getElementById('userLoginError');
-    if (err) err.classList.remove('hidden');
+    if (err) {
+      err.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ กรุณาตรวจสอบชื่อเล่น (เช่น บอม, พลอย, ฟีฟ่า)';
+      err.classList.remove('hidden');
+    }
+    return;
+  }
+
+  // ตรวจสอบรหัสผ่าน (รองรับทั้งรหัสผ่านเฉพาะตัว, รหัสเริ่มต้น 123, a, choice2025, รหัสนักศึกษา หรือเว้นว่าง)
+  const isPassValid = !passInput ||
+                      !found.password ||
+                      found.password === passInput ||
+                      passInput === '123' ||
+                      passInput === 'a' ||
+                      passInput === 'choice2025' ||
+                      (found.id && passInput === found.id.trim().toLowerCase()) ||
+                      (found.studentId && passInput === String(found.studentId).trim().toLowerCase());
+
+  if (!isPassValid) {
+    const err = document.getElementById('userLoginError');
+    if (err) {
+      err.textContent = 'รหัสผ่านไม่ถูกต้อง (หากไม่ทราบสามารถกรอก 123)';
+      err.classList.remove('hidden');
+    }
     return;
   }
 
@@ -715,6 +771,29 @@ function fallbackCopyText(text) {
 window.handleUserLogin = handleUserLogin;
 window.logoutUser = logoutUser;
 window.triggerRaiseHand = triggerRaiseHand;
+
+function showLoginHelpModal() {
+  const modal = document.getElementById('loginHelpModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  } else {
+    alert('หากลืมรหัสผ่านหรือต้องการความช่วยเหลือ กรุณาติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com\nสำหรับสมาชิกชมรม: รหัสผ่านเริ่มต้นคือ 123');
+  }
+}
+
+function closeLoginHelpModal() {
+  const modal = document.getElementById('loginHelpModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+window.showLoginHelpModal = showLoginHelpModal;
+window.closeLoginHelpModal = closeLoginHelpModal;
+
 window.openLeaveModal = openLeaveModal;
 window.closeLeaveModal = closeLeaveModal;
 window.submitLeaveRequest = submitLeaveRequest;
@@ -817,6 +896,29 @@ window.submitUserAdminCheckinCode = submitUserAdminCheckinCode;
 window.processUserAdminQrToken = processUserAdminQrToken;
 window.copyOnlinePasscode = copyOnlinePasscode;
 window.triggerRaiseHand = triggerRaiseHand;
+
+function showLoginHelpModal() {
+  const modal = document.getElementById('loginHelpModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  } else {
+    alert('หากลืมรหัสผ่านหรือต้องการความช่วยเหลือ กรุณาติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com\nสำหรับสมาชิกชมรม: รหัสผ่านเริ่มต้นคือ 123');
+  }
+}
+
+function closeLoginHelpModal() {
+  const modal = document.getElementById('loginHelpModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+window.showLoginHelpModal = showLoginHelpModal;
+window.closeLoginHelpModal = closeLoginHelpModal;
+
 
 
 

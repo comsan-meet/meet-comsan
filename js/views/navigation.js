@@ -1,4 +1,4 @@
-﻿/**
+/**
  * COMSAN Meeting System - Navigation View Controller (Comsan Choice Unified Sister-Site Edition)
  */
 
@@ -1029,8 +1029,11 @@ function switchUserToolSubTab(subTab) {
     if (sec) sec.classList.toggle('hidden', st !== targetSub);
     if (btn) {
       btn.className = st === targetSub
-        ? 'shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap'
-        : 'shrink-0 sm:shrink sm:col-span-1 py-2 sm:py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap';
+        ? 'shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap'
+        : 'shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap';
+      if (st === targetSub && typeof btn.scrollIntoView === 'function') {
+        try { btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch (e) {}
+      }
     }
   });
 
