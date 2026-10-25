@@ -432,7 +432,8 @@ async function previewSharedFile(fileId) {
     if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     return;
   }
-  } else if (isVideo) {
+
+  if (isVideo) {
     bodyEl.innerHTML = `
       <div class="w-full flex-1 flex flex-col items-center justify-center bg-black/95 rounded-2xl overflow-hidden shadow-inner p-1">
         <video id="filePreviewVideoEl" controls autoplay playsinline class="max-w-full max-h-[62vh] w-auto h-auto rounded-xl">
@@ -707,7 +708,7 @@ function renderFileDropSection() {
   const permListEl = document.getElementById('adminFilePermissionsList');
   if (permListEl) {
     const searchEl = document.getElementById('adminFilePermSearchInput');
-    const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+    const q = (searchEl && searchEl.value) ? String(searchEl.value).trim().toLowerCase() : '';
 
     const sortedWithOriginalIndex = (state.users || [])
       .map((u, originalIdx) => ({ u, originalIdx }))
