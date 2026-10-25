@@ -3015,7 +3015,7 @@
                     <button type="button" onclick="document.getElementById('avatar_file_${type}_${idx}').click()"
                       class="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-2xs transition active:scale-95 cursor-pointer">
                       <i data-lucide="upload-cloud" class="h-3.5 w-3.5"></i>
-                      <span>อัปโหลดรูปตรงๆ</span>
+                      <span>อัปโหลดรูป</span>
                     </button>
 
                     <button type="button" onclick="triggerCropForRepeater('${type}', ${idx})"
