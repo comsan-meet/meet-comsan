@@ -572,14 +572,18 @@
       }
 
       case 'admin:toggleMotion': {
-        const motionId = payload;
-        const m = state.motions.find(item => item.id === motionId);
+        const payloadObj = (typeof payload === 'object' && payload !== null) ? payload : { motionId: payload };
+        const motionId = payloadObj.motionId;
+        const targetOpen = payloadObj.isOpen;
+        const m = (state.motions || []).find(item => item.id === motionId);
         if (m) {
-          if (!m.isOpen && state.meeting && state.meeting.isEnded) {
+          const nextState = (targetOpen !== undefined) ? Boolean(targetOpen) : !m.isOpen;
+          if (nextState && state.meeting && state.meeting.isEnded) {
             shouldPersist = false;
+            result = { ok: false, error: 'Meeting ended' };
             break;
           }
-          m.isOpen = !m.isOpen;
+          m.isOpen = nextState;
         }
         result = { ok: true };
         break;

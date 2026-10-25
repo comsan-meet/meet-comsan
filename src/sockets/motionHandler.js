@@ -34,13 +34,17 @@ module.exports = function registerMotionHandlers(io, socket) {
     stateService.persistAndBroadcast();
   });
 
-  socket.on('admin:toggleMotion', (motionId) => {
-    const m = state.motions.find(item => item.id === motionId);
+  socket.on('admin:toggleMotion', (payload) => {
+    const payloadObj = (typeof payload === 'object' && payload !== null) ? payload : { motionId: payload };
+    const motionId = payloadObj.motionId;
+    const targetOpen = payloadObj.isOpen;
+    const m = (state.motions || []).find(item => item.id === motionId);
     if (m) {
-      if (!m.isOpen && state.meeting && state.meeting.isEnded) {
+      const nextState = (targetOpen !== undefined) ? Boolean(targetOpen) : !m.isOpen;
+      if (nextState && state.meeting && state.meeting.isEnded) {
         return; // Don't allow re-opening votes if meeting is ended
       }
-      m.isOpen = !m.isOpen;
+      m.isOpen = nextState;
       stateService.persistAndBroadcast();
     }
   });

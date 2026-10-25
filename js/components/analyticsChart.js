@@ -124,8 +124,30 @@ function renderAdminAnalyticsChart() {
       const currentMotion = motions.find(m => m.id === adminChartSelectedMotionId) || motions[motions.length - 1];
       if (motionBadge) {
         motionBadge.innerHTML = currentMotion.isOpen
-          ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">กำลังเปิดโหวต</span>`
-          : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-muted text-muted-foreground border border-border whitespace-nowrap">ปิดการโหวตแล้ว</span>`;
+          ? `
+            <div class="flex items-center gap-1.5">
+              <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> กำลังเปิดโหวต
+              </span>
+              <button type="button" onclick="toggleMotionStatus('${currentMotion.id}')"
+                class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-[11px] font-bold transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                title="คลิกเพื่อปิดรับคะแนนโหวตญัตตินี้">
+                <i data-lucide="lock" class="w-3 h-3"></i> <span>ปิดโหวต</span>
+              </button>
+            </div>
+          `
+          : `
+            <div class="flex items-center gap-1.5">
+              <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-muted text-muted-foreground border border-border whitespace-nowrap flex items-center gap-1">
+                <i data-lucide="lock" class="w-3 h-3"></i> ปิดโหวตแล้ว
+              </span>
+              <button type="button" onclick="toggleMotionStatus('${currentMotion.id}')"
+                class="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold transition border border-emerald-500/30 flex items-center gap-1 cursor-pointer"
+                title="คลิกเพื่อเปิดรับคะแนนโหวตญัตตินี้อีกครั้ง">
+                <i data-lucide="unlock" class="w-3 h-3"></i> <span>เปิดโหวต</span>
+              </button>
+            </div>
+          `;
       }
 
       const opts = typeof window.getMotionOptions === 'function' ? window.getMotionOptions(currentMotion) : (currentMotion.options || []);

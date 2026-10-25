@@ -421,17 +421,29 @@ async function deleteMotion(motionId) {
   if (typeof showToast === 'function') showToast(`ลบญัตติ "${title}" เรียบร้อยแล้ว`, 'info');
 }
 
-function toggleMotionStatus(motionId) {
-  const m = window.appState.motions.find(item => item.id === motionId);
-  if (m) {
-    if (!m.isOpen && window.appState.meeting && window.appState.meeting.isEnded) {
+function toggleMotionStatus(motionId, explicitTargetState) {
+  const state = window.appState;
+  if (!state || !Array.isArray(state.motions)) return;
+  const m = state.motions.find(item => item.id === motionId);
+  if (!m) return;
+
+  const targetState = (explicitTargetState !== undefined) ? Boolean(explicitTargetState) : !m.isOpen;
+
+  if (targetState && state.meeting && state.meeting.isEnded) {
+    if (typeof showToast === 'function') {
       showToast('ไม่สามารถเปิดโหวตได้เนื่องจากการประชุมจบลงแล้ว กรุณาเปิดการประชุมก่อน', 'error');
-      return;
     }
-    m.isOpen = !m.isOpen;
-    window.saveLocalState();
-    window.socket.emit('admin:toggleMotion', motionId);
-    if (typeof window.renderAll === 'function') window.renderAll();
+    return;
+  }
+
+  m.isOpen = targetState;
+  if (typeof window.saveLocalState === 'function') window.saveLocalState();
+  if (window.socket && typeof window.socket.emit === 'function') {
+    window.socket.emit('admin:toggleMotion', { motionId, isOpen: targetState });
+  }
+  if (typeof window.renderAll === 'function') window.renderAll();
+  if (typeof showToast === 'function') {
+    showToast(targetState ? `เปิดรับคะแนนโหวตญัตติ "${m.title}" แล้ว` : `ปิดรับคะแนนโหวตญัตติ "${m.title}" เรียบร้อยแล้ว`, 'info');
   }
 }
 

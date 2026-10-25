@@ -704,8 +704,12 @@ function renderAll() {
                 <div class="flex justify-between items-center gap-2">
                   <h4 class="text-sm font-bold text-slate-900 dark:text-white">${mot.title} ${mot.isSecret ? '<span class="text-xs text-purple-500 font-bold ml-1">(โหวตลับ)</span>' : ''}</h4>
                   <div class="flex gap-1.5 shrink-0">
-                    <button type="button" onclick="toggleMotionStatus('${mot.id}')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-600 text-xs font-bold">${mot.isOpen ? 'ปิดโหวต' : 'เปิดอีกครั้ง'}</button>
-                    <button type="button" onclick="deleteMotion('${mot.id}')" class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-500 text-xs"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline-block"></i></button>
+                    <button type="button" onclick="toggleMotionStatus('${mot.id}')"
+                      class="px-3 py-1.5 rounded-xl ${mot.isOpen ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold' : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30'} text-xs transition shadow-2xs active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                      <i data-lucide="${mot.isOpen ? 'lock' : 'unlock'}" class="w-3.5 h-3.5"></i>
+                      <span>${mot.isOpen ? 'ปิดโหวต' : 'เปิดอีกครั้ง'}</span>
+                    </button>
+                    <button type="button" onclick="deleteMotion('${mot.id}')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 text-xs transition active:scale-95 flex items-center justify-center cursor-pointer" title="ลบญัตติ"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline-block"></i></button>
                   </div>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
