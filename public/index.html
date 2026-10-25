@@ -870,14 +870,26 @@ button.gradient-primary.rounded-full {
 
 /* Toast Notifications */
 #toastContainer {
-  position: fixed;
-  bottom: 5rem;
-  right: 1.25rem;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  pointer-events: none;
+  position: fixed !important;
+  top: 1.5rem !important;
+  right: 1.5rem !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+  pointer-events: none !important;
+  max-width: calc(100vw - 2rem) !important;
+}
+
+@media (max-width: 640px) {
+  #toastContainer {
+    top: 1rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    align-items: center !important;
+  }
 }
 
 .comsan-toast {
@@ -3001,7 +3013,7 @@ label svg, label i {
                 class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95"
                 title="ค้นหาและจับคู่รูปภาพกับรายชื่อคนทั้งหมดให้อัตโนมัติตามชื่อเล่นและชื่อ-สกุล">
                 <i data-lucide="wand-2" class="h-3.5 w-3.5"></i>
-                <span>⚡ จับคู่รูปทั้งหมดอัตโนมัติ</span>
+                <span>จับคู่รูปทั้งหมดอัตโนมัติ</span>
               </button>
             </div>
 
@@ -3303,8 +3315,8 @@ label svg, label i {
 
         <div class="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex items-start gap-2.5">
           <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</span>
-          <div class="space-y-2 w-full">
-            <div class="flex items-center justify-between">
+          <div class="space-y-2 flex-1 min-w-0">
+            <div class="flex items-center justify-between flex-wrap gap-2">
               <p class="font-bold">วางโค้ดสคริปต์เชื่อมต่อ Drive ด้านล่างนี้</p>
               <button type="button" onclick="copyGasScriptToClipboard()"
                 class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition active:scale-95 cursor-pointer">
@@ -3312,10 +3324,19 @@ label svg, label i {
                 <span id="btnCopyGasScriptLabel">คัดลอกโค้ดสคริปต์</span>
               </button>
             </div>
-            <pre class="p-3 rounded-xl bg-slate-900 text-slate-100 font-mono text-[11px] overflow-x-auto max-h-40 border border-slate-700 leading-relaxed select-all" id="gasScriptCodeBlock">function doGet(e) {
+            <div class="w-full max-w-full rounded-xl bg-slate-900 border border-slate-700 overflow-hidden">
+              <pre class="p-3 text-slate-100 font-mono text-[11px] overflow-x-auto max-h-48 leading-relaxed select-all block w-full whitespace-pre" id="gasScriptCodeBlock">function doGet(e) {
   var folderId = e.parameter.folderId;
+  if (!folderId && e.parameter.url) {
+    var match = e.parameter.url.match(/folders\/([a-zA-Z0-9_-]+)/);
+    if (match) folderId = match[1];
+  }
   if (!folderId) {
-    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: "Missing folderId parameter" })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: false,
+      status: "error",
+      message: "Missing folderId parameter"
+    })).setMimeType(ContentService.MimeType.JSON);
   }
   try {
     var folder = DriveApp.getFolderById(folderId);
@@ -3337,14 +3358,20 @@ label svg, label i {
     }
     return ContentService.createTextOutput(JSON.stringify({
       ok: true,
+      status: "success",
       folderName: folder.getName(),
       totalFiles: list.length,
       files: list
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: false,
+      status: "error",
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 }</pre>
+            </div>
           </div>
         </div>
 
@@ -3368,7 +3395,7 @@ label svg, label i {
           วาง URL เว็บแอป (Web App URL) ของคุณที่นี่:
         </label>
         <div class="flex items-center gap-2">
-          <input type="url" id="prjDriveBridgeScriptUrlInput"
+          <input type="url" id="prjDriveBridgeUrlInput"
             placeholder="https://script.google.com/macros/s/AKfycb.../exec"
             class="flex-1 px-3 py-2 rounded-xl bg-card border border-border text-xs focus:border-primary font-mono" />
           <button type="button" onclick="saveDriveBridgeUrlFromModal()"
@@ -3377,7 +3404,7 @@ label svg, label i {
           </button>
         </div>
         <p class="text-[11px] text-muted-foreground">
-          💡 ตั้งค่าครั้งเดียว ระบบจะจำค่านี้ไว้ตลอดไปในอุปกรณ์ของคุณ
+          ตั้งค่าครั้งเดียว ระบบจะจำค่านี้ไว้ในอุปกรณ์ของคุณ
         </p>
       </div>
 
@@ -3443,7 +3470,7 @@ label svg, label i {
         <button type="button" onclick="autoMatchAllPhotosFromCatalog(); closeDriveCatalogListModal();"
           class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
           <i data-lucide="wand-2" class="h-3.5 w-3.5"></i>
-          <span>⚡ จับคู่รูปทั้งหมดอัตโนมัติตามชื่อ</span>
+          <span>จับคู่รูปทั้งหมดอัตโนมัติตามชื่อ</span>
         </button>
         <button type="button" onclick="closeDriveCatalogListModal()"
           class="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-semibold transition cursor-pointer">

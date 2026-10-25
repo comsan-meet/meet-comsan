@@ -629,9 +629,16 @@
 
     // Check if Google Apps Script Bridge URL is configured
     if (!driveBridgeScriptUrl) {
-      // Guide user to set up script bridge or choose files locally
       openDriveScriptHelpModal();
       return;
+    }
+
+    // Auto-fix URL if user entered .../edit
+    let scriptUrl = driveBridgeScriptUrl.trim();
+    if (scriptUrl.includes('/edit')) {
+      scriptUrl = scriptUrl.replace(/\/edit.*$/, '/exec');
+      driveBridgeScriptUrl = scriptUrl;
+      try { localStorage.setItem('comsan_drive_bridge_url', scriptUrl); } catch (e) {}
     }
 
     const scanBtn = document.getElementById('prjDriveScanBtn');
@@ -639,20 +646,32 @@
     if (scanBtn) scanBtn.disabled = true;
     if (scanBtnText) scanBtnText.textContent = 'กำลังสแกนรูป...';
 
+    const statusText = document.getElementById('prjDriveFolderStatusText');
+    if (statusText) {
+      statusText.innerHTML = `
+        <i data-lucide="loader-2" class="h-3.5 w-3.5 text-blue-500 animate-spin shrink-0"></i>
+        <span>กำลังเชื่อมต่อ Google Apps Script เพื่ออ่านรูปภาพในโฟลเดอร์...</span>
+      `;
+      if (typeof window.refreshIcons === 'function') window.refreshIcons();
+      else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    }
+
     try {
-      const fetchUrl = `${driveBridgeScriptUrl}${driveBridgeScriptUrl.includes('?') ? '&' : '?'}folderId=${encodeURIComponent(folderId)}`;
-      const res = await fetch(fetchUrl, { method: 'GET' });
+      const fetchUrl = `${scriptUrl}${scriptUrl.includes('?') ? '&' : '?'}folderId=${encodeURIComponent(folderId)}`;
+      const res = await fetch(fetchUrl, { method: 'GET', redirect: 'follow' });
       const data = await res.json();
 
-      if (data && data.status === 'success' && Array.isArray(data.files)) {
-        drivePhotoCatalog = data.files.map(f => ({
+      const files = (data && (Array.isArray(data.files) ? data.files : (Array.isArray(data.data) ? data.data : []))) || [];
+      const isSuccess = data && (data.status === 'success' || data.ok === true || files.length > 0);
+
+      if (isSuccess) {
+        drivePhotoCatalog = files.map(f => ({
           id: f.id,
           name: f.name || 'untitled',
           url: f.url || `https://lh3.googleusercontent.com/d/${f.id}`,
           size: f.size || 0
         }));
         updateDrivePhotoFolderStatusUi();
-        // Re-render repeaters to show suggestions
         renderRepeater('LEADERS');
         renderRepeater('MEMBERS');
         renderRepeater('ADVISORS');
@@ -662,14 +681,23 @@
           window.showToast(`สแกนพบรูปภาพทั้งหมด ${drivePhotoCatalog.length} รูปในโฟลเดอร์ Google Drive เรียบร้อยแล้ว`, 'success');
         }
       } else {
-        throw new Error(data && data.message ? data.message : 'ไม่สามารถดึงรายชื่อไฟล์จาก Google Apps Script ได้');
+        const errMsg = (data && (data.message || data.error)) || 'ไม่สามารถดึงรายชื่อไฟล์จาก Google Apps Script ได้';
+        throw new Error(errMsg);
       }
     } catch (err) {
       console.error('Scan Drive Folder Error:', err);
+      const friendlyMsg = err && err.message ? err.message : 'กรุณาตรวจสอบการตั้งค่าสคริปต์ (ตั้งค่า Anyone / ทุกคน และใช้ลิงก์ /exec)';
       if (typeof window.showToast === 'function') {
-        window.showToast(`การเชื่อมต่อสคริปต์ขัดข้อง: ${err.message || 'กรุณาตรวจสอบการตั้งค่าสคริปต์'}`, 'error');
+        window.showToast(`การเชื่อมต่อสคริปต์ขัดข้อง: ${friendlyMsg}`, 'error');
       }
-      openDriveScriptHelpModal();
+      if (statusText) {
+        statusText.innerHTML = `
+          <i data-lucide="alert-circle" class="h-3.5 w-3.5 text-rose-500 shrink-0"></i>
+          <span class="text-rose-500 font-medium">การเชื่อมต่อขัดข้อง: ${escapeHtml(friendlyMsg)}</span>
+        `;
+        if (typeof window.refreshIcons === 'function') window.refreshIcons();
+        else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+      }
     } finally {
       if (scanBtn) scanBtn.disabled = false;
       if (scanBtnText) scanBtnText.textContent = 'สแกนอ่านรูปในโฟลเดอร์';
@@ -772,7 +800,7 @@
     renderRepeater('SMO');
 
     if (typeof window.showToast === 'function') {
-      window.showToast(`⚡ จับคู่รูปภาพสำเร็จ ${matchedCount} คน จากทั้งหมดในโครงการ`, 'success');
+      window.showToast(`จับคู่รูปภาพสำเร็จ ${matchedCount} คน จากทั้งหมดในโครงการ`, 'success');
     }
   }
 
@@ -875,8 +903,8 @@
    * Modals & UI Controls for Drive Apps Script & Catalog Browser
    */
   function openDriveScriptHelpModal() {
-    const input = document.getElementById('prjDriveBridgeUrlInput');
-    if (input) input.value = driveBridgeScriptUrl;
+    const input = document.getElementById('prjDriveBridgeUrlInput') || document.getElementById('prjDriveBridgeScriptUrlInput');
+    if (input) input.value = driveBridgeScriptUrl || (typeof localStorage !== 'undefined' ? localStorage.getItem('comsan_drive_bridge_url') || '' : '');
     const modal = document.getElementById('driveScriptHelpModal');
     if (modal) {
       modal.classList.remove('hidden');
@@ -895,59 +923,75 @@
   }
 
   function saveDriveBridgeUrlFromModal() {
-    const input = document.getElementById('prjDriveBridgeUrlInput');
-    const val = input ? input.value.trim() : '';
+    const input = document.getElementById('prjDriveBridgeUrlInput') || document.getElementById('prjDriveBridgeScriptUrlInput');
+    let val = input ? input.value.trim() : '';
     if (!val) {
       if (typeof window.showToast === 'function') {
         window.showToast('กรุณาระบุ URL ของเว็บแอปพลิเคชัน Google Apps Script', 'warning');
       }
       return;
     }
+
+    if (val.includes('/edit')) {
+      val = val.replace(/\/edit.*$/, '/exec');
+      if (input) input.value = val;
+    }
+
     driveBridgeScriptUrl = val;
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('comsan_drive_bridge_url', val);
+      try {
+        localStorage.setItem('comsan_drive_bridge_url', val);
+      } catch (e) {}
     }
     closeDriveScriptHelpModal();
     if (typeof window.showToast === 'function') {
-      window.showToast('บันทึกการตั้งค่าสคริปต์ Google Apps Script เรียบร้อยแล้ว', 'success');
+      window.showToast('บันทึกการตั้งค่าสคริปต์ Google Apps Script เรียบร้อยแล้ว กำลังสแกนรูป...', 'info');
     }
     scanDrivePhotoFolder();
   }
 
   function copyGasScriptToClipboard() {
     const code = `function doGet(e) {
+  var folderId = e.parameter.folderId;
+  if (!folderId && e.parameter.url) {
+    var match = e.parameter.url.match(/folders\\/([a-zA-Z0-9_-]+)/);
+    if (match) folderId = match[1];
+  }
+  if (!folderId) {
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: false,
+      status: "error",
+      message: "Missing folderId parameter"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
   try {
-    var folderId = e.parameter.folderId;
-    if (!folderId && e.parameter.url) {
-      var match = e.parameter.url.match(/folders\\/([a-zA-Z0-9_-]+)/);
-      if (match) folderId = match[1];
-    }
-    if (!folderId) {
-      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Missing folderId parameter" }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
     var folder = DriveApp.getFolderById(folderId);
-    var files = [];
-    var fileIterator = folder.getFiles();
-    while (fileIterator.hasNext()) {
-      var file = fileIterator.next();
+    var files = folder.getFiles();
+    var list = [];
+    while (files.hasNext()) {
+      var file = files.next();
+      var name = file.getName();
+      var id = file.getId();
       var mime = file.getMimeType();
-      if (mime.indexOf("image/") === 0) {
-        files.push({
-          id: file.getId(),
-          name: file.getName(),
-          url: "https://lh3.googleusercontent.com/d/" + file.getId(),
-          size: file.getSize()
+      if (mime.indexOf("image/") === 0 || name.match(/\\.(jpg|jpeg|png|webp|gif|svg)$/i)) {
+        list.push({
+          id: id,
+          name: name,
+          size: file.getSize(),
+          url: "https://lh3.googleusercontent.com/d/" + id
         });
       }
     }
     return ContentService.createTextOutput(JSON.stringify({
+      ok: true,
       status: "success",
       folderName: folder.getName(),
-      files: files
+      totalFiles: list.length,
+      files: list
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({
+      ok: false,
       status: "error",
       message: err.toString()
     })).setMimeType(ContentService.MimeType.JSON);
@@ -2939,7 +2983,7 @@
                   </span>
                 ` : `
                   <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                    <i data-lucide="sparkles" class="h-3 w-3"></i> รูปการ์ตูนน่ารักอัตโนมัติ (DiceBear)
+                    <i data-lucide="user" class="h-3 w-3"></i> รูปโปรไฟล์เริ่มต้น (DiceBear)
                   </span>
                 `}
               </div>
@@ -2994,8 +3038,7 @@
                       <button type="button" onclick="resetRepeaterAvatarToCute('${type}', ${idx})"
                         class="px-2.5 py-1.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 text-[11px] font-semibold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
                         title="ลบรูปกำหนดเอง และคืนค่าเป็นรูปการ์ตูนน่ารัก">
-                        <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
-                        <span>ใช้รูปน่ารักเริ่มต้น</span>
+                        <i data-lucide="user" class="h-3.5 w-3.5"></i><span>ใช้รูปเริ่มต้น</span>
                       </button>
                     ` : ''}
                   </div>
@@ -3028,8 +3071,7 @@
                               <span class="text-[10px] text-muted-foreground">พบรูปตรงกับชื่อ:</span>
                               <button type="button" onclick="selectPhotoFromCatalogForPerson('${type}', ${idx}, '${suggest.id}', '${escapeHtml(suggest.name)}')"
                                 class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/25 transition cursor-pointer">
-                                <i data-lucide="sparkles" class="h-3 w-3"></i>
-                                <span>คลิกใช้รูป "${escapeHtml(suggest.name)}"</span>
+                                <i data-lucide="image" class="h-3 w-3"></i><span>ใช้รูป "${escapeHtml(suggest.name)}"</span>
                               </button>
                             </div>
                           `;
