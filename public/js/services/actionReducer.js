@@ -65,6 +65,7 @@
     state.files = Array.isArray(state.files) ? state.files : [];
     state.raiseHandQueue = Array.isArray(state.raiseHandQueue) ? state.raiseHandQueue : [];
     state.calendarEvents = Array.isArray(state.calendarEvents) ? state.calendarEvents : [];
+    state.projects = Array.isArray(state.projects) ? state.projects : [];
     state.meetingHistory = Array.isArray(state.meetingHistory) ? state.meetingHistory : [];
     state.meeting = state.meeting || {};
     state.randomizer = state.randomizer || { lastWinner: null, history: [] };
@@ -1043,6 +1044,79 @@
       case 'admin:clearAllCalendarEvents': {
         state.calendarEvents = [];
         result = { success: true };
+        break;
+      }
+
+      // ==========================================
+      // 8. PROJECTS MANAGEMENT
+      // ==========================================
+      case 'admin:createProject': {
+        const data = payload || {};
+        const newProject = {
+          id: data.id || `PRJ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          title: (data.title || 'โครงการใหม่').trim(),
+          code: (data.code || '').trim(),
+          academicYear: (data.academicYear || '').trim(),
+          status: data.status || 'IN_PROGRESS', // 'IN_PROGRESS' | 'COMPLETED' | 'PLANNING'
+          startDate: data.startDate || todayISO,
+          endDate: data.endDate || data.startDate || todayISO,
+          location: (data.location || '').trim(),
+          budget: (data.budget || '').trim(),
+          summary: (data.summary || '').trim(),
+          description: (data.description || '').trim(),
+          googleDriveUrl: (data.googleDriveUrl || '').trim(),
+          projectDocument: data.projectDocument || { title: '', url: '', updatedAt: todayISO },
+          budgetDocument: data.budgetDocument || { title: '', url: '', totalBudget: '', updatedAt: todayISO },
+          leaders: Array.isArray(data.leaders) ? data.leaders : [],
+          members: Array.isArray(data.members) ? data.members : [],
+          advisors: Array.isArray(data.advisors) ? data.advisors : [],
+          smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        state.projects.unshift(newProject);
+        result = { success: true, project: newProject };
+        break;
+      }
+
+      case 'admin:updateProject': {
+        const data = payload || {};
+        const idx = state.projects.findIndex(p => p.id === data.id);
+        if (idx !== -1) {
+          state.projects[idx] = {
+            ...state.projects[idx],
+            title: data.title !== undefined ? String(data.title).trim() : state.projects[idx].title,
+            code: data.code !== undefined ? String(data.code).trim() : state.projects[idx].code,
+            academicYear: data.academicYear !== undefined ? String(data.academicYear).trim() : state.projects[idx].academicYear,
+            status: data.status || state.projects[idx].status,
+            startDate: data.startDate || state.projects[idx].startDate,
+            endDate: data.endDate || state.projects[idx].endDate,
+            location: data.location !== undefined ? String(data.location).trim() : state.projects[idx].location,
+            budget: data.budget !== undefined ? String(data.budget).trim() : state.projects[idx].budget,
+            summary: data.summary !== undefined ? String(data.summary).trim() : state.projects[idx].summary,
+            description: data.description !== undefined ? String(data.description).trim() : state.projects[idx].description,
+            googleDriveUrl: data.googleDriveUrl !== undefined ? String(data.googleDriveUrl).trim() : state.projects[idx].googleDriveUrl,
+            projectDocument: data.projectDocument || state.projects[idx].projectDocument,
+            budgetDocument: data.budgetDocument || state.projects[idx].budgetDocument,
+            leaders: Array.isArray(data.leaders) ? data.leaders : state.projects[idx].leaders,
+            members: Array.isArray(data.members) ? data.members : state.projects[idx].members,
+            advisors: Array.isArray(data.advisors) ? data.advisors : state.projects[idx].advisors,
+            smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : state.projects[idx].smoOfficers,
+            updatedAt: new Date().toISOString()
+          };
+          result = { success: true, project: state.projects[idx] };
+        } else {
+          result = { success: false, message: 'ไม่พบโครงการที่ต้องการแก้ไข' };
+          shouldPersist = false;
+        }
+        break;
+      }
+
+      case 'admin:deleteProject': {
+        const { projectId } = payload || {};
+        state.projects = state.projects.filter(p => p.id !== projectId);
+        result = { success: true, projectId };
         break;
       }
 

@@ -866,6 +866,14 @@ function renderAll() {
       window.renderAdminCalendarSection();
     }
 
+    // Render Projects sections if available
+    if (typeof window.renderUserProjectsSection === 'function') {
+      window.renderUserProjectsSection();
+    }
+    if (typeof window.renderAdminProjectsSection === 'function') {
+      window.renderAdminProjectsSection();
+    }
+
     // Render User Meeting History list if modal is open
     const uHistModal = document.getElementById('userMeetingHistoryModal');
     if (uHistModal && !uHistModal.classList.contains('hidden') && typeof window.renderUserMeetingHistoryList === 'function') {

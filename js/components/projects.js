@@ -1,0 +1,1246 @@
+/**
+ * COMSAN Meeting System - Projects Component
+ * Manages Club Projects, Stakeholders, Documents, and Google Drive Links
+ */
+
+(function (root, factory) {
+  const mod = factory();
+  if (typeof module === 'object' && module.exports) {
+    module.exports = mod;
+  }
+  if (typeof root !== 'undefined') {
+    Object.assign(root, mod);
+  }
+  if (typeof window !== 'undefined') {
+    Object.assign(window, mod);
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+
+  let userProjectFilter = 'ALL';
+  let userProjectSearch = '';
+  let userProjectYear = 'ALL';
+
+  let adminProjectFilter = 'ALL';
+  let adminProjectSearch = '';
+  let adminProjectYear = 'ALL';
+
+  // Temporary arrays for admin edit modal repeaters
+  let prjFormLeaders = [];
+  let prjFormMembers = [];
+  let prjFormAdvisors = [];
+  let prjFormSmoOfficers = [];
+
+  function getProjectsList() {
+    if (window.appState && Array.isArray(window.appState.projects)) {
+      return window.appState.projects;
+    }
+    if (typeof window.defaultProjects !== 'undefined' && Array.isArray(window.defaultProjects)) {
+      return window.defaultProjects;
+    }
+    return [];
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function getStatusMeta(status) {
+    switch (status) {
+      case 'IN_PROGRESS':
+        return {
+          label: 'กำลังดำเนินการ',
+          color: 'emerald',
+          badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+          dotClass: 'bg-emerald-500',
+          ping: true,
+          icon: 'play-circle'
+        };
+      case 'COMPLETED':
+        return {
+          label: 'สิ้นสุดแล้ว',
+          color: 'blue',
+          badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+          dotClass: 'bg-blue-500',
+          ping: false,
+          icon: 'check-circle-2'
+        };
+      case 'PLANNING':
+      default:
+        return {
+          label: 'เตรียมการ',
+          color: 'amber',
+          badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+          dotClass: 'bg-amber-500',
+          ping: false,
+          icon: 'clock'
+        };
+    }
+  }
+
+  function formatThaiDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const d = parseInt(parts[2], 10);
+        const m = parseInt(parts[1], 10);
+        const y = parseInt(parts[0], 10);
+        const thaiMonths = [
+          'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+          'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+        ];
+        const thaiYear = y < 2500 ? y + 543 : y;
+        return `${d} ${thaiMonths[m - 1] || ''} ${thaiYear}`;
+      }
+    } catch (e) {}
+    return dateStr;
+  }
+
+  function formatThaiDateRange(startDate, endDate) {
+    if (!startDate && !endDate) return '-';
+    if (!endDate || startDate === endDate) return formatThaiDate(startDate);
+    return `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`;
+  }
+
+  // ========================================================
+  // 1. USER VIEW RENDERING
+  // ========================================================
+  function renderUserProjectsSection() {
+    const container = document.getElementById('uToolSec_PROJECTS');
+    if (!container) return;
+
+    const allProjects = getProjectsList();
+
+    // Collect available academic years
+    const yearSet = new Set();
+    allProjects.forEach(p => {
+      if (p.academicYear) yearSet.add(p.academicYear);
+    });
+    const sortedYears = Array.from(yearSet).sort((a, b) => b.localeCompare(a));
+
+    // Filter projects
+    const q = userProjectSearch.trim().toLowerCase();
+    const filtered = allProjects.filter(p => {
+      if (userProjectFilter !== 'ALL' && p.status !== userProjectFilter) return false;
+      if (userProjectYear !== 'ALL' && p.academicYear !== userProjectYear) return false;
+      if (q) {
+        const titleMatch = (p.title || '').toLowerCase().includes(q);
+        const codeMatch = (p.code || '').toLowerCase().includes(q);
+        const yearMatch = (p.academicYear || '').toLowerCase().includes(q);
+        const leaderMatch = (p.leaders || []).some(l => 
+          (l.name || '').toLowerCase().includes(q) || (l.nickname || '').toLowerCase().includes(q)
+        );
+        const memberMatch = (p.members || []).some(m =>
+          (m.name || '').toLowerCase().includes(q) || (m.nickname || '').toLowerCase().includes(q)
+        );
+        if (!titleMatch && !codeMatch && !yearMatch && !leaderMatch && !memberMatch) return false;
+      }
+      return true;
+    });
+
+    const counts = {
+      ALL: allProjects.length,
+      IN_PROGRESS: allProjects.filter(p => p.status === 'IN_PROGRESS').length,
+      COMPLETED: allProjects.filter(p => p.status === 'COMPLETED').length,
+      PLANNING: allProjects.filter(p => p.status === 'PLANNING').length
+    };
+
+    let html = `
+      <div class="space-y-4">
+        <!-- Header & Counter -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="text-base sm:text-lg font-extrabold text-foreground flex items-center gap-2">
+                <i data-lucide="folder-kanban" class="text-primary h-5 w-5"></i>
+                โครงการของชมรม
+              </h3>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                ${allProjects.length} โครงการ
+              </span>
+            </div>
+            <p class="text-xs text-muted-foreground mt-0.5">
+              ติดตามโครงการ กิจกรรม เล่มโครงการ งบประมาณ และผู้รับผิดชอบของชมรมสันทนาการ
+            </p>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="bg-card border border-border/80 rounded-2xl p-3 sm:p-4 space-y-3 shadow-xs">
+          <!-- Status Pills -->
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            <button type="button" onclick="setUserProjectFilter('ALL')"
+              class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                userProjectFilter === 'ALL'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground'
+              }">
+              ทั้งหมด (${counts.ALL})
+            </button>
+            <button type="button" onclick="setUserProjectFilter('IN_PROGRESS')"
+              class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                userProjectFilter === 'IN_PROGRESS'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-muted/60 hover:bg-muted text-emerald-600 dark:text-emerald-400'
+              }">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              กำลังดำเนินการ (${counts.IN_PROGRESS})
+            </button>
+            <button type="button" onclick="setUserProjectFilter('COMPLETED')"
+              class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                userProjectFilter === 'COMPLETED'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-muted/60 hover:bg-muted text-blue-600 dark:text-blue-400'
+              }">
+              <i data-lucide="check-circle-2" class="h-3.5 w-3.5"></i>
+              สิ้นสุดแล้ว (${counts.COMPLETED})
+            </button>
+            <button type="button" onclick="setUserProjectFilter('PLANNING')"
+              class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                userProjectFilter === 'PLANNING'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-muted/60 hover:bg-muted text-amber-600 dark:text-amber-400'
+              }">
+              <i data-lucide="clock" class="h-3.5 w-3.5"></i>
+              เตรียมการ (${counts.PLANNING})
+            </button>
+          </div>
+
+          <!-- Search Input & Year Dropdown -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"></i>
+              <input type="text"
+                id="userProjectSearchInput"
+                value="${escapeHtml(userProjectSearch)}"
+                oninput="setUserProjectSearch(this.value)"
+                placeholder="ค้นหาชื่อโครงการ, รหัส, หรือชื่อผู้รับผิดชอบ..."
+                class="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-muted/40 border border-border focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+              />
+              ${userProjectSearch ? `
+                <button type="button" onclick="setUserProjectSearch('')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <i data-lucide="x" class="h-3.5 w-3.5"></i>
+                </button>
+              ` : ''}
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <select onchange="setUserProjectYear(this.value)" class="py-2 px-3 rounded-xl text-xs bg-muted/40 border border-border focus:outline-hidden focus:border-primary text-foreground">
+                <option value="ALL" ${userProjectYear === 'ALL' ? 'selected' : ''}>ทุกปีการศึกษา</option>
+                ${sortedYears.map(yr => `<option value="${yr}" ${userProjectYear === yr ? 'selected' : ''}>ปีการศึกษา ${yr}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Cards Grid -->
+        ${filtered.length === 0 ? `
+          <div class="bg-card border border-border rounded-3xl p-8 text-center space-y-3">
+            <div class="w-14 h-14 rounded-2xl bg-muted/60 text-muted-foreground flex items-center justify-center mx-auto text-2xl">
+              <i data-lucide="folder-search" class="h-7 w-7"></i>
+            </div>
+            <div class="space-y-1">
+              <p class="font-bold text-foreground text-sm">ไม่พบโครงการที่ค้นหา</p>
+              <p class="text-xs text-muted-foreground">ลองเปลี่ยนคำค้นหา หรือเลือกตัวกรองสถานะอื่น</p>
+            </div>
+            ${(userProjectSearch || userProjectFilter !== 'ALL' || userProjectYear !== 'ALL') ? `
+              <button type="button" onclick="resetUserProjectFilters()"
+                class="px-4 py-2 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground transition">
+                ล้างตัวกรองทั้งหมด
+              </button>
+            ` : ''}
+          </div>
+        ` : `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${filtered.map(p => renderProjectCardHtml(p, false)).join('')}
+          </div>
+        `}
+      </div>
+    `;
+
+    container.innerHTML = html;
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function renderProjectCardHtml(p, isAdmin = false) {
+    const statusMeta = getStatusMeta(p.status);
+    const leaders = Array.isArray(p.leaders) ? p.leaders : [];
+    const primaryLeader = leaders[0] || null;
+    const hasDrive = Boolean(p.googleDriveUrl);
+    const hasDoc = Boolean(p.projectDocument && p.projectDocument.url);
+    const hasBudgetDoc = Boolean(p.budgetDocument && p.budgetDocument.url);
+
+    return `
+      <div class="bg-card border border-border/80 hover:border-primary/40 rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 shadow-xs hover:shadow-md group relative">
+        <div class="space-y-3">
+          <!-- Top Row: Status Badge & Code/Year -->
+          <div class="flex items-center justify-between gap-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusMeta.badgeClass}">
+              <span class="relative flex h-2 w-2">
+                ${statusMeta.ping ? `<span class="animate-ping absolute inline-flex h-full w-full rounded-full ${statusMeta.dotClass} opacity-75"></span>` : ''}
+                <span class="relative inline-flex rounded-full h-2 w-2 ${statusMeta.dotClass}"></span>
+              </span>
+              ${statusMeta.label}
+            </span>
+
+            <div class="flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono">
+              ${p.academicYear ? `<span class="px-2 py-0.5 rounded-md bg-muted font-sans font-medium text-foreground">ปี ${escapeHtml(p.academicYear)}</span>` : ''}
+              ${p.code ? `<span class="truncate max-w-[110px]" title="${escapeHtml(p.code)}">${escapeHtml(p.code)}</span>` : ''}
+            </div>
+          </div>
+
+          <!-- Project Title -->
+          <div class="space-y-1">
+            <h4 onclick="openProjectDetailModal('${p.id}')"
+              class="text-sm sm:text-base font-bold text-foreground group-hover:text-primary transition-colors cursor-pointer line-clamp-2 leading-snug"
+              title="${escapeHtml(p.title)}">
+              ${escapeHtml(p.title)}
+            </h4>
+          </div>
+
+          <!-- Meta Pills: Dates & Location -->
+          <div class="space-y-1.5 text-xs text-muted-foreground">
+            <div class="flex items-center gap-2">
+              <i data-lucide="calendar" class="h-3.5 w-3.5 text-primary shrink-0"></i>
+              <span class="truncate">${formatThaiDateRange(p.startDate, p.endDate)}</span>
+            </div>
+            ${p.location ? `
+              <div class="flex items-center gap-2">
+                <i data-lucide="map-pin" class="h-3.5 w-3.5 text-rose-500 shrink-0"></i>
+                <span class="truncate">${escapeHtml(p.location)}</span>
+              </div>
+            ` : ''}
+            ${p.budget ? `
+              <div class="flex items-center gap-2">
+                <i data-lucide="wallet" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+                <span class="font-semibold text-foreground">${escapeHtml(p.budget)}</span>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Short Summary -->
+          ${p.summary ? `
+            <p class="text-xs text-muted-foreground line-clamp-2 leading-relaxed bg-muted/30 p-2.5 rounded-xl border border-border/40">
+              ${escapeHtml(p.summary)}
+            </p>
+          ` : ''}
+
+          <!-- Primary Leader Chip -->
+          ${primaryLeader ? `
+            <div class="pt-1 flex items-center gap-2.5">
+              ${primaryLeader.avatar ? `
+                <img src="${escapeHtml(primaryLeader.avatar)}" alt="${escapeHtml(primaryLeader.name)}"
+                  class="w-7 h-7 rounded-full object-cover ring-1 ring-border shrink-0"
+                  onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(primaryLeader.name)}&background=4f46e5&color=fff';" />
+              ` : `
+                <div class="w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center ring-1 ring-border shrink-0">
+                  ${(primaryLeader.nickname || primaryLeader.name || 'ผ').charAt(0)}
+                </div>
+              `}
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-foreground truncate">
+                  ${escapeHtml(primaryLeader.name)} ${primaryLeader.nickname ? `(${escapeHtml(primaryLeader.nickname)})` : ''}
+                </p>
+                <p class="text-[10px] text-muted-foreground truncate">
+                  ${escapeHtml(primaryLeader.role || 'ผู้รับผิดชอบโครงการ')}
+                </p>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Feature Indicator Tags -->
+          <div class="flex items-center gap-1.5 flex-wrap pt-1">
+            ${hasDrive ? `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                <i data-lucide="hard-drive" class="h-3 w-3"></i> Google Drive
+              </span>
+            ` : ''}
+            ${hasDoc ? `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                <i data-lucide="file-text" class="h-3 w-3"></i> เล่มโครงการ
+              </span>
+            ` : ''}
+            ${hasBudgetDoc ? `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <i data-lucide="banknote" class="h-3 w-3"></i> เล่มงบประมาณ
+              </span>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- Card Footer Actions -->
+        <div class="pt-4 mt-3 border-t border-border/60 flex items-center justify-between gap-2">
+          <button type="button" onclick="openProjectDetailModal('${p.id}')"
+            class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs">
+            <i data-lucide="external-link" class="h-3.5 w-3.5"></i>
+            ดูรายละเอียดโครงการ
+          </button>
+
+          ${isAdmin ? `
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="openAdminProjectEditModal('${p.id}')"
+                class="w-8 h-8 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border flex items-center justify-center transition"
+                title="แก้ไขโครงการ">
+                <i data-lucide="square-pen" class="h-3.5 w-3.5"></i>
+              </button>
+              <button type="button" onclick="confirmDeleteProject('${p.id}', '${escapeHtml(p.title)}')"
+                class="w-8 h-8 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center justify-center transition"
+                title="ลบโครงการ">
+                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // ========================================================
+  // 2. ADMIN VIEW RENDERING
+  // ========================================================
+  function renderAdminProjectsSection() {
+    const container = document.getElementById('aTab_PROJECTS');
+    if (!container) return;
+
+    const allProjects = getProjectsList();
+
+    // Collect available academic years
+    const yearSet = new Set();
+    allProjects.forEach(p => {
+      if (p.academicYear) yearSet.add(p.academicYear);
+    });
+    const sortedYears = Array.from(yearSet).sort((a, b) => b.localeCompare(a));
+
+    const q = adminProjectSearch.trim().toLowerCase();
+    const filtered = allProjects.filter(p => {
+      if (adminProjectFilter !== 'ALL' && p.status !== adminProjectFilter) return false;
+      if (adminProjectYear !== 'ALL' && p.academicYear !== adminProjectYear) return false;
+      if (q) {
+        const titleMatch = (p.title || '').toLowerCase().includes(q);
+        const codeMatch = (p.code || '').toLowerCase().includes(q);
+        const yearMatch = (p.academicYear || '').toLowerCase().includes(q);
+        const leaderMatch = (p.leaders || []).some(l => 
+          (l.name || '').toLowerCase().includes(q) || (l.nickname || '').toLowerCase().includes(q)
+        );
+        if (!titleMatch && !codeMatch && !yearMatch && !leaderMatch) return false;
+      }
+      return true;
+    });
+
+    const inProgressCount = allProjects.filter(p => p.status === 'IN_PROGRESS').length;
+    const completedCount = allProjects.filter(p => p.status === 'COMPLETED').length;
+    const planningCount = allProjects.filter(p => p.status === 'PLANNING').length;
+
+    let html = `
+      <div class="space-y-6">
+        <!-- Top Banner & Action -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card border border-border/80 rounded-3xl p-5 sm:p-6 shadow-xs">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="p-2 rounded-2xl bg-primary/10 text-primary">
+                <i data-lucide="folder-kanban" class="h-6 w-6"></i>
+              </span>
+              <div>
+                <h3 class="text-lg sm:text-xl font-extrabold text-foreground">จัดการโครงการของชมรม (Projects)</h3>
+                <p class="text-xs text-muted-foreground">สร้าง แก้ไข ติดตามสถานะ เล่มโครงการ งบประมาณ และผู้เกี่ยวข้องทั้งหมด</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="openAdminProjectEditModal()"
+              class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-md transition active:scale-95 flex items-center gap-2 cursor-pointer">
+              <i data-lucide="plus-circle" class="h-4 w-4"></i>
+              <span>สร้างโครงการใหม่</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-card border border-border/80 rounded-2xl p-4 space-y-1 shadow-2xs">
+            <div class="flex items-center justify-between text-muted-foreground text-xs">
+              <span>โครงการทั้งหมด</span>
+              <i data-lucide="folder" class="h-4 w-4 text-primary"></i>
+            </div>
+            <p class="text-xl sm:text-2xl font-black text-foreground">${allProjects.length}</p>
+          </div>
+
+          <div class="bg-card border border-border/80 rounded-2xl p-4 space-y-1 shadow-2xs">
+            <div class="flex items-center justify-between text-muted-foreground text-xs">
+              <span>กำลังดำเนินการ</span>
+              <i data-lucide="play-circle" class="h-4 w-4 text-emerald-500"></i>
+            </div>
+            <p class="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">${inProgressCount}</p>
+          </div>
+
+          <div class="bg-card border border-border/80 rounded-2xl p-4 space-y-1 shadow-2xs">
+            <div class="flex items-center justify-between text-muted-foreground text-xs">
+              <span>สิ้นสุดแล้ว</span>
+              <i data-lucide="check-circle-2" class="h-4 w-4 text-blue-500"></i>
+            </div>
+            <p class="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">${completedCount}</p>
+          </div>
+
+          <div class="bg-card border border-border/80 rounded-2xl p-4 space-y-1 shadow-2xs">
+            <div class="flex items-center justify-between text-muted-foreground text-xs">
+              <span>เตรียมการ</span>
+              <i data-lucide="clock" class="h-4 w-4 text-amber-500"></i>
+            </div>
+            <p class="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">${planningCount}</p>
+          </div>
+        </div>
+
+        <!-- Filters & Search -->
+        <div class="bg-card border border-border/80 rounded-2xl p-3 sm:p-4 space-y-3 shadow-xs">
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            <button type="button" onclick="setAdminProjectFilter('ALL')"
+              class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                adminProjectFilter === 'ALL'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground'
+              }">
+              ทั้งหมด (${allProjects.length})
+            </button>
+            <button type="button" onclick="setAdminProjectFilter('IN_PROGRESS')"
+              class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                adminProjectFilter === 'IN_PROGRESS'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-muted/60 hover:bg-muted text-emerald-600 dark:text-emerald-400'
+              }">
+              กำลังดำเนินการ (${inProgressCount})
+            </button>
+            <button type="button" onclick="setAdminProjectFilter('COMPLETED')"
+              class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                adminProjectFilter === 'COMPLETED'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-muted/60 hover:bg-muted text-blue-600 dark:text-blue-400'
+              }">
+              สิ้นสุดแล้ว (${completedCount})
+            </button>
+            <button type="button" onclick="setAdminProjectFilter('PLANNING')"
+              class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                adminProjectFilter === 'PLANNING'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-muted/60 hover:bg-muted text-amber-600 dark:text-amber-400'
+              }">
+              เตรียมการ (${planningCount})
+            </button>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"></i>
+              <input type="text"
+                value="${escapeHtml(adminProjectSearch)}"
+                oninput="setAdminProjectSearch(this.value)"
+                placeholder="ค้นหาชื่อโครงการ, รหัส, หรือผู้รับผิดชอบ..."
+                class="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-muted/40 border border-border focus:outline-hidden focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+              />
+              ${adminProjectSearch ? `
+                <button type="button" onclick="setAdminProjectSearch('')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <i data-lucide="x" class="h-3.5 w-3.5"></i>
+                </button>
+              ` : ''}
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <select onchange="setAdminProjectYear(this.value)" class="py-2 px-3 rounded-xl text-xs bg-muted/40 border border-border focus:outline-hidden focus:border-primary text-foreground">
+                <option value="ALL" ${adminProjectYear === 'ALL' ? 'selected' : ''}>ทุกปีการศึกษา</option>
+                ${sortedYears.map(yr => `<option value="${yr}" ${adminProjectYear === yr ? 'selected' : ''}>ปีการศึกษา ${yr}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Cards Grid (Admin) -->
+        ${filtered.length === 0 ? `
+          <div class="bg-card border border-border rounded-3xl p-8 text-center space-y-3">
+            <div class="w-14 h-14 rounded-2xl bg-muted/60 text-muted-foreground flex items-center justify-center mx-auto text-2xl">
+              <i data-lucide="folder-search" class="h-7 w-7"></i>
+            </div>
+            <div class="space-y-1">
+              <p class="font-bold text-foreground text-sm">ยังไม่มีโครงการในหมวดหมู่นี้</p>
+              <p class="text-xs text-muted-foreground">สามารถกดปุ่ม "สร้างโครงการใหม่" ด้านบนเพื่อเพิ่มโครงการ</p>
+            </div>
+            <button type="button" onclick="openAdminProjectEditModal()"
+              class="px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-primary-foreground shadow-xs transition">
+              + สร้างโครงการใหม่
+            </button>
+          </div>
+        ` : `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${filtered.map(p => renderProjectCardHtml(p, true)).join('')}
+          </div>
+        `}
+      </div>
+    `;
+
+    container.innerHTML = html;
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  // Filter setters
+  function setUserProjectFilter(f) {
+    userProjectFilter = f;
+    renderUserProjectsSection();
+  }
+  function setUserProjectSearch(q) {
+    userProjectSearch = q;
+    renderUserProjectsSection();
+  }
+  function setUserProjectYear(y) {
+    userProjectYear = y;
+    renderUserProjectsSection();
+  }
+  function resetUserProjectFilters() {
+    userProjectFilter = 'ALL';
+    userProjectSearch = '';
+    userProjectYear = 'ALL';
+    renderUserProjectsSection();
+  }
+
+  function setAdminProjectFilter(f) {
+    adminProjectFilter = f;
+    renderAdminProjectsSection();
+  }
+  function setAdminProjectSearch(q) {
+    adminProjectSearch = q;
+    renderAdminProjectsSection();
+  }
+  function setAdminProjectYear(y) {
+    adminProjectYear = y;
+    renderAdminProjectsSection();
+  }
+
+  // ========================================================
+  // 3. FULL PROJECT DETAIL MODAL
+  // ========================================================
+  function openProjectDetailModal(projectId) {
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === projectId);
+    if (!p) {
+      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลโครงการที่ระบุ', 'warning');
+      return;
+    }
+
+    const modal = document.getElementById('projectDetailModal');
+    if (!modal) return;
+
+    // Header & Badges
+    const statusMeta = getStatusMeta(p.status);
+    const statusBadgeEl = document.getElementById('prjDetailStatusBadge');
+    if (statusBadgeEl) {
+      statusBadgeEl.className = `inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${statusMeta.badgeClass}`;
+      statusBadgeEl.innerHTML = `
+        <span class="relative flex h-2 w-2">
+          ${statusMeta.ping ? `<span class="animate-ping absolute inline-flex h-full w-full rounded-full ${statusMeta.dotClass} opacity-75"></span>` : ''}
+          <span class="relative inline-flex rounded-full h-2 w-2 ${statusMeta.dotClass}"></span>
+        </span>
+        ${statusMeta.label}
+      `;
+    }
+
+    const yearBadgeEl = document.getElementById('prjDetailYearBadge');
+    if (yearBadgeEl) {
+      yearBadgeEl.textContent = p.academicYear ? `ปีการศึกษา ${p.academicYear}` : '';
+      yearBadgeEl.classList.toggle('hidden', !p.academicYear);
+    }
+
+    const codeBadgeEl = document.getElementById('prjDetailCodeBadge');
+    if (codeBadgeEl) {
+      codeBadgeEl.textContent = p.code ? `รหัส: ${p.code}` : '';
+      codeBadgeEl.classList.toggle('hidden', !p.code);
+    }
+
+    const titleEl = document.getElementById('prjDetailTitle');
+    if (titleEl) titleEl.textContent = p.title || 'ไม่มีชื่อโครงการ';
+
+    // Dates, Location, Budget
+    const datesEl = document.getElementById('prjDetailDates');
+    if (datesEl) datesEl.textContent = formatThaiDateRange(p.startDate, p.endDate);
+
+    const locEl = document.getElementById('prjDetailLocation');
+    if (locEl) locEl.textContent = p.location || 'ไม่ได้ระบุสถานที่';
+
+    const budgetEl = document.getElementById('prjDetailBudget');
+    if (budgetEl) budgetEl.textContent = p.budget || 'ไม่มีระบุงบประมาณ';
+
+    // Google Drive Link Button
+    const driveBox = document.getElementById('prjDetailGoogleDriveBox');
+    const driveBtn = document.getElementById('prjDetailGoogleDriveBtn');
+    if (driveBox && driveBtn) {
+      if (p.googleDriveUrl) {
+        driveBox.classList.remove('hidden');
+        driveBtn.href = p.googleDriveUrl;
+      } else {
+        driveBox.classList.add('hidden');
+        driveBtn.href = '#';
+      }
+    }
+
+    // Documents (เล่มโครงการ & เล่มงบประมาณ)
+    const docBox = document.getElementById('prjDetailDocBox');
+    const docTitle = document.getElementById('prjDetailDocTitle');
+    const docDate = document.getElementById('prjDetailDocDate');
+    const docBtn = document.getElementById('prjDetailDocBtn');
+    if (docBox && docBtn) {
+      if (p.projectDocument && p.projectDocument.url) {
+        docBox.classList.remove('hidden');
+        if (docTitle) docTitle.textContent = p.projectDocument.title || 'เล่มโครงการ (ฉบับสมบูรณ์)';
+        if (docDate) docDate.textContent = p.projectDocument.updatedAt ? `อัปเดตเมื่อ: ${formatThaiDate(p.projectDocument.updatedAt)}` : '';
+        docBtn.href = p.projectDocument.url;
+      } else {
+        docBox.classList.add('hidden');
+        docBtn.href = '#';
+      }
+    }
+
+    const budgetDocBox = document.getElementById('prjDetailBudgetDocBox');
+    const budgetDocTitle = document.getElementById('prjDetailBudgetDocTitle');
+    const budgetDocAmount = document.getElementById('prjDetailBudgetDocAmount');
+    const budgetDocDate = document.getElementById('prjDetailBudgetDocDate');
+    const budgetDocBtn = document.getElementById('prjDetailBudgetDocBtn');
+    if (budgetDocBox && budgetDocBtn) {
+      if (p.budgetDocument && p.budgetDocument.url) {
+        budgetDocBox.classList.remove('hidden');
+        if (budgetDocTitle) budgetDocTitle.textContent = p.budgetDocument.title || 'เล่มงบประมาณและบัญชี';
+        if (budgetDocAmount) budgetDocAmount.textContent = p.budgetDocument.totalBudget ? `ยอดรวม: ${p.budgetDocument.totalBudget}` : '';
+        if (budgetDocDate) budgetDocDate.textContent = p.budgetDocument.updatedAt ? `อัปเดตเมื่อ: ${formatThaiDate(p.budgetDocument.updatedAt)}` : '';
+        budgetDocBtn.href = p.budgetDocument.url;
+      } else {
+        budgetDocBox.classList.add('hidden');
+        budgetDocBtn.href = '#';
+      }
+    }
+
+    // Full Description Narrative
+    const descEl = document.getElementById('prjDetailDescription');
+    if (descEl) {
+      descEl.textContent = p.description || p.summary || 'ยังไม่มีการระบุรายละเอียดโครงการ';
+    }
+
+    // 4 Stakeholder Sections
+    renderPersonCardsList('prjDetailLeadersList', p.leaders, 'ผู้รับผิดชอบโครงการ');
+    renderPersonCardsList('prjDetailMembersList', p.members, 'ผู้ที่เกี่ยวข้องกับโครงการ');
+    renderPersonCardsList('prjDetailAdvisorsList', p.advisors, 'อาจารย์ที่ปรึกษา');
+    renderPersonCardsList('prjDetailSmoOfficersList', p.smoOfficers, 'ตัวแทนสโมสรนักศึกษา');
+
+    // Admin Action Buttons in modal
+    const adminActions = document.getElementById('prjDetailAdminActions');
+    const editBtn = document.getElementById('prjDetailEditBtn');
+    const deleteBtn = document.getElementById('prjDetailDeleteBtn');
+    const isAdmin = window.currentRole === 'ADMIN';
+
+    if (adminActions) adminActions.classList.toggle('hidden', !isAdmin);
+    if (editBtn) {
+      editBtn.onclick = () => {
+        closeProjectDetailModal();
+        openAdminProjectEditModal(p.id);
+      };
+    }
+    if (deleteBtn) {
+      deleteBtn.onclick = () => {
+        closeProjectDetailModal();
+        confirmDeleteProject(p.id, p.title);
+      };
+    }
+
+    // Show modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function closeProjectDetailModal() {
+    const modal = document.getElementById('projectDetailModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  }
+
+  // Helper to render personnel cards in detail modal
+  function renderPersonCardsList(containerId, list, emptyLabel) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (!Array.isArray(list) || list.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full p-4 rounded-2xl bg-muted/30 border border-border/40 text-center text-xs text-muted-foreground">
+          ยังไม่มีการระบุข้อมูล${emptyLabel}
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(person => {
+      const name = person.name || 'ไม่ระบุชื่อ';
+      const nickname = person.nickname ? `(${person.nickname})` : '';
+      const role = person.role || 'หน้าที่ไม่ระบุ';
+      const department = person.department ? `<p class="text-[11px] text-muted-foreground truncate">${escapeHtml(person.department)}</p>` : '';
+      const details = person.details ? `<p class="text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-xl border border-border/40 leading-relaxed mt-2">${escapeHtml(person.details)}</p>` : '';
+      const avatarUrl = person.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff`;
+
+      return `
+        <div class="bg-card border border-border/80 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-primary/30 transition">
+          <div class="space-y-2">
+            <div class="flex items-start gap-3">
+              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}"
+                class="w-12 h-12 rounded-2xl object-cover ring-2 ring-primary/20 shrink-0"
+                onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff';" />
+
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h5 class="text-xs sm:text-sm font-bold text-foreground truncate" title="${escapeHtml(name)} ${escapeHtml(nickname)}">
+                    ${escapeHtml(name)} ${escapeHtml(nickname)}
+                  </h5>
+                </div>
+                <span class="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                  ${escapeHtml(role)}
+                </span>
+                ${department}
+              </div>
+            </div>
+
+            ${details}
+          </div>
+
+          <!-- Contact Badges / Links -->
+          <div class="pt-2 border-t border-border/60 flex items-center gap-1.5 flex-wrap">
+            ${person.phone ? `
+              <a href="tel:${escapeHtml(person.phone)}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-foreground transition" title="โทร: ${escapeHtml(person.phone)}">
+                <i data-lucide="phone" class="h-3 w-3 text-emerald-500"></i>
+                <span class="truncate max-w-[100px]">${escapeHtml(person.phone)}</span>
+              </a>
+            ` : ''}
+
+            ${person.kkuMail ? `
+              <a href="mailto:${escapeHtml(person.kkuMail)}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-foreground transition" title="KKU-Mail: ${escapeHtml(person.kkuMail)}">
+                <i data-lucide="mail" class="h-3 w-3 text-primary"></i>
+                <span class="truncate max-w-[120px]">${escapeHtml(person.kkuMail)}</span>
+              </a>
+            ` : ''}
+
+            ${person.contactLink ? `
+              <a href="${escapeHtml(person.contactLink)}" target="_blank" rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 hover:bg-primary/20 text-primary transition ml-auto" title="เปิดช่องทางติดต่อ">
+                <i data-lucide="external-link" class="h-3 w-3"></i>
+                <span>ติดต่อ</span>
+              </a>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ========================================================
+  // 4. ADMIN PROJECT EDITOR MODAL
+  // ========================================================
+  function openAdminProjectEditModal(projectId = null) {
+    if (window.currentRole !== 'ADMIN') {
+      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถจัดการโครงการได้', 'warning');
+      return;
+    }
+
+    const modal = document.getElementById('adminProjectEditModal');
+    if (!modal) return;
+
+    const allProjects = getProjectsList();
+    const isEdit = Boolean(projectId);
+    const p = isEdit ? allProjects.find(item => item.id === projectId) : null;
+
+    // Set modal title
+    const modalTitle = document.getElementById('adminPrjModalTitle');
+    if (modalTitle) modalTitle.textContent = isEdit ? 'แก้ไขข้อมูลโครงการ' : 'สร้างโครงการใหม่';
+
+    // Populate basic fields
+    document.getElementById('prjFormId').value = isEdit ? p.id : '';
+    document.getElementById('prjFormTitle').value = isEdit ? (p.title || '') : '';
+    document.getElementById('prjFormCode').value = isEdit ? (p.code || '') : '';
+    document.getElementById('prjFormAcademicYear').value = isEdit ? (p.academicYear || '') : '2569';
+    document.getElementById('prjFormStatus').value = isEdit ? (p.status || 'IN_PROGRESS') : 'IN_PROGRESS';
+    document.getElementById('prjFormStartDate').value = isEdit ? (p.startDate || '') : (new Date().toISOString().slice(0, 10));
+    document.getElementById('prjFormEndDate').value = isEdit ? (p.endDate || '') : (new Date().toISOString().slice(0, 10));
+    document.getElementById('prjFormLocation').value = isEdit ? (p.location || '') : '';
+    document.getElementById('prjFormBudget').value = isEdit ? (p.budget || '') : '';
+    document.getElementById('prjFormSummary').value = isEdit ? (p.summary || '') : '';
+    document.getElementById('prjFormDescription').value = isEdit ? (p.description || '') : '';
+    document.getElementById('prjFormGoogleDriveUrl').value = isEdit ? (p.googleDriveUrl || '') : '';
+
+    // Document & Budget Document
+    document.getElementById('prjFormDocTitle').value = isEdit && p.projectDocument ? (p.projectDocument.title || '') : '';
+    document.getElementById('prjFormDocUrl').value = isEdit && p.projectDocument ? (p.projectDocument.url || '') : '';
+    document.getElementById('prjFormBudgetDocTitle').value = isEdit && p.budgetDocument ? (p.budgetDocument.title || '') : '';
+    document.getElementById('prjFormBudgetDocAmount').value = isEdit && p.budgetDocument ? (p.budgetDocument.totalBudget || '') : '';
+    document.getElementById('prjFormBudgetDocUrl').value = isEdit && p.budgetDocument ? (p.budgetDocument.url || '') : '';
+
+    // Clone stakeholder arrays
+    prjFormLeaders = isEdit && Array.isArray(p.leaders) ? JSON.parse(JSON.stringify(p.leaders)) : [];
+    prjFormMembers = isEdit && Array.isArray(p.members) ? JSON.parse(JSON.stringify(p.members)) : [];
+    prjFormAdvisors = isEdit && Array.isArray(p.advisors) ? JSON.parse(JSON.stringify(p.advisors)) : [];
+    prjFormSmoOfficers = isEdit && Array.isArray(p.smoOfficers) ? JSON.parse(JSON.stringify(p.smoOfficers)) : [];
+
+    // Render repeaters
+    renderRepeater('LEADERS');
+    renderRepeater('MEMBERS');
+    renderRepeater('ADVISORS');
+    renderRepeater('SMO');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function closeAdminProjectEditModal() {
+    const modal = document.getElementById('adminProjectEditModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  }
+
+  // Repeater helper for admin modal
+  function renderRepeater(type) {
+    let list;
+    let containerId;
+    let typeLabel;
+
+    if (type === 'LEADERS') {
+      list = prjFormLeaders;
+      containerId = 'prjFormLeadersContainer';
+      typeLabel = 'ผู้รับผิดชอบโครงการ';
+    } else if (type === 'MEMBERS') {
+      list = prjFormMembers;
+      containerId = 'prjFormMembersContainer';
+      typeLabel = 'ผู้เกี่ยวข้องกับโครงการ';
+    } else if (type === 'ADVISORS') {
+      list = prjFormAdvisors;
+      containerId = 'prjFormAdvisorsContainer';
+      typeLabel = 'อาจารย์ที่ปรึกษา';
+    } else if (type === 'SMO') {
+      list = prjFormSmoOfficers;
+      containerId = 'prjFormSmoContainer';
+      typeLabel = 'ตัวแทนสโมสรนักศึกษา';
+    }
+
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (!list || list.length === 0) {
+      container.innerHTML = `
+        <div class="p-3 rounded-xl bg-muted/20 border border-border/40 text-center text-xs text-muted-foreground">
+          ยังไม่มีรายการ${typeLabel} (กดปุ่มด้านล่างเพื่อเพิ่ม)
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map((item, idx) => `
+      <div class="bg-muted/30 border border-border/70 rounded-2xl p-3.5 space-y-3 relative">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">
+              ${idx + 1}
+            </span>
+            ${typeLabel} #${idx + 1}
+          </span>
+          <button type="button" onclick="removeRepeaterItem('${type}', ${idx})"
+            class="text-rose-500 hover:text-rose-600 text-xs flex items-center gap-1 cursor-pointer">
+            <i data-lucide="trash" class="h-3.5 w-3.5"></i> ลบ
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+          <div>
+            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ชื่อ - สกุล *</label>
+            <input type="text" value="${escapeHtml(item.name || '')}"
+              oninput="updateRepeaterField('${type}', ${idx}, 'name', this.value)"
+              placeholder="เช่น นายอิทธิพัทธ์ พืชผักหวาน"
+              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ชื่อเล่น</label>
+            <input type="text" value="${escapeHtml(item.nickname || '')}"
+              oninput="updateRepeaterField('${type}', ${idx}, 'nickname', this.value)"
+              placeholder="เช่น บอม"
+              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ตำแหน่ง / หน้าที่ในโครงการ</label>
+            <input type="text" value="${escapeHtml(item.role || '')}"
+              oninput="updateRepeaterField('${type}', ${idx}, 'role', this.value)"
+              placeholder="เช่น ประธานโครงการ / หัวหน้าฝ่ายสถานที่"
+              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-muted-foreground mb-1">เบอร์ติดต่อ</label>
+            <input type="text" value="${escapeHtml(item.phone || '')}"
+              oninput="updateRepeaterField('${type}', ${idx}, 'phone', this.value)"
+              placeholder="เช่น 081-234-5678"
+              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-muted-foreground mb-1">KKU-MAIL</label>
+            <input type="text" value="${escapeHtml(item.kkuMail || '')}"
+              oninput="updateRepeaterField('${type}', ${idx}, 'kkuMail', this.value)"
+              placeholder="เช่น user.p@kkumail.com"
+              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ลิงก์ช่องทางการติดต่อ (IG/FB/Line)</label>
+            <input type="url" value="${escapeHtml(item.contactLink || '')}"
+              oninput="updateRepeaterField('${type}', ${idx}, 'contactLink', this.value)"
+              placeholder="https://..."
+              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ลิงก์รูปหน้า (Avatar URL)</label>
+            <input type="url" value="${escapeHtml(item.avatar || '')}"
+              oninput="updateRepeaterField('${type}', ${idx}, 'avatar', this.value)"
+              placeholder="https://... (หากว่างระบบจะใช้รูปอักษรย่อ)"
+              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block text-[11px] font-medium text-muted-foreground mb-1">รายละเอียดหน้าที่ความรับผิดชอบ (ถ้ามี)</label>
+            <textarea rows="2"
+              oninput="updateRepeaterField('${type}', ${idx}, 'details', this.value)"
+              placeholder="ระบุรายละเอียดความรับผิดชอบในโครงการ..."
+              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs resize-none">${escapeHtml(item.details || '')}</textarea>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function addRepeaterItem(type) {
+    const newItem = {
+      id: `p_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      name: '',
+      nickname: '',
+      role: '',
+      details: '',
+      phone: '',
+      kkuMail: '',
+      contactLink: '',
+      avatar: ''
+    };
+
+    if (type === 'LEADERS') prjFormLeaders.push(newItem);
+    else if (type === 'MEMBERS') prjFormMembers.push(newItem);
+    else if (type === 'ADVISORS') prjFormAdvisors.push(newItem);
+    else if (type === 'SMO') prjFormSmoOfficers.push(newItem);
+
+    renderRepeater(type);
+  }
+
+  function removeRepeaterItem(type, index) {
+    if (type === 'LEADERS') prjFormLeaders.splice(index, 1);
+    else if (type === 'MEMBERS') prjFormMembers.splice(index, 1);
+    else if (type === 'ADVISORS') prjFormAdvisors.splice(index, 1);
+    else if (type === 'SMO') prjFormSmoOfficers.splice(index, 1);
+
+    renderRepeater(type);
+  }
+
+  function updateRepeaterField(type, index, field, value) {
+    let list;
+    if (type === 'LEADERS') list = prjFormLeaders;
+    else if (type === 'MEMBERS') list = prjFormMembers;
+    else if (type === 'ADVISORS') list = prjFormAdvisors;
+    else if (type === 'SMO') list = prjFormSmoOfficers;
+
+    if (list && list[index]) {
+      list[index][field] = value;
+    }
+  }
+
+  // Save Project Form
+  function saveProjectFromAdminForm(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const id = document.getElementById('prjFormId').value.trim();
+    const title = document.getElementById('prjFormTitle').value.trim();
+    if (!title) {
+      if (typeof showToast === 'function') showToast('กรุณากรอกชื่อโครงการ', 'error');
+      document.getElementById('prjFormTitle').focus();
+      return;
+    }
+
+    const code = document.getElementById('prjFormCode').value.trim();
+    const academicYear = document.getElementById('prjFormAcademicYear').value.trim();
+    const status = document.getElementById('prjFormStatus').value;
+    const startDate = document.getElementById('prjFormStartDate').value;
+    const endDate = document.getElementById('prjFormEndDate').value || startDate;
+    const location = document.getElementById('prjFormLocation').value.trim();
+    const budget = document.getElementById('prjFormBudget').value.trim();
+    const summary = document.getElementById('prjFormSummary').value.trim();
+    const description = document.getElementById('prjFormDescription').value.trim();
+    const googleDriveUrl = document.getElementById('prjFormGoogleDriveUrl').value.trim();
+
+    // Documents
+    const docTitle = document.getElementById('prjFormDocTitle').value.trim();
+    const docUrl = document.getElementById('prjFormDocUrl').value.trim();
+    const budgetDocTitle = document.getElementById('prjFormBudgetDocTitle').value.trim();
+    const budgetDocAmount = document.getElementById('prjFormBudgetDocAmount').value.trim();
+    const budgetDocUrl = document.getElementById('prjFormBudgetDocUrl').value.trim();
+
+    const todayISO = new Date().toISOString().slice(0, 10);
+
+    const projectPayload = {
+      id: id || undefined,
+      title,
+      code,
+      academicYear,
+      status,
+      startDate,
+      endDate,
+      location,
+      budget,
+      summary,
+      description,
+      googleDriveUrl,
+      projectDocument: {
+        title: docTitle || 'เล่มโครงการ.pdf',
+        url: docUrl,
+        updatedAt: todayISO
+      },
+      budgetDocument: {
+        title: budgetDocTitle || 'เล่มงบประมาณ.pdf',
+        url: budgetDocUrl,
+        totalBudget: budgetDocAmount || budget,
+        updatedAt: todayISO
+      },
+      leaders: prjFormLeaders.filter(l => l.name && l.name.trim()),
+      members: prjFormMembers.filter(m => m.name && m.name.trim()),
+      advisors: prjFormAdvisors.filter(a => a.name && a.name.trim()),
+      smoOfficers: prjFormSmoOfficers.filter(s => s.name && s.name.trim())
+    };
+
+    if (id) {
+      // Update
+      if (window.socket && typeof window.socket.emit === 'function') {
+        window.socket.emit('admin:updateProject', projectPayload);
+      }
+      // Optimistic local update
+      if (window.appState && Array.isArray(window.appState.projects)) {
+        const idx = window.appState.projects.findIndex(p => p.id === id);
+        if (idx !== -1) {
+          window.appState.projects[idx] = {
+            ...window.appState.projects[idx],
+            ...projectPayload,
+            updatedAt: new Date().toISOString()
+          };
+          if (typeof saveLocalState === 'function') saveLocalState();
+        }
+      }
+      if (typeof showToast === 'function') showToast('บันทึกการแก้ไขโครงการสำเร็จ', 'success');
+    } else {
+      // Create
+      const newId = `PRJ-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      projectPayload.id = newId;
+      if (window.socket && typeof window.socket.emit === 'function') {
+        window.socket.emit('admin:createProject', projectPayload);
+      }
+      if (window.appState && Array.isArray(window.appState.projects)) {
+        window.appState.projects.unshift({
+          ...projectPayload,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        if (typeof saveLocalState === 'function') saveLocalState();
+      }
+      if (typeof showToast === 'function') showToast('สร้างโครงการใหม่เรียบร้อยแล้ว', 'success');
+    }
+
+    closeAdminProjectEditModal();
+    if (typeof window.renderAll === 'function') window.renderAll();
+    else {
+      renderUserProjectsSection();
+      renderAdminProjectsSection();
+    }
+  }
+
+  // Delete Project Confirmation
+  async function confirmDeleteProject(projectId, title) {
+    if (window.currentRole !== 'ADMIN') {
+      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถลบโครงการได้', 'warning');
+      return;
+    }
+
+    const confirmed = typeof window.showConfirmDialog === 'function'
+      ? await window.showConfirmDialog({
+          title: 'ยืนยันการลบโครงการ',
+          message: `คุณต้องการลบโครงการ "${title}" ออกจากระบบอย่างถาวรหรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`,
+          confirmText: 'ลบโครงการ',
+          cancelText: 'ยกเลิก',
+          isDanger: true,
+          icon: 'trash-2'
+        })
+      : false;
+
+    if (!confirmed) return;
+
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('admin:deleteProject', { projectId });
+    }
+
+    if (window.appState && Array.isArray(window.appState.projects)) {
+      window.appState.projects = window.appState.projects.filter(p => p.id !== projectId);
+      if (typeof saveLocalState === 'function') saveLocalState();
+    }
+
+    if (typeof showToast === 'function') showToast(`ลบโครงการ "${title}" เรียบร้อยแล้ว`, 'info');
+
+    if (typeof window.renderAll === 'function') window.renderAll();
+    else {
+      renderUserProjectsSection();
+      renderAdminProjectsSection();
+    }
+  }
+
+  return {
+    renderUserProjectsSection,
+    renderAdminProjectsSection,
+    openProjectDetailModal,
+    closeProjectDetailModal,
+    openAdminProjectEditModal,
+    closeAdminProjectEditModal,
+    addRepeaterItem,
+    removeRepeaterItem,
+    updateRepeaterField,
+    saveProjectFromAdminForm,
+    confirmDeleteProject,
+    setUserProjectFilter,
+    setUserProjectSearch,
+    setUserProjectYear,
+    resetUserProjectFilters,
+    setAdminProjectFilter,
+    setAdminProjectSearch,
+    setAdminProjectYear
+  };
+});

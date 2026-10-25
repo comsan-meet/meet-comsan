@@ -162,6 +162,7 @@ const defaultState = {
   lastMeetingSummary: null,
   meetingHistory: [],
   calendarEvents: [],
+  projects: (typeof defaultProjects !== 'undefined') ? defaultProjects : [],
   systemVersion: '2.0.1',
   versionNotes: null
 };
@@ -202,6 +203,7 @@ function normalizeState(raw) {
     lastMeetingSummary: raw.lastMeetingSummary || null,
     meetingHistory: Array.isArray(raw.meetingHistory) ? raw.meetingHistory : [],
     calendarEvents: Array.isArray(raw.calendarEvents) ? raw.calendarEvents : (defaultState.calendarEvents || []),
+    projects: Array.isArray(raw.projects) ? raw.projects : ((typeof defaultProjects !== 'undefined') ? defaultProjects : (defaultState.projects || [])),
     systemVersion: raw.systemVersion || defaultState.systemVersion || '2.0.1',
     versionNotes: raw.versionNotes || defaultState.versionNotes || null
   };
@@ -301,7 +303,7 @@ function setSessionAdmin(auth) {
 }
 
 let activeUserTab = 'HOME'; // 'HOME' | 'VOTE' | 'RAISE' | 'CHAT' | 'PROFILE'
-let activeUserToolSubTab = 'FILES'; // 'FILES' | 'STREAM' | 'NOTE' | 'SEATS' | 'RANDOM'
+let activeUserToolSubTab = 'FILES'; // 'FILES' | 'STREAM' | 'NOTE' | 'CALENDAR' | 'PROJECTS' | 'SEATS' | 'RANDOM'
 let activeAdminTab = 'DASHBOARD';
 let parliamentMode = 'ATTENDANCE';
 let summaryFilterMode = 'ALL';

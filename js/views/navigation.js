@@ -51,7 +51,7 @@ function updateSidebarActiveStates() {
   const inactiveClass = 'sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer';
 
   const userNavIds = ['HOME', 'VOTE', 'RAISE', 'CHAT', 'PROFILE'];
-  const adminNavIds = ['DASHBOARD', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS', 'DATABASE'];
+  const adminNavIds = ['DASHBOARD', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'PROJECTS', 'SUMMARY', 'MEMBERS', 'DATABASE'];
 
   const isAdminMode = window.currentRole === 'ADMIN';
 
@@ -343,6 +343,7 @@ function updateDesktopHeader() {
       VOTING: ['สร้างการลงคะแนน', 'เปิดญัตติใหม่และควบคุมการลงมติในที่ประชุม'],
       QUEUE: ['คิวผู้ขอพูด', 'จัดลำดับผู้ยกมือขออภิปรายและจับเวลา'],
       CALENDAR: ['จัดการปฏิทิน', 'เพิ่มและแก้ไขกำหนดการประชุมขององค์กร'],
+      PROJECTS: ['โครงการของชมรม', 'จัดการและติดตามความคืบหน้าโครงการ เล่มโครงการ งบประมาณ และผู้เกี่ยวข้อง'],
       FILES: ['จัดการเอกสาร', 'อัปโหลดเอกสารประกอบการประชุมสำหรับสมาชิก'],
       STREAM: ['ตั้งค่าถ่ายทอดสด', 'จัดการลิงก์สัญญาณภาพสดและห้องประชุมออนไลน์'],
       MEMBERS: ['จัดการสมาชิก', `นำเข้าและจัดการรายชื่อสมาชิกในองค์กร (${totalMembers} คน)`],
@@ -493,7 +494,7 @@ function openUserSection(section) {
     if (userView) userView.classList.remove('hidden');
   }
 
-  const toolSubSections = ['SEATS', 'CALENDAR', 'NOTE', 'FILES', 'STREAM', 'RANDOM'];
+  const toolSubSections = ['SEATS', 'CALENDAR', 'PROJECTS', 'NOTE', 'FILES', 'STREAM', 'RANDOM'];
 
   if (section === 'HOME') {
     switchUserTab('HOME');
@@ -927,7 +928,7 @@ function switchUserTab(tab) {
   }
 
   // Support aliases for subtabs
-  const toolSubTabs = ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'SEATS', 'RANDOM'];
+  const toolSubTabs = ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'PROJECTS', 'SEATS', 'RANDOM'];
   if (toolSubTabs.includes(tab)) {
     window.activeUserToolSubTab = tab;
     switchUserTab('HOME');
@@ -1042,7 +1043,7 @@ function switchUserToolSubTab(subTab) {
     });
   }
 
-  ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'SEATS', 'RANDOM'].forEach(st => {
+  ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'PROJECTS', 'SEATS', 'RANDOM'].forEach(st => {
     const sec = document.getElementById(`uToolSec_${st}`);
     const btn = document.getElementById(`uToolBtn_${st}`);
     if (sec) sec.classList.toggle('hidden', st !== targetSub);
@@ -1073,6 +1074,8 @@ function switchUserToolSubTab(subTab) {
     if (typeof window.rebuildRandomMemberPool === 'function') window.rebuildRandomMemberPool();
   } else if (targetSub === 'CALENDAR') {
     if (typeof window.renderUserCalendarSection === 'function') window.renderUserCalendarSection();
+  } else if (targetSub === 'PROJECTS') {
+    if (typeof window.renderUserProjectsSection === 'function') window.renderUserProjectsSection();
   }
 
   updateSidebarActiveStates();
@@ -1163,7 +1166,7 @@ function actuallySwitchAdminTab(tab) {
     return;
   }
   window.activeAdminTab = tab;
-  ['DASHBOARD', 'CHAT', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS', 'DATABASE'].forEach(t => {
+  ['DASHBOARD', 'CHAT', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'PROJECTS', 'SUMMARY', 'MEMBERS', 'DATABASE'].forEach(t => {
     const sec = document.getElementById(`aTab_${t}`);
     if (sec) sec.classList.toggle('hidden', t !== tab);
   });
@@ -1176,6 +1179,10 @@ function actuallySwitchAdminTab(tab) {
 
   if (tab === 'CALENDAR') {
     if (typeof window.renderAdminCalendarSection === 'function') window.renderAdminCalendarSection();
+  }
+
+  if (tab === 'PROJECTS') {
+    if (typeof window.renderAdminProjectsSection === 'function') window.renderAdminProjectsSection();
   }
 
   if (tab === 'CHAT') {

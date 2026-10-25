@@ -7,6 +7,7 @@ const registerFileHandlers = require('./fileHandler');
 const registerRandomizerHandlers = require('./randomizerHandler');
 const registerStreamHandlers = require('./streamHandler');
 const registerCalendarHandlers = require('./calendarHandler');
+const registerProjectHandlers = require('./projectHandler');
 
 function initializeSockets(io) {
   stateService.setIO(io);
@@ -26,6 +27,7 @@ function initializeSockets(io) {
     registerRandomizerHandlers(io, socket);
     registerStreamHandlers(io, socket);
     registerCalendarHandlers(io, socket);
+    registerProjectHandlers(io, socket);
 
     socket.on('disconnect', () => {
       io.emit('clients:count', io.engine.clientsCount);

@@ -1035,7 +1035,9 @@ input[type="number"] {
 /* Modal Centering Fix */
 #calendarEventModal:not(.hidden),
 #calendarIcsModal:not(.hidden),
-#calendarEventDetailModal:not(.hidden) {
+#calendarEventDetailModal:not(.hidden),
+#projectDetailModal:not(.hidden),
+#adminProjectEditModal:not(.hidden) {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -2530,7 +2532,413 @@ label svg, label i {
     </div>
   </div>
 
-  <div id="authScreen" class="min-h-screen pb-16 bg-slate-50 dark:bg-slate-950 text-foreground flex items-center justify-center p-4 transition-colors select-none relative overflow-hidden">
+  
+  <!-- ======================================================== -->
+  <!-- PROJECT DETAIL MODAL (รายละเอียดโครงการเต็ม)              -->
+  <!-- ======================================================== -->
+  <div id="projectDetailModal" class="fixed inset-0 bg-background/85 backdrop-blur-md hidden flex items-center justify-center z-[90] p-3 sm:p-4 select-text">
+    <div class="bg-card text-card-foreground border border-border rounded-3xl p-5 sm:p-7 max-w-4xl w-full shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto m-auto">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between gap-4 border-b border-border pb-4">
+        <div class="min-w-0 flex-1 space-y-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span id="prjDetailStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"></span>
+            <span id="prjDetailYearBadge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-muted text-foreground border border-border"></span>
+            <span id="prjDetailCodeBadge" class="px-2.5 py-1 rounded-lg text-xs font-mono font-medium text-muted-foreground bg-muted/50 border border-border/50"></span>
+          </div>
+          <h2 id="prjDetailTitle" class="text-lg sm:text-2xl font-black text-foreground leading-snug"></h2>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button type="button" onclick="closeProjectDetailModal()" class="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer">
+            <i data-lucide="x" class="h-4 w-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Meta Stats (ระยะเวลา, สถานที่, งบประมาณ) -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-muted/30 border border-border/60 rounded-2xl p-3.5 space-y-1">
+          <div class="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+            <i data-lucide="calendar" class="h-3.5 w-3.5 text-primary"></i>
+            <span>ระยะเวลาโครงการ</span>
+          </div>
+          <p id="prjDetailDates" class="text-xs sm:text-sm font-bold text-foreground">-</p>
+        </div>
+
+        <div class="bg-muted/30 border border-border/60 rounded-2xl p-3.5 space-y-1">
+          <div class="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+            <i data-lucide="map-pin" class="h-3.5 w-3.5 text-rose-500"></i>
+            <span>สถานที่จัดกิจกรรม</span>
+          </div>
+          <p id="prjDetailLocation" class="text-xs sm:text-sm font-bold text-foreground truncate">-</p>
+        </div>
+
+        <div class="bg-muted/30 border border-border/60 rounded-2xl p-3.5 space-y-1">
+          <div class="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+            <i data-lucide="wallet" class="h-3.5 w-3.5 text-emerald-500"></i>
+            <span>งบประมาณที่ได้รับอนุมัติ</span>
+          </div>
+          <p id="prjDetailBudget" class="text-xs sm:text-sm font-bold text-foreground">-</p>
+        </div>
+      </div>
+
+      <!-- Google Drive & Official Documents Row -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="paperclip" class="h-3.5 w-3.5"></i> ลิงก์และเอกสารโครงการ
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- Google Drive Box -->
+          <div id="prjDetailGoogleDriveBox" class="bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent border border-blue-500/30 rounded-2xl p-3.5 flex flex-col justify-between space-y-2.5">
+            <div class="flex items-start gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <i data-lucide="hard-drive" class="h-5 w-5"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-foreground">Google Drive โครงการ</p>
+                <p class="text-[11px] text-muted-foreground">โฟลเดอร์ไฟล์ รูปภาพ และงานออกแบบ</p>
+              </div>
+            </div>
+            <a id="prjDetailGoogleDriveBtn" href="#" target="_blank" rel="noopener noreferrer"
+              class="w-full py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs">
+              <i data-lucide="external-link" class="h-3.5 w-3.5"></i> เปิด Google Drive
+            </a>
+          </div>
+
+          <!-- เล่มโครงการ Box -->
+          <div id="prjDetailDocBox" class="bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent border border-indigo-500/30 rounded-2xl p-3.5 flex flex-col justify-between space-y-2.5">
+            <div class="flex items-start gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                <i data-lucide="file-text" class="h-5 w-5"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p id="prjDetailDocTitle" class="text-xs font-bold text-foreground truncate">เล่มโครงการ (ฉบับสมบูรณ์)</p>
+                <p id="prjDetailDocDate" class="text-[11px] text-muted-foreground truncate"></p>
+              </div>
+            </div>
+            <a id="prjDetailDocBtn" href="#" target="_blank" rel="noopener noreferrer"
+              class="w-full py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs">
+              <i data-lucide="file-check-2" class="h-3.5 w-3.5"></i> เปิดดูเล่มโครงการ
+            </a>
+          </div>
+
+          <!-- เล่มงบประมาณ Box -->
+          <div id="prjDetailBudgetDocBox" class="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 rounded-2xl p-3.5 flex flex-col justify-between space-y-2.5">
+            <div class="flex items-start gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <i data-lucide="banknote" class="h-5 w-5"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p id="prjDetailBudgetDocTitle" class="text-xs font-bold text-foreground truncate">เล่มงบประมาณและบัญชี</p>
+                <p id="prjDetailBudgetDocAmount" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold truncate"></p>
+                <p id="prjDetailBudgetDocDate" class="text-[10px] text-muted-foreground truncate"></p>
+              </div>
+            </div>
+            <a id="prjDetailBudgetDocBtn" href="#" target="_blank" rel="noopener noreferrer"
+              class="w-full py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs">
+              <i data-lucide="receipt" class="h-3.5 w-3.5"></i> เปิดดูเล่มงบประมาณ
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- รายละเอียดโครงการเต็ม (Description) -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="align-left" class="h-3.5 w-3.5"></i> รายละเอียดโครงการเต็ม
+        </h4>
+        <div class="bg-muted/30 border border-border/60 rounded-2xl p-4 sm:p-5">
+          <p id="prjDetailDescription" class="text-xs sm:text-sm text-foreground whitespace-pre-wrap leading-relaxed"></p>
+        </div>
+      </div>
+
+      <!-- 4 STAKEHOLDER CATEGORIES -->
+      <!-- Category 1: ผู้รับผิดชอบโครงการ -->
+      <div class="space-y-2.5">
+        <h4 class="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+          <span class="p-1 rounded-lg bg-primary/10 text-primary">
+            <i data-lucide="crown" class="h-3.5 w-3.5"></i>
+          </span>
+          ผู้รับผิดชอบโครงการ
+        </h4>
+        <div id="prjDetailLeadersList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- Category 2: รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด -->
+      <div class="space-y-2.5">
+        <h4 class="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+          <span class="p-1 rounded-lg bg-indigo-500/10 text-indigo-500">
+            <i data-lucide="users" class="h-3.5 w-3.5"></i>
+          </span>
+          รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด
+        </h4>
+        <div id="prjDetailMembersList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- Category 3: รายชื่ออาจารย์ที่ปรึกษา -->
+      <div class="space-y-2.5">
+        <h4 class="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+          <span class="p-1 rounded-lg bg-emerald-500/10 text-emerald-500">
+            <i data-lucide="graduation-cap" class="h-3.5 w-3.5"></i>
+          </span>
+          รายชื่ออาจารย์ที่ปรึกษา
+        </h4>
+        <div id="prjDetailAdvisorsList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- Category 4: รายชื่อสโมสรนักศึกษาที่ดูแล -->
+      <div class="space-y-2.5">
+        <h4 class="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+          <span class="p-1 rounded-lg bg-amber-500/10 text-amber-500">
+            <i data-lucide="landmark" class="h-3.5 w-3.5"></i>
+          </span>
+          รายชื่อสโมสรนักศึกษาที่ดูแล
+        </h4>
+        <div id="prjDetailSmoOfficersList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-4 border-t border-border flex items-center justify-between gap-3">
+        <div id="prjDetailAdminActions" class="hidden items-center gap-2">
+          <button type="button" id="prjDetailEditBtn"
+            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
+            <i data-lucide="square-pen" class="h-3.5 w-3.5"></i> แก้ไขโครงการนี้
+          </button>
+          <button type="button" id="prjDetailDeleteBtn"
+            class="px-3 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
+            <i data-lucide="trash-2" class="h-3.5 w-3.5"></i> ลบโครงการ
+          </button>
+        </div>
+
+        <button type="button" onclick="closeProjectDetailModal()"
+          class="ml-auto px-5 py-2 rounded-xl text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground transition cursor-pointer">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ADMIN PROJECT EDITOR MODAL                                -->
+  <!-- ======================================================== -->
+  <div id="adminProjectEditModal" class="fixed inset-0 bg-background/85 backdrop-blur-md hidden flex items-center justify-center z-[90] p-3 sm:p-4 select-text">
+    <div class="bg-card text-card-foreground border border-border rounded-3xl p-5 sm:p-7 max-w-4xl w-full shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto m-auto">
+      <div class="flex items-center justify-between border-b border-border pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <i data-lucide="folder-plus" class="h-4 w-4"></i>
+          </div>
+          <div>
+            <h3 id="adminPrjModalTitle" class="text-base sm:text-lg font-bold text-foreground">สร้างโครงการใหม่</h3>
+            <p class="text-xs text-muted-foreground">กรอกข้อมูลโครงการและรายชื่อผู้เกี่ยวข้องทั้งหมด</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeAdminProjectEditModal()" class="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <form id="adminProjectEditForm" onsubmit="saveProjectFromAdminForm(event)" class="space-y-5">
+        <input type="hidden" id="prjFormId" value="">
+
+        <!-- Basic Project Info -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-foreground mb-1">ชื่อโครงการ *</label>
+            <input type="text" id="prjFormTitle" required placeholder="เช่น โครงการค่ายสันทนาการสัมพันธ์ COMSAN Camp 2569"
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-foreground mb-1">รหัสโครงการ</label>
+            <input type="text" id="prjFormCode" placeholder="เช่น CS-PRJ-2569-01"
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs font-mono" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-foreground mb-1">ปีการศึกษา</label>
+            <input type="text" id="prjFormAcademicYear" placeholder="2569"
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-foreground mb-1">สถานะโครงการ</label>
+            <select id="prjFormStatus" class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs font-semibold text-foreground">
+              <option value="IN_PROGRESS">กำลังดำเนินการ (In Progress)</option>
+              <option value="COMPLETED">สิ้นสุดแล้ว (Completed)</option>
+              <option value="PLANNING">เตรียมการ (Planning)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-foreground mb-1">งบประมาณ</label>
+            <input type="text" id="prjFormBudget" placeholder="เช่น 28,500 บาท"
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-foreground mb-1">วันที่เริ่มโครงการ</label>
+            <input type="date" id="prjFormStartDate" required
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-foreground mb-1">วันที่สิ้นสุดโครงการ</label>
+            <input type="date" id="prjFormEndDate"
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-foreground mb-1">สถานที่จัดโครงการ</label>
+            <input type="text" id="prjFormLocation" placeholder="เช่น วิทยาลัยการคอมพิวเตอร์"
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs" />
+          </div>
+
+          <div class="sm:col-span-3">
+            <label class="block font-bold text-foreground mb-1">รายละเอียดโครงการโดยย่อ (Short Summary)</label>
+            <textarea id="prjFormSummary" rows="2" placeholder="อธิบายภาพรวมโครงการสั้นๆ เพื่อแสดงบนการ์ด..."
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs resize-none"></textarea>
+          </div>
+
+          <div class="sm:col-span-3">
+            <label class="block font-bold text-foreground mb-1">รายละเอียดโครงการเต็ม (Full Description)</label>
+            <textarea id="prjFormDescription" rows="4" placeholder="ระบุวัตถุประสงค์ กำหนดการ ผลลัพธ์ที่คาดว่าจะได้รับ..."
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs leading-relaxed"></textarea>
+          </div>
+
+          <div class="sm:col-span-3">
+            <label class="block font-bold text-foreground mb-1 flex items-center gap-1.5">
+              <i data-lucide="hard-drive" class="h-3.5 w-3.5 text-blue-500"></i> ลิงก์ Google Drive โครงการ
+            </label>
+            <input type="url" id="prjFormGoogleDriveUrl" placeholder="https://drive.google.com/drive/folders/..."
+              class="w-full px-3 py-2 rounded-xl bg-muted/40 border border-border focus:border-primary text-xs" />
+          </div>
+        </div>
+
+        <!-- Document Links Section -->
+        <div class="border-t border-border pt-3 space-y-3">
+          <h4 class="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="file-text" class="h-3.5 w-3.5"></i> ลิงก์เล่มโครงการ & เล่มงบประมาณ
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="bg-muted/20 border border-border/60 rounded-2xl p-3 space-y-2">
+              <p class="font-bold text-foreground flex items-center gap-1.5">
+                <i data-lucide="file-check-2" class="h-3.5 w-3.5 text-indigo-500"></i> เล่มโครงการ
+              </p>
+              <div>
+                <label class="block text-[11px] text-muted-foreground mb-0.5">ชื่อเอกสาร</label>
+                <input type="text" id="prjFormDocTitle" placeholder="เช่น เล่มโครงการค่ายสันทนาการ.pdf"
+                  class="w-full px-3 py-1.5 rounded-lg bg-card border border-border text-xs" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-muted-foreground mb-0.5">URL ดาวน์โหลด/เปิดดู</label>
+                <input type="url" id="prjFormDocUrl" placeholder="https://drive.google.com/.../view"
+                  class="w-full px-3 py-1.5 rounded-lg bg-card border border-border text-xs" />
+              </div>
+            </div>
+
+            <div class="bg-muted/20 border border-border/60 rounded-2xl p-3 space-y-2">
+              <p class="font-bold text-foreground flex items-center gap-1.5">
+                <i data-lucide="receipt" class="h-3.5 w-3.5 text-emerald-500"></i> เล่มงบประมาณ
+              </p>
+              <div>
+                <label class="block text-[11px] text-muted-foreground mb-0.5">ชื่อเอกสาร</label>
+                <input type="text" id="prjFormBudgetDocTitle" placeholder="เช่น สรุปบัญชีรายรับ-รายจ่าย.pdf"
+                  class="w-full px-3 py-1.5 rounded-lg bg-card border border-border text-xs" />
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] text-muted-foreground mb-0.5">ยอดเงินรวม</label>
+                  <input type="text" id="prjFormBudgetDocAmount" placeholder="เช่น 28,500 บาท"
+                    class="w-full px-3 py-1.5 rounded-lg bg-card border border-border text-xs" />
+                </div>
+                <div>
+                  <label class="block text-[11px] text-muted-foreground mb-0.5">URL เปิดดู</label>
+                  <input type="url" id="prjFormBudgetDocUrl" placeholder="https://..."
+                    class="w-full px-3 py-1.5 rounded-lg bg-card border border-border text-xs" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Stakeholder Repeaters -->
+        <!-- 1. Leaders -->
+        <div class="border-t border-border pt-3 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <i data-lucide="crown" class="h-3.5 w-3.5 text-primary"></i>
+              ผู้รับผิดชอบโครงการ (Project Leaders)
+            </h4>
+            <button type="button" onclick="addRepeaterItem('LEADERS')"
+              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้รับผิดชอบ
+            </button>
+          </div>
+          <div id="prjFormLeadersContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- 2. Members -->
+        <div class="border-t border-border pt-3 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <i data-lucide="users" class="h-3.5 w-3.5 text-indigo-500"></i>
+              รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด
+            </h4>
+            <button type="button" onclick="addRepeaterItem('MEMBERS')"
+              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้เกี่ยวข้อง
+            </button>
+          </div>
+          <div id="prjFormMembersContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- 3. Advisors -->
+        <div class="border-t border-border pt-3 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <i data-lucide="graduation-cap" class="h-3.5 w-3.5 text-emerald-500"></i>
+              อาจารย์ที่ปรึกษาโครงการ
+            </h4>
+            <button type="button" onclick="addRepeaterItem('ADVISORS')"
+              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มอาจารย์ที่ปรึกษา
+            </button>
+          </div>
+          <div id="prjFormAdvisorsContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- 4. SMO Officers -->
+        <div class="border-t border-border pt-3 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <i data-lucide="landmark" class="h-3.5 w-3.5 text-amber-500"></i>
+              สโมสรนักศึกษาที่ดูแล
+            </h4>
+            <button type="button" onclick="addRepeaterItem('SMO')"
+              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้ดูแลจากสโมสร
+            </button>
+          </div>
+          <div id="prjFormSmoContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="pt-4 border-t border-border flex items-center justify-end gap-2">
+          <button type="button" onclick="closeAdminProjectEditModal()"
+            class="px-4 py-2.5 rounded-xl border border-border hover:bg-muted text-xs font-semibold text-foreground transition cursor-pointer">
+            ยกเลิก
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="save" class="h-4 w-4"></i> บันทึกข้อมูลโครงการ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<div id="authScreen" class="min-h-screen pb-16 bg-slate-50 dark:bg-slate-950 text-foreground flex items-center justify-center p-4 transition-colors select-none relative overflow-hidden">
     <!-- Ambient decorative backdrop glows -->
     <div class="absolute -top-32 -right-32 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -3221,6 +3629,10 @@ label svg, label i {
             <i data-lucide="calendar-days" class="h-4 w-4 shrink-0 transition-colors"></i>
             <span class="truncate">ปฏิทินงาน</span>
           </a>
+          <a onclick="switchAdminTab('PROJECTS')" id="aNav_PROJECTS" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+            <i data-lucide="folder-kanban" class="h-4 w-4 shrink-0 transition-colors"></i>
+            <span class="truncate">โครงการ</span>
+          </a>
           <a onclick="switchAdminTab('SUMMARY')" id="aNav_SUMMARY" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0 transition-colors"></i>
             <span class="truncate">สรุปผลประชุม</span>
@@ -3579,7 +3991,7 @@ label svg, label i {
               </div>
 
               <!-- SEGMENTED CONTROL PILL BAR (เอกสาร | แชร์หน้าจอ | สมุดจด | ปฏิทินงาน | สมาชิกชมรม | วงล้อสุ่ม - สวยงาม รองรับมือถือ ไอแพต และคอม) -->
-              <div class="bg-muted/60 p-1.5 rounded-2xl flex items-center gap-2 overflow-x-auto no-scrollbar xl:grid xl:grid-cols-6 border border-border/50 select-none scroll-smooth">
+              <div class="bg-muted/60 p-1.5 rounded-2xl flex items-center gap-2 overflow-x-auto no-scrollbar xl:grid xl:grid-cols-7 border border-border/50 select-none scroll-smooth">
                 <button type="button" onclick="switchUserToolSubTab('FILES')" id="uToolBtn_FILES"
                   class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap">
                   <i data-lucide="file-text" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">เอกสาร</span>
@@ -3595,6 +4007,10 @@ label svg, label i {
                 <button type="button" onclick="switchUserToolSubTab('CALENDAR')" id="uToolBtn_CALENDAR"
                   class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
                   <i data-lucide="calendar-days" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">ปฏิทินงาน</span>
+                </button>
+                <button type="button" onclick="switchUserToolSubTab('PROJECTS')" id="uToolBtn_PROJECTS"
+                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  <i data-lucide="folder-kanban" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">โครงการ</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('SEATS')" id="uToolBtn_SEATS"
                   class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
@@ -3885,6 +4301,12 @@ label svg, label i {
             <!-- SUB-VIEW 6: ปฏิทินงานชมรม (CALENDAR)                  -->
             <!-- =================================================== -->
             <div id="uToolSec_CALENDAR" class="hidden space-y-4"></div>
+
+            <!-- =================================================== -->
+            <!-- SUB-VIEW 7: โครงการของชมรม (PROJECTS)                  -->
+            <!-- =================================================== -->
+            <div id="uToolSec_PROJECTS" class="hidden space-y-4"></div>
+
 
           </section>
 
@@ -5255,6 +5677,10 @@ label svg, label i {
         <!-- ADMIN TAB: CALENDAR (ปฏิทินงานชมรม) -->
         <section id="aTab_CALENDAR" class="hidden space-y-6"></section>
 
+        <!-- ADMIN TAB: PROJECTS (โครงการของชมรม) -->
+        <section id="aTab_PROJECTS" class="hidden space-y-6"></section>
+
+
       
         </main>
         </div>
@@ -5421,6 +5847,7 @@ label svg, label i {
   <script src="js/supabaseConfig.js"></script>
   <script src="js/services/supabaseAdapter.js"></script>
   <script src="js/config.js"></script>
+  <script src="js/defaultProjects.js"></script>
   <script src="js/state.js"></script>
   <script src="js/utils/format.js"></script>
   <script src="js/utils/ui.js"></script>
@@ -5433,6 +5860,7 @@ label svg, label i {
   <script src="js/components/stream.js"></script>
   <script src="js/components/analyticsChart.js"></script>
   <script src="js/components/calendar.js"></script>
+  <script src="js/components/projects.js"></script>
   <script src="js/views/navigation.js"></script>
   <script src="js/views/userView.js"></script>
   <script src="js/views/adminView.js"></script>

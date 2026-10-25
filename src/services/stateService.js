@@ -55,6 +55,9 @@ class StateService {
         parsed.calendarEvents = (Array.isArray(parsed.calendarEvents) && parsed.calendarEvents.length > 0)
           ? parsed.calendarEvents
           : (defaultState.calendarEvents || []);
+        parsed.projects = (Array.isArray(parsed.projects) && parsed.projects.length > 0)
+          ? parsed.projects
+          : (defaultState.projects || []);
         return parsed;
       }
     } catch (err) {

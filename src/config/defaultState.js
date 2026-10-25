@@ -1,4 +1,5 @@
 const todayISO = new Date().toISOString().slice(0, 10);
+const defaultProjects = require('./defaultProjects');
 
 const defaultState = {
   meeting: {
@@ -178,6 +179,7 @@ const defaultState = {
       createdAt: new Date().toISOString()
     }
   ],
+  projects: defaultProjects,
   systemVersion: '2.0.1',
   versionNotes: {
     version: '2.0.1',
