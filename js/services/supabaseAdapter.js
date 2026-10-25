@@ -165,10 +165,11 @@
         });
       }
       if (Array.isArray(clone.projects)) {
+        const sampleIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
         const u = [];
         const s = new Set();
         clone.projects.forEach(p => {
-          if (p && p.id && !s.has(p.id)) {
+          if (p && p.id && !sampleIds.has(p.id) && !s.has(p.id)) {
             s.add(p.id);
             u.push(p);
           }
@@ -188,16 +189,17 @@
         const stateToSave = this.prepareStateForBroadcast(this.pendingStateToSave);
         this.pendingStateToSave = null;
 
-        // CRITICAL SAFEGUARD: Ensure projects array is ALWAYS preserved and never wiped out by partial updates
+        const sampleIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
         if (!Array.isArray(stateToSave.projects)) {
           if (Array.isArray(this.lastKnownProjects)) {
-            stateToSave.projects = this.lastKnownProjects;
+            stateToSave.projects = this.lastKnownProjects.filter(p => p && p.id && !sampleIds.has(p.id));
           } else if (window.appState && Array.isArray(window.appState.projects)) {
-            stateToSave.projects = window.appState.projects;
+            stateToSave.projects = window.appState.projects.filter(p => p && p.id && !sampleIds.has(p.id));
           } else {
             stateToSave.projects = [];
           }
         } else {
+          stateToSave.projects = stateToSave.projects.filter(p => p && p.id && !sampleIds.has(p.id));
           this.lastKnownProjects = stateToSave.projects;
         }
 
@@ -307,12 +309,14 @@
               this.lastSyncTimestamp = new Date(full.updated_at).getTime();
 
               // Preserve projects if remote state lacks projects
+              const sampleIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
               if (Array.isArray(full.state.projects)) {
+                full.state.projects = full.state.projects.filter(p => p && p.id && !sampleIds.has(p.id));
                 this.lastKnownProjects = full.state.projects;
               } else if (Array.isArray(this.lastKnownProjects)) {
-                full.state.projects = this.lastKnownProjects;
-              } else if (window.appState && Array.isArray(window.appState.projects)) {
-                full.state.projects = window.appState.projects;
+                full.state.projects = this.lastKnownProjects.filter(p => p && p.id && !sampleIds.has(p.id));
+              } else {
+                full.state.projects = [];
               }
 
               if (typeof window.normalizeState === 'function') {
@@ -351,12 +355,14 @@
           this.lastSyncTimestamp = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
 
           // Preserve projects if remote state lacks projects
+          const sampleIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
           if (Array.isArray(data.state.projects)) {
+            data.state.projects = data.state.projects.filter(p => p && p.id && !sampleIds.has(p.id));
             this.lastKnownProjects = data.state.projects;
           } else if (Array.isArray(this.lastKnownProjects)) {
-            data.state.projects = this.lastKnownProjects;
-          } else if (window.appState && Array.isArray(window.appState.projects) && window.appState.projects.length > 0) {
-            data.state.projects = window.appState.projects;
+            data.state.projects = this.lastKnownProjects.filter(p => p && p.id && !sampleIds.has(p.id));
+          } else {
+            data.state.projects = [];
           }
 
           if (typeof window.normalizeState === 'function') {

@@ -464,14 +464,13 @@
     let list = [];
     if (typeof window !== 'undefined' && window.appState && Array.isArray(window.appState.projects)) {
       list = window.appState.projects;
-    } else if (typeof window !== 'undefined' && typeof window.defaultProjects !== 'undefined' && Array.isArray(window.defaultProjects)) {
-      list = window.defaultProjects;
     }
-    // Deduplicate by ID to guarantee no duplicate cards ever render
+    const sampleProjectIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
+    // Deduplicate by ID and exclude defunct sample projects
     const unique = [];
     const seen = new Set();
     list.forEach(p => {
-      if (p && p.id && !seen.has(p.id)) {
+      if (p && p.id && !sampleProjectIds.has(p.id) && !seen.has(p.id)) {
         seen.add(p.id);
         unique.push(p);
       }

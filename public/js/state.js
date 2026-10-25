@@ -162,7 +162,7 @@ const defaultState = {
   lastMeetingSummary: null,
   meetingHistory: [],
   calendarEvents: [],
-  projects: (typeof defaultProjects !== 'undefined') ? defaultProjects : [],
+  projects: [],
   systemVersion: '2.0.1',
   versionNotes: null
 };
@@ -190,15 +190,8 @@ function normalizeState(raw) {
     }
   });
 
-  let rawProjects;
-  if (Array.isArray(raw.projects)) {
-    rawProjects = raw.projects;
-  } else if (raw && raw.meeting && (raw.meeting.isStarted || (Array.isArray(raw.users) && raw.users.length > 0))) {
-    // Existing database/meeting state: NEVER resurrect deleted default projects!
-    rawProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : [];
-  } else {
-    rawProjects = (typeof defaultProjects !== 'undefined') ? defaultProjects : (defaultState.projects || []);
-  }
+  const sampleProjectIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
+  const rawProjects = (Array.isArray(raw.projects) ? raw.projects : []).filter(p => p && p.id && !sampleProjectIds.has(p.id));
   const uniqueProjects = [];
   const seenPrjIds = new Set();
   rawProjects.forEach(p => {
