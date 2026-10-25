@@ -841,9 +841,12 @@
         const user = state.users.find(u => u.id === userId);
         if (user) {
           user.streamPermission = status || 'NONE';
-          if (status !== 'APPROVED' && state.activeStream && state.activeStream.streamerId === userId) {
-            state.activeStream = null;
-            notify('stream:stopped');
+          if (status !== 'APPROVED') {
+            if (state.activeStream && (state.activeStream.streamerId === userId || !state.activeStream.streamerId)) {
+              state.activeStream = null;
+              notify('stream:stopped');
+              notify('stream:forceStop');
+            }
           }
           notify('stream:permission', { userId, status: user.streamPermission });
           notify('notify:event', {
@@ -858,11 +861,33 @@
         break;
       }
 
+      case 'admin:stopAllStreams': {
+        state.activeStream = null;
+        if (Array.isArray(state.users)) {
+          state.users.forEach(u => {
+            if (u.streamPermission === 'APPROVED' || u.streamPermission === 'PENDING') {
+              u.streamPermission = 'NONE';
+            }
+          });
+        }
+        notify('stream:stopped');
+        notify('stream:forceStop');
+        result = { ok: true };
+        break;
+      }
+
       case 'stream:frame': {
         const framePayload = payload;
         if (!framePayload || !framePayload.frameDataUrl) {
           shouldPersist = false;
           break;
+        }
+        if (framePayload.streamerId && framePayload.streamerId !== 'ADMIN') {
+          const streamer = state.users.find(u => u.id === framePayload.streamerId);
+          if (!streamer || streamer.streamPermission !== 'APPROVED') {
+            shouldPersist = false;
+            break; // Reject unauthorized streamer frames
+          }
         }
         state.activeStream = {
           streamerId: framePayload.streamerId,
@@ -880,6 +905,7 @@
       case 'stream:stop': {
         state.activeStream = null;
         notify('stream:stopped');
+        notify('stream:forceStop');
         shouldPersist = false;
         result = { ok: true };
         break;
@@ -891,9 +917,10 @@
         if (user) {
           if (permType === 'STREAM') {
             user.streamPermission = 'NONE';
-            if (state.activeStream && state.activeStream.streamerId === userId) {
+            if (state.activeStream && (state.activeStream.streamerId === userId || !state.activeStream.streamerId)) {
               state.activeStream = null;
               notify('stream:stopped');
+              notify('stream:forceStop');
             }
             notify('stream:permission', { userId, status: 'NONE' });
           } else if (permType === 'FILE') {

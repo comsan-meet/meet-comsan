@@ -9,9 +9,10 @@ module.exports = function registerStreamHandlers(io, socket) {
     if (!user) return;
     if (permType === 'STREAM') {
       user.streamPermission = 'NONE';
-      if (state.activeStream && state.activeStream.streamerId === userId) {
+      if (state.activeStream && (state.activeStream.streamerId === userId || !state.activeStream.streamerId)) {
         state.activeStream = null;
         io.emit('stream:stopped');
+        io.emit('stream:forceStop');
       }
       io.emit('stream:permission', { userId, status: 'NONE' });
     } else if (permType === 'FILE') {
@@ -39,9 +40,12 @@ module.exports = function registerStreamHandlers(io, socket) {
     const user = state.users.find(u => u.id === userId);
     if (!user) return;
     user.streamPermission = status;
-    if (status !== 'APPROVED' && state.activeStream && state.activeStream.streamerId === userId) {
-      state.activeStream = null;
-      io.emit('stream:stopped');
+    if (status !== 'APPROVED') {
+      if (state.activeStream && (state.activeStream.streamerId === userId || !state.activeStream.streamerId)) {
+        state.activeStream = null;
+        io.emit('stream:stopped');
+        io.emit('stream:forceStop');
+      }
     }
     stateService.persistAndBroadcast();
     io.emit('stream:permission', { userId, status: user.streamPermission });
@@ -54,8 +58,30 @@ module.exports = function registerStreamHandlers(io, socket) {
     });
   });
 
+  // แอดมินสั่งหยุดแชร์ทั้งหมด และคืนสิทธิ์ทุกคน
+  socket.on('admin:stopAllStreams', () => {
+    state.activeStream = null;
+    if (Array.isArray(state.users)) {
+      state.users.forEach(u => {
+        if (u.streamPermission === 'APPROVED' || u.streamPermission === 'PENDING') {
+          u.streamPermission = 'NONE';
+        }
+      });
+    }
+    stateService.persistAndBroadcast();
+    io.emit('stream:stopped');
+    io.emit('stream:forceStop');
+  });
+
   socket.on('stream:frame', (framePayload) => {
     if (!framePayload || !framePayload.frameDataUrl) return;
+    // Reject frames from unauthorized users
+    if (framePayload.streamerId && framePayload.streamerId !== 'ADMIN') {
+      const streamer = state.users.find(u => u.id === framePayload.streamerId);
+      if (!streamer || streamer.streamPermission !== 'APPROVED') {
+        return; // Dropped unauthorized frame
+      }
+    }
     state.activeStream = {
       streamerId: framePayload.streamerId,
       streamerName: framePayload.streamerName,
@@ -70,5 +96,6 @@ module.exports = function registerStreamHandlers(io, socket) {
     state.activeStream = null;
     stateService.persistAndBroadcast();
     io.emit('stream:stopped');
+    io.emit('stream:forceStop');
   });
 };

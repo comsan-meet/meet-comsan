@@ -1180,8 +1180,20 @@ function setupSocketListeners() {
       const u = state.users.find(user => user.id === data.userId);
       if (u) {
         u.streamPermission = data.status || 'NONE';
-        if (data.status !== 'APPROVED' && state.activeStream && state.activeStream.streamerId === data.userId) {
-          state.activeStream = null;
+        if (data.status !== 'APPROVED') {
+          if (state.activeStream && (state.activeStream.streamerId === data.userId || !state.activeStream.streamerId)) {
+            state.activeStream = null;
+          }
+          if (data.userId === window.currentUserId) {
+            if (typeof stopMediaTracksOnly === 'function') stopMediaTracksOnly();
+            if (window.streamInterval) {
+              clearInterval(window.streamInterval);
+              window.streamInterval = null;
+            }
+            window.currentStreamMode = null;
+            const indicator = document.getElementById('liveStreamActiveIndicator');
+            if (indicator) indicator.classList.add('hidden');
+          }
         }
         if (typeof window.saveLocalState === 'function') window.saveLocalState();
         if (typeof window.renderAll === 'function') window.renderAll();
@@ -1245,6 +1257,16 @@ function setupSocketListeners() {
   });
 
   socket.on('stream:stopped', () => {
+    if (window.localMediaStream || window.streamInterval || window.currentStreamMode) {
+      if (typeof stopMediaTracksOnly === 'function') stopMediaTracksOnly();
+      if (window.streamInterval) {
+        clearInterval(window.streamInterval);
+        window.streamInterval = null;
+      }
+      window.currentStreamMode = null;
+      const indicator = document.getElementById('liveStreamActiveIndicator');
+      if (indicator) indicator.classList.add('hidden');
+    }
     if (window.appState) {
       window.appState.activeStream = null;
       if (typeof updateUserActiveEventsBanner === 'function') {
@@ -1254,6 +1276,31 @@ function setupSocketListeners() {
     if (typeof window.clearStreamViewerScreens === 'function') {
       window.clearStreamViewerScreens();
     }
+    if (typeof window.renderStreamSection === 'function') {
+      window.renderStreamSection();
+    }
+  });
+
+  socket.on('stream:forceStop', () => {
+    if (typeof stopMediaTracksOnly === 'function') stopMediaTracksOnly();
+    if (window.streamInterval) {
+      clearInterval(window.streamInterval);
+      window.streamInterval = null;
+    }
+    window.currentStreamMode = null;
+    const indicator = document.getElementById('liveStreamActiveIndicator');
+    if (indicator) indicator.classList.add('hidden');
+    if (window.appState) {
+      window.appState.activeStream = null;
+      if (typeof updateUserActiveEventsBanner === 'function') {
+        updateUserActiveEventsBanner(window.appState);
+      }
+    }
+    if (typeof window.clearStreamViewerScreens === 'function') {
+      window.clearStreamViewerScreens();
+    }
+    if (typeof window.renderAll === 'function') window.renderAll();
+    if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
   });
 }
 

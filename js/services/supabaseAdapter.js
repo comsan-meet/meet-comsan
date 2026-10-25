@@ -113,7 +113,18 @@
           if (eventName === 'state:update' && eventPayload) {
             payloadToSend = this.prepareStateForBroadcast(eventPayload);
           } else if (eventName === 'file:upload' && eventPayload) {
-            payloadToSend = { ...eventPayload, dataUrl: null, hasContent: true };
+            if (eventPayload.dataUrl && typeof window.saveFileContentToCloud === 'function') {
+              window.saveFileContentToCloud(eventPayload).catch(() => {});
+            }
+            if (eventPayload.dataUrl && eventPayload.dataUrl.length <= 150000) {
+              payloadToSend = eventPayload;
+            } else {
+              payloadToSend = { ...eventPayload, dataUrl: null, hasContent: true };
+            }
+          } else if (eventName === 'file:delete' && eventPayload) {
+            if (typeof window.deleteFileContentFromCloud === 'function') {
+              window.deleteFileContentFromCloud(eventPayload).catch(() => {});
+            }
           }
           this.channel.send({
             type: 'broadcast',
@@ -353,7 +364,8 @@
         'file:upload',
         'file:delete',
         'stream:frameUpdate',
-        'stream:stopped'
+        'stream:stopped',
+        'stream:forceStop'
       ];
 
       broadcastEvents.forEach(evt => {
@@ -429,14 +441,63 @@
               const u = state.users.find(user => user.id === payload.userId);
               if (u) {
                 u.streamPermission = payload.status || 'NONE';
-                if (payload.status !== 'APPROVED' && state.activeStream && state.activeStream.streamerId === payload.userId) {
-                  state.activeStream = null;
+                if (payload.status !== 'APPROVED') {
+                  if (state.activeStream && (state.activeStream.streamerId === payload.userId || !state.activeStream.streamerId)) {
+                    state.activeStream = null;
+                  }
+                  if (payload.userId === window.currentUserId) {
+                    if (typeof stopMediaTracksOnly === 'function') stopMediaTracksOnly();
+                    if (window.streamInterval) {
+                      clearInterval(window.streamInterval);
+                      window.streamInterval = null;
+                    }
+                    window.currentStreamMode = null;
+                    const indicator = document.getElementById('liveStreamActiveIndicator');
+                    if (indicator) indicator.classList.add('hidden');
+                  }
                 }
                 if (typeof window.saveLocalState === 'function') window.saveLocalState();
                 if (typeof window.renderAll === 'function') window.renderAll();
                 if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
               }
             }
+          } else if (evt === 'stream:stopped') {
+            if (window.localMediaStream || window.streamInterval || window.currentStreamMode) {
+              if (typeof stopMediaTracksOnly === 'function') stopMediaTracksOnly();
+              if (window.streamInterval) {
+                clearInterval(window.streamInterval);
+                window.streamInterval = null;
+              }
+              window.currentStreamMode = null;
+              const indicator = document.getElementById('liveStreamActiveIndicator');
+              if (indicator) indicator.classList.add('hidden');
+            }
+            if (window.appState) {
+              window.appState.activeStream = null;
+            }
+            if (typeof window.clearStreamViewerScreens === 'function') {
+              window.clearStreamViewerScreens();
+            }
+            if (typeof window.renderStreamSection === 'function') {
+              window.renderStreamSection();
+            }
+          } else if (evt === 'stream:forceStop') {
+            if (typeof stopMediaTracksOnly === 'function') stopMediaTracksOnly();
+            if (window.streamInterval) {
+              clearInterval(window.streamInterval);
+              window.streamInterval = null;
+            }
+            window.currentStreamMode = null;
+            const indicator = document.getElementById('liveStreamActiveIndicator');
+            if (indicator) indicator.classList.add('hidden');
+            if (window.appState) {
+              window.appState.activeStream = null;
+            }
+            if (typeof window.clearStreamViewerScreens === 'function') {
+              window.clearStreamViewerScreens();
+            }
+            if (typeof window.renderAll === 'function') window.renderAll();
+            if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
           } else if (evt === 'file:permission' && payload) {
             const state = window.appState;
             if (state && Array.isArray(state.users)) {
@@ -548,24 +609,116 @@
 
   window.SupabaseSocketAdapter = SupabaseSocketAdapter;
 
-  window.fetchFileContentFromCloud = async function(fileId) {
+  window.saveFileContentToCloud = async function(fileObj) {
+    if (!fileObj || !fileObj.id || !fileObj.dataUrl) return false;
     try {
-      if (window.socket && window.socket.engine && window.socket.engine.supabase) {
-        const sb = window.socket.engine.supabase;
-        const { data, error } = await sb
+      let sb = (window.socket && window.socket.engine && window.socket.engine.supabase) ? window.socket.engine.supabase : null;
+      if (!sb && typeof SupabaseConfigManager !== 'undefined') {
+        const creds = await SupabaseConfigManager.getCredentials();
+        if (creds.isConfigured && window.supabase && typeof window.supabase.createClient === 'function') {
+          sb = window.supabase.createClient(creds.url, creds.anonKey);
+        }
+      }
+      if (sb) {
+        const { error } = await sb
+          .from('comsan_meeting_state')
+          .upsert({
+            id: `file:${fileObj.id}`,
+            state: {
+              id: fileObj.id,
+              name: fileObj.name,
+              size: fileObj.size,
+              type: fileObj.type,
+              dataUrl: fileObj.dataUrl,
+              uploadedAt: fileObj.uploadedAt || Date.now()
+            },
+            updated_at: new Date().toISOString()
+          });
+        return !error;
+      }
+    } catch (e) {
+      console.warn('saveFileContentToCloud error:', e);
+    }
+    return false;
+  };
+
+  window.deleteFileContentFromCloud = async function(fileId) {
+    if (!fileId) return;
+    try {
+      let sb = (window.socket && window.socket.engine && window.socket.engine.supabase) ? window.socket.engine.supabase : null;
+      if (!sb && typeof SupabaseConfigManager !== 'undefined') {
+        const creds = await SupabaseConfigManager.getCredentials();
+        if (creds.isConfigured && window.supabase && typeof window.supabase.createClient === 'function') {
+          sb = window.supabase.createClient(creds.url, creds.anonKey);
+        }
+      }
+      if (sb) {
+        await sb
+          .from('comsan_meeting_state')
+          .delete()
+          .eq('id', `file:${fileId}`);
+      }
+    } catch (e) {
+      console.warn('deleteFileContentFromCloud error:', e);
+    }
+  };
+
+  window.fetchFileContentFromCloud = async function(fileId) {
+    if (!fileId) return null;
+    try {
+      // 1. Check if local memory already has dataUrl
+      if (window.appState && Array.isArray(window.appState.files)) {
+        const memF = window.appState.files.find(item => item.id === fileId);
+        if (memF && memF.dataUrl) return memF.dataUrl;
+      }
+
+      let sb = (window.socket && window.socket.engine && window.socket.engine.supabase) ? window.socket.engine.supabase : null;
+      if (!sb && typeof SupabaseConfigManager !== 'undefined') {
+        const creds = await SupabaseConfigManager.getCredentials();
+        if (creds.isConfigured && window.supabase && typeof window.supabase.createClient === 'function') {
+          sb = window.supabase.createClient(creds.url, creds.anonKey);
+        }
+      }
+
+      if (sb) {
+        // Query dedicated file row first (fast, reliable, independent)
+        const { data: fileRow, error: fileErr } = await sb
+          .from('comsan_meeting_state')
+          .select('state')
+          .eq('id', `file:${fileId}`)
+          .maybeSingle();
+
+        if (!fileErr && fileRow && fileRow.state && fileRow.state.dataUrl) {
+          const dUrl = fileRow.state.dataUrl;
+          if (window.appState && Array.isArray(window.appState.files)) {
+            const localF = window.appState.files.find(item => item.id === fileId);
+            if (localF) {
+              localF.dataUrl = dUrl;
+              localF.hasContent = true;
+            }
+          }
+          return dUrl;
+        }
+
+        // Fallback: check main state row 'current'
+        const { data: mainData, error: mainErr } = await sb
           .from('comsan_meeting_state')
           .select('state')
           .eq('id', 'current')
           .maybeSingle();
 
-        if (!error && data && data.state && Array.isArray(data.state.files)) {
-          const remoteF = data.state.files.find(item => item.id === fileId);
+        if (!mainErr && mainData && mainData.state && Array.isArray(mainData.state.files)) {
+          const remoteF = mainData.state.files.find(item => item.id === fileId);
           if (remoteF && remoteF.dataUrl) {
-            const localF = (window.appState && Array.isArray(window.appState.files))
-              ? window.appState.files.find(item => item.id === fileId)
-              : null;
-            if (localF) localF.dataUrl = remoteF.dataUrl;
-            return remoteF.dataUrl;
+            const dUrl = remoteF.dataUrl;
+            if (window.appState && Array.isArray(window.appState.files)) {
+              const localF = window.appState.files.find(item => item.id === fileId);
+              if (localF) {
+                localF.dataUrl = dUrl;
+                localF.hasContent = true;
+              }
+            }
+            return dUrl;
           }
         }
       }

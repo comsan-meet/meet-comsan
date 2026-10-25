@@ -30,14 +30,15 @@ module.exports = function registerFileHandlers(io, socket) {
   });
 
   socket.on('file:upload', (fileObj) => {
-    if (!fileObj || !fileObj.name || !fileObj.dataUrl) return;
+    if (!fileObj || !fileObj.name || (!fileObj.dataUrl && !fileObj.hasContent)) return;
     const now = Date.now();
     const item = {
       id: fileObj.id || ('FILE-' + now),
       name: fileObj.name,
       size: fileObj.size || 0,
       type: fileObj.type || 'application/octet-stream',
-      dataUrl: fileObj.dataUrl,
+      dataUrl: fileObj.dataUrl || null,
+      hasContent: Boolean(fileObj.dataUrl || fileObj.hasContent),
       uploaderId: fileObj.uploaderId || 'ADMIN',
       uploaderName: fileObj.uploaderName || 'ADMIN',
       time: fileObj.time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
@@ -45,8 +46,21 @@ module.exports = function registerFileHandlers(io, socket) {
       isPinned: Boolean(fileObj.isPinned),
       pinnedAt: fileObj.pinnedAt || null
     };
-    state.files.push(item);
+
+    state.files = Array.isArray(state.files) ? state.files : [];
+    const existingIdx = state.files.findIndex(f => f.id === item.id);
+    if (existingIdx !== -1) {
+      state.files[existingIdx] = {
+        ...state.files[existingIdx],
+        ...item,
+        dataUrl: item.dataUrl || state.files[existingIdx].dataUrl
+      };
+    } else {
+      state.files.push(item);
+    }
+
     stateService.persistAndBroadcast();
+    io.emit('file:upload', item);
     io.emit('notify:event', {
       type: 'fileDrop',
       text: `📎 ${item.uploaderName} ดรอปไฟล์ใหม่: "${item.name}"`
@@ -68,7 +82,8 @@ module.exports = function registerFileHandlers(io, socket) {
   });
 
   socket.on('file:delete', (fileId) => {
-    state.files = state.files.filter(f => f.id !== fileId);
+    state.files = (state.files || []).filter(f => f.id !== fileId);
     stateService.persistAndBroadcast();
+    io.emit('file:delete', fileId);
   });
 };

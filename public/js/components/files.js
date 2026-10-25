@@ -142,6 +142,11 @@ function handleFileUpload(e, roleType) {
       pinnedAt: null
     };
 
+    // Save to cloud in dedicated row if cloud storage is configured
+    if (fileObj.dataUrl && typeof window.saveFileContentToCloud === 'function') {
+      window.saveFileContentToCloud(fileObj).catch(() => {});
+    }
+
     // Do NOT push directly to appState.files to prevent 2x duplication; ActionReducer handles it
     window.socket.emit('file:upload', fileObj);
     e.target.value = '';
@@ -205,6 +210,9 @@ async function deleteSharedFile(fileId) {
   if (!confirmed) return;
   window.appState.files = (window.appState.files || []).filter(f => f.id !== fileId);
   window.saveLocalState();
+  if (typeof window.deleteFileContentFromCloud === 'function') {
+    window.deleteFileContentFromCloud(fileId).catch(() => {});
+  }
   window.socket.emit('file:delete', fileId);
   renderFileDropSection();
   showToast(`ลบเอกสาร "${name}" เรียบร้อยแล้ว`, 'info');
@@ -351,11 +359,6 @@ async function previewSharedFile(fileId) {
   const f = (state.files || []).find(item => item.id === fileId);
   if (!f) return showToast('ไม่พบข้อมูลไฟล์', 'error');
 
-  if (!f.dataUrl && typeof window.fetchFileContentFromCloud === 'function') {
-    showToast(`กำลังโหลดข้อมูลสำหรับดูตัวอย่าง...`, 'info');
-    f.dataUrl = await window.fetchFileContentFromCloud(fileId);
-  }
-
   const modal = document.getElementById('filePreviewModal');
   const titleEl = document.getElementById('filePreviewTitle');
   const metaEl = document.getElementById('filePreviewMeta');
@@ -383,6 +386,25 @@ async function previewSharedFile(fileId) {
     dlBtn.onclick = () => downloadSharedFile(f.id);
   }
 
+  // Open modal immediately
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // If dataUrl is missing, show loading spinner while fetching
+  if (!f.dataUrl && typeof window.fetchFileContentFromCloud === 'function') {
+    bodyEl.innerHTML = `
+      <div class="py-16 px-4 text-center space-y-4">
+        <div class="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <h4 class="text-sm font-bold text-foreground">กำลังดาวน์โหลดข้อมูลไฟล์...</h4>
+        <p class="text-xs text-muted-foreground">${escapeFileHtml(f.name)} (${formatFileSize(f.size)})</p>
+      </div>
+    `;
+    f.dataUrl = await window.fetchFileContentFromCloud(fileId);
+    if (f.dataUrl) {
+      f.hasContent = true;
+    }
+  }
+
   const name = (f.name || '').toLowerCase();
   const ext = name.includes('.') ? name.split('.').pop().trim() : '';
   const mime = (f.type || '').toLowerCase();
@@ -393,7 +415,7 @@ async function previewSharedFile(fileId) {
   const isPdf = ext === 'pdf' || mime.includes('pdf');
   const isText = ['txt', 'json', 'log', 'md', 'js', 'ts', 'html', 'css', 'py', 'sql', 'xml', 'yaml', 'yml'].includes(ext) || mime.startsWith('text/');
 
-  // If dataUrl is missing
+  // If dataUrl is still missing after fetch attempt
   if (!f.dataUrl) {
     bodyEl.innerHTML = `
       <div class="py-12 px-4 text-center space-y-3">
@@ -402,8 +424,14 @@ async function previewSharedFile(fileId) {
         </div>
         <h4 class="text-base font-bold text-foreground">ไม่พบข้อมูลเนื้อหาของไฟล์</h4>
         <p class="text-xs text-muted-foreground max-w-sm mx-auto">ไฟล์นี้อาจถูกอัปโหลดจากแหล่งภายนอก หรือข้อมูลเนื้อหาไม่สมบูรณ์</p>
+        <button type="button" onclick="previewSharedFile('${f.id}')" class="px-4 py-2 mt-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:opacity-90 transition">
+          ลองใหม่อีกครั้ง
+        </button>
       </div>
     `;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+    return;
+  }
   } else if (isVideo) {
     bodyEl.innerHTML = `
       <div class="w-full flex-1 flex flex-col items-center justify-center bg-black/95 rounded-2xl overflow-hidden shadow-inner p-1">

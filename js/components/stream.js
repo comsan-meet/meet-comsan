@@ -21,7 +21,16 @@ function requestStreamPermission() {
 function adminSetStreamPermission(userId, status) {
   const user = (window.appState?.users || []).find(u => u.id === userId);
   if (user) user.streamPermission = status;
-  window.saveLocalState();
+  if (status !== 'APPROVED') {
+    if (window.appState?.activeStream && (window.appState.activeStream.streamerId === userId || !window.appState.activeStream.streamerId)) {
+      window.appState.activeStream = null;
+      clearStreamViewerScreens();
+      if (window.socket) {
+        window.socket.emit('stream:stop');
+      }
+    }
+  }
+  if (typeof window.saveLocalState === 'function') window.saveLocalState();
   if (window.socket) {
     window.socket.emit('admin:setStreamPermission', { userId, status });
   }
@@ -86,6 +95,10 @@ function clearStreamViewerScreens() {
     pill.className = 'px-2.5 sm:px-3 py-1 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shrink-0';
     pill.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span> รอการนำเสนอ';
   }
+  const presName = document.getElementById('streamPresenterName');
+  const presSub = document.getElementById('streamPresenterSub');
+  if (presName) presName.textContent = 'ไม่มีการแชร์หน้าจอ';
+  if (presSub) presSub.textContent = 'ยังไม่มีผู้แชร์หน้าจอหรือเปิดกล้องในขณะนี้';
   closeStreamFullscreen();
 }
 
@@ -195,21 +208,56 @@ function stopAndReleaseStream() {
   window.currentStreamMode = null;
   if (window.appState) window.appState.activeStream = null;
   clearStreamViewerScreens();
-  window.socket.emit('stream:stop');
+  if (window.socket) window.socket.emit('stream:stop');
 
-  if (window.currentRole === 'USER' && window.currentUserId) {
-    const me = (window.appState.users || []).find(u => u.id === window.currentUserId);
+  if (window.currentUserId) {
+    const me = (window.appState?.users || []).find(u => u.id === window.currentUserId);
     if (me) me.streamPermission = 'NONE';
-    window.saveLocalState();
-    window.socket.emit('admin:setStreamPermission', { userId: window.currentUserId, status: 'NONE' });
-    window.socket.emit('user:finishPermission', { userId: window.currentUserId, permType: 'STREAM' });
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+    if (window.socket) {
+      window.socket.emit('admin:setStreamPermission', { userId: window.currentUserId, status: 'NONE' });
+      window.socket.emit('user:finishPermission', { userId: window.currentUserId, permType: 'STREAM' });
+    }
   }
   if (typeof window.renderAll === 'function') window.renderAll();
+  if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
   showToast('หยุดแชร์และคืนสิทธิ์เรียบร้อยแล้ว', 'info');
 }
 
+function adminStopAllStreams() {
+  stopMediaTracksOnly();
+  if (window.streamInterval) {
+    clearInterval(window.streamInterval);
+    window.streamInterval = null;
+  }
+  window.currentStreamMode = null;
+  if (window.appState) {
+    window.appState.activeStream = null;
+    if (Array.isArray(window.appState.users)) {
+      window.appState.users.forEach(u => {
+        if (u.streamPermission === 'APPROVED' || u.streamPermission === 'PENDING') {
+          u.streamPermission = 'NONE';
+        }
+      });
+    }
+  }
+  clearStreamViewerScreens();
+  if (window.socket) {
+    window.socket.emit('admin:stopAllStreams');
+    window.socket.emit('stream:stop');
+  }
+  if (typeof window.saveLocalState === 'function') window.saveLocalState();
+  if (typeof window.renderAll === 'function') window.renderAll();
+  if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
+  if (typeof showToast === 'function') showToast('สั่งหยุดการแชร์หน้าจอและกล้องทั้งหมดเรียบร้อยแล้ว', 'info');
+}
+
 function stopLocalStream() {
-  stopAndReleaseStream();
+  if (window.currentRole === 'ADMIN') {
+    adminStopAllStreams();
+  } else {
+    stopAndReleaseStream();
+  }
 }
 
 function finishUserPermission(permType) {
@@ -368,6 +416,7 @@ window.populateCameraDeviceOptions = populateCameraDeviceOptions;
 window.startLocalStream = startLocalStream;
 window.handleStreamSettingsChange = handleStreamSettingsChange;
 window.stopAndReleaseStream = stopAndReleaseStream;
+window.adminStopAllStreams = adminStopAllStreams;
 window.stopLocalStream = stopLocalStream;
 window.finishUserPermission = finishUserPermission;
 window.openStreamFullscreen = openStreamFullscreen;
