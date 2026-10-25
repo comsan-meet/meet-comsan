@@ -1150,14 +1150,16 @@ function closeUserVersionNotesModal() {
 }
 
 let globalConfirmResolve = null;
+let globalPromptResolve = null;
 
 function showConfirmDialog({
   title = 'ยืนยันการทำรายการ',
   message = 'คุณแน่ใจหรือไม่ว่าต้องการดำเนินการนี้?',
-  confirmText = 'ยืนยันการลบ',
+  confirmText = 'ยืนยัน',
   cancelText = 'ยกเลิก',
   isDanger = true,
-  icon = 'trash-2'
+  icon = 'trash-2',
+  isAlert = false
 } = {}) {
   return new Promise((resolve) => {
     globalConfirmResolve = resolve;
@@ -1170,14 +1172,23 @@ function showConfirmDialog({
     const iconWrap = document.getElementById('globalConfirmIconWrap');
 
     if (!modal) {
-      const res = window.confirm(`${title}\n\n${message}`);
-      return resolve(res);
+      if (typeof window.showToast === 'function') {
+        window.showToast(`${title}: ${message}`, isDanger ? 'warning' : 'info');
+      }
+      return resolve(isAlert ? true : false);
     }
 
     if (titleEl) titleEl.textContent = title;
     if (msgEl) msgEl.textContent = message;
     if (actionText) actionText.textContent = confirmText;
-    if (cancelBtn) cancelBtn.textContent = cancelText;
+    if (cancelBtn) {
+      cancelBtn.textContent = cancelText;
+      if (isAlert) {
+        cancelBtn.classList.add('hidden');
+      } else {
+        cancelBtn.classList.remove('hidden');
+      }
+    }
 
     if (actionBtn) {
       if (isDanger) {
@@ -1191,7 +1202,7 @@ function showConfirmDialog({
       iconWrap.className = isDanger
         ? 'w-11 h-11 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0'
         : 'w-11 h-11 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0';
-      iconWrap.innerHTML = `<i data-lucide="${icon || (isDanger ? 'trash-2' : 'alert-circle')}" class="h-5 w-5"></i>`;
+      iconWrap.innerHTML = `<i data-lucide="${icon || (isDanger ? 'trash-2' : (isAlert ? 'info' : 'alert-circle'))}" class="h-5 w-5"></i>`;
     }
 
     modal.classList.remove('hidden');
@@ -1200,6 +1211,23 @@ function showConfirmDialog({
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
       window.lucide.createIcons();
     }
+  });
+}
+
+function showAlertDialog({
+  title = 'การแจ้งเตือน',
+  message = '',
+  confirmText = 'รับทราบ',
+  isDanger = false,
+  icon = 'info'
+} = {}) {
+  return showConfirmDialog({
+    title,
+    message,
+    confirmText,
+    isDanger,
+    icon,
+    isAlert: true
   });
 }
 
@@ -1213,6 +1241,108 @@ function closeGlobalConfirmDialog(confirmed) {
     globalConfirmResolve(Boolean(confirmed));
     globalConfirmResolve = null;
   }
+}
+
+function showPromptDialog({
+  title = 'ระบุข้อมูล',
+  message = '',
+  defaultValue = '',
+  placeholder = '',
+  confirmText = 'ตกลง',
+  cancelText = 'ยกเลิก',
+  icon = 'edit-3'
+} = {}) {
+  return new Promise((resolve) => {
+    globalPromptResolve = resolve;
+    const modal = document.getElementById('globalPromptModal');
+    const titleEl = document.getElementById('globalPromptTitle');
+    const msgEl = document.getElementById('globalPromptMessage');
+    const inputEl = document.getElementById('globalPromptInput');
+    const actionText = document.getElementById('globalPromptActionText');
+    const cancelBtn = document.getElementById('globalPromptCancelBtn');
+    const iconWrap = document.getElementById('globalPromptIconWrap');
+
+    if (!modal) {
+      return resolve(defaultValue || null);
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message || '';
+    if (inputEl) {
+      inputEl.value = defaultValue || '';
+      inputEl.placeholder = placeholder || '';
+    }
+    if (actionText) actionText.textContent = confirmText;
+    if (cancelBtn) cancelBtn.textContent = cancelText;
+
+    if (iconWrap) {
+      iconWrap.innerHTML = `<i data-lucide="${icon || 'edit-3'}" class="h-5 w-5"></i>`;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+
+    setTimeout(() => {
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.select();
+      }
+    }, 100);
+  });
+}
+
+function submitGlobalPromptDialog() {
+  const inputEl = document.getElementById('globalPromptInput');
+  const val = inputEl ? inputEl.value : '';
+  closeGlobalPromptDialog(val);
+}
+
+function closeGlobalPromptDialog(val) {
+  const modal = document.getElementById('globalPromptModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  if (typeof globalPromptResolve === 'function') {
+    globalPromptResolve(val);
+    globalPromptResolve = null;
+  }
+}
+
+// Global Browser Dialog Overrides to prevent native "comsan-meet.vercel.app says"
+if (typeof window !== 'undefined') {
+  window.alert = function (message) {
+    if (document.getElementById('globalConfirmModal')) {
+      showAlertDialog({
+        title: 'การแจ้งเตือน',
+        message: String(message || ''),
+        confirmText: 'รับทราบ',
+        icon: 'info'
+      });
+    } else if (typeof window.showToast === 'function') {
+      window.showToast(String(message || ''), 'info');
+    }
+  };
+
+  const _origConfirm = window.confirm;
+  window.confirm = function (message) {
+    if (document.getElementById('globalConfirmModal')) {
+      showConfirmDialog({
+        title: 'ยืนยันการทำรายการ',
+        message: String(message || ''),
+        confirmText: 'ยืนยัน',
+        cancelText: 'ยกเลิก',
+        isDanger: false,
+        icon: 'help-circle'
+      });
+      return false;
+    }
+    return _origConfirm ? _origConfirm.call(window, message) : false;
+  };
 }
 
 // Window attachments
@@ -1260,5 +1390,9 @@ window.openMemberProfilePopup = openMemberProfilePopup;
 window.closeMemberProfilePopup = closeMemberProfilePopup;
 window.showConfirmDialog = showConfirmDialog;
 window.closeGlobalConfirmDialog = closeGlobalConfirmDialog;
+window.showAlertDialog = showAlertDialog;
+window.showPromptDialog = showPromptDialog;
+window.submitGlobalPromptDialog = submitGlobalPromptDialog;
+window.closeGlobalPromptDialog = closeGlobalPromptDialog;
 
 

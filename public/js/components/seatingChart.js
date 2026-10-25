@@ -95,10 +95,21 @@ function populateSeatGrid(canvasEl, users, activeMotion, showRealtime, isAdminCl
           return;
         }
         if (!u.checkedIn) {
-          if (confirm(`เช็คชื่อเข้าประชุมให้ "${u.nickname} (${u.firstName})" ทันทีหรือไม่?`)) {
-            if (typeof window.processUserCheckIn === 'function') {
-              window.processUserCheckIn(u.id);
-            }
+          if (typeof window.showConfirmDialog === 'function') {
+            window.showConfirmDialog({
+              title: 'เช็คชื่อเข้าประชุม',
+              message: `ต้องการเช็คชื่อเข้าประชุมให้ "${u.nickname} (${u.firstName})" ทันทีหรือไม่?`,
+              confirmText: 'เช็คชื่อทันที',
+              cancelText: 'ยกเลิก',
+              isDanger: false,
+              icon: 'user-check'
+            }).then(confirmed => {
+              if (confirmed && typeof window.processUserCheckIn === 'function') {
+                window.processUserCheckIn(u.id);
+              }
+            });
+          } else if (typeof window.processUserCheckIn === 'function') {
+            window.processUserCheckIn(u.id);
           }
         } else {
           if (typeof window.openMemberProfilePopup === 'function') {

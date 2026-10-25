@@ -1048,7 +1048,7 @@ async function deleteChatMessage(msgId) {
         isDanger: true,
         icon: 'trash-2'
       })
-    : window.confirm('ต้องการลบข้อความนี้ใช่หรือไม่?');
+    : false;
   if (!confirmed) return;
   window.appState.chats = (window.appState.chats || []).filter(c => String(c.id) !== String(msgId));
   if (window.appState.chatLogs) {

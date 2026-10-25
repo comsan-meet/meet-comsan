@@ -225,8 +225,18 @@ function saveLocalState() {
   } catch (e) {}
 }
 
-function emergencyResetCache() {
-  if (!confirm('ต้องการล้างแคชหน้าเว็บและรีเฟรชหน้าจอใหม่หรือไม่? (ข้อมูลบนเซิร์ฟเวอร์จะไม่หาย)')) return;
+async function emergencyResetCache() {
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'ล้างแคชระบบ',
+        message: 'ต้องการล้างแคชหน้าเว็บและรีเฟรชหน้าจอใหม่หรือไม่? (ข้อมูลบนเซิร์ฟเวอร์จะไม่หาย)',
+        confirmText: 'ล้างแคชและรีเฟรช',
+        cancelText: 'ยกเลิก',
+        isDanger: true,
+        icon: 'rotate-ccw'
+      })
+    : false;
+  if (!confirmed) return;
   localStorage.removeItem(LOCAL_STORAGE_KEY);
   localStorage.removeItem('COMSAN_HYBRID_STATE_V4');
   localStorage.removeItem('COMSAN_HYBRID_STATE_V3');

@@ -1187,7 +1187,7 @@ async function confirmDeleteCalendarEvent(eventId, title) {
         isDanger: true,
         icon: 'trash-2'
       })
-    : window.confirm(`คุณต้องการลบกิจกรรม "${title}" ออกจากปฏิทินหรือไม่?`);
+    : false;
   if (!confirmed) return;
   window.socket.emit('admin:deleteCalendarEvent', { eventId });
   showToast(`ลบกิจกรรม "${title}" เรียบร้อยแล้ว`, 'info');

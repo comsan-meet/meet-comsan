@@ -5369,6 +5369,40 @@ label svg, label i {
     </div>
   </div>
 
+  <!-- ========================================================= -->
+  <!-- POP-UP MODAL: IN-WEB PROMPT (แทน browser prompt)           -->
+  <!-- ========================================================= -->
+  <div id="globalPromptModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-[250] p-4 select-none animate-fadeIn" onclick="if(event.target === this) closeGlobalPromptDialog(null)">
+    <div class="bg-card border border-border rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl text-card-foreground space-y-4">
+      <div class="flex items-center gap-3">
+        <div id="globalPromptIconWrap" class="w-11 h-11 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+          <i data-lucide="edit-3" class="h-5 w-5"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h3 id="globalPromptTitle" class="text-base font-bold text-foreground leading-tight">ระบุข้อมูล</h3>
+          <p id="globalPromptSubtitle" class="text-[11px] text-muted-foreground mt-0.5">กรุณากรอกข้อมูลที่ต้องการ</p>
+        </div>
+      </div>
+      <p id="globalPromptMessage" class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+        ระบุข้อความ:
+      </p>
+      <form onsubmit="event.preventDefault(); submitGlobalPromptDialog();" class="space-y-4">
+        <div>
+          <input type="text" id="globalPromptInput" class="w-full h-11 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition" />
+        </div>
+        <div class="flex items-center justify-end gap-2.5 pt-1">
+          <button type="button" id="globalPromptCancelBtn" onclick="closeGlobalPromptDialog(null)" class="px-4 py-2 rounded-full border border-border text-foreground hover:bg-muted font-semibold text-xs transition cursor-pointer">
+            ยกเลิก
+          </button>
+          <button type="submit" id="globalPromptActionBtn" class="px-4 py-2 rounded-full gradient-primary text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="check" class="h-3.5 w-3.5"></i>
+            <span id="globalPromptActionText">ยืนยัน</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 <!-- HIDDEN PRINT TEMPLATE FOR THAI PDF GENERATION -->
   <div class="hidden">
     <div id="pdfPrintTemplate" style="padding: 32px; font-family: 'Prompt', sans-serif; color: #0f172a; background: #ffffff; width: 700px;">

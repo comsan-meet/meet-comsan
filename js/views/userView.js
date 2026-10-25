@@ -780,8 +780,15 @@ function showLoginHelpModal() {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-  } else {
-    alert('หากลืมรหัสผ่านหรือต้องการความช่วยเหลือ กรุณาติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com\nสำหรับสมาชิกชมรม: รหัสผ่านเริ่มต้นคือ 123');
+  } else if (typeof window.showAlertDialog === 'function') {
+    window.showAlertDialog({
+      title: 'ช่วยเหลือการเข้าสู่ระบบ',
+      message: 'หากลืมรหัสผ่านหรือต้องการความช่วยเหลือ กรุณาติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com\n\nสำหรับสมาชิกชมรม: รหัสผ่านเริ่มต้นคือ 123',
+      confirmText: 'รับทราบ',
+      icon: 'help-circle'
+    });
+  } else if (typeof window.showToast === 'function') {
+    window.showToast('ติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com (รหัสผ่านเริ่มต้น 123)', 'info');
   }
 }
 
@@ -901,27 +908,6 @@ window.toggleUserCameraScanner = toggleUserCameraScanner;
 window.submitUserAdminCheckinCode = submitUserAdminCheckinCode;
 window.processUserAdminQrToken = processUserAdminQrToken;
 window.copyOnlinePasscode = copyOnlinePasscode;
-function showLoginHelpModal() {
-  const modal = document.getElementById('loginHelpModal');
-  if (modal) {
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-  } else {
-    alert('หากลืมรหัสผ่านหรือต้องการความช่วยเหลือ กรุณาติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com\nสำหรับสมาชิกชมรม: รหัสผ่านเริ่มต้นคือ 123');
-  }
-}
-
-function closeLoginHelpModal() {
-  const modal = document.getElementById('loginHelpModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-  }
-}
-
-window.showLoginHelpModal = showLoginHelpModal;
-window.closeLoginHelpModal = closeLoginHelpModal;
 
 
 

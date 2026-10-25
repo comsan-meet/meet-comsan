@@ -206,7 +206,7 @@ async function deleteSharedFile(fileId) {
         isDanger: true,
         icon: 'trash-2'
       })
-    : window.confirm(`ต้องการลบเอกสาร "${name}" ออกจากห้องประชุมหรือไม่?`);
+    : false;
   if (!confirmed) return;
   window.appState.files = (window.appState.files || []).filter(f => f.id !== fileId);
   window.saveLocalState();

@@ -215,8 +215,18 @@ function startOfficialMeeting(e) {
   return true;
 }
 
-function resetMeetingToNotStarted() {
-  if (!confirm('ตั้งค่าสถานะกลับเป็น "การประชุมยังไม่เริ่ม" หรือไม่?')) return;
+async function resetMeetingToNotStarted() {
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'ยืนยันการรีเซ็ตสถานะการประชุม',
+        message: 'ต้องการตั้งค่าสถานะกลับเป็น "การประชุมยังไม่เริ่ม" หรือไม่? ระบบจะรีเซ็ตสถานะการเช็คชื่อของสมาชิกทั้งหมด',
+        confirmText: 'ยืนยันรีเซ็ต',
+        cancelText: 'ยกเลิก',
+        isDanger: true,
+        icon: 'rotate-ccw'
+      })
+    : false;
+  if (!confirmed) return;
   window.appState.meeting.isStarted = false;
   window.appState.meeting.isEnded = false;
   window.appState.meeting.startedAtMs = null;
@@ -233,39 +243,51 @@ function resetMeetingToNotStarted() {
   showToast('รีเซ็ตสถานะการประชุมเรียบร้อยแล้ว', 'info');
 }
 
-function endMeetingNow(skipConfirm = false) {
-  if (skipConfirm || confirm('ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?')) {
-    window.appState.meeting.isEnded = true;
-    (window.appState.motions || []).forEach(m => {
-      m.isOpen = false;
-    });
-
-    window.appState.lastMeetingSummary = {
-      meetingTitle: window.appState.meeting.title,
-      meetingDate: window.appState.meeting.date,
-      location: window.appState.meeting.location,
-      format: window.appState.meeting.format,
-      onlinePlatform: window.appState.meeting.onlinePlatform,
-      startTime: window.appState.meeting.startTime,
-      endTime: window.appState.meeting.endTime,
-      lateTime: window.appState.meeting.lateTime,
-      endedAtMs: Date.now(),
-      users: JSON.parse(JSON.stringify(window.appState.users || [])),
-      motions: JSON.parse(JSON.stringify(window.appState.motions || []))
-    };
-
-    resetAllUsersAttendance(window.appState.users);
-    window.appState.raiseHandQueue = [];
-
-    window.saveLocalState();
-    window.socket.emit('admin:endMeeting');
-    if (typeof window.switchAdminTab === 'function') window.switchAdminTab('SUMMARY');
-    if (typeof window.renderAll === 'function') window.renderAll();
-    showToast('จบการประชุมเรียบร้อยแล้ว', 'info');
+async function endMeetingNow(skipConfirm = false) {
+  if (!skipConfirm) {
+    const confirmed = typeof window.showConfirmDialog === 'function'
+      ? await window.showConfirmDialog({
+          title: 'ยืนยันการจบการประชุม',
+          message: 'ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?',
+          confirmText: 'จบการประชุม',
+          cancelText: 'ยกเลิก',
+          isDanger: false,
+          icon: 'flag'
+        })
+      : false;
+    if (!confirmed) return;
   }
+
+  window.appState.meeting.isEnded = true;
+  (window.appState.motions || []).forEach(m => {
+    m.isOpen = false;
+  });
+
+  window.appState.lastMeetingSummary = {
+    meetingTitle: window.appState.meeting.title,
+    meetingDate: window.appState.meeting.date,
+    location: window.appState.meeting.location,
+    format: window.appState.meeting.format,
+    onlinePlatform: window.appState.meeting.onlinePlatform,
+    startTime: window.appState.meeting.startTime,
+    endTime: window.appState.meeting.endTime,
+    lateTime: window.appState.meeting.lateTime,
+    endedAtMs: Date.now(),
+    users: JSON.parse(JSON.stringify(window.appState.users || [])),
+    motions: JSON.parse(JSON.stringify(window.appState.motions || []))
+  };
+
+  resetAllUsersAttendance(window.appState.users);
+  window.appState.raiseHandQueue = [];
+
+  window.saveLocalState();
+  window.socket.emit('admin:endMeeting');
+  if (typeof window.switchAdminTab === 'function') window.switchAdminTab('SUMMARY');
+  if (typeof window.renderAll === 'function') window.renderAll();
+  showToast('จบการประชุมเรียบร้อยแล้ว', 'info');
 }
 
-function handleAdminMeetingToggle(isChecked) {
+async function handleAdminMeetingToggle(isChecked) {
   const toggleSwitch = document.getElementById('adminMeetingToggleSwitch');
   const state = window.appState;
   const isMeetingActive = Boolean(state?.meeting?.isStarted && !state?.meeting?.isEnded);
@@ -279,7 +301,17 @@ function handleAdminMeetingToggle(isChecked) {
     }
   } else {
     if (isMeetingActive) {
-      if (confirm('ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?')) {
+      const confirmed = typeof window.showConfirmDialog === 'function'
+        ? await window.showConfirmDialog({
+            title: 'ยืนยันการจบการประชุม',
+            message: 'ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?',
+            confirmText: 'จบการประชุม',
+            cancelText: 'ยกเลิก',
+            isDanger: false,
+            icon: 'flag'
+          })
+        : false;
+      if (confirmed) {
         endMeetingNow(true);
       } else {
         if (toggleSwitch) toggleSwitch.checked = true;
@@ -426,7 +458,7 @@ async function deleteHistoryMeeting(meetingId) {
         isDanger: true,
         icon: 'trash-2'
       })
-    : window.confirm('คุณต้องการลบประวัติการประชุมนี้ออกจากระบบใช่หรือไม่?');
+    : false;
   if (!confirmed) return;
   if (window.selectedHistoryMeetingId === meetingId) {
     window.selectedHistoryMeetingId = null;
@@ -543,7 +575,7 @@ function getSummaryUsers() {
 }
 window.getSummaryUsers = getSummaryUsers;
 
-function adminChangeUserStatus(userId, newStatus) {
+async function adminChangeUserStatus(userId, newStatus) {
   const state = window.appState;
   if (!state) return;
 
@@ -554,7 +586,16 @@ function adminChangeUserStatus(userId, newStatus) {
       if (u) {
         let reason = u.leaveReason || '';
         if (newStatus === 'LEAVE' && !reason) {
-          reason = prompt(`ระบุเหตุผลการลาของ ${u.nickname}:`, 'ลาป่วย / ติดภารกิจ') || 'ผู้ดูแลระบบอนุมัติลา';
+          reason = typeof window.showPromptDialog === 'function'
+            ? await window.showPromptDialog({
+                title: 'ระบุเหตุผลการลาประชุม',
+                message: `ระบุเหตุผลการลาของ ${u.nickname}:`,
+                defaultValue: 'ลาป่วย / ติดภารกิจ',
+                placeholder: 'กรอกเหตุผลการลา...',
+                confirmText: 'บันทึก'
+              })
+            : 'ผู้ดูแลระบบอนุมัติลา';
+          if (!reason) reason = 'ผู้ดูแลระบบอนุมัติลา';
         }
         const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
         if (newStatus === 'LEAVE') {
@@ -589,7 +630,16 @@ function adminChangeUserStatus(userId, newStatus) {
   const targetUser = user || summaryUser;
   let reason = targetUser.leaveReason || '';
   if (newStatus === 'LEAVE' && !reason) {
-    reason = prompt(`ระบุเหตุผลการลาของ ${targetUser.nickname}:`, 'ลาป่วย / ติดภารกิจ') || 'ผู้ดูแลระบบอนุมัติลา';
+    reason = typeof window.showPromptDialog === 'function'
+      ? await window.showPromptDialog({
+          title: 'ระบุเหตุผลการลาประชุม',
+          message: `ระบุเหตุผลการลาของ ${targetUser.nickname}:`,
+          defaultValue: 'ลาป่วย / ติดภารกิจ',
+          placeholder: 'กรอกเหตุผลการลา...',
+          confirmText: 'บันทึก'
+        })
+      : 'ผู้ดูแลระบบอนุมัติลา';
+    if (!reason) reason = 'ผู้ดูแลระบบอนุมัติลา';
   }
   const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
@@ -646,7 +696,7 @@ async function clearRaiseHandQueue() {
         isDanger: true,
         icon: 'trash-2'
       })
-    : window.confirm(`คุณต้องการล้างคิวผู้ขอยกมือทั้งหมด (${queueCount} คน) หรือไม่?`);
+    : false;
   if (!confirmed) return;
   window.appState.raiseHandQueue = [];
   window.saveLocalState();
@@ -964,7 +1014,17 @@ function copyAdminCheckinToken() {
   navigator.clipboard.writeText(token).then(() => {
     showToast(`คัดลอกรหัสเช็คชื่อ "${token}" เรียบร้อยแล้ว`, 'success');
   }).catch(() => {
-    prompt('คัดลอกรหัสเช็คชื่อ:', token);
+    if (typeof window.showPromptDialog === 'function') {
+      window.showPromptDialog({
+        title: 'รหัสเช็คชื่อการประชุม',
+        message: 'คุณสามารถคัดลอกรหัสด้านล่างนี้เพื่อส่งให้สมาชิก:',
+        defaultValue: token,
+        confirmText: 'ปิด',
+        icon: 'key'
+      });
+    } else {
+      showToast(`รหัสเช็คชื่อ: ${token}`, 'info');
+    }
   });
 }
 
@@ -976,7 +1036,17 @@ function copyAdminCheckinLink() {
   navigator.clipboard.writeText(url).then(() => {
     showToast('คัดลอกลิงก์เช็คชื่ออัตโนมัติเรียบร้อยแล้ว', 'success');
   }).catch(() => {
-    prompt('คัดลอกลิงก์เช็คชื่อ:', url);
+    if (typeof window.showPromptDialog === 'function') {
+      window.showPromptDialog({
+        title: 'ลิงก์เช็คชื่ออัตโนมัติ',
+        message: 'คุณสามารถคัดลอกลิงก์ด้านล่างนี้เพื่อส่งให้สมาชิก:',
+        defaultValue: url,
+        confirmText: 'ปิด',
+        icon: 'link'
+      });
+    } else {
+      showToast('คัดลอกลิงก์เช็คชื่อเรียบร้อยแล้ว', 'info');
+    }
   });
 }
 
@@ -1510,11 +1580,19 @@ try {
   navigator.clipboard.writeText(phpCode).then(() => {
     if (typeof window.showToast === 'function') {
       window.showToast('คัดลอกโค้ด config.php ลงคลิปบอร์ดแล้ว!', 'success');
-    } else {
-      alert('คัดลอกโค้ด config.php ลงคลิปบอร์ดแล้ว!');
     }
   }).catch(() => {
-    prompt('คัดลอกโค้ด config.php ด้านล่างนี้:', phpCode);
+    if (typeof window.showPromptDialog === 'function') {
+      window.showPromptDialog({
+        title: 'โค้ดการเชื่อมต่อฐานข้อมูล config.php',
+        message: 'คุณสามารถคัดลอกโค้ดด้านล่างนี้ไปวางในไฟล์ config.php:',
+        defaultValue: phpCode,
+        confirmText: 'ปิด',
+        icon: 'database'
+      });
+    } else if (typeof window.showToast === 'function') {
+      window.showToast('กรุณาคัดลอกโค้ด config.php จากหน้านี้', 'info');
+    }
   });
 }
 

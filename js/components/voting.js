@@ -419,7 +419,7 @@ async function deleteMotion(motionId) {
         isDanger: true,
         icon: 'trash-2'
       })
-    : window.confirm(`ยืนยันการลบญัตติ "${title}" หรือไม่?`);
+    : false;
   if (!confirmed) return;
   window.appState.motions = (window.appState.motions || []).filter(m => m.id !== motionId);
   window.saveLocalState();
