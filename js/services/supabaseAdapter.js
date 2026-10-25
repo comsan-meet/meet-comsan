@@ -137,6 +137,22 @@
           return f;
         });
       }
+      if (Array.isArray(clone.chats)) {
+        clone.chats = clone.chats.map(c => {
+          if (c.mediaUrl && c.mediaUrl.length > 25000) {
+            return { ...c, mediaUrl: null, hasMedia: true };
+          }
+          return c;
+        });
+      }
+      if (Array.isArray(clone.chatLogs)) {
+        clone.chatLogs = clone.chatLogs.map(l => {
+          if (l.mediaUrl && l.mediaUrl.length > 25000) {
+            return { ...l, mediaUrl: null, hasMedia: true };
+          }
+          return l;
+        });
+      }
       return clone;
     }
 
@@ -147,7 +163,7 @@
       const delay = immediate ? 0 : 350;
       this.saveDebounceTimer = setTimeout(async () => {
         if (!this.pendingStateToSave || !this.supabase) return;
-        const stateToSave = { ...this.pendingStateToSave, activeStream: null };
+        const stateToSave = this.prepareStateForBroadcast(this.pendingStateToSave);
         this.pendingStateToSave = null;
 
         try {
@@ -332,6 +348,8 @@
         'notify:event',
         'random:spin',
         'user:statusNote',
+        'stream:permission',
+        'file:permission',
         'file:upload',
         'file:delete',
         'stream:frameUpdate',
@@ -347,6 +365,23 @@
                 if (!pf.dataUrl) {
                   const existing = window.appState.files.find(ef => ef.id === pf.id);
                   if (existing && existing.dataUrl) pf.dataUrl = existing.dataUrl;
+                }
+              });
+            }
+            // Merge chats and chatLogs to preserve local full mediaUrl if broadcast omitted it
+            if (Array.isArray(payload.chats) && window.appState && Array.isArray(window.appState.chats)) {
+              payload.chats.forEach(pc => {
+                if (!pc.mediaUrl) {
+                  const existing = window.appState.chats.find(ec => String(ec.id) === String(pc.id));
+                  if (existing && existing.mediaUrl) pc.mediaUrl = existing.mediaUrl;
+                }
+              });
+            }
+            if (Array.isArray(payload.chatLogs) && window.appState && Array.isArray(window.appState.chatLogs)) {
+              payload.chatLogs.forEach(pl => {
+                if (!pl.mediaUrl) {
+                  const existing = window.appState.chatLogs.find(el => String(el.id) === String(pl.id));
+                  if (existing && existing.mediaUrl) pl.mediaUrl = existing.mediaUrl;
                 }
               });
             }
@@ -386,6 +421,31 @@
                 u.statusNoteUpdatedAt = u.statusNote ? (payload.updatedAt || Date.now()) : null;
                 if (typeof window.saveLocalState === 'function') window.saveLocalState();
                 if (typeof window.renderAll === 'function') window.renderAll();
+              }
+            }
+          } else if (evt === 'stream:permission' && payload) {
+            const state = window.appState;
+            if (state && Array.isArray(state.users)) {
+              const u = state.users.find(user => user.id === payload.userId);
+              if (u) {
+                u.streamPermission = payload.status || 'NONE';
+                if (payload.status !== 'APPROVED' && state.activeStream && state.activeStream.streamerId === payload.userId) {
+                  state.activeStream = null;
+                }
+                if (typeof window.saveLocalState === 'function') window.saveLocalState();
+                if (typeof window.renderAll === 'function') window.renderAll();
+                if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
+              }
+            }
+          } else if (evt === 'file:permission' && payload) {
+            const state = window.appState;
+            if (state && Array.isArray(state.users)) {
+              const u = state.users.find(user => user.id === payload.userId);
+              if (u) {
+                u.filePermission = payload.status || 'NONE';
+                if (typeof window.saveLocalState === 'function') window.saveLocalState();
+                if (typeof window.renderAll === 'function') window.renderAll();
+                if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
               }
             }
           }

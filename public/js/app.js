@@ -1173,6 +1173,37 @@ function setupSocketListeners() {
     }
   });
 
+  socket.on('stream:permission', (data) => {
+    if (!data || !data.userId) return;
+    const state = window.appState;
+    if (state && Array.isArray(state.users)) {
+      const u = state.users.find(user => user.id === data.userId);
+      if (u) {
+        u.streamPermission = data.status || 'NONE';
+        if (data.status !== 'APPROVED' && state.activeStream && state.activeStream.streamerId === data.userId) {
+          state.activeStream = null;
+        }
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+        if (typeof window.renderAll === 'function') window.renderAll();
+        if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
+      }
+    }
+  });
+
+  socket.on('file:permission', (data) => {
+    if (!data || !data.userId) return;
+    const state = window.appState;
+    if (state && Array.isArray(state.users)) {
+      const u = state.users.find(user => user.id === data.userId);
+      if (u) {
+        u.filePermission = data.status || 'NONE';
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+        if (typeof window.renderAll === 'function') window.renderAll();
+        if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
+      }
+    }
+  });
+
   socket.on('stream:frameUpdate', (streamData) => {
     if (!streamData || !streamData.frameDataUrl) return;
     const uImg = document.getElementById('userLiveStreamViewer');

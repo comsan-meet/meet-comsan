@@ -22,31 +22,45 @@ async function downloadSharedFile(fileId) {
 }
 
 function requestFileDropPermission() {
-  if (!window.currentUserId) return;
-  const me = (window.appState.users || []).find(u => u.id === window.currentUserId);
+  const userId = window.currentUserId || localStorage.getItem('comsan_current_user_id');
+  if (!userId) {
+    if (typeof showToast === 'function') showToast('กรุณาเข้าสู่ระบบก่อนขอสิทธิ์อัปโหลดเอกสาร', 'warning');
+    return;
+  }
+  const me = (window.appState?.users || []).find(u => u.id === userId);
   if (me) me.filePermission = 'PENDING';
   window.saveLocalState();
-  window.socket.emit('file:requestPermission', window.currentUserId);
+  if (window.socket) {
+    window.socket.emit('file:requestPermission', userId);
+  }
   renderFileDropSection();
-  showToast('ส่งคำขออนุญาตอัปโหลดเอกสารแล้ว', 'info');
+  if (typeof showToast === 'function') showToast('ส่งคำขออนุญาตอัปโหลดเอกสารแล้ว', 'info');
 }
 
 function adminSetFilePermission(userId, status) {
-  const user = (window.appState.users || []).find(u => u.id === userId);
+  const user = (window.appState?.users || []).find(u => u.id === userId);
   if (user) user.filePermission = status;
   window.saveLocalState();
-  window.socket.emit('admin:setFilePermission', { userId, status });
+  if (window.socket) {
+    window.socket.emit('admin:setFilePermission', { userId, status });
+  }
   renderFileDropSection();
+  if (user && typeof showToast === 'function') {
+    showToast(status === 'APPROVED' ? `อนุมัติให้ ${user.nickname} อัปโหลดเอกสารแล้ว` : `คืนสถานะสิทธิ์ของ ${user.nickname} แล้ว`, 'success');
+  }
 }
 
 function releaseFilePermission() {
-  if (!window.currentUserId) return;
-  const me = (window.appState.users || []).find(u => u.id === window.currentUserId);
+  const userId = window.currentUserId || localStorage.getItem('comsan_current_user_id');
+  if (!userId) return;
+  const me = (window.appState?.users || []).find(u => u.id === userId);
   if (me) me.filePermission = 'NONE';
   window.saveLocalState();
-  window.socket.emit('admin:setFilePermission', { userId: window.currentUserId, status: 'NONE' });
+  if (window.socket) {
+    window.socket.emit('admin:setFilePermission', { userId, status: 'NONE' });
+  }
   renderFileDropSection();
-  showToast('คืนสิทธิ์อัปโหลดเอกสารเรียบร้อยแล้ว', 'info');
+  if (typeof showToast === 'function') showToast('คืนสิทธิ์อัปโหลดเอกสารเรียบร้อยแล้ว', 'info');
 }
 
 function setFileUploadProgress(roleType, { visible, percent = 0, fileName = '', status = '' }) {

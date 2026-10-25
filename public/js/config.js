@@ -229,6 +229,17 @@ class UnifiedSocketHub {
     this.engine = newEngine;
     this.engine.hub = this;
 
+    // Forward incoming events from engine to hub listeners
+    if (typeof this.engine.onAny === 'function') {
+      this.engine.onAny((event, ...args) => {
+        this.trigger(event, ...args);
+      });
+    } else if (typeof this.engine.on === 'function') {
+      for (const event of this.listeners.keys()) {
+        this.engine.on(event, (...args) => this.trigger(event, ...args));
+      }
+    }
+
     console.info(`[SocketHub] Engine switched to: ${newEngine.constructor ? newEngine.constructor.name : 'CustomEngine'}`);
   }
 
@@ -240,6 +251,15 @@ class UnifiedSocketHub {
     const arr = this.listeners.get(event);
     if (!arr.includes(callback)) {
       arr.push(callback);
+    }
+
+    // Also register on current engine if it doesn't support onAny
+    if (this.engine && typeof this.engine.on === 'function' && typeof this.engine.onAny !== 'function') {
+      if (!this._registeredEvents) this._registeredEvents = new Set();
+      if (!this._registeredEvents.has(event)) {
+        this._registeredEvents.add(event);
+        this.engine.on(event, (...args) => this.trigger(event, ...args));
+      }
     }
   }
 

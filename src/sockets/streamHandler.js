@@ -13,8 +13,10 @@ module.exports = function registerStreamHandlers(io, socket) {
         state.activeStream = null;
         io.emit('stream:stopped');
       }
+      io.emit('stream:permission', { userId, status: 'NONE' });
     } else if (permType === 'FILE') {
       user.filePermission = 'NONE';
+      io.emit('file:permission', { userId, status: 'NONE' });
     }
     stateService.persistAndBroadcast();
   });
@@ -25,6 +27,7 @@ module.exports = function registerStreamHandlers(io, socket) {
     if (!user) return;
     user.streamPermission = 'PENDING';
     stateService.persistAndBroadcast();
+    io.emit('stream:permission', { userId, status: 'PENDING' });
     io.emit('notify:event', {
       type: 'info',
       targetRole: 'ADMIN',
@@ -41,6 +44,7 @@ module.exports = function registerStreamHandlers(io, socket) {
       io.emit('stream:stopped');
     }
     stateService.persistAndBroadcast();
+    io.emit('stream:permission', { userId, status: user.streamPermission });
     io.emit('notify:event', {
       type: status === 'APPROVED' ? 'success' : 'warning',
       targetUserId: user.id,

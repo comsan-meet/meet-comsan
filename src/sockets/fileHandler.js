@@ -8,6 +8,7 @@ module.exports = function registerFileHandlers(io, socket) {
     if (!user) return;
     user.filePermission = 'PENDING';
     stateService.persistAndBroadcast();
+    io.emit('file:permission', { userId, status: 'PENDING' });
     io.emit('notify:event', {
       type: 'fileReq',
       targetRole: 'ADMIN',
@@ -20,6 +21,7 @@ module.exports = function registerFileHandlers(io, socket) {
     if (!user) return;
     user.filePermission = status;
     stateService.persistAndBroadcast();
+    io.emit('file:permission', { userId, status: user.filePermission });
     io.emit('notify:event', {
       type: status === 'APPROVED' ? 'success' : 'warning',
       targetUserId: user.id,

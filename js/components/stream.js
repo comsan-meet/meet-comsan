@@ -3,22 +3,32 @@
  */
 
 function requestStreamPermission() {
-  if (!window.currentUserId) return;
-  const me = (window.appState.users || []).find(u => u.id === window.currentUserId);
+  const userId = window.currentUserId || localStorage.getItem('comsan_current_user_id');
+  if (!userId) {
+    if (typeof showToast === 'function') showToast('กรุณาเข้าสู่ระบบก่อนขอสิทธิ์แชร์หน้าจอ', 'warning');
+    return;
+  }
+  const me = (window.appState?.users || []).find(u => u.id === userId);
   if (me) me.streamPermission = 'PENDING';
   window.saveLocalState();
-  window.socket.emit('stream:requestPermission', window.currentUserId);
+  if (window.socket) {
+    window.socket.emit('stream:requestPermission', userId);
+  }
   renderStreamSection();
-  showToast('ส่งคำขอเปิดกล้อง/แชร์หน้าจอไปยังผู้ดำเนินการแล้ว', 'info');
+  if (typeof showToast === 'function') showToast('ส่งคำขอเปิดกล้อง/แชร์หน้าจอไปยังผู้ดำเนินการแล้ว', 'info');
 }
 
 function adminSetStreamPermission(userId, status) {
-  const user = (window.appState.users || []).find(u => u.id === userId);
+  const user = (window.appState?.users || []).find(u => u.id === userId);
   if (user) user.streamPermission = status;
   window.saveLocalState();
-  window.socket.emit('admin:setStreamPermission', { userId, status });
+  if (window.socket) {
+    window.socket.emit('admin:setStreamPermission', { userId, status });
+  }
   renderStreamSection();
-  showToast(status === 'APPROVED' ? `อนุมัติให้ ${user.nickname} แชร์หน้าจอ/กล้องแล้ว` : `คืนสถานะสิทธิ์ของ ${user.nickname} แล้ว`, 'success');
+  if (user && typeof showToast === 'function') {
+    showToast(status === 'APPROVED' ? `อนุมัติให้ ${user.nickname} แชร์หน้าจอ/กล้องแล้ว` : `คืนสถานะสิทธิ์ของ ${user.nickname} แล้ว`, 'success');
+  }
 }
 
 async function populateCameraDeviceOptions() {
@@ -235,7 +245,7 @@ function closeStreamFullscreen() {
 function renderStreamSection() {
   const state = window.appState;
   if (!state) return;
-  const uid = window.currentUserId || 'COMSAN-01';
+  const uid = window.currentUserId || localStorage.getItem('comsan_current_user_id') || 'COMSAN-01';
   const me = (state.users || []).find(u => u.id === uid);
   const permBox = document.getElementById('userStreamPermissionBox');
   const controls = document.getElementById('userStreamControls');

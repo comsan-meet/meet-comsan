@@ -722,17 +722,18 @@
       // 6. FILES & STREAM
       // ==========================================
       case 'file:requestPermission': {
-        const userId = payload;
+        const userId = typeof payload === 'string' ? payload : (payload && payload.userId);
         const user = state.users.find(u => u.id === userId);
         if (user) {
           user.filePermission = 'PENDING';
+          notify('file:permission', { userId, status: 'PENDING' });
           notify('notify:event', {
             type: 'fileReq',
             targetRole: 'ADMIN',
             text: `📁 ${user.nickname} ส่งคำขออนุญาตดรอปไฟล์`
           });
         }
-        result = { ok: true };
+        result = { ok: true, userId, status: 'PENDING' };
         break;
       }
 
@@ -740,14 +741,15 @@
         const { userId, status } = payload || {};
         const user = state.users.find(u => u.id === userId);
         if (user) {
-          user.filePermission = status;
+          user.filePermission = status || 'NONE';
+          notify('file:permission', { userId, status: user.filePermission });
           notify('notify:event', {
             type: status === 'APPROVED' ? 'success' : 'warning',
             targetUserId: user.id,
             text: status === 'APPROVED' ? '✅ ADMIN อนุมัติให้คุณดรอปไฟล์ได้แล้ว!' : '⚠️ สิทธิ์การดรอปไฟล์ถูกยกเลิก'
           });
         }
-        result = { ok: true };
+        result = { ok: true, userId, status: user ? user.filePermission : 'NONE' };
         break;
       }
 
@@ -819,17 +821,18 @@
       }
 
       case 'stream:requestPermission': {
-        const userId = payload;
+        const userId = typeof payload === 'string' ? payload : (payload && payload.userId);
         const user = state.users.find(u => u.id === userId);
         if (user) {
           user.streamPermission = 'PENDING';
+          notify('stream:permission', { userId, status: 'PENDING' });
           notify('notify:event', {
             type: 'info',
             targetRole: 'ADMIN',
             text: `🎥 ${user.nickname} (${user.firstName}) ขออนุญาตเปิดกล้อง/แชร์หน้าจอ`
           });
         }
-        result = { ok: true };
+        result = { ok: true, userId, status: 'PENDING' };
         break;
       }
 
@@ -837,11 +840,12 @@
         const { userId, status } = payload || {};
         const user = state.users.find(u => u.id === userId);
         if (user) {
-          user.streamPermission = status;
+          user.streamPermission = status || 'NONE';
           if (status !== 'APPROVED' && state.activeStream && state.activeStream.streamerId === userId) {
             state.activeStream = null;
             notify('stream:stopped');
           }
+          notify('stream:permission', { userId, status: user.streamPermission });
           notify('notify:event', {
             type: status === 'APPROVED' ? 'success' : 'warning',
             targetUserId: user.id,
@@ -850,7 +854,7 @@
               : '⚠️ สิทธิ์การเปิดกล้อง/แชร์หน้าจอถูกยกเลิก'
           });
         }
-        result = { ok: true };
+        result = { ok: true, userId, status: user ? user.streamPermission : 'NONE' };
         break;
       }
 
@@ -891,8 +895,10 @@
               state.activeStream = null;
               notify('stream:stopped');
             }
+            notify('stream:permission', { userId, status: 'NONE' });
           } else if (permType === 'FILE') {
             user.filePermission = 'NONE';
+            notify('file:permission', { userId, status: 'NONE' });
           }
         }
         result = { ok: true };
