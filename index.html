@@ -1037,7 +1037,8 @@ input[type="number"] {
 #calendarIcsModal:not(.hidden),
 #calendarEventDetailModal:not(.hidden),
 #projectDetailModal:not(.hidden),
-#adminProjectEditModal:not(.hidden) {
+#adminProjectEditModal:not(.hidden),
+#projectAvatarCropperModal:not(.hidden) {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -3057,6 +3058,118 @@ label svg, label i {
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- PROJECT AVATAR CROPPER MODAL (High-DPI Canvas Cropper)   -->
+  <!-- ======================================================== -->
+  <div id="projectAvatarCropperModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden flex items-center justify-center z-[100] p-3 sm:p-4 select-none">
+    <div class="bg-card text-card-foreground border border-border rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 max-h-[96vh] overflow-y-auto m-auto">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-border/80 pb-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <i data-lucide="crop" class="h-5 w-5"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 id="cropperModalTitle" class="text-sm sm:text-base font-bold text-foreground truncate">ครอบตัดรูปโปรไฟล์</h3>
+            <p class="text-[11px] text-muted-foreground truncate">ลากเพื่อเลื่อนตำแหน่ง และปรับซูมให้พอดี</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeImageCropperModal()"
+          class="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer shrink-0">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <!-- Viewport & Canvas -->
+      <div class="flex flex-col items-center">
+        <div class="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-inner flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
+             id="cropperCanvasWrapper">
+          <canvas id="cropperCanvas" width="640" height="640" class="w-full h-full block"></canvas>
+          
+          <!-- Circular Mask Overlay with Dark Outer Ring -->
+          <div class="absolute inset-0 pointer-events-none border-2 border-white/70 rounded-full shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]"></div>
+          
+          <!-- Subtle Rule-of-Thirds Grid inside Circular Crop -->
+          <div class="absolute inset-0 pointer-events-none flex flex-col justify-evenly opacity-20">
+            <div class="border-b border-white"></div>
+            <div class="border-b border-white"></div>
+          </div>
+          <div class="absolute inset-0 pointer-events-none flex justify-evenly opacity-20">
+            <div class="border-r border-white"></div>
+            <div class="border-r border-white"></div>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-muted-foreground mt-2.5 flex items-center gap-1.5">
+          <i data-lucide="move" class="h-3 w-3 text-indigo-500"></i>
+          <span>คลิกลากเพื่อเลื่อนตำแหน่ง / หมุนล้อเมาส์ (Scroll) เพื่อซูม</span>
+        </p>
+      </div>
+
+      <!-- Controls: Zoom, Rotate, Reset -->
+      <div class="bg-muted/40 p-3 rounded-2xl border border-border/60 space-y-2.5">
+        <!-- Zoom Slider -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs font-semibold">
+            <span class="flex items-center gap-1 text-muted-foreground">
+              <i data-lucide="zoom-in" class="h-3.5 w-3.5"></i> ขยาย / ย่อภาพ
+            </span>
+            <span id="cropperZoomLabel" class="text-indigo-600 dark:text-indigo-400 font-mono text-[11px]">100%</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="adjustCropperZoom(-0.1)" class="w-7 h-7 rounded-lg bg-card border border-border hover:bg-muted flex items-center justify-center text-xs font-bold transition cursor-pointer">
+              -
+            </button>
+            <input type="range" id="cropperZoomSlider" min="0.5" max="3" step="0.01" value="1"
+              oninput="onCropperZoomSliderChange(parseFloat(this.value))"
+              class="flex-1 accent-indigo-600 h-2 bg-muted rounded-lg cursor-pointer" />
+            <button type="button" onclick="adjustCropperZoom(0.1)" class="w-7 h-7 rounded-lg bg-card border border-border hover:bg-muted flex items-center justify-center text-xs font-bold transition cursor-pointer">
+              +
+            </button>
+          </div>
+        </div>
+
+        <!-- Rotate & Center Buttons -->
+        <div class="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="rotateCropper(-90)"
+              class="px-2.5 py-1.5 rounded-xl bg-card border border-border hover:bg-muted text-xs font-medium flex items-center gap-1 transition cursor-pointer"
+              title="หมุนซ้าย 90°">
+              <i data-lucide="rotate-ccw" class="h-3.5 w-3.5"></i>
+              <span>หมุนซ้าย</span>
+            </button>
+            <button type="button" onclick="rotateCropper(90)"
+              class="px-2.5 py-1.5 rounded-xl bg-card border border-border hover:bg-muted text-xs font-medium flex items-center gap-1 transition cursor-pointer"
+              title="หมุนขวา 90°">
+              <i data-lucide="rotate-cw" class="h-3.5 w-3.5"></i>
+              <span>หมุนขวา</span>
+            </button>
+          </div>
+
+          <button type="button" onclick="resetCropperTransform()"
+            class="px-2.5 py-1.5 rounded-xl bg-card border border-border hover:bg-muted text-xs font-medium flex items-center gap-1 transition cursor-pointer"
+            title="จัดกึ่งกลางและรีเซ็ตขนาด">
+            <i data-lucide="refresh-cw" class="h-3.5 w-3.5"></i>
+            <span>จัดกึ่งกลาง</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="pt-2 border-t border-border flex items-center justify-end gap-2">
+        <button type="button" onclick="closeImageCropperModal()"
+          class="px-4 py-2 rounded-xl border border-border hover:bg-muted text-xs font-semibold transition cursor-pointer">
+          ยกเลิก
+        </button>
+        <button type="button" onclick="saveCroppedImage()"
+          class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="check" class="h-4 w-4"></i>
+          <span>ใช้รูปนี้ (บันทึก)</span>
+        </button>
+      </div>
     </div>
   </div>
 

@@ -47,11 +47,424 @@
 
   let isSavingProject = false;
 
+  // ========================================================
+  // AVATARS & GOOGLE DRIVE RESOLVER & IMAGE CROPPER
+  // ========================================================
+
+  /**
+   * Deterministic cute avatar URL using DiceBear Gaze Bold Pop Palette
+   * Exactly matching user profile avatar standard (iconsAndAvatars.js)
+   */
+  function getCuteAvatarUrl(seed) {
+    if (typeof window !== 'undefined' && typeof window.getUserAvatarUrl === 'function') {
+      return window.getUserAvatarUrl(seed || 'comsan-user');
+    }
+    const cleanSeed = encodeURIComponent(String(seed || 'comsan-user').trim());
+    return `https://api.dicebear.com/10.x/gaze/svg?seed=${cleanSeed}&backgroundColor=ff5d8f,ffb703,43aa8b,4d96ff,b57bff`;
+  }
+
+  /**
+   * Extracts Google Drive file ID from URL, filename, or raw ID
+   */
+  function extractDriveFileId(input) {
+    if (!input || typeof input !== 'string') return '';
+    const trimmed = input.trim();
+    if (!trimmed) return '';
+
+    // /file/d/FILE_ID
+    const dMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (dMatch && dMatch[1]) return dMatch[1];
+
+    // id=FILE_ID
+    const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (idMatch && idMatch[1]) return idMatch[1];
+
+    // googleusercontent.com/d/FILE_ID
+    const lh3Match = trimmed.match(/googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+    if (lh3Match && lh3Match[1]) return lh3Match[1];
+
+    // thumbnail?id=FILE_ID
+    const thumbMatch = trimmed.match(/thumbnail\?id=([a-zA-Z0-9_-]+)/);
+    if (thumbMatch && thumbMatch[1]) return thumbMatch[1];
+
+    // Strip image extension if filename is the ID (e.g. 1AbCd... .jpg)
+    const withoutExt = trimmed.replace(/\.(jpg|jpeg|png|webp|gif|svg)$/i, '');
+    if (/^[a-zA-Z0-9_-]{20,60}$/.test(withoutExt)) {
+      return withoutExt;
+    }
+
+    const generalMatch = trimmed.match(/([a-zA-Z0-9_-]{25,50})/);
+    if (generalMatch && generalMatch[1]) {
+      return generalMatch[1];
+    }
+    return '';
+  }
+
+  /**
+   * Converts Google Drive links or file IDs to direct image preview URLs
+   */
+  function resolveGoogleDriveImageUrl(input) {
+    if (!input || typeof input !== 'string') return '';
+    const fileId = extractDriveFileId(input);
+    if (fileId) {
+      return `https://lh3.googleusercontent.com/d/${fileId}`;
+    }
+    return input.trim();
+  }
+
+  // Cropper State & Handlers
+  let activeCropperCallback = null;
+  let cropperActiveImage = null;
+  let cropperImageSrc = '';
+  let cropperState = {
+    x: 0,
+    y: 0,
+    scale: 1,
+    initialScale: 1,
+    rotation: 0,
+    isDragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    startStateX: 0,
+    startStateY: 0
+  };
+  let cropperEventsAttached = false;
+
+  function openImageCropperModal(options) {
+    const { imageSrc, title, onSave } = options || {};
+    if (!imageSrc) return;
+
+    activeCropperCallback = onSave;
+    cropperImageSrc = imageSrc;
+
+    const titleEl = document.getElementById('cropperModalTitle');
+    if (titleEl && title) titleEl.textContent = title;
+
+    const modal = document.getElementById('projectAvatarCropperModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      cropperActiveImage = img;
+      initCropperCanvas();
+    };
+    img.onerror = function () {
+      if (typeof window.showToast === 'function') {
+        window.showToast('ไม่สามารถโหลดรูปภาพสำหรับครอบตัดได้ กรุณาลองอัปโหลดเป็นไฟล์ภาพโดยตรง', 'warning');
+      }
+      closeImageCropperModal();
+    };
+    img.src = imageSrc;
+  }
+
+  function initCropperCanvas() {
+    const canvas = document.getElementById('cropperCanvas');
+    const wrapper = document.getElementById('cropperCanvasWrapper');
+    if (!canvas || !wrapper || !cropperActiveImage) return;
+
+    const minDim = Math.min(cropperActiveImage.naturalWidth, cropperActiveImage.naturalHeight);
+    const baseScale = minDim > 0 ? (640 / minDim) : 1;
+
+    cropperState.scale = baseScale;
+    cropperState.initialScale = baseScale;
+    cropperState.x = 0;
+    cropperState.y = 0;
+    cropperState.rotation = 0;
+    cropperState.isDragging = false;
+
+    const slider = document.getElementById('cropperZoomSlider');
+    if (slider) {
+      slider.min = (baseScale * 0.5).toFixed(2);
+      slider.max = (baseScale * 3.5).toFixed(2);
+      slider.step = ((baseScale * 3) / 100).toFixed(3);
+      slider.value = baseScale.toFixed(2);
+    }
+    updateCropperZoomLabel();
+
+    if (!cropperEventsAttached) {
+      attachCropperEventListeners(wrapper);
+      cropperEventsAttached = true;
+    }
+
+    renderCropperCanvas();
+  }
+
+  function attachCropperEventListeners(wrapper) {
+    wrapper.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      cropperState.isDragging = true;
+      cropperState.dragStartX = e.clientX;
+      cropperState.dragStartY = e.clientY;
+      cropperState.startStateX = cropperState.x;
+      cropperState.startStateY = cropperState.y;
+      wrapper.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!cropperState.isDragging) return;
+      const rect = wrapper.getBoundingClientRect();
+      const ratio = rect.width > 0 ? (640 / rect.width) : 2;
+      const dx = (e.clientX - cropperState.dragStartX) * ratio;
+      const dy = (e.clientY - cropperState.dragStartY) * ratio;
+      cropperState.x = cropperState.startStateX + dx;
+      cropperState.y = cropperState.startStateY + dy;
+      renderCropperCanvas();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (cropperState.isDragging) {
+        cropperState.isDragging = false;
+        wrapper.style.cursor = 'grab';
+      }
+    });
+
+    wrapper.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches.length === 1) {
+        cropperState.isDragging = true;
+        cropperState.dragStartX = e.touches[0].clientX;
+        cropperState.dragStartY = e.touches[0].clientY;
+        cropperState.startStateX = cropperState.x;
+        cropperState.startStateY = cropperState.y;
+      }
+    }, { passive: true });
+
+    wrapper.addEventListener('touchmove', (e) => {
+      if (!cropperState.isDragging || !e.touches || e.touches.length !== 1) return;
+      const rect = wrapper.getBoundingClientRect();
+      const ratio = rect.width > 0 ? (640 / rect.width) : 2;
+      const dx = (e.touches[0].clientX - cropperState.dragStartX) * ratio;
+      const dy = (e.touches[0].clientY - cropperState.dragStartY) * ratio;
+      cropperState.x = cropperState.startStateX + dx;
+      cropperState.y = cropperState.startStateY + dy;
+      renderCropperCanvas();
+    }, { passive: true });
+
+    wrapper.addEventListener('touchend', () => {
+      cropperState.isDragging = false;
+    }, { passive: true });
+
+    wrapper.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.08 : -0.08;
+      adjustCropperZoom(delta);
+    }, { passive: false });
+  }
+
+  function renderCropperCanvas() {
+    const canvas = document.getElementById('cropperCanvas');
+    if (!canvas || !cropperActiveImage) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 640, 640);
+
+    ctx.save();
+    ctx.translate(320 + cropperState.x, 320 + cropperState.y);
+    ctx.rotate((cropperState.rotation * Math.PI) / 180);
+    ctx.scale(cropperState.scale, cropperState.scale);
+    ctx.drawImage(cropperActiveImage, -cropperActiveImage.naturalWidth / 2, -cropperActiveImage.naturalHeight / 2);
+    ctx.restore();
+  }
+
+  function adjustCropperZoom(deltaRatio) {
+    const minScale = cropperState.initialScale * 0.4;
+    const maxScale = cropperState.initialScale * 4.0;
+    const newScale = Math.min(maxScale, Math.max(minScale, cropperState.scale + cropperState.initialScale * deltaRatio));
+    cropperState.scale = newScale;
+
+    const slider = document.getElementById('cropperZoomSlider');
+    if (slider) slider.value = newScale.toFixed(2);
+    updateCropperZoomLabel();
+    renderCropperCanvas();
+  }
+
+  function onCropperZoomSliderChange(val) {
+    cropperState.scale = val;
+    updateCropperZoomLabel();
+    renderCropperCanvas();
+  }
+
+  function updateCropperZoomLabel() {
+    const label = document.getElementById('cropperZoomLabel');
+    if (label && cropperState.initialScale > 0) {
+      const pct = Math.round((cropperState.scale / cropperState.initialScale) * 100);
+      label.textContent = `${pct}%`;
+    }
+  }
+
+  function rotateCropper(deg) {
+    cropperState.rotation = (cropperState.rotation + deg) % 360;
+    renderCropperCanvas();
+  }
+
+  function resetCropperTransform() {
+    cropperState.x = 0;
+    cropperState.y = 0;
+    cropperState.rotation = 0;
+    cropperState.scale = cropperState.initialScale;
+    const slider = document.getElementById('cropperZoomSlider');
+    if (slider) slider.value = cropperState.initialScale.toFixed(2);
+    updateCropperZoomLabel();
+    renderCropperCanvas();
+  }
+
+  function saveCroppedImage() {
+    if (!cropperActiveImage) {
+      closeImageCropperModal();
+      return;
+    }
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = 400;
+    exportCanvas.height = 400;
+    const ctx = exportCanvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    const ratio = 400 / 640;
+    ctx.save();
+    ctx.translate(200 + cropperState.x * ratio, 200 + cropperState.y * ratio);
+    ctx.rotate((cropperState.rotation * Math.PI) / 180);
+    ctx.scale(cropperState.scale * ratio, cropperState.scale * ratio);
+    ctx.drawImage(cropperActiveImage, -cropperActiveImage.naturalWidth / 2, -cropperActiveImage.naturalHeight / 2);
+    ctx.restore();
+
+    let resultUrl = '';
+    try {
+      resultUrl = exportCanvas.toDataURL('image/jpeg', 0.88);
+    } catch (err) {
+      console.warn('Canvas export failed or tainted:', err);
+      resultUrl = cropperImageSrc || '';
+    }
+
+    if (typeof activeCropperCallback === 'function') {
+      activeCropperCallback(resultUrl);
+    }
+    closeImageCropperModal();
+  }
+
+  function closeImageCropperModal() {
+    const modal = document.getElementById('projectAvatarCropperModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    activeCropperCallback = null;
+    cropperActiveImage = null;
+    cropperImageSrc = '';
+  }
+
+  // Repeater Avatar Helpers
+  function getRepeaterList(type) {
+    if (type === 'LEADERS') return prjFormLeaders;
+    if (type === 'MEMBERS') return prjFormMembers;
+    if (type === 'ADVISORS') return prjFormAdvisors;
+    if (type === 'SMO') return prjFormSmoOfficers;
+    return null;
+  }
+
+  function handlePersonAvatarFileUpload(type, index, file) {
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'warning');
+      }
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const list = getRepeaterList(type);
+      const person = list && list[index];
+      const personName = person ? (person.nickname || person.name || 'สมาชิก') : 'สมาชิก';
+
+      openImageCropperModal({
+        imageSrc: e.target.result,
+        title: `ครอบตัดรูปโปรไฟล์ (${personName})`,
+        onSave: function (croppedDataUrl) {
+          updateRepeaterField(type, index, 'avatar', croppedDataUrl);
+          renderRepeater(type);
+          if (typeof window.showToast === 'function') {
+            window.showToast('อัปโหลดและครอบตัดรูปภาพเรียบร้อยแล้ว', 'success');
+          }
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handlePersonDriveAvatarInput(type, index, value) {
+    const list = getRepeaterList(type);
+    if (!list || !list[index]) return;
+
+    const directUrl = resolveGoogleDriveImageUrl(value);
+    list[index].avatar = directUrl;
+
+    const preview = document.getElementById(`avatar_preview_${type}_${index}`);
+    if (preview) {
+      const seed = list[index].nickname || list[index].name || `${type}_${index}`;
+      const fallback = getCuteAvatarUrl(seed);
+      preview.src = directUrl || fallback;
+    }
+  }
+
+  function applyDriveAvatarForRepeater(type, index) {
+    const inputEl = document.getElementById(`avatar_drive_input_${type}_${index}`);
+    const val = inputEl ? inputEl.value.trim() : '';
+    if (!val) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('กรุณาระบุรหัสรูปภาพ หรือลิงก์ Google Drive ในช่องกรอก', 'info');
+      }
+      return;
+    }
+    const resolved = resolveGoogleDriveImageUrl(val);
+    updateRepeaterField(type, index, 'avatar', resolved);
+    renderRepeater(type);
+    if (typeof window.showToast === 'function') {
+      window.showToast('ดึงและเชื่อมต่อรูปภาพจาก Google Drive เรียบร้อยแล้ว', 'success');
+    }
+  }
+
+  function triggerCropForRepeater(type, index) {
+    const list = getRepeaterList(type);
+    const person = list && list[index];
+    if (!person) return;
+
+    if (!person.avatar) {
+      const fileInput = document.getElementById(`avatar_file_${type}_${index}`);
+      if (fileInput) fileInput.click();
+      return;
+    }
+
+    const personName = person.nickname || person.name || 'สมาชิก';
+    openImageCropperModal({
+      imageSrc: person.avatar,
+      title: `ครอบตัดรูปโปรไฟล์ (${personName})`,
+      onSave: function (croppedDataUrl) {
+        updateRepeaterField(type, index, 'avatar', croppedDataUrl);
+        renderRepeater(type);
+        if (typeof window.showToast === 'function') {
+          window.showToast('ครอบตัดและบันทึกรูปภาพเรียบร้อยแล้ว', 'success');
+        }
+      }
+    });
+  }
+
+  function resetRepeaterAvatarToCute(type, index) {
+    updateRepeaterField(type, index, 'avatar', '');
+    renderRepeater(type);
+    if (typeof window.showToast === 'function') {
+      window.showToast('คืนค่าเป็นรูปโปรไฟล์น่ารัก (DiceBear) เรียบร้อยแล้ว', 'info');
+    }
+  }
+
   function getProjectsList() {
     let list = [];
-    if (window.appState && Array.isArray(window.appState.projects)) {
+    if (typeof window !== 'undefined' && window.appState && Array.isArray(window.appState.projects)) {
       list = window.appState.projects;
-    } else if (typeof window.defaultProjects !== 'undefined' && Array.isArray(window.defaultProjects)) {
+    } else if (typeof window !== 'undefined' && typeof window.defaultProjects !== 'undefined' && Array.isArray(window.defaultProjects)) {
       list = window.defaultProjects;
     }
     // Deduplicate by ID to guarantee no duplicate cards ever render
@@ -407,27 +820,26 @@
           ` : ''}
 
           <!-- Primary Leader Chip -->
-          ${primaryLeader ? `
-            <div class="pt-1 flex items-center gap-2.5">
-              ${primaryLeader.avatar ? `
-                <img src="${escapeHtml(primaryLeader.avatar)}" alt="${escapeHtml(primaryLeader.name)}"
-                  class="w-7 h-7 rounded-full object-cover ring-1 ring-border shrink-0"
-                  onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(primaryLeader.name)}&background=4f46e5&color=fff';" />
-              ` : `
-                <div class="w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center ring-1 ring-border shrink-0">
-                  ${(primaryLeader.nickname || primaryLeader.name || 'ผ').charAt(0)}
+          ${primaryLeader ? (() => {
+            const leaderSeed = primaryLeader.nickname || primaryLeader.name || 'leader';
+            const leaderFallback = getCuteAvatarUrl(leaderSeed);
+            const leaderAvatar = primaryLeader.avatar ? escapeHtml(primaryLeader.avatar) : leaderFallback;
+            return `
+              <div class="pt-1 flex items-center gap-2.5">
+                <img src="${leaderAvatar}" alt="${escapeHtml(primaryLeader.name || 'ผู้รับผิดชอบ')}"
+                  class="w-7 h-7 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs"
+                  onerror="this.onerror=null; this.src='${leaderFallback}';" />
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-bold text-foreground truncate">
+                    ${escapeHtml(primaryLeader.name)} ${primaryLeader.nickname ? `(${escapeHtml(primaryLeader.nickname)})` : ''}
+                  </p>
+                  <p class="text-[10px] text-muted-foreground truncate">
+                    ${escapeHtml(primaryLeader.role || 'ผู้รับผิดชอบโครงการ')}
+                  </p>
                 </div>
-              `}
-              <div class="min-w-0 flex-1">
-                <p class="text-xs font-bold text-foreground truncate">
-                  ${escapeHtml(primaryLeader.name)} ${primaryLeader.nickname ? `(${escapeHtml(primaryLeader.nickname)})` : ''}
-                </p>
-                <p class="text-[10px] text-muted-foreground truncate">
-                  ${escapeHtml(primaryLeader.role || 'ผู้รับผิดชอบโครงการ')}
-                </p>
               </div>
-            </div>
-          ` : ''}
+            `;
+          })() : ''}
 
           <!-- Feature Indicator Tags -->
           <div class="flex items-center gap-1.5 flex-wrap pt-1">
@@ -998,7 +1410,9 @@
       const deptBadge = getDepartmentBadgeClass(dept);
       const name = m.name || 'ไม่ระบุชื่อ';
       const nickname = m.nickname ? `(${m.nickname})` : '';
-      const avatarUrl = m.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4f46e5&color=fff`;
+      const seed = m.nickname || m.name || m.id || `member_${idx}`;
+      const fallbackUrl = getCuteAvatarUrl(seed);
+      const avatarUrl = m.avatar || fallbackUrl;
 
       return `
         <tr class="hover:bg-muted/40 transition-colors">
@@ -1011,8 +1425,8 @@
           <td class="py-3 px-3">
             <div class="flex items-center gap-2.5">
               <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}"
-                class="w-8 h-8 rounded-full object-cover ring-1 ring-border shrink-0"
-                onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4f46e5&color=fff';" />
+                class="w-8 h-8 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs"
+                onerror="this.onerror=null; this.src='${fallbackUrl}';" />
               <div class="min-w-0">
                 <p class="font-bold text-foreground text-xs truncate" title="${escapeHtml(name)} ${escapeHtml(nickname)}">
                   ${escapeHtml(name)} ${nickname ? `<span class="font-normal text-muted-foreground">${escapeHtml(nickname)}</span>` : ''}
@@ -1184,7 +1598,10 @@
       const phone = String(r['เบอร์ติดต่อ'] || r['เบอร์โทร'] || r['เบอร์โทรศัพท์'] || r['เบอร์'] || r['Phone'] || r['Tel'] || '').trim();
       const kkuMail = String(r['KKU-MAIL'] || r['KKUMAIL'] || r['KKU Mail'] || r['kku-mail'] || r['อีเมล'] || r['Email'] || '').trim();
       const contactLink = String(r['ลิงก์ติดต่อ'] || r['ช่องทางติดต่อ'] || r['โซเชียล'] || r['Contact Link'] || r['Social'] || '').trim();
-      const avatar = String(r['รูปหน้า'] || r['ลิงก์รูปหน้า'] || r['รูป'] || r['Avatar'] || '').trim();
+      let avatar = String(r['รูปหน้า'] || r['ลิงก์รูปหน้า'] || r['รูป'] || r['Avatar'] || '').trim();
+      if (avatar) {
+        avatar = resolveGoogleDriveImageUrl(avatar);
+      }
 
       return {
         id: `MBR-${Date.now()}-${idx + 1}`,
@@ -1458,21 +1875,23 @@
       return;
     }
 
-    container.innerHTML = list.map(person => {
+    container.innerHTML = list.map((person, pIdx) => {
       const name = person.name || 'ไม่ระบุชื่อ';
       const nickname = person.nickname ? `(${person.nickname})` : '';
       const role = person.role || 'หน้าที่ไม่ระบุ';
       const department = person.department ? `<p class="text-[11px] text-muted-foreground truncate">${escapeHtml(person.department)}</p>` : '';
       const details = person.details ? `<p class="text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-xl border border-border/40 leading-relaxed mt-2">${escapeHtml(person.details)}</p>` : '';
-      const avatarUrl = person.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff`;
+      const seed = person.nickname || person.name || person.id || `person_${pIdx}`;
+      const fallbackUrl = getCuteAvatarUrl(seed);
+      const avatarUrl = person.avatar || fallbackUrl;
 
       return `
         <div class="bg-card border border-border/80 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-primary/30 transition">
           <div class="space-y-2">
             <div class="flex items-start gap-3">
               <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}"
-                class="w-12 h-12 rounded-2xl object-cover ring-2 ring-primary/20 shrink-0"
-                onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff';" />
+                class="w-12 h-12 rounded-2xl object-cover ring-2 ring-primary/20 shrink-0 shadow-sm"
+                onerror="this.onerror=null; this.src='${fallbackUrl}';" />
 
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -1750,6 +2169,9 @@
 
       const isExpanded = expandedSet.has(idx);
       const deptBadge = getDepartmentBadgeClass(item.department);
+      const seed = item.nickname || item.name || item.id || `${type}_${idx}`;
+      const itemFallbackUrl = getCuteAvatarUrl(seed);
+      const itemAvatarUrl = item.avatar || itemFallbackUrl;
 
       // Collapsed summary row
       if (!isExpanded) {
@@ -1760,6 +2182,10 @@
                 <span class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center justify-center shrink-0">
                   ${idx + 1}
                 </span>
+
+                <img src="${escapeHtml(itemAvatarUrl)}" alt="avatar"
+                  class="w-7 h-7 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs"
+                  onerror="this.onerror=null; this.src='${itemFallbackUrl}';" />
 
                 ${type === 'MEMBERS' && item.department ? `
                   <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${deptBadge} shrink-0 max-w-[130px] truncate" title="${escapeHtml(item.department)}">
@@ -1809,6 +2235,9 @@
               <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0">
                 ${idx + 1}
               </span>
+              <img src="${escapeHtml(itemAvatarUrl)}" alt="avatar"
+                class="w-6 h-6 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs"
+                onerror="this.onerror=null; this.src='${itemFallbackUrl}';" />
               <span class="text-xs font-bold text-foreground truncate">
                 ${escapeHtml(item.name || `${typeLabel} #${idx + 1}`)} ${item.nickname ? `(${escapeHtml(item.nickname)})` : ''}
               </span>
@@ -1895,12 +2324,109 @@
                 class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
             </div>
 
-            <div class="sm:col-span-2">
-              <label class="block text-[11px] font-medium text-muted-foreground mb-1">ลิงก์รูปหน้า (Avatar URL)</label>
-              <input type="url" value="${escapeHtml(item.avatar || '')}"
-                oninput="updateRepeaterField('${type}', ${idx}, 'avatar', this.value)"
-                placeholder="https://... (หากว่างระบบจะใช้รูปอักษรย่ออัตโนมัติ)"
-                class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+            <!-- Avatar / Photo Section (Direct Upload, Google Drive ID/Link, Crop, Cute Fallback) -->
+            <div class="sm:col-span-2 p-3 sm:p-3.5 rounded-2xl bg-muted/30 border border-border/70 space-y-3">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <label class="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                  <i data-lucide="image" class="h-3.5 w-3.5 text-indigo-500"></i>
+                  <span>รูปโปรไฟล์ประจำตัว (Profile Photo)</span>
+                </label>
+                ${item.avatar ? `
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${item.avatar.startsWith('data:image') ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20' : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'}">
+                    ${item.avatar.startsWith('data:image') ? '✓ รูปอัปโหลด / ครอบตัดแล้ว' : (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? '✓ เชื่อมรูปจาก Google Drive' : '✓ ลิงก์รูปกำหนดเอง'}
+                  </span>
+                ` : `
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                    <i data-lucide="sparkles" class="h-3 w-3"></i> รูปการ์ตูนน่ารักอัตโนมัติ (DiceBear)
+                  </span>
+                `}
+              </div>
+
+              <div class="flex flex-col sm:flex-row items-center sm:items-start gap-3.5">
+                <!-- Avatar Preview with quick Crop overlay -->
+                <div class="relative group shrink-0">
+                  <img src="${escapeHtml(itemAvatarUrl)}" alt="avatar preview"
+                    id="avatar_preview_${type}_${idx}"
+                    class="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-indigo-500/30 shadow-sm bg-background transition-transform group-hover:scale-105"
+                    onerror="this.onerror=null; this.src='${itemFallbackUrl}';" />
+                  
+                  <button type="button" onclick="triggerCropForRepeater('${type}', ${idx})"
+                    title="คลิกเพื่อครอบตัดรูปนี้"
+                    class="absolute inset-0 bg-black/55 text-white rounded-2xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] font-semibold transition-opacity backdrop-blur-xs cursor-pointer">
+                    <i data-lucide="crop" class="h-4 w-4 mb-0.5"></i>
+                    <span>ครอบตัด</span>
+                  </button>
+                </div>
+
+                <!-- Avatar Actions & Drive Controls -->
+                <div class="flex-1 w-full space-y-2 min-w-0">
+                  <!-- Action Buttons -->
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <!-- Hidden File Input for direct upload -->
+                    <input type="file" id="avatar_file_${type}_${idx}" accept="image/*" class="hidden"
+                      onchange="handlePersonAvatarFileUpload('${type}', ${idx}, this.files[0])" />
+                    
+                    <button type="button" onclick="document.getElementById('avatar_file_${type}_${idx}').click()"
+                      class="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-2xs transition active:scale-95 cursor-pointer">
+                      <i data-lucide="upload-cloud" class="h-3.5 w-3.5"></i>
+                      <span>อัปโหลดรูปตรงๆ</span>
+                    </button>
+
+                    <button type="button" onclick="triggerCropForRepeater('${type}', ${idx})"
+                      class="px-2.5 py-1.5 rounded-xl bg-card hover:bg-muted text-foreground border border-border text-[11px] font-semibold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                      title="ครอบตัดรูป ปรับตำแหน่ง ซูม และหมุนภาพ">
+                      <i data-lucide="crop" class="h-3.5 w-3.5 text-indigo-500"></i>
+                      <span>ครอบตัดรูป (Crop)</span>
+                    </button>
+
+                    ${item.avatar ? `
+                      <button type="button" onclick="resetRepeaterAvatarToCute('${type}', ${idx})"
+                        class="px-2.5 py-1.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 text-[11px] font-semibold flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                        title="ลบรูปกำหนดเอง และคืนค่าเป็นรูปการ์ตูนน่ารัก">
+                        <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+                        <span>ใช้รูปน่ารักเริ่มต้น</span>
+                      </button>
+                    ` : ''}
+                  </div>
+
+                  <!-- Google Drive Input -->
+                  <div class="space-y-1">
+                    <div class="relative flex items-center">
+                      <div class="absolute left-2.5 flex items-center pointer-events-none text-blue-500">
+                        <i data-lucide="hard-drive" class="h-3.5 w-3.5"></i>
+                      </div>
+                      <input type="text"
+                        id="avatar_drive_input_${type}_${idx}"
+                        value="${escapeHtml(item.avatar && (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? item.avatar : '')}"
+                        oninput="handlePersonDriveAvatarInput('${type}', ${idx}, this.value)"
+                        placeholder="วางรหัสรูปใน Drive (เช่น 1AbCd...) หรือลิงก์แชร์..."
+                        class="w-full pl-8 pr-22 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+                      <button type="button" onclick="applyDriveAvatarForRepeater('${type}', ${idx})"
+                        class="absolute right-1 px-2 py-0.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold transition cursor-pointer">
+                        ดึงรูป Drive
+                      </button>
+                    </div>
+                    <p class="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <i data-lucide="info" class="h-3 w-3 shrink-0 text-blue-500"></i>
+                      <span>ใส่รหัสรูปในไดรฟ์ (รหัสรูปคือชื่อรูป) หรือลิงก์แชร์ Google Drive ได้โดยตรง</span>
+                    </p>
+                  </div>
+
+                  <!-- Advanced / Direct URL toggle -->
+                  <details class="text-[11px] text-muted-foreground">
+                    <summary class="cursor-pointer hover:text-foreground font-medium select-none">
+                      หรือระบุลิงก์รูปตรง (Custom URL)
+                    </summary>
+                    <div class="pt-1.5">
+                      <input type="url" value="${escapeHtml(item.avatar || '')}"
+                        id="avatar_url_input_${type}_${idx}"
+                        oninput="updateRepeaterField('${type}', ${idx}, 'avatar', this.value)"
+                        placeholder="https://example.com/photo.jpg"
+                        class="w-full px-3 py-1 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+                    </div>
+                  </details>
+                </div>
+              </div>
             </div>
 
             <div class="sm:col-span-2">
@@ -2250,6 +2776,22 @@
     downloadProjectMembersTemplate,
     exportCurrentProjectMembersToExcel,
     confirmDeleteProjectMember,
-    getActiveDetailProjectId: () => activeDetailProjectId
+    getActiveDetailProjectId: () => activeDetailProjectId,
+    // Avatar, Google Drive & Cropper methods
+    getCuteAvatarUrl,
+    extractDriveFileId,
+    resolveGoogleDriveImageUrl,
+    openImageCropperModal,
+    closeImageCropperModal,
+    saveCroppedImage,
+    adjustCropperZoom,
+    onCropperZoomSliderChange,
+    rotateCropper,
+    resetCropperTransform,
+    handlePersonAvatarFileUpload,
+    handlePersonDriveAvatarInput,
+    applyDriveAvatarForRepeater,
+    triggerCropForRepeater,
+    resetRepeaterAvatarToCute
   };
 });
