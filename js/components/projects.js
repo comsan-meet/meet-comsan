@@ -585,7 +585,7 @@
       if (statusText) {
         statusText.innerHTML = `
           <i data-lucide="check-circle" class="h-3.5 w-3.5 text-emerald-500 shrink-0"></i>
-          <span class="text-emerald-600 dark:text-emerald-400 font-medium">เชื่อมต่อแล้ว พบรูปภาพ ${count} รูปในโฟลเดอร์ พร้อมใช้งานจับคู่ชื่อรูปในการ์ดแต่ละคน</span>
+          <span class="text-emerald-600 dark:text-emerald-400 font-medium">เชื่อมต่อแล้ว พบรูปภาพ ${count} รูปในโฟลเดอร์ พร้อมใช้งานจับคู่ชื่อรูปในการ์ดแต่ละบุคคล</span>
         `;
       }
     } else {
