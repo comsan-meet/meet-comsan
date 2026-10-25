@@ -96,7 +96,7 @@ function startFrameBroadcastLoop(mode) {
   window.selectedStreamRes = resSelect ? Number(resSelect.value) || 640 : 640;
   window.selectedStreamFps = fpsSelect ? Number(fpsSelect.value) || 5 : 5;
 
-  const intervalMs = Math.max(65, Math.round(1000 / window.selectedStreamFps));
+  const intervalMs = Math.max(30, Math.round(1000 / window.selectedStreamFps));
   const jpegQuality = window.selectedStreamRes >= 960 ? 0.72 : window.selectedStreamRes >= 640 ? 0.62 : 0.5;
   const video = document.getElementById('localStreamVideo');
   const me = (window.appState.users || []).find(u => u.id === window.currentUserId);
@@ -104,21 +104,28 @@ function startFrameBroadcastLoop(mode) {
 
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
+  let isBroadcastingFrame = false;
 
   window.streamInterval = setInterval(() => {
     if (!window.localMediaStream || !video || video.readyState < 2) return;
-    const targetW = window.selectedStreamRes;
-    const ratio = video.videoHeight / Math.max(1, video.videoWidth);
-    const targetH = Math.round(targetW * ratio) || Math.round(targetW * 0.75);
-    canvas.width = targetW;
-    canvas.height = targetH;
-    ctx.drawImage(video, 0, 0, targetW, targetH);
-    window.socket.emit('stream:frame', {
-      streamerId: window.currentUserId || 'ADMIN',
-      streamerName,
-      mode,
-      frameDataUrl: canvas.toDataURL('image/jpeg', jpegQuality)
-    });
+    if (isBroadcastingFrame) return;
+    isBroadcastingFrame = true;
+    try {
+      const targetW = window.selectedStreamRes;
+      const ratio = video.videoHeight / Math.max(1, video.videoWidth);
+      const targetH = Math.round(targetW * ratio) || Math.round(targetW * 0.75);
+      canvas.width = targetW;
+      canvas.height = targetH;
+      ctx.drawImage(video, 0, 0, targetW, targetH);
+      window.socket.emit('stream:frame', {
+        streamerId: window.currentUserId || 'ADMIN',
+        streamerName,
+        mode,
+        frameDataUrl: canvas.toDataURL('image/jpeg', jpegQuality)
+      });
+    } finally {
+      isBroadcastingFrame = false;
+    }
   }, intervalMs);
 }
 
@@ -128,16 +135,22 @@ async function startLocalStream(mode) {
     window.currentStreamMode = mode;
     const camSelect = document.getElementById('streamCameraSelect');
     const resSelect = document.getElementById('streamResSelect');
+    const fpsSelect = document.getElementById('streamFpsSelect');
     window.selectedCameraDeviceId = camSelect ? camSelect.value : 'user';
     window.selectedStreamRes = resSelect ? Number(resSelect.value) || 640 : 640;
+    window.selectedStreamFps = fpsSelect ? Number(fpsSelect.value) || 5 : 5;
 
     if (mode === 'SCREEN') {
       window.localMediaStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { width: { ideal: window.selectedStreamRes }, frameRate: { ideal: window.selectedStreamFps } },
+        video: { width: { ideal: window.selectedStreamRes }, frameRate: { ideal: window.selectedStreamFps, max: 30 } },
         audio: false
       });
     } else {
-      let videoConstraints = { width: { ideal: window.selectedStreamRes }, height: { ideal: Math.round(window.selectedStreamRes * 0.75) } };
+      let videoConstraints = {
+        width: { ideal: window.selectedStreamRes },
+        height: { ideal: Math.round(window.selectedStreamRes * 0.75) },
+        frameRate: { ideal: window.selectedStreamFps, max: 30 }
+      };
       if (window.selectedCameraDeviceId === 'user' || window.selectedCameraDeviceId === 'environment') {
         videoConstraints.facingMode = { ideal: window.selectedCameraDeviceId };
       } else {
