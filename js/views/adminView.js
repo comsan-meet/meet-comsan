@@ -414,13 +414,23 @@ function returnToCurrentMeetingSummary() {
 }
 window.returnToCurrentMeetingSummary = returnToCurrentMeetingSummary;
 
-function deleteHistoryMeeting(meetingId) {
+async function deleteHistoryMeeting(meetingId) {
   if (!meetingId) return;
-  if (!confirm('คุณต้องการลบประวัติการประชุมนี้ออกจากระบบใช่หรือไม่?')) return;
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'ยืนยันการลบประวัติการประชุม',
+        message: 'คุณต้องการลบประวัติการประชุมนี้ออกจากระบบใช่หรือไม่? ข้อมูลสรุปและบันทึกจะไม่สามารถกู้คืนได้',
+        confirmText: 'ลบประวัติการประชุม',
+        isDanger: true,
+        icon: 'trash-2'
+      })
+    : window.confirm('คุณต้องการลบประวัติการประชุมนี้ออกจากระบบใช่หรือไม่?');
+  if (!confirmed) return;
   if (window.selectedHistoryMeetingId === meetingId) {
     window.selectedHistoryMeetingId = null;
   }
   window.socket.emit('admin:deleteMeetingHistory', meetingId);
+  if (typeof showToast === 'function') showToast('ลบประวัติการประชุมเรียบร้อยแล้ว', 'info');
 }
 window.deleteHistoryMeeting = deleteHistoryMeeting;
 
@@ -617,11 +627,27 @@ function removeQueueItem(queueId) {
   if (typeof window.renderAll === 'function') window.renderAll();
 }
 
-function clearRaiseHandQueue() {
+async function clearRaiseHandQueue() {
+  const queueCount = (window.appState?.raiseHandQueue || []).length;
+  if (queueCount === 0) {
+    if (typeof showToast === 'function') showToast('ไม่มีคิวยกมือในขณะนี้', 'info');
+    return;
+  }
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'ยืนยันการล้างคิวยกมือ',
+        message: `คุณต้องการล้างคิวผู้ขอยกมือทั้งหมด (${queueCount} คน) หรือไม่?`,
+        confirmText: 'ล้างคิวทั้งหมด',
+        isDanger: true,
+        icon: 'trash-2'
+      })
+    : window.confirm(`คุณต้องการล้างคิวผู้ขอยกมือทั้งหมด (${queueCount} คน) หรือไม่?`);
+  if (!confirmed) return;
   window.appState.raiseHandQueue = [];
   window.saveLocalState();
   window.socket.emit('admin:clearQueue');
   if (typeof window.renderAll === 'function') window.renderAll();
+  if (typeof showToast === 'function') showToast('ล้างคิวยกมือทั้งหมดเรียบร้อยแล้ว', 'info');
 }
 
 function handleExcelImport(e) {

@@ -365,12 +365,24 @@ function createMotion(e) {
   showToast(`เปิดญัตติใหม่: "${title}" เรียบร้อยแล้ว`, 'success');
 }
 
-function deleteMotion(motionId) {
-  if (!confirm('ยืนยันการลบญัตตินี้หรือไม่?')) return;
-  window.appState.motions = window.appState.motions.filter(m => m.id !== motionId);
+async function deleteMotion(motionId) {
+  const m = (window.appState?.motions || []).find(item => item.id === motionId);
+  const title = m ? m.title : 'ญัตตินี้';
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'ยืนยันการลบญัตติการลงมติ',
+        message: `คุณต้องการลบญัตติ "${title}" ออกจากระบบหรือไม่? คะแนนโหวตทั้งหมดจะถูกลบด้วย`,
+        confirmText: 'ลบญัตติ',
+        isDanger: true,
+        icon: 'trash-2'
+      })
+    : window.confirm(`ยืนยันการลบญัตติ "${title}" หรือไม่?`);
+  if (!confirmed) return;
+  window.appState.motions = (window.appState.motions || []).filter(m => m.id !== motionId);
   window.saveLocalState();
   window.socket.emit('admin:deleteMotion', motionId);
   if (typeof window.renderAll === 'function') window.renderAll();
+  if (typeof showToast === 'function') showToast(`ลบญัตติ "${title}" เรียบร้อยแล้ว`, 'info');
 }
 
 function toggleMotionStatus(motionId) {

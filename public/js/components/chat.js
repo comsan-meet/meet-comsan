@@ -1029,8 +1029,17 @@ function sendAdminChat(e) {
   renderAdminChatSection(true);
 }
 
-function deleteChatMessage(msgId) {
-  if (!confirm('ต้องการลบข้อความนี้ใช่หรือไม่?')) return;
+async function deleteChatMessage(msgId) {
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'ยืนยันการลบข้อความ',
+        message: 'ต้องการลบข้อความนี้ออกจากห้องแชตหรือไม่?',
+        confirmText: 'ลบข้อความ',
+        isDanger: true,
+        icon: 'trash-2'
+      })
+    : window.confirm('ต้องการลบข้อความนี้ใช่หรือไม่?');
+  if (!confirmed) return;
   window.appState.chats = (window.appState.chats || []).filter(c => String(c.id) !== String(msgId));
   if (window.appState.chatLogs) {
     const targetLog = window.appState.chatLogs.find(l => String(l.msgId) === String(msgId));

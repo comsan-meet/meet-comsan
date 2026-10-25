@@ -1404,9 +1404,9 @@ label svg, label i {
     <div class="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-card text-card-foreground">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
-          <i data-lucide="shield-check" class="text-amber-500"></i> เข้าใช้งานระบบจัดการประชุม
+          <i data-lucide="shield-check" class="text-amber-500"></i> เข้าใช้งานระบบผู้ดูแล (ADMIN)
         </h3>
-        <button type="button" onclick="closeAdminModal()" class="w-8 h-8 rounded-xl bg-muted/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition">
+        <button type="button" onclick="closeAdminModal()" class="w-8 h-8 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer">
           <i data-lucide="x" class=""></i>
         </button>
       </div>
@@ -1415,10 +1415,10 @@ label svg, label i {
         <div>
           <label class="block text-xs font-medium text-muted-foreground mb-1">รหัสผ่านผู้ดูแลระบบ</label>
           <input type="password" id="adminPassInput" placeholder="กรอกรหัสผ่านผู้ดูแลระบบ" required
-            class="w-full h-11 px-4 py-2.5 rounded-xl bg-background/50 border border-input text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all" />
+            class="w-full h-11 px-4 py-2.5 rounded-full bg-background/50 border border-input text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all" />
           <p id="adminLoginError" class="text-xs text-destructive mt-1.5 hidden font-medium">รหัสผ่านไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง</p>
         </div>
-        <button type="submit" id="btnAdminLoginSubmit" class="w-full h-11 bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-slate-950 font-bold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+        <button type="submit" id="btnAdminLoginSubmit" class="w-full h-11 bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-slate-950 font-bold rounded-full transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer flex items-center justify-center gap-2">
           <i data-lucide="log-in" class="text-slate-900"></i> เข้าสู่ระบบผู้ดำเนินการ (ADMIN)
         </button>
       </form>
@@ -1664,37 +1664,44 @@ label svg, label i {
         </div>
       </div>
 
-      <!-- ระบบผู้ดูแลระบบ (Admin Access Section) - การ์ดแบบยาว คลิกเพื่อเปิดป๊อปอัปกรอกรหัสผ่าน -->
-      <div id="settingAdminCard" class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card overflow-hidden">
-        <div id="settingAdminRow" onclick="if(!window.isAdminAuthenticated){ requestAdminAccess(); }"
-          class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-muted/30 transition select-none">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <i data-lucide="shield-check" class="h-5 w-5"></i>
+      <!-- สลับบัญชี (Switch Account / Admin Access Section - ตามภาพผู้ใช้ระบุ) -->
+      <div id="settingAdminCard" class="space-y-2 select-none">
+        <div class="px-1">
+          <h3 class="text-base font-bold text-foreground tracking-tight">สลับบัญชี</h3>
+          <p class="text-xs text-muted-foreground">แตะบัญชีที่ต้องการใช้งานเพื่อเข้าสู่ระบบ</p>
+        </div>
+
+        <div id="settingAdminRow" onclick="if(window.isAdminAuthenticated){ closeSettingsModal(); switchRoleView('ADMIN'); } else { requestAdminAccess(); }"
+          class="flex items-center justify-between gap-3.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-muted/40 text-card-foreground shadow-2xs hover:border-primary/40 transition-all cursor-pointer select-none group">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <i data-lucide="shield" class="h-6 w-6"></i>
             </div>
             <div class="min-w-0">
-              <h3 class="text-sm font-semibold text-foreground truncate">ระบบผู้ดูแลระบบ (Admin)</h3>
-              <p class="text-[11px] text-muted-foreground truncate">แตะเพื่อเข้าสู่ระบบ Admin</p>
+              <h4 class="text-sm font-bold text-foreground truncate">ระบบผู้ดูแล</h4>
+              <p class="text-xs text-muted-foreground truncate">จัดการ ควบคุม เปิดการประชุม</p>
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
-            <span id="settingAdminStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border shrink-0">
+            <span id="settingAdminStatusBadge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border shrink-0">
               <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span><span>ยังไม่ได้ล็อกอิน</span>
             </span>
-            <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground"></i>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all">
+              <i data-lucide="chevron-right" class="h-5 w-5"></i>
+            </div>
           </div>
         </div>
 
-        <!-- ล็อกอิน Admin แล้ว: ปุ่มสลับหน้า/ออกจากระบบ แบบกะทัดรัด -->
-        <div id="settingAdminLoggedBox" class="hidden px-4 pb-3 pt-0">
-          <div class="flex items-center gap-2 pt-3 border-t border-border/60">
+        <!-- เมื่อล็อกอินแล้ว มีปุ่มตัวเลือกสลับ หรือ ออกจากระบบ -->
+        <div id="settingAdminLoggedBox" class="hidden px-1 pt-1">
+          <div class="flex items-center gap-2">
             <button type="button" onclick="closeSettingsModal(); switchRoleView('ADMIN');"
-              class="flex-1 h-9 rounded-xl gradient-primary text-white font-semibold text-xs shadow-sm hover:opacity-95 transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+              class="flex-1 h-9 rounded-full gradient-primary text-white font-semibold text-xs shadow-xs hover:opacity-95 transition flex items-center justify-center gap-1.5 cursor-pointer">
               <i data-lucide="shield" class="h-4 w-4"></i>
-              <span>สลับไปหน้า ADMIN</span>
+              <span>เข้าสู่หน้าผู้ดูแล (ADMIN)</span>
             </button>
             <button type="button" onclick="logoutAdminFromSettings()"
-              class="h-9 px-3 rounded-xl border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 font-semibold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap" title="ออกจากระบบผู้ดูแลระบบ">
+              class="h-9 px-4 rounded-full border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 font-semibold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer" title="ออกจากระบบผู้ดูแลระบบ">
               <i data-lucide="log-out" class="h-4 w-4"></i>
               <span>ออกจากระบบ</span>
             </button>
@@ -3047,8 +3054,8 @@ label svg, label i {
       </div>
     </header>
 
-    <!-- SIDEBAR (<aside> - Exact Comsan Choice Sidebar Layout) -->
-    <aside id="appSidebar" class="hidden md:flex flex-col md:w-56 lg:w-64 xl:w-72 shrink-0 border-r border-border bg-card/60 backdrop-blur-sm sticky top-0 h-screen z-40 select-none justify-between transition-colors">
+    <!-- SIDEBAR (<aside> - Exact Comsan Choice Sidebar Layout, Optimized for iPad & Desktop) -->
+    <aside id="appSidebar" class="hidden md:flex flex-col md:w-60 lg:w-64 xl:w-72 shrink-0 border-r border-border bg-card/60 backdrop-blur-sm sticky top-0 h-screen md:h-[100dvh] max-h-screen overflow-hidden z-40 select-none justify-between transition-colors">
       <!-- Logo & Brand Header (Pinned at top - Never scrolls away) -->
       <div class="p-4 pb-3 border-b border-border/40 select-none shrink-0">
         <div class="flex items-center justify-between px-2">
@@ -3170,15 +3177,15 @@ label svg, label i {
         </div>
       </div>
 
-      <!-- Aside Footer: Profile Card + Utility Toolbar (Exact Comsan Choice Style) -->
-      <div class="p-3 border-t border-border/60 bg-muted/20 space-y-2">
+      <!-- Aside Footer: Profile Card + Utility Toolbar (Exact Comsan Choice Style with iPad Safe Area) -->
+      <div class="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-border/60 bg-muted/20 space-y-2 shrink-0">
         <div onclick="switchUserTab('PROFILE')" class="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-muted/60 transition-all border border-border/40 bg-card/60 shadow-2xs group">
           <span class="relative flex overflow-hidden rounded-full h-9 w-9 border border-background shadow-xs shrink-0 bg-primary/10 text-primary items-center justify-center font-bold text-xs" id="sidebarAvatarContainer">
             <span id="sidebarUserInitials">U</span>
           </span>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1">
-              <span class="text-sm font-medium text-foreground truncate block" id="sidebarProfileName">ผู้ใช้งาน</span>
+              <span class="text-sm font-semibold text-foreground truncate block" id="sidebarProfileName">ผู้ใช้งาน</span>
               <span class="inline-flex shrink-0 items-center justify-center" title="ผู้เข้าร่วมประชุม" id="sidebarVerifiedIcon">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0 h-3.5 w-3.5"><g transform="translate(1.8, 1.8) scale(0.85)"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" fill="hsl(var(--accent))" stroke="none"></path><path d="m9 12 2 2 4-4" fill="none" stroke="hsl(var(--accent-foreground))" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
               </span>
@@ -3188,20 +3195,20 @@ label svg, label i {
           <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0"></i>
         </div>
 
-        <!-- Toolbar row -->
+        <!-- Toolbar row: Circular Buttons for Consistency -->
         <div class="flex items-center justify-between pt-1 px-1">
           <div class="flex items-center gap-1">
-            <button type="button" onclick="openSettingsModal()" class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="ตั้งค่าระบบ">
+            <button type="button" onclick="openSettingsModal()" class="h-8 w-8 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="ตั้งค่าระบบ">
               <i data-lucide="settings" class="h-4 w-4"></i>
             </button>
-            <button type="button" onclick="toggleTheme()" class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="เปลี่ยนธีม (สว่าง/มืด)" id="sidebarThemeBtn">
+            <button type="button" onclick="toggleTheme()" class="h-8 w-8 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="เปลี่ยนธีม (สว่าง/มืด)" id="sidebarThemeBtn">
               <i data-lucide="sun" id="sidebarThemeIcon" class="theme-toggle-icon h-4 w-4"></i>
             </button>
-            <button type="button" onclick="showToast('ภาษาปัจจุบัน: ไทย (TH)', 'info')" class="h-8 px-2 inline-flex items-center justify-center rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="เปลี่ยนภาษา">
+            <button type="button" onclick="showToast('ภาษาปัจจุบัน: ไทย (TH)', 'info')" class="h-8 px-2.5 inline-flex items-center justify-center rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer" title="เปลี่ยนภาษา">
               TH
             </button>
           </div>
-          <button type="button" onclick="logoutUser()" class="h-8 w-8 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer" title="ออกจากระบบ">
+          <button type="button" onclick="logoutUser()" class="h-8 w-8 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer" title="ออกจากระบบ">
             <i data-lucide="log-out" class="h-4 w-4"></i>
           </button>
         </div>
@@ -3583,6 +3590,18 @@ label svg, label i {
                   </div>
                   <input type="file" id="userFileInput" onchange="handleFileUpload(event, 'USER')" class="hidden" />
                 </label>
+
+                <!-- แถบแสดงความคืบหน้าการอัปโหลดไฟล์ (Progress Bar) -->
+                <div id="userFileUploadProgressContainer" class="hidden rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5 space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span id="userFileUploadName" class="font-semibold text-foreground truncate max-w-[200px]">กำลังอัปโหลด...</span>
+                    <span id="userFileUploadPercent" class="font-bold font-mono text-emerald-600 dark:text-emerald-400">0%</span>
+                  </div>
+                  <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div id="userFileUploadProgressBar" class="bg-emerald-500 h-full w-0 transition-all duration-150 rounded-full"></div>
+                  </div>
+                  <p id="userFileUploadStatusText" class="text-[11px] text-muted-foreground">กำลังประมวลผลและส่งไฟล์เข้าสู่ห้องประชุม...</p>
+                </div>
               </div>
 
               <!-- รายการการ์ดเอกสารแบบคลีน -->
@@ -4795,8 +4814,8 @@ label svg, label i {
                 </h2>
                 <p class="text-xs text-muted-foreground mt-0.5">รายชื่อสมาชิกที่ขอยกมือพูดหรือซักถาม เรียงตามลำดับเวลา</p>
               </div>
-              <button type="button" onclick="clearRaiseHandQueue()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition">
-                <i data-lucide="trash-2" class="mr-1"></i> ล้างคิวทั้งหมด
+              <button type="button" onclick="clearRaiseHandQueue()" class="w-9 h-9 rounded-full bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white transition flex items-center justify-center shadow-2xs cursor-pointer shrink-0" title="ล้างคิวยกมือทั้งหมด" aria-label="ล้างคิวยกมือทั้งหมด">
+                <i data-lucide="trash-2" class="w-4 h-4 pointer-events-none"></i>
               </button>
             </div>
             <div id="raiseHandQueueList" class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1"></div>
@@ -4942,6 +4961,18 @@ label svg, label i {
                 </div>
                 <input type="file" id="adminFileInput" onchange="handleFileUpload(event, 'ADMIN')" class="hidden" />
               </label>
+
+              <!-- แถบแสดงความคืบหน้าการอัปโหลดไฟล์ Admin (Progress Bar) -->
+              <div id="adminFileUploadProgressContainer" class="hidden rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5 space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span id="adminFileUploadName" class="font-semibold text-foreground truncate max-w-[200px]">กำลังอัปโหลด...</span>
+                  <span id="adminFileUploadPercent" class="font-bold font-mono text-emerald-600 dark:text-emerald-400">0%</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                  <div id="adminFileUploadProgressBar" class="bg-emerald-500 h-full w-0 transition-all duration-150 rounded-full"></div>
+                </div>
+                <p id="adminFileUploadStatusText" class="text-[11px] text-muted-foreground">กำลังประมวลผลและส่งไฟล์เข้าสู่ห้องประชุม...</p>
+              </div>
             </div>
 
             <!-- Box 2: Member File Upload Permissions -->
@@ -5214,6 +5245,35 @@ label svg, label i {
 
 
 
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- POP-UP MODAL: GLOBAL CONFIRMATION MODAL (ยืนยันการลบ/ดำเนินการ) -->
+  <!-- ========================================================= -->
+  <div id="globalConfirmModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-[250] p-4 select-none animate-fadeIn" onclick="if(event.target === this) closeGlobalConfirmDialog(false)">
+    <div class="bg-card border border-border rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl text-card-foreground space-y-4">
+      <div class="flex items-center gap-3">
+        <div id="globalConfirmIconWrap" class="w-11 h-11 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
+          <i data-lucide="trash-2" class="h-5 w-5"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h3 id="globalConfirmTitle" class="text-base font-bold text-foreground leading-tight">ยืนยันการลบข้อมูล</h3>
+          <p id="globalConfirmSubtitle" class="text-[11px] text-muted-foreground mt-0.5">โปรดตรวจสอบก่อนดำเนินการ</p>
+        </div>
+      </div>
+      <p id="globalConfirmMessage" class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+        คุณแน่ใจหรือไม่ว่าต้องการดำเนินการนี้ การกระทำนี้ไม่สามารถยกเลิกได้
+      </p>
+      <div class="flex items-center justify-end gap-2.5 pt-1">
+        <button type="button" id="globalConfirmCancelBtn" onclick="closeGlobalConfirmDialog(false)" class="px-4 py-2 rounded-full border border-border text-foreground hover:bg-muted font-semibold text-xs transition cursor-pointer">
+          ยกเลิก
+        </button>
+        <button type="button" id="globalConfirmActionBtn" onclick="closeGlobalConfirmDialog(true)" class="px-4 py-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer flex items-center gap-1.5">
+          <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+          <span id="globalConfirmActionText">ยืนยันการลบ</span>
+        </button>
+      </div>
+    </div>
   </div>
 
 <!-- HIDDEN PRINT TEMPLATE FOR THAI PDF GENERATION -->

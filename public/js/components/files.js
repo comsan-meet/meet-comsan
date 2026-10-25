@@ -39,6 +39,38 @@ function adminSetFilePermission(userId, status) {
   renderFileDropSection();
 }
 
+function releaseFilePermission() {
+  if (!window.currentUserId) return;
+  const me = (window.appState.users || []).find(u => u.id === window.currentUserId);
+  if (me) me.filePermission = 'NONE';
+  window.saveLocalState();
+  window.socket.emit('admin:setFilePermission', { userId: window.currentUserId, status: 'NONE' });
+  renderFileDropSection();
+  showToast('คืนสิทธิ์อัปโหลดเอกสารเรียบร้อยแล้ว', 'info');
+}
+
+function setFileUploadProgress(roleType, { visible, percent = 0, fileName = '', status = '' }) {
+  const prefix = roleType === 'USER' ? 'user' : 'admin';
+  const container = document.getElementById(`${prefix}FileUploadProgressContainer`);
+  const bar = document.getElementById(`${prefix}FileUploadProgressBar`);
+  const nameEl = document.getElementById(`${prefix}FileUploadName`);
+  const pctEl = document.getElementById(`${prefix}FileUploadPercent`);
+  const statusEl = document.getElementById(`${prefix}FileUploadStatusText`);
+
+  if (!container) return;
+
+  if (!visible) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  container.classList.remove('hidden');
+  if (bar) bar.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+  if (pctEl) pctEl.textContent = `${Math.round(percent)}%`;
+  if (nameEl && fileName) nameEl.textContent = fileName;
+  if (statusEl && status) statusEl.textContent = status;
+}
+
 function handleFileUpload(e, roleType) {
   const file = e.target.files[0];
   if (!file) return;
@@ -49,15 +81,45 @@ function handleFileUpload(e, roleType) {
     const pos = (me && me.position) ? ` (${me.position})` : '';
     uploaderName = me ? `${me.nickname || me.firstName || 'สมาชิก'}${pos}` : 'ผู้เข้าร่วมประชุม';
   }
+
+  // Show Progress Bar
+  setFileUploadProgress(roleType, {
+    visible: true,
+    percent: 15,
+    fileName: file.name,
+    status: 'กำลังอ่านข้อมูลไฟล์...'
+  });
+
   const reader = new FileReader();
+
+  reader.onprogress = function(evt) {
+    if (evt.lengthComputable) {
+      const pct = Math.min(85, Math.max(20, Math.round((evt.loaded / evt.total) * 80)));
+      setFileUploadProgress(roleType, {
+        visible: true,
+        percent: pct,
+        fileName: file.name,
+        status: `กำลังประมวลผลข้อมูล (${formatFileSize(evt.loaded)} / ${formatFileSize(evt.total)})...`
+      });
+    }
+  };
+
   reader.onload = function (evt) {
+    setFileUploadProgress(roleType, {
+      visible: true,
+      percent: 92,
+      fileName: file.name,
+      status: 'กำลังบันทึกและส่งไฟล์เข้าสู่ห้องประชุม...'
+    });
+
     const now = Date.now();
     const fileObj = {
       id: 'FILE-' + now,
       name: file.name,
       size: file.size,
-      type: file.type,
+      type: file.type || 'application/octet-stream',
       dataUrl: evt.target.result,
+      hasContent: true,
       uploaderId,
       uploaderName,
       time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
@@ -65,12 +127,39 @@ function handleFileUpload(e, roleType) {
       isPinned: false,
       pinnedAt: null
     };
+
     // Do NOT push directly to appState.files to prevent 2x duplication; ActionReducer handles it
     window.socket.emit('file:upload', fileObj);
     e.target.value = '';
+
+    setFileUploadProgress(roleType, {
+      visible: true,
+      percent: 100,
+      fileName: file.name,
+      status: 'อัปโหลดเอกสารสำเร็จเรียบร้อย!'
+    });
+
     renderFileDropSection();
     showToast(`อัปโหลดไฟล์ "${file.name}" เรียบร้อยแล้ว`, 'success');
+
+    setTimeout(() => {
+      setFileUploadProgress(roleType, { visible: false });
+    }, 1800);
   };
+
+  reader.onerror = function() {
+    setFileUploadProgress(roleType, {
+      visible: true,
+      percent: 0,
+      fileName: file.name,
+      status: 'เกิดข้อผิดพลาดในการอ่านไฟล์'
+    });
+    showToast('เกิดข้อผิดพลาดในการอ่านไฟล์', 'error');
+    setTimeout(() => {
+      setFileUploadProgress(roleType, { visible: false });
+    }, 2000);
+  };
+
   reader.readAsDataURL(file);
 }
 
@@ -78,20 +167,33 @@ function togglePinSharedFile(fileId) {
   if (window.currentRole !== 'ADMIN' || !window.isAdminAuthenticated) return;
   const file = (window.appState?.files || []).find(f => f.id === fileId);
   if (!file) return;
-  file.isPinned = !file.isPinned;
-  file.pinnedAt = file.isPinned ? Date.now() : null;
+  const targetPinned = !file.isPinned;
+  file.isPinned = targetPinned;
+  file.pinnedAt = targetPinned ? Date.now() : null;
   window.saveLocalState();
-  window.socket.emit('admin:togglePinFile', fileId);
+  window.socket.emit('admin:togglePinFile', { fileId, isPinned: targetPinned });
   renderFileDropSection();
-  showToast(file.isPinned ? `📌 ปักหมุดเอกสาร "${file.name}" ไว้บนสุดแล้ว` : `เลิกปักหมุดเอกสาร "${file.name}" แล้ว`, 'info');
+  showToast(targetPinned ? `📌 ปักหมุดเอกสาร "${file.name}" ไว้บนสุดแล้ว` : `เลิกปักหมุดเอกสาร "${file.name}" แล้ว`, 'info');
 }
 
-function deleteSharedFile(fileId) {
-  if (!confirm('ต้องการลบไฟล์นี้ออกจากห้องประชุมหรือไม่?')) return;
+async function deleteSharedFile(fileId) {
+  const f = (window.appState?.files || []).find(item => item.id === fileId);
+  const name = f ? f.name : 'เอกสารนี้';
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'ยืนยันการลบเอกสาร',
+        message: `คุณต้องการลบเอกสาร "${name}" ออกจากห้องประชุมหรือไม่? การกระทำนี้ไม่สามารถยกเลิกได้`,
+        confirmText: 'ลบเอกสาร',
+        isDanger: true,
+        icon: 'trash-2'
+      })
+    : window.confirm(`ต้องการลบเอกสาร "${name}" ออกจากห้องประชุมหรือไม่?`);
+  if (!confirmed) return;
   window.appState.files = (window.appState.files || []).filter(f => f.id !== fileId);
   window.saveLocalState();
   window.socket.emit('file:delete', fileId);
   renderFileDropSection();
+  showToast(`ลบเอกสาร "${name}" เรียบร้อยแล้ว`, 'info');
 }
 
 function formatFileUploadStamp(f) {
@@ -528,14 +630,28 @@ function renderFileDropSection() {
     const permBox = document.getElementById('userFilePermissionBox');
     const dropzone = document.getElementById('userFileDropzone');
     if (me && permBox && dropzone) {
-      if (me.filePermission === 'APPROVED' || me.checkedIn) {
-        permBox.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 text-[11px] font-bold">พร้อมแนบไฟล์</span>`;
+      if (me.filePermission === 'APPROVED') {
+        permBox.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 text-[11px] font-bold">พร้อมแนบไฟล์</span>
+            <button type="button" onclick="releaseFilePermission()" class="px-2.5 sm:px-3 py-1 rounded-full bg-rose-500/15 text-rose-600 text-[11px] sm:text-xs font-bold hover:bg-rose-600 hover:text-white transition whitespace-nowrap shrink-0 cursor-pointer" title="คืนสิทธิ์การอัปโหลดไฟล์">
+              คืนสิทธิ์
+            </button>
+          </div>
+        `;
         dropzone.classList.remove('hidden');
       } else if (me.filePermission === 'PENDING') {
-        permBox.innerHTML = `<span class="px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 text-[11px] sm:text-xs font-bold whitespace-nowrap shrink-0 inline-block">รออนุมัติ...</span>`;
+        permBox.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 text-[11px] sm:text-xs font-bold animate-pulse whitespace-nowrap shrink-0 inline-block">รออนุมัติ...</span>
+            <button type="button" onclick="releaseFilePermission()" class="px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-[10px] hover:bg-rose-500 hover:text-white transition whitespace-nowrap shrink-0 cursor-pointer">
+              ยกเลิก
+            </button>
+          </div>
+        `;
         dropzone.classList.add('hidden');
       } else {
-        permBox.innerHTML = `<button type="button" onclick="requestFileDropPermission()" class="px-3 py-1 rounded-full bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 text-[11px] sm:text-xs font-bold hover:bg-indigo-600 hover:text-white transition whitespace-nowrap shrink-0">+ ขอแนบไฟล์</button>`;
+        permBox.innerHTML = `<button type="button" onclick="requestFileDropPermission()" class="px-3 py-1 rounded-full bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 text-[11px] sm:text-xs font-bold hover:bg-indigo-600 hover:text-white transition whitespace-nowrap shrink-0 cursor-pointer">+ ขอแนบไฟล์</button>`;
         dropzone.classList.add('hidden');
       }
     }
@@ -582,11 +698,11 @@ function renderFileDropSection() {
       return `
         <div class="p-2.5 sm:p-3 rounded-xl border ${cardCls} flex items-center justify-between text-xs gap-2.5 transition">
           <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-8 h-8 rounded-lg ${st === 'PENDING' ? 'bg-amber-500 text-white' : st === 'APPROVED' ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'} font-bold text-[11px] flex items-center justify-center shrink-0">
+            <div class="w-8 h-8 rounded-full ${st === 'PENDING' ? 'bg-amber-500 text-white' : st === 'APPROVED' ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'} font-bold text-[11px] flex items-center justify-center shrink-0">
               #${originalIdx + 1}
             </div>
             <div class="min-w-0">
-              <p class="font-bold text-foreground truncate">${escapeFileHtml(u.nickname || '')}</p>
+              <p class="font-bold text-foreground truncate">${escapeFileHtml(u.nickname || u.firstName || '')}</p>
               <p class="text-[10px] truncate ${st === 'PENDING' ? 'text-amber-600 dark:text-amber-400 font-bold' : st === 'APPROVED' ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground'}">
                 ${st === 'PENDING' ? 'ขออนุญาตอัปโหลดไฟล์' : st === 'APPROVED' ? 'กำลังได้รับสิทธิ์อัปโหลด' : 'ลำดับปกติ'}
               </p>
@@ -594,10 +710,10 @@ function renderFileDropSection() {
           </div>
           <div class="shrink-0">
             ${st === 'APPROVED'
-              ? `<button type="button" onclick="adminSetFilePermission('${u.id}', 'NONE')" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold transition shadow-2xs whitespace-nowrap">เสร็จสิ้น</button>`
+              ? `<button type="button" onclick="adminSetFilePermission('${u.id}', 'NONE')" class="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold transition shadow-2xs whitespace-nowrap cursor-pointer">เสร็จสิ้น</button>`
               : st === 'PENDING'
-              ? `<div class="flex items-center gap-1.5"><button type="button" onclick="adminSetFilePermission('${u.id}', 'NONE')" class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-600 border border-rose-500/30 text-[11px] font-bold transition whitespace-nowrap !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="ไม่อนุญาต" aria-label="ไม่อนุญาต"><i data-lucide="x" class="h-4 w-4 pointer-events-none"></i></button><button type="button" onclick="adminSetFilePermission('${u.id}', 'APPROVED')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition shadow-2xs whitespace-nowrap !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="อนุญาต" aria-label="อนุญาต"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button></div>`
-              : `<button type="button" onclick="adminSetFilePermission('${u.id}', 'APPROVED')" class="px-3 py-1.5 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary border border-border text-foreground text-[11px] font-semibold transition whitespace-nowrap !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="ให้สิทธิ์" aria-label="ให้สิทธิ์"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button>`
+              ? `<div class="flex items-center gap-1.5"><button type="button" onclick="adminSetFilePermission('${u.id}', 'NONE')" class="w-8 h-8 rounded-full bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-600 border border-rose-500/30 text-[11px] font-bold transition inline-flex items-center justify-center shrink-0 cursor-pointer" title="ไม่อนุญาต" aria-label="ไม่อนุญาต"><i data-lucide="x" class="h-4 w-4 pointer-events-none"></i></button><button type="button" onclick="adminSetFilePermission('${u.id}', 'APPROVED')" class="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition shadow-2xs inline-flex items-center justify-center shrink-0 cursor-pointer" title="อนุญาต" aria-label="อนุญาต"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button></div>`
+              : `<button type="button" onclick="adminSetFilePermission('${u.id}', 'APPROVED')" class="w-8 h-8 rounded-full bg-muted hover:bg-primary/10 hover:text-primary border border-border text-foreground text-[11px] font-semibold transition inline-flex items-center justify-center shrink-0 cursor-pointer" title="ให้สิทธิ์" aria-label="ให้สิทธิ์"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button>`
             }
           </div>
         </div>
@@ -612,6 +728,7 @@ window.previewSharedFile = previewSharedFile;
 window.closeFilePreview = closeFilePreview;
 window.formatFileSize = formatFileSize;
 window.requestFileDropPermission = requestFileDropPermission;
+window.releaseFilePermission = releaseFilePermission;
 window.adminSetFilePermission = adminSetFilePermission;
 window.formatFileUploadStamp = formatFileUploadStamp;
 window.handleFileUpload = handleFileUpload;

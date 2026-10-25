@@ -1149,6 +1149,72 @@ function closeUserVersionNotesModal() {
   }
 }
 
+let globalConfirmResolve = null;
+
+function showConfirmDialog({
+  title = 'ยืนยันการทำรายการ',
+  message = 'คุณแน่ใจหรือไม่ว่าต้องการดำเนินการนี้?',
+  confirmText = 'ยืนยันการลบ',
+  cancelText = 'ยกเลิก',
+  isDanger = true,
+  icon = 'trash-2'
+} = {}) {
+  return new Promise((resolve) => {
+    globalConfirmResolve = resolve;
+    const modal = document.getElementById('globalConfirmModal');
+    const titleEl = document.getElementById('globalConfirmTitle');
+    const msgEl = document.getElementById('globalConfirmMessage');
+    const actionBtn = document.getElementById('globalConfirmActionBtn');
+    const actionText = document.getElementById('globalConfirmActionText');
+    const cancelBtn = document.getElementById('globalConfirmCancelBtn');
+    const iconWrap = document.getElementById('globalConfirmIconWrap');
+
+    if (!modal) {
+      const res = window.confirm(`${title}\n\n${message}`);
+      return resolve(res);
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message;
+    if (actionText) actionText.textContent = confirmText;
+    if (cancelBtn) cancelBtn.textContent = cancelText;
+
+    if (actionBtn) {
+      if (isDanger) {
+        actionBtn.className = 'px-4 py-2 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer flex items-center gap-1.5';
+      } else {
+        actionBtn.className = 'px-4 py-2 rounded-full gradient-primary text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer flex items-center gap-1.5';
+      }
+    }
+
+    if (iconWrap) {
+      iconWrap.className = isDanger
+        ? 'w-11 h-11 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0'
+        : 'w-11 h-11 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0';
+      iconWrap.innerHTML = `<i data-lucide="${icon || (isDanger ? 'trash-2' : 'alert-circle')}" class="h-5 w-5"></i>`;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  });
+}
+
+function closeGlobalConfirmDialog(confirmed) {
+  const modal = document.getElementById('globalConfirmModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  if (typeof globalConfirmResolve === 'function') {
+    globalConfirmResolve(Boolean(confirmed));
+    globalConfirmResolve = null;
+  }
+}
+
 // Window attachments
 window.playNotificationSound = playNotificationSound;
 window.showToast = showToast;
@@ -1192,5 +1258,7 @@ window.applyHeroBubbleAnimation = applyHeroBubbleAnimation;
 window.toggleHeroBubbleAnimation = toggleHeroBubbleAnimation;
 window.openMemberProfilePopup = openMemberProfilePopup;
 window.closeMemberProfilePopup = closeMemberProfilePopup;
+window.showConfirmDialog = showConfirmDialog;
+window.closeGlobalConfirmDialog = closeGlobalConfirmDialog;
 
 

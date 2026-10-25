@@ -380,11 +380,33 @@ function updateMeetingTimersAndBanners() {
       if (heroOnlineCheckedInBox) {
         heroOnlineCheckedInBox.classList.remove('hidden');
         heroOnlineCheckedInBox.classList.add('inline-flex');
+        if (meUser.isLate) {
+          heroOnlineCheckedInBox.className = 'w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/25 border border-amber-400/50 text-amber-200 text-xs font-semibold backdrop-blur-xs';
+          heroOnlineCheckedInBox.innerHTML = `
+            <i data-lucide="clock" class="h-4 w-4 text-amber-300"></i>
+            <span>เช็คชื่อแล้ว (มาสาย)</span>
+            <span id="heroOnlineCheckinTime" class="font-mono text-[11px] opacity-90">${meUser.checkInTimeStr ? `(${meUser.checkInTimeStr} น.)` : ''}</span>
+          `;
+        } else {
+          heroOnlineCheckedInBox.className = 'w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold backdrop-blur-xs';
+          heroOnlineCheckedInBox.innerHTML = `
+            <i data-lucide="check-circle-2" class="h-4 w-4 text-emerald-400"></i>
+            <span>เช็คชื่อเรียบร้อย</span>
+            <span id="heroOnlineCheckinTime" class="font-mono text-[11px] opacity-80">${meUser.checkInTimeStr ? `(${meUser.checkInTimeStr} น.)` : ''}</span>
+          `;
+        }
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        }
       }
-      if (heroOnlineCheckinTime) heroOnlineCheckinTime.textContent = `(${meUser.checkInTimeStr} น. • ${meUser.isLate ? 'มาสาย' : 'ทันเวลา'})`;
       if (heroUserCheckinPill) {
-        heroUserCheckinPill.textContent = 'เช็คชื่อแล้ว';
-        heroUserCheckinPill.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
+        if (meUser.isLate) {
+          heroUserCheckinPill.textContent = 'เช็คชื่อแล้ว (มาสาย)';
+          heroUserCheckinPill.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/25 text-amber-200 border border-amber-400/50 backdrop-blur-xs';
+        } else {
+          heroUserCheckinPill.textContent = 'เช็คชื่อแล้ว';
+          heroUserCheckinPill.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 backdrop-blur-xs';
+        }
       }
     } else {
       if (heroOnlineNotCheckedInBox) {
@@ -895,8 +917,8 @@ function renderAll() {
             statusBadge.className = 'px-2.5 py-0.5 text-[10px] rounded-full bg-amber-500/20 text-amber-600 font-bold';
           }
           if (heroCheckPill) {
-            heroCheckPill.textContent = `⚠️ มาสาย (${me.checkInTimeStr})`;
-            heroCheckPill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/25 text-amber-200';
+            heroCheckPill.textContent = 'เช็คชื่อแล้ว (มาสาย)';
+            heroCheckPill.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/25 text-amber-200 border border-amber-400/50 backdrop-blur-xs';
           }
           if (pCard) pCard.className = 'bg-amber-500/10 border border-amber-500/30 rounded-[24px] p-4 flex items-center gap-3.5';
           if (pIcon) pIcon.className = 'w-10 h-10 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shrink-0';
@@ -908,8 +930,8 @@ function renderAll() {
             statusBadge.className = 'px-2.5 py-0.5 text-[10px] rounded-full bg-emerald-500/20 text-emerald-600 font-bold';
           }
           if (heroCheckPill) {
-            heroCheckPill.textContent = `✔ เช็คชื่อแล้ว (${me.checkInTimeStr})`;
-            heroCheckPill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400/25 text-emerald-200';
+            heroCheckPill.textContent = 'เช็คชื่อแล้ว';
+            heroCheckPill.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 backdrop-blur-xs';
           }
           if (pCard) pCard.className = 'bg-emerald-500/10 border border-emerald-500/30 rounded-[24px] p-4 flex items-center gap-3.5';
           if (pIcon) pIcon.className = 'w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0';

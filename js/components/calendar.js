@@ -1172,14 +1172,23 @@ function saveCalendarEventFromModal() {
   closeCalendarEventModal();
 }
 
-function confirmDeleteCalendarEvent(eventId, title) {
+async function confirmDeleteCalendarEvent(eventId, title) {
   if (!isCalendarAdmin()) {
     if (typeof showToast === 'function') {
       showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถลบกิจกรรมได้', 'warning');
     }
     return;
   }
-  if (!confirm(`คุณต้องการลบกิจกรรม "${title}" ออกจากปฏิทินหรือไม่?`)) return;
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'ยืนยันการลบกิจกรรมปฏิทิน',
+        message: `คุณต้องการลบกิจกรรม "${title}" ออกจากปฏิทินหรือไม่?`,
+        confirmText: 'ลบกิจกรรม',
+        isDanger: true,
+        icon: 'trash-2'
+      })
+    : window.confirm(`คุณต้องการลบกิจกรรม "${title}" ออกจากปฏิทินหรือไม่?`);
+  if (!confirmed) return;
   window.socket.emit('admin:deleteCalendarEvent', { eventId });
   showToast(`ลบกิจกรรม "${title}" เรียบร้อยแล้ว`, 'info');
 }

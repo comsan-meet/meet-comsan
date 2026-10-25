@@ -278,8 +278,8 @@ function updateSidebarProfile() {
   const me = state && (state.users || []).find(u => u.id === userId);
 
   if (window.currentRole === 'ADMIN') {
-    nameEl.textContent = 'ผู้ดำเนินการ (ADMIN)';
-    if (roleEl) roleEl.textContent = me ? `ผู้ดูแลระบบ (${me.nickname || me.firstName})` : 'ผู้ดูแลระบบการประชุม';
+    nameEl.textContent = 'ผู้ดูแลระบบ';
+    if (roleEl) roleEl.textContent = me ? `${me.nickname || me.firstName} • ผู้ดำเนินการ` : 'ผู้ดำเนินการประชุม (ADMIN)';
     if (initialEl) initialEl.textContent = 'A';
     if (avatarContainer && typeof window.updateAvatarElement === 'function') {
       window.updateAvatarElement(avatarContainer, { nickname: 'ADMIN', id: 'ADMIN' });

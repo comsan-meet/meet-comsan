@@ -273,16 +273,31 @@ function renderStreamSection() {
 
     permListEl.innerHTML = sorted.map(({ u, originalIdx }) => {
       const st = u.streamPermission || 'NONE';
+      const cardCls = st === 'PENDING'
+        ? 'bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500/20'
+        : st === 'APPROVED'
+        ? 'bg-emerald-500/10 border-emerald-500/40'
+        : 'bg-card border-border hover:border-primary/30';
+
       return `
-        <div class="p-2.5 rounded-xl border ${st === 'PENDING' ? 'bg-amber-500/15 border-amber-500' : st === 'APPROVED' ? 'bg-emerald-500/10 border-emerald-500/40' : 'border-slate-200 dark:border-slate-800'} flex items-center justify-between text-xs gap-2">
-          <div class="truncate">
-            <span class="font-bold">#${originalIdx + 1} ${u.nickname}</span>
-            <span class="block text-[10px] ${st === 'PENDING' ? 'text-amber-500 font-bold' : st === 'APPROVED' ? 'text-emerald-500 font-bold' : 'text-slate-400'}">
-              ${st === 'PENDING' ? '🔔 ขอสิทธิ์แชร์หน้าจอ/กล้อง!' : st === 'APPROVED' ? '🎥 กำลังได้รับสิทธิ์' : 'ลำดับปกติ'}
-            </span>
+        <div class="p-2.5 sm:p-3 rounded-xl border ${cardCls} flex items-center justify-between text-xs gap-2.5 transition">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-full ${st === 'PENDING' ? 'bg-amber-500 text-white' : st === 'APPROVED' ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'} font-bold text-[11px] flex items-center justify-center shrink-0">
+              #${originalIdx + 1}
+            </div>
+            <div class="min-w-0">
+              <span class="font-bold text-foreground truncate block">${u.nickname || u.firstName || 'สมาชิก'}</span>
+              <span class="block text-[10px] truncate ${st === 'PENDING' ? 'text-amber-600 dark:text-amber-400 font-bold' : st === 'APPROVED' ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground'}">
+                ${st === 'PENDING' ? '🔔 ขอสิทธิ์แชร์หน้าจอ/กล้อง!' : st === 'APPROVED' ? '🎥 กำลังได้รับสิทธิ์' : 'ลำดับปกติ'}
+              </span>
+            </div>
           </div>
           <div class="shrink-0">
-            ${st === 'APPROVED' ? `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'NONE')" class="px-2.5 py-1 rounded bg-rose-600 text-white font-bold">เสร็จสิ้น</button>` : st === 'PENDING' ? `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'APPROVED')" class="px-2.5 py-1 rounded bg-emerald-600 text-white font-bold !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="อนุญาต" aria-label="อนุญาต"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button>` : `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'APPROVED')" class="px-2.5 py-1 rounded bg-slate-200 dark:bg-slate-800 font-bold !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="ให้สิทธิ์" aria-label="ให้สิทธิ์"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button>`}
+            ${st === 'APPROVED'
+              ? `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'NONE')" class="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold transition shadow-2xs whitespace-nowrap cursor-pointer">เสร็จสิ้น</button>`
+              : st === 'PENDING'
+              ? `<div class="flex items-center gap-1.5"><button type="button" onclick="adminSetStreamPermission('${u.id}', 'NONE')" class="w-8 h-8 rounded-full bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-600 border border-rose-500/30 text-[11px] font-bold transition inline-flex items-center justify-center shrink-0 cursor-pointer" title="ไม่อนุญาต"><i data-lucide="x" class="h-4 w-4 pointer-events-none"></i></button><button type="button" onclick="adminSetStreamPermission('${u.id}', 'APPROVED')" class="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition shadow-2xs inline-flex items-center justify-center shrink-0 cursor-pointer" title="อนุญาต"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button></div>`
+              : `<button type="button" onclick="adminSetStreamPermission('${u.id}', 'APPROVED')" class="w-8 h-8 rounded-full bg-muted hover:bg-primary/10 hover:text-primary border border-border text-foreground text-[11px] font-semibold transition inline-flex items-center justify-center shrink-0 cursor-pointer" title="ให้สิทธิ์"><i data-lucide="check" class="h-4 w-4 pointer-events-none"></i></button>`}
           </div>
         </div>
       `;

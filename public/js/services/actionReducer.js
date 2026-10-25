@@ -733,7 +733,7 @@
 
       case 'file:upload': {
         const fileObj = payload;
-        if (!fileObj || !fileObj.name || !fileObj.dataUrl) {
+        if (!fileObj || !fileObj.name || (!fileObj.dataUrl && !fileObj.hasContent)) {
           shouldPersist = false;
           break;
         }
@@ -743,7 +743,8 @@
           name: fileObj.name,
           size: fileObj.size || 0,
           type: fileObj.type || 'application/octet-stream',
-          dataUrl: fileObj.dataUrl,
+          dataUrl: fileObj.dataUrl || null,
+          hasContent: Boolean(fileObj.dataUrl || fileObj.hasContent),
           uploaderId: fileObj.uploaderId || 'ADMIN',
           uploaderName: fileObj.uploaderName || 'ADMIN',
           time: fileObj.time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
@@ -754,7 +755,11 @@
         state.files = Array.isArray(state.files) ? state.files : [];
         const existingIdx = state.files.findIndex(f => f.id === item.id);
         if (existingIdx !== -1) {
-          state.files[existingIdx] = item;
+          state.files[existingIdx] = {
+            ...state.files[existingIdx],
+            ...item,
+            dataUrl: item.dataUrl || state.files[existingIdx].dataUrl
+          };
         } else {
           state.files.push(item);
         }
@@ -768,10 +773,12 @@
       }
 
       case 'admin:togglePinFile': {
-        const fileId = payload;
+        const fileId = (typeof payload === 'object' && payload && payload.fileId) ? payload.fileId : payload;
+        const targetPinned = (typeof payload === 'object' && payload && payload.isPinned !== undefined) ? payload.isPinned : null;
+        state.files = Array.isArray(state.files) ? state.files : [];
         const file = state.files.find(f => f.id === fileId);
         if (file) {
-          file.isPinned = !file.isPinned;
+          file.isPinned = targetPinned !== null ? targetPinned : !file.isPinned;
           file.pinnedAt = file.isPinned ? Date.now() : null;
           if (file.isPinned) {
             notify('notify:event', {

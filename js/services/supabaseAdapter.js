@@ -89,7 +89,11 @@
 
         // Persist to Supabase and broadcast state to all clients
         if (shouldPersist && this.supabase) {
-          this.scheduleSaveToSupabase(window.appState);
+          if (event === 'file:upload') {
+            this.scheduleSaveToSupabase(window.appState, true);
+          } else {
+            this.scheduleSaveToSupabase(window.appState);
+          }
           this.broadcastEvent('state:update', window.appState);
         }
       } else {
@@ -108,6 +112,8 @@
           let payloadToSend = eventPayload;
           if (eventName === 'state:update' && eventPayload) {
             payloadToSend = this.prepareStateForBroadcast(eventPayload);
+          } else if (eventName === 'file:upload' && eventPayload) {
+            payloadToSend = { ...eventPayload, dataUrl: null, hasContent: true };
           }
           this.channel.send({
             type: 'broadcast',
@@ -134,10 +140,11 @@
       return clone;
     }
 
-    scheduleSaveToSupabase(state) {
+    scheduleSaveToSupabase(state, immediate = false) {
       this.pendingStateToSave = state;
       if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
 
+      const delay = immediate ? 0 : 350;
       this.saveDebounceTimer = setTimeout(async () => {
         if (!this.pendingStateToSave || !this.supabase) return;
         const stateToSave = { ...this.pendingStateToSave, activeStream: null };
