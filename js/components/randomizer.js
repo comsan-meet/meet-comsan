@@ -277,8 +277,24 @@ function playRandomizerPopupAnimation(payload) {
   const wheelBox = document.getElementById('popupWheelBox');
   const slotBox = document.getElementById('popupSlotBox');
   const slotText = document.getElementById('popupSlotText');
+  const giftBox = document.getElementById('popupGiftBox');
+  const giftLid = document.getElementById('giftBoxLid');
+  const giftWinnerCard = document.getElementById('giftWinnerCard');
+  const giftWinnerLabel = document.getElementById('giftWinnerLabel');
+  const giftAura = document.getElementById('giftAura');
+  const giftContainer = document.getElementById('giftBoxContainer');
   const winnerBanner = document.getElementById('popupWinnerBanner');
   const titleEl = document.getElementById('popupRandomTitle');
+
+  // Clear any existing spin timers
+  if (window._spinTimers && Array.isArray(window._spinTimers)) {
+    window._spinTimers.forEach(t => clearTimeout(t));
+  }
+  if (window._spinIntervals && Array.isArray(window._spinIntervals)) {
+    window._spinIntervals.forEach(i => clearInterval(i));
+  }
+  window._spinTimers = [];
+  window._spinIntervals = [];
 
   if (modal) {
     modal.classList.remove('hidden');
@@ -293,10 +309,17 @@ function playRandomizerPopupAnimation(payload) {
   const startTime = performance.now();
   const mode = (payload.mode || 'WHEEL').toUpperCase();
 
+  // Reset display elements
+  if (wheelBox) wheelBox.classList.add('hidden');
+  if (slotBox) slotBox.classList.add('hidden');
+  if (giftBox) {
+    giftBox.classList.add('hidden');
+    giftBox.classList.remove('flex');
+  }
+
   if (mode === 'WHEEL') {
     if (titleEl) titleEl.textContent = '🎡 กำลังหมุนวงล้อสุ่ม...';
     if (wheelBox) wheelBox.classList.remove('hidden');
-    if (slotBox) slotBox.classList.add('hidden');
     const sliceAngle = (Math.PI * 2) / n;
     const targetRotation = (Math.PI * 2 * 7) - (winnerIdx * sliceAngle + sliceAngle / 2);
 
@@ -311,18 +334,95 @@ function playRandomizerPopupAnimation(payload) {
       }
     }
     requestAnimationFrame(animateWheel);
+  } else if (mode === 'CARD' || mode === 'GIFT') {
+    if (titleEl) titleEl.textContent = '🎁 กำลังเปิดกล่องสุ่มของขวัญ...';
+    if (giftBox) {
+      giftBox.classList.remove('hidden');
+      giftBox.classList.add('flex');
+    }
+
+    // Reset Gift components
+    if (giftLid) {
+      giftLid.style.transform = 'translateY(0) rotate(0deg)';
+      giftLid.style.opacity = '1';
+    }
+    if (giftAura) {
+      giftAura.style.opacity = '0';
+      giftAura.style.transform = 'scale(0.75)';
+    }
+    if (giftWinnerCard) {
+      giftWinnerCard.style.transform = 'scale(0.5) translateY(0)';
+      giftWinnerCard.style.opacity = '0';
+    }
+    if (giftWinnerLabel) {
+      giftWinnerLabel.textContent = payload.winnerLabel;
+    }
+    if (giftContainer) {
+      giftContainer.style.transform = 'rotate(0deg)';
+    }
+
+    // Phase 1: Wiggle / Shake gift box excitement (0ms - 2000ms)
+    let wobbleStep = 0;
+    const wobbleInterval = setInterval(() => {
+      wobbleStep++;
+      if (!giftContainer) return;
+      const angle = (wobbleStep % 2 === 0 ? 1 : -1) * (4 + (wobbleStep % 3));
+      const jumpY = (wobbleStep % 4 === 0 ? -4 : 0);
+      giftContainer.style.transform = `rotate(${angle}deg) translateY(${jumpY}px)`;
+    }, 90);
+    window._spinIntervals.push(wobbleInterval);
+
+    // Phase 2: Lid pops off & Golden Light bursts (at 2000ms)
+    const lidTimer = setTimeout(() => {
+      clearInterval(wobbleInterval);
+      if (giftContainer) giftContainer.style.transform = 'rotate(0deg) translateY(0)';
+      if (titleEl) titleEl.textContent = '✨ กล่องของขวัญเปิดแล้ว!';
+
+      if (giftLid) {
+        giftLid.style.transform = 'translateY(-65px) rotate(-16deg)';
+        giftLid.style.opacity = '0.2';
+      }
+      if (giftAura) {
+        giftAura.style.opacity = '1';
+        giftAura.style.transform = 'scale(1.4)';
+      }
+    }, 2000);
+    window._spinTimers.push(lidTimer);
+
+    // Phase 3: Winner card floats out of the box (at 2500ms)
+    const cardTimer = setTimeout(() => {
+      if (giftWinnerCard) {
+        giftWinnerCard.style.transform = 'scale(1) translateY(-45px)';
+        giftWinnerCard.style.opacity = '1';
+      }
+      try {
+        if (typeof playNotificationSound === 'function') {
+          playNotificationSound('vote');
+        }
+      } catch (e) {}
+    }, 2500);
+    window._spinTimers.push(cardTimer);
+
+    // Phase 4: Finalize
+    const finishTimer = setTimeout(() => {
+      finishRandomSpin(payload.winnerLabel);
+    }, 3800);
+    window._spinTimers.push(finishTimer);
+
   } else {
-    if (titleEl) titleEl.textContent = mode === 'SLOT' ? '🎰 กำลังหมุนสล็อตสุ่มชื่อ...' : '🎁 กำลังเปิดกล่องสุ่มปริศนา...';
-    if (wheelBox) wheelBox.classList.add('hidden');
+    // SLOT MODE
+    if (titleEl) titleEl.textContent = '🎰 กำลังหมุนสล็อตสุ่มชื่อ...';
     if (slotBox) slotBox.classList.remove('hidden');
     const stepInterval = setInterval(() => {
       if (slotText) slotText.textContent = items[Math.floor(Math.random() * n)].label;
     }, 85);
-    setTimeout(() => {
+    window._spinIntervals.push(stepInterval);
+    const finishTimer = setTimeout(() => {
       clearInterval(stepInterval);
       if (slotText) slotText.textContent = payload.winnerLabel;
       finishRandomSpin(payload.winnerLabel);
     }, duration);
+    window._spinTimers.push(finishTimer);
   }
 }
 
@@ -342,10 +442,43 @@ function finishRandomSpin(winnerLabel) {
 }
 
 function closeRandomPopup() {
+  if (window._spinTimers && Array.isArray(window._spinTimers)) {
+    window._spinTimers.forEach(t => clearTimeout(t));
+  }
+  if (window._spinIntervals && Array.isArray(window._spinIntervals)) {
+    window._spinIntervals.forEach(i => clearInterval(i));
+  }
+  window._spinTimers = [];
+  window._spinIntervals = [];
+
   const modal = document.getElementById('randomPopupModal');
   if (modal) {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
+  }
+  const giftBox = document.getElementById('popupGiftBox');
+  const giftLid = document.getElementById('giftBoxLid');
+  const giftWinnerCard = document.getElementById('giftWinnerCard');
+  const giftAura = document.getElementById('giftAura');
+  const giftContainer = document.getElementById('giftBoxContainer');
+  if (giftBox) {
+    giftBox.classList.add('hidden');
+    giftBox.classList.remove('flex');
+  }
+  if (giftLid) {
+    giftLid.style.transform = '';
+    giftLid.style.opacity = '';
+  }
+  if (giftAura) {
+    giftAura.style.opacity = '0';
+    giftAura.style.transform = '';
+  }
+  if (giftWinnerCard) {
+    giftWinnerCard.style.transform = '';
+    giftWinnerCard.style.opacity = '0';
+  }
+  if (giftContainer) {
+    giftContainer.style.transform = '';
   }
 }
 

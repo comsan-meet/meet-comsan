@@ -295,6 +295,10 @@ function triggerRaiseHand() {
   }
 
   const me = (state.users || []).find(u => u.id === userId);
+  if (!me || !me.checkedIn) {
+    if (typeof showToast === 'function') showToast('กรุณาเช็คชื่อเข้าประชุมก่อนยกมือขอพูด', 'warning');
+    return;
+  }
   if (me && !window.socket.connected) {
     me.raiseHandCount = (me.raiseHandCount || 0) + 1;
     state.raiseHandQueue.push({
@@ -770,8 +774,6 @@ function fallbackCopyText(text) {
 // Window attachments
 window.handleUserLogin = handleUserLogin;
 window.logoutUser = logoutUser;
-window.triggerRaiseHand = triggerRaiseHand;
-
 function showLoginHelpModal() {
   const modal = document.getElementById('loginHelpModal');
   if (modal) {
@@ -895,8 +897,6 @@ window.toggleUserCameraScanner = toggleUserCameraScanner;
 window.submitUserAdminCheckinCode = submitUserAdminCheckinCode;
 window.processUserAdminQrToken = processUserAdminQrToken;
 window.copyOnlinePasscode = copyOnlinePasscode;
-window.triggerRaiseHand = triggerRaiseHand;
-
 function showLoginHelpModal() {
   const modal = document.getElementById('loginHelpModal');
   if (modal) {

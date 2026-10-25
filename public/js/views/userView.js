@@ -295,6 +295,10 @@ function triggerRaiseHand() {
   }
 
   const me = (state.users || []).find(u => u.id === userId);
+  if (!me || !me.checkedIn) {
+    if (typeof showToast === 'function') showToast('กรุณาเช็คชื่อเข้าประชุมก่อนยกมือขอพูด', 'warning');
+    return;
+  }
   if (me && !window.socket.connected) {
     me.raiseHandCount = (me.raiseHandCount || 0) + 1;
     state.raiseHandQueue.push({

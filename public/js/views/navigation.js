@@ -90,10 +90,27 @@ function updateSidebarActiveStates() {
 
   const mRaiseBtn = document.getElementById('mNav_RAISE');
   if (mRaiseBtn) {
+    const state = window.appState;
+    const queue = (state && state.raiseHandQueue) || [];
+    const qIdx = queue.findIndex(q => q.userId === window.currentUserId);
+    const isInQueue = qIdx !== -1;
+    const isSpeaker = state && state.activeSpeaker === window.currentUserId;
     const isRaiseActive = !isAdminMode && window.activeUserTab === 'RAISE';
-    mRaiseBtn.className = isRaiseActive
-      ? 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.35)] ring-2 ring-primary ring-offset-2 ring-offset-background cursor-pointer'
-      : 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)] hover:scale-105 cursor-pointer';
+
+    if (isInQueue) {
+      if (qIdx === 0 || isSpeaker) {
+        // ถึงคิวแล้ว / เป็นผู้พูด -> สีเขียว
+        mRaiseBtn.className = `absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-emerald-500 text-white active:scale-95 shadow-[0_4px_16px_rgba(16,185,129,0.5)] ring-4 ring-emerald-400/40 animate-pulse cursor-pointer ${isRaiseActive ? 'ring-offset-2 ring-offset-background' : ''}`;
+      } else {
+        // กำลังรอคิว -> สีเหลือง
+        mRaiseBtn.className = `absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-amber-500 text-slate-950 active:scale-95 shadow-[0_4px_16px_rgba(245,158,11,0.45)] ring-4 ring-amber-400/30 cursor-pointer ${isRaiseActive ? 'ring-offset-2 ring-offset-background' : ''}`;
+      }
+    } else {
+      // ไม่ได้ยกมือ -> สีเดิม
+      mRaiseBtn.className = isRaiseActive
+        ? 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.35)] ring-2 ring-primary ring-offset-2 ring-offset-background cursor-pointer'
+        : 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)] hover:scale-105 cursor-pointer';
+    }
   }
 }
 

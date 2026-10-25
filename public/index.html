@@ -1186,9 +1186,48 @@ label svg, label i {
         <canvas id="popupWheelCanvas" width="300" height="300" class="w-full h-full rounded-full shadow-card border-4 border-primary/30"></canvas>
       </div>
 
-      <!-- Slot / Card Mode -->
+      <!-- Slot Mode -->
       <div id="popupSlotBox" class="hidden py-10 px-6 rounded-2xl bg-card border-2 border-primary shadow-inner">
         <p id="popupSlotText" class="text-2xl sm:text-3xl font-extrabold text-amber-500 tracking-wide">???</p>
+      </div>
+
+      <!-- Gift Box Mode (การสุ่มแบบเปิดกล่องของขวัญ) -->
+      <div id="popupGiftBox" class="hidden relative w-64 h-64 sm:w-72 sm:h-72 mx-auto flex items-center justify-center overflow-visible select-none">
+        <!-- Golden Aura / Light Rays Background -->
+        <div id="giftAura" class="absolute inset-0 rounded-full bg-amber-400/25 blur-2xl scale-75 opacity-0 transition-all duration-700 pointer-events-none"></div>
+
+        <!-- Flying Winner Scroll/Card emerging from box -->
+        <div id="giftWinnerCard" class="absolute z-30 transform scale-50 opacity-0 transition-all duration-700 ease-out flex flex-col items-center">
+          <div class="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 font-black shadow-2xl border-2 border-white ring-4 ring-amber-400/40 text-center max-w-[240px]">
+            <span class="text-[10px] font-bold uppercase tracking-wider block text-slate-800">ผู้โชคดี</span>
+            <span id="giftWinnerLabel" class="text-base sm:text-lg block truncate font-extrabold mt-0.5">...</span>
+          </div>
+          <!-- Sparkles -->
+          <div class="flex items-center gap-1.5 mt-1 text-amber-500 font-bold text-xs animate-bounce">
+            <span>✨</span><span>🎉</span><span>✨</span>
+          </div>
+        </div>
+
+        <!-- 3D Gift Box Container -->
+        <div id="giftBoxContainer" class="relative z-20 flex flex-col items-center transition-all duration-300">
+          <!-- Gift Lid (ฝากล่อง) -->
+          <div id="giftBoxLid" class="relative z-20 w-36 sm:w-40 h-10 bg-gradient-to-r from-rose-500 via-rose-600 to-rose-700 rounded-t-xl rounded-b-sm shadow-md border-b-2 border-rose-800 flex items-center justify-center transition-all duration-700">
+            <!-- Ribbon Bow on Top -->
+            <div class="absolute -top-3 w-8 h-6 flex items-center justify-center">
+              <div class="w-3.5 h-3.5 rounded-full border-2 border-amber-300 bg-amber-400 shadow-xs"></div>
+            </div>
+            <!-- Golden Ribbon Vertical Stripe -->
+            <div class="w-7 h-full bg-gradient-to-r from-amber-300 to-amber-400 shadow-inner"></div>
+          </div>
+
+          <!-- Gift Body (ตัวกล่อง) -->
+          <div id="giftBoxBody" class="relative z-10 w-32 sm:w-36 h-28 sm:h-32 bg-gradient-to-b from-rose-600 to-rose-800 rounded-b-2xl shadow-xl flex items-center justify-center overflow-hidden border-t border-rose-700">
+            <!-- Golden Ribbon Vertical Stripe -->
+            <div class="w-7 h-full bg-gradient-to-r from-amber-300 to-amber-400 shadow-inner"></div>
+            <!-- Golden Ribbon Horizontal Stripe -->
+            <div class="absolute w-full h-7 bg-gradient-to-b from-amber-300 to-amber-400 shadow-inner"></div>
+          </div>
+        </div>
       </div>
 
       <!-- Winner Banner -->
@@ -1664,15 +1703,15 @@ label svg, label i {
         </div>
       </div>
 
-      <!-- สลับบัญชี (Switch Account / Admin Access Section - ตามภาพผู้ใช้ระบุ) -->
-      <div id="settingAdminCard" class="space-y-2 select-none">
-        <div class="px-1">
-          <h3 class="text-base font-bold text-foreground tracking-tight">สลับบัญชี</h3>
+      <!-- สลับบัญชี (Switch Account Section) - มีกรอบครอบเหมือนส่วนอื่นในการตั้งค่า -->
+      <div id="settingAdminCard" class="rounded-2xl border border-border bg-card text-card-foreground shadow-sm shadow-card p-5 sm:p-6 space-y-4 select-none">
+        <div class="space-y-1">
+          <h3 class="font-bold tracking-tight text-base sm:text-lg text-foreground">สลับบัญชี</h3>
           <p class="text-xs text-muted-foreground">แตะบัญชีที่ต้องการใช้งานเพื่อเข้าสู่ระบบ</p>
         </div>
 
         <div id="settingAdminRow" onclick="if(window.isAdminAuthenticated){ closeSettingsModal(); switchRoleView('ADMIN'); } else { requestAdminAccess(); }"
-          class="flex items-center justify-between gap-3.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-muted/40 text-card-foreground shadow-2xs hover:border-primary/40 transition-all cursor-pointer select-none group">
+          class="flex items-center justify-between gap-3.5 p-3.5 rounded-2xl border border-border bg-muted/30 hover:bg-muted/60 text-card-foreground shadow-2xs hover:border-primary/40 transition-all cursor-pointer select-none group">
           <div class="flex items-center gap-3.5 min-w-0">
             <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <i data-lucide="shield" class="h-6 w-6"></i>
@@ -1693,7 +1732,7 @@ label svg, label i {
         </div>
 
         <!-- เมื่อล็อกอินแล้ว มีปุ่มตัวเลือกสลับ หรือ ออกจากระบบ -->
-        <div id="settingAdminLoggedBox" class="hidden px-1 pt-1">
+        <div id="settingAdminLoggedBox" class="hidden pt-1">
           <div class="flex items-center gap-2">
             <button type="button" onclick="closeSettingsModal(); switchRoleView('ADMIN');"
               class="flex-1 h-9 rounded-full gradient-primary text-white font-semibold text-xs shadow-xs hover:opacity-95 transition flex items-center justify-center gap-1.5 cursor-pointer">
@@ -1747,27 +1786,13 @@ label svg, label i {
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base sm:text-lg font-bold text-foreground">คำร้องขอลาออกจากชมรม</h3>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20">เงื่อนไขพิเศษ</span>
             </div>
             <p class="text-xs text-muted-foreground">ระบบพิจารณาสละสิทธิ์สมาชิกภาพตลอดชีพ (COMSAN Resignation)</p>
           </div>
         </div>
-        <button type="button" onclick="closeEasterEggModal()" class="w-8 h-8 rounded-xl bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center transition shrink-0" title="ปิดหน้าต่าง">
+        <button type="button" onclick="closeEasterEggModal()" class="w-8 h-8 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center transition shrink-0 cursor-pointer" title="ปิดหน้าต่าง">
           <i data-lucide="x" class="text-sm"></i>
         </button>
-      </div>
-
-      <!-- ข้อความเยาะเย้ย / Teasing Notice Card -->
-      <div class="p-3.5 sm:p-4 rounded-xl bg-rose-500/10 dark:bg-rose-950/30 border border-rose-500/30 text-rose-700 dark:text-rose-300 space-y-2">
-        <div class="flex items-center gap-2 font-bold text-xs sm:text-sm">
-          <span>😈 คิดจะลาออกงั้นเหรอ? ฝันไปเถอะน้อง!</span>
-        </div>
-        <p class="text-xs leading-relaxed opacity-95">
-          ชมรมคมสันแห่งนี้ <strong>"เข้าแล้วออกไม่ได้ตลอดกาล"</strong> ถ้ายังไม่จบปริญญาตรี และไม่มีใบปริญญาบัตรตัวจริงมายื่น ก็อย่าหวังว่าจะได้ออกจากชมรมนี้เลย! อยู่ช่วยงาน ซ้อมเต้น และจัดกิจกรรมสันทนาการต่อไปยาวๆ จนกว่าจะได้ใส่ชุดครุยนะจ๊ะ! 🎓✨
-        </p>
-        <p class="text-[11px] font-semibold text-rose-600/80 dark:text-rose-400/80 pt-0.5 italic">
-          — ด้วยรักและห่วงใยจากประธานชมรมสุดหล่อ 💖
-        </p>
       </div>
 
       <!-- แนบหลักฐานใบปริญญาบัตร -->
@@ -4150,7 +4175,7 @@ label svg, label i {
                 <p class="text-xs text-muted-foreground">เลือกดูสรุปผลโหวตล่าสุด หรืออัตราการเข้าร่วมประชุม พร้อมปรับเปลี่ยนประเภทกราฟได้ตามต้องการ</p>
               </div>
 
-              <!-- Main Metric Tab: [ สรุปผลโหวต | อัตราคนเข้าประชุม ] -->
+              <!-- Main Metric Tab: [ สรุปผลโหวต | อัตราการเข้าประชุม ] -->
               <div class="flex items-center bg-muted/60 p-1 rounded-xl border border-border/60 shrink-0 w-full sm:w-auto">
                 <button type="button" onclick="setAdminChartMetric('VOTE')" id="btnChartMetric_VOTE"
                   class="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20">
@@ -4160,7 +4185,7 @@ label svg, label i {
                 <button type="button" onclick="setAdminChartMetric('ATTENDANCE')" id="btnChartMetric_ATTENDANCE"
                   class="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground">
                   <i data-lucide="users" class=""></i>
-                  <span>อัตราคนเข้าประชุม</span>
+                  <span>อัตราการเข้าประชุม</span>
                 </button>
               </div>
             </div>

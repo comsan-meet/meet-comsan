@@ -17,6 +17,11 @@ function getOptionSubText(optId, label) {
 }
 
 function selectDraftVoteOption(motionId, optionId) {
+  const me = (window.appState?.users || []).find(u => u.id === window.currentUserId);
+  if (!me || !me.checkedIn) {
+    showToast('กรุณาเช็คชื่อเข้าประชุมก่อนใช้สิทธิ์ลงมติ', 'warning');
+    return;
+  }
   window.pendingVoteChoices[motionId] = optionId;
   renderVotingCardsSafe();
 }
@@ -25,8 +30,16 @@ function confirmUserVote(motionId) {
   const userId = window.currentUserId;
   const state = window.appState;
   if (!userId || !state) return;
+  const me = (state.users || []).find(u => u.id === userId);
+  if (!me || !me.checkedIn) {
+    showToast('คุณยังไม่ได้เช็คชื่อเข้าประชุม ไม่สามารถใช้สิทธิ์ลงมติได้', 'warning');
+    return;
+  }
   const m = (state.motions || []).find(item => item.id === motionId);
-  if (!m || !m.isOpen) return;
+  if (!m || !m.isOpen) {
+    showToast('ญัตตินี้ปิดการลงคะแนนแล้ว ไม่สามารถแก้ไขได้', 'warning');
+    return;
+  }
   const chosen = window.pendingVoteChoices[motionId] || (m.votes ? m.votes[userId] : null);
   if (!chosen) {
     showToast('กรุณาแตะเลือกตัวเลือกก่อนกดยืนยันลงมติ', 'warning');
@@ -39,8 +52,17 @@ function submitUserVote(motionId, choice) {
   const userId = window.currentUserId;
   const state = window.appState;
   if (!userId || !state) return;
+  const me = (state.users || []).find(u => u.id === userId);
+  if (!me || !me.checkedIn) {
+    showToast('คุณยังไม่ได้เช็คชื่อเข้าประชุม ไม่สามารถใช้สิทธิ์ลงมติได้', 'warning');
+    return;
+  }
   const m = (state.motions || []).find(item => item.id === motionId);
-  if (!m || !m.isOpen) return;
+  if (!m || !m.isOpen) {
+    showToast('ญัตตินี้ปิดการลงคะแนนแล้ว ไม่สามารถแก้ไขได้', 'warning');
+    return;
+  }
+  const isEditing = Boolean(m.votes && m.votes[userId]);
   if (!m.votes) m.votes = {};
   m.votes[userId] = choice;
   window.pendingVoteChoices[motionId] = choice;
@@ -48,7 +70,7 @@ function submitUserVote(motionId, choice) {
   window.socket.emit('user:vote', { userId, motionId, choice });
   renderVotingCardsSafe();
   if (typeof window.renderAll === 'function') window.renderAll();
-  showToast('บันทึกผลการลงมติของคุณเรียบร้อยแล้ว!', 'success');
+  showToast(isEditing ? 'แก้ไขการลงมติของคุณเรียบร้อยแล้ว!' : 'บันทึกผลการลงมติของคุณเรียบร้อยแล้ว!', 'success');
 }
 
 function openAutoVotePopup(motionId) {
@@ -157,6 +179,8 @@ function renderVotingCardsSafe() {
     return b.originalIdx - a.originalIdx;
   });
 
+  const isCheckedIn = Boolean(me && me.checkedIn);
+
   votingArea.innerHTML = sortedMotions.map(({ mot, motNumber }) => {
     const opts = typeof window.getMotionOptions === 'function' ? window.getMotionOptions(mot) : (mot.options || []);
     const savedVote = mot.votes ? mot.votes[me.id] : null;
@@ -189,8 +213,8 @@ function renderVotingCardsSafe() {
             const safeLbl = String(opt.label || '').replace(/'/g, "\\'");
 
             return `
-              <div onclick="${isClosed ? '' : `selectDraftVoteOption('${mot.id}', '${opt.id}')`}"
-                class="w-full text-left cursor-pointer rounded-xl p-4 border transition flex flex-col gap-3 ${isSelected ? 'border-primary bg-primary/[0.05] ring-1 ring-primary/30 shadow-2xs' : 'border-border bg-card hover:border-primary/40'} ${isClosed ? 'cursor-not-allowed' : ''}">
+              <div onclick="${(!isCheckedIn || isClosed) ? '' : `selectDraftVoteOption('${mot.id}', '${opt.id}')`}"
+                class="w-full text-left cursor-pointer rounded-xl p-4 border transition flex flex-col gap-3 ${isSelected ? 'border-primary bg-primary/[0.05] ring-1 ring-primary/30 shadow-2xs' : 'border-border bg-card hover:border-primary/40'} ${(!isCheckedIn || isClosed) ? 'cursor-not-allowed opacity-80' : ''}">
                 ${opt.image ? `
                   <div class="relative w-full">
                     <img src="${opt.image}" class="w-full h-40 object-cover rounded-lg block" />
@@ -220,22 +244,34 @@ function renderVotingCardsSafe() {
           }).join('')}
         </div>
 
-        ${!isClosed ? `
+        ${!isCheckedIn ? `
+        <div class="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-center space-y-2">
+          <p class="text-xs sm:text-sm font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1.5">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500"></i>
+            คุณยังไม่ได้เช็คชื่อเข้าประชุม
+          </p>
+          <p class="text-xs text-muted-foreground">กรุณาเช็คชื่อเข้าประชุมที่หน้าหลักก่อน จึงจะมีสิทธิ์ลงมติในวาระนี้</p>
+          <button type="button" onclick="switchUserTab('HOME')" class="px-4 py-1.5 rounded-full gradient-primary text-white text-xs font-semibold shadow-xs cursor-pointer">
+            ไปหน้าเช็คชื่อ
+          </button>
+        </div>
+        ` : !isClosed ? `
         <div class="space-y-2 pt-1 text-center">
           <p class="text-xs text-muted-foreground flex items-center justify-center gap-1">
             <i data-lucide="info" class="w-4 h-4 text-primary"></i>
-            <span>${selectedOptObj ? `คุณเลือก "${selectedOptObj.label}" แล้ว • กดปุ่มด้านล่างเพื่อยืนยัน` : 'แตะเลือกตัวเลือกด้านบนเพื่อลงมติ'}</span>
+            <span>${selectedOptObj ? `คุณเลือก "${selectedOptObj.label}" แล้ว • กดปุ่มด้านล่างเพื่อ${savedVote ? 'แก้ไข' : 'ยืนยัน'}` : 'แตะเลือกตัวเลือกด้านบนเพื่อลงมติ'}</span>
           </p>
           <button type="button" onclick="confirmUserVote('${mot.id}')"
-            class="w-full h-11 rounded-xl gradient-primary text-white font-medium text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5">
-            <i data-lucide="check" class="w-4 h-4"></i> <span>ยืนยันลงมติ ${selectedOptObj ? `• ${selectedOptObj.label}` : ''}</span>
+            class="w-full h-11 rounded-full gradient-primary text-white font-bold text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5">
+            <i data-lucide="${savedVote ? 'pencil' : 'check'}" class="w-4 h-4"></i>
+            <span>${savedVote ? 'แก้ไขการลงมติ' : 'ยืนยันการลงมติ'} ${selectedOptObj ? `• ${selectedOptObj.label}` : ''}</span>
           </button>
         </div>
         ` : `
         <div class="pt-2 text-center">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 text-muted-foreground text-xs font-medium border border-border">
             <i data-lucide="lock" class="w-3.5 h-3.5"></i>
-            <span>ปิดการลงคะแนนในญัตตินี้แล้ว</span>
+            <span>ปิดการลงคะแนนในญัตตินี้แล้ว (ไม่สามารถแก้ไขได้)</span>
           </span>
         </div>
         `}
@@ -444,6 +480,8 @@ function updateRaiseHandUserUI() {
   const queue = state.raiseHandQueue || [];
   const myIdx = window.currentUserId ? queue.findIndex(q => q.userId === window.currentUserId) : -1;
   const isInQueue = myIdx !== -1;
+  const me = (state.users || []).find(u => u.id === window.currentUserId);
+  const isCheckedIn = Boolean(me && me.checkedIn);
 
   const statusPill = document.getElementById('raiseStatusPill');
   const outerCircle = document.getElementById('raiseOuterCircle');
@@ -461,21 +499,41 @@ function updateRaiseHandUserUI() {
   if (uBadgeRaise) uBadgeRaise.classList.toggle('hidden', !isInQueue);
 
   if (mNavBtn && mNavLbl) {
-    mNavBtn.className = isInQueue
-      ? 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-emerald-600 text-white active:scale-95 shadow-[0_4px_14px_rgba(5,150,105,0.4)] cursor-pointer'
-      : 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)] hover:scale-105 cursor-pointer';
+    if (isInQueue) {
+      if (myIdx === 0 || state.activeSpeaker === window.currentUserId) {
+        // ถึงคิวแล้ว / เป็นผู้พูด -> สีเขียว
+        mNavBtn.className = 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-emerald-500 text-white active:scale-95 shadow-[0_4px_16px_rgba(16,185,129,0.5)] ring-4 ring-emerald-400/40 animate-pulse cursor-pointer';
+      } else {
+        // กำลังรอคิว -> สีเหลือง
+        mNavBtn.className = 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-amber-500 text-slate-950 active:scale-95 shadow-[0_4px_16px_rgba(245,158,11,0.45)] ring-4 ring-amber-400/30 cursor-pointer';
+      }
+    } else {
+      // ไม่ได้ยกมือ -> สีเดิม
+      mNavBtn.className = 'absolute -top-5 inset-x-0 mx-auto w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 bg-primary text-primary-foreground active:scale-95 shadow-[0_4px_14px_hsl(var(--primary)/0.25)] hover:scale-105 cursor-pointer';
+    }
     mNavLbl.className = 'sr-only';
   }
 
   if (statusPill && outerCircle && mainTitle) {
     if (isInQueue) {
       const myItem = queue[myIdx];
-      statusPill.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-bold';
-      statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> อยู่ในคิวขอพูด';
-      outerCircle.className = 'w-full h-full rounded-full bg-emerald-500/15 border-8 border-emerald-500/10 flex items-center justify-center text-5xl text-emerald-600 dark:text-emerald-400 transition-all';
+      const isMyTurn = myIdx === 0 || state.activeSpeaker === window.currentUserId;
+
+      if (isMyTurn) {
+        statusPill.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-bold';
+        statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> ถึงคิวพูดของคุณแล้ว! 🎉';
+        outerCircle.className = 'w-full h-full rounded-full bg-emerald-500/20 border-8 border-emerald-500/30 flex items-center justify-center text-5xl text-emerald-600 dark:text-emerald-400 animate-pulse transition-all';
+        mainTitle.textContent = 'ถึงคิวพูดของคุณแล้ว!';
+        subDesc.textContent = 'ผู้ดำเนินการเรียกชื่อคุณแล้ว คุณสามารถกล่าวเปิดไมค์หรือซักถามได้ทันที';
+      } else {
+        statusPill.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-bold';
+        statusPill.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> กำลังรอคิวพูด (ลำดับที่ ${myIdx + 1})`;
+        outerCircle.className = 'w-full h-full rounded-full bg-amber-500/15 border-8 border-amber-500/25 flex items-center justify-center text-5xl text-amber-500 transition-all';
+        mainTitle.textContent = 'อยู่ในคิวรอพูดแล้ว';
+        subDesc.textContent = 'ระบบได้บันทึกคิวของคุณแล้ว กรุณารอประธานหรือผู้ดำเนินการเรียกชื่อ';
+      }
+
       if (checkBadge) { checkBadge.classList.remove('hidden'); checkBadge.classList.add('flex'); }
-      mainTitle.textContent = 'อยู่ในคิวรอพูดแล้ว';
-      subDesc.textContent = 'ระบบได้บันทึกคิวของคุณแล้ว กรุณารอประธานหรือผู้ดำเนินการเรียกชื่อ';
       if (myOrderNum) myOrderNum.textContent = myIdx + 1;
       if (waitBeforeNum) waitBeforeNum.textContent = myIdx;
       if (timeText) timeText.textContent = myItem ? myItem.time : '-';
@@ -483,6 +541,21 @@ function updateRaiseHandUserUI() {
         actionBtn.disabled = false;
         actionBtn.className = 'w-full py-4 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer';
         actionBtn.innerHTML = '<i data-lucide="hand" class="w-5 h-5"></i> <span>กดยกเลิกการยกมือ (เอามือลง)</span>';
+      }
+    } else if (!isCheckedIn) {
+      statusPill.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-bold';
+      statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span> ยังไม่ได้เช็คชื่อ';
+      outerCircle.className = 'w-full h-full rounded-full bg-amber-500/10 border-8 border-amber-500/20 flex items-center justify-center text-5xl text-amber-500 transition-all';
+      if (checkBadge) { checkBadge.classList.add('hidden'); checkBadge.classList.remove('flex'); }
+      mainTitle.textContent = 'กรุณาเช็คชื่อเข้าประชุมก่อน';
+      subDesc.textContent = 'คุณต้องเช็คชื่อเข้าประชุมที่หน้าหลักก่อน จึงจะมีสิทธิ์ยกมือขอพูดในที่ประชุม';
+      if (myOrderNum) myOrderNum.textContent = '-';
+      if (waitBeforeNum) waitBeforeNum.textContent = '0 คน';
+      if (timeText) timeText.textContent = 'ยังไม่ได้เช็คชื่อ';
+      if (actionBtn) {
+        actionBtn.disabled = true;
+        actionBtn.className = 'w-full py-4 rounded-2xl bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-sm border border-amber-500/30 cursor-not-allowed opacity-90 flex items-center justify-center gap-1.5';
+        actionBtn.innerHTML = '<i data-lucide="alert-circle" class="w-5 h-5"></i> <span>กรุณาเช็คชื่อเข้าประชุมก่อนยกมือ</span>';
       }
     } else if (!m.isStarted) {
       statusPill.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-muted text-muted-foreground text-xs font-bold';

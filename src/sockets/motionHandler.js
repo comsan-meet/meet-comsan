@@ -51,6 +51,8 @@ module.exports = function registerMotionHandlers(io, socket) {
   });
 
   socket.on('user:vote', ({ userId, motionId, choice }) => {
+    const user = (state.users || []).find(u => u.id === userId);
+    if (!user || !user.checkedIn) return;
     const m = state.motions.find(item => item.id === motionId);
     if (m && m.isOpen && userId) {
       if (!m.votes) m.votes = {};
@@ -61,7 +63,7 @@ module.exports = function registerMotionHandlers(io, socket) {
 
   socket.on('user:raiseHand', (userId) => {
     const user = state.users.find(u => u.id === userId);
-    if (!user) return;
+    if (!user || !user.checkedIn) return;
     user.raiseHandCount = (user.raiseHandCount || 0) + 1;
     const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const alertData = {

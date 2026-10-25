@@ -480,6 +480,11 @@
         const userId = payload;
         const user = state.users.find(u => u.id === userId);
         if (user) {
+          if (!user.checkedIn) {
+            shouldPersist = false;
+            result = { ok: false, error: 'User not checked in' };
+            break;
+          }
           user.raiseHandCount = (user.raiseHandCount || 0) + 1;
           const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
           const alertData = {
@@ -588,6 +593,12 @@
 
       case 'user:vote': {
         const { userId, motionId, choice } = payload || {};
+        const user = state.users.find(u => u.id === userId);
+        if (!user || !user.checkedIn) {
+          shouldPersist = false;
+          result = { ok: false, error: 'User not checked in' };
+          break;
+        }
         const m = state.motions.find(item => item.id === motionId);
         if (m && m.isOpen && userId) {
           if (!m.votes) m.votes = {};
