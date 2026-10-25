@@ -177,6 +177,10 @@ class HttpSocketBridge {
             const data = await r.json();
             if (data && data.status === 'success' && data.state && data.version > this.lastVersion) {
               this.lastVersion = data.version;
+              const merger = typeof window.mergeProjectsSafely === 'function' ? window.mergeProjectsSafely : null;
+              const localProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : [];
+              data.state.projects = merger ? merger(localProjects, data.state.projects || []) : (localProjects.length > 0 ? localProjects : (data.state.projects || []));
+
               if (typeof window.normalizeState === 'function') {
                 window.appState = window.normalizeState(data.state);
               } else {
@@ -293,6 +297,25 @@ class UnifiedSocketHub {
       console.warn(`[SocketHub] emit called with no active engine for event: ${event}`);
     }
   }
+
+  scheduleSaveToSupabase(state, immediate = false) {
+    if (this.engine && typeof this.engine.scheduleSaveToSupabase === 'function') {
+      return this.engine.scheduleSaveToSupabase(state, immediate);
+    } else if (window.supabaseSocketAdapter && typeof window.supabaseSocketAdapter.scheduleSaveToSupabase === 'function') {
+      return window.supabaseSocketAdapter.scheduleSaveToSupabase(state, immediate);
+    }
+  }
+
+  get lastKnownProjects() {
+    if (this.engine && this.engine.lastKnownProjects) return this.engine.lastKnownProjects;
+    if (window.supabaseSocketAdapter && window.supabaseSocketAdapter.lastKnownProjects) return window.supabaseSocketAdapter.lastKnownProjects;
+    return (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : [];
+  }
+
+  set lastKnownProjects(val) {
+    if (this.engine) this.engine.lastKnownProjects = val;
+    if (window.supabaseSocketAdapter) window.supabaseSocketAdapter.lastKnownProjects = val;
+  }
 }
 
 // Socket Connection Initialization
@@ -318,6 +341,54 @@ if (!activeEngine) {
 
 // Global permanent socket hub
 window.socket = new UnifiedSocketHub(activeEngine);
+
+// Guaranteed Cloud Persistence for Projects
+window.persistProjectsToCloud = async function(immediate = true) {
+  try {
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+
+    // 1. Supabase adapter scheduleSave
+    const sb = (window.supabaseSocketAdapter)
+      ? window.supabaseSocketAdapter
+      : ((window.socket && window.socket.engine && typeof window.socket.engine.scheduleSaveToSupabase === 'function')
+        ? window.socket.engine
+        : ((window.socket && typeof window.socket.scheduleSaveToSupabase === 'function') ? window.socket : null));
+
+    if (sb) {
+      if (window.appState && Array.isArray(window.appState.projects)) {
+        sb.lastKnownProjects = window.appState.projects;
+      }
+      sb.scheduleSaveToSupabase(window.appState, immediate);
+    }
+
+    // 2. Direct REST API fail-safe push to Supabase
+    const cfg = window.COMSAN_SUPABASE_CONFIG;
+    if (cfg && cfg.url && cfg.anonKey && window.appState) {
+      const stateToPush = (sb && typeof sb.prepareStateForBroadcast === 'function')
+        ? sb.prepareStateForBroadcast(window.appState)
+        : { ...window.appState, activeStream: null };
+
+      stateToPush.projects = Array.isArray(window.appState.projects) ? window.appState.projects : [];
+
+      fetch(`${cfg.url}/rest/v1/comsan_meeting_state?id=eq.current`, {
+        method: 'POST',
+        headers: {
+          'apikey': cfg.anonKey,
+          'Authorization': `Bearer ${cfg.anonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          id: 'current',
+          state: stateToPush,
+          updated_at: new Date().toISOString()
+        })
+      }).catch(err => console.warn('Direct cloud persist warning:', err));
+    }
+  } catch (e) {
+    console.warn('persistProjectsToCloud error:', e);
+  }
+};
 
 // Auto-check and upgrade to Supabase Realtime if credentials exist
 (async function initSupabaseCloudIfAvailable() {

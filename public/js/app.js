@@ -1040,18 +1040,11 @@ function setupSocketListeners() {
       newState.motions = uniqueM;
     }
 
-    // 1.1 Deduplicate projects to guarantee no duplicate project cards appear
-    if (Array.isArray(newState.projects)) {
-      const uniqueP = [];
-      const seenP = new Set();
-      newState.projects.forEach(p => {
-        if (p && p.id && !seenP.has(p.id)) {
-          seenP.add(p.id);
-          uniqueP.push(p);
-        }
-      });
-      newState.projects = uniqueP;
-    }
+    // 1.1 Merge & Deduplicate projects to guarantee local projects are NEVER lost
+    const merger = typeof window.mergeProjectsSafely === 'function' ? window.mergeProjectsSafely : null;
+    const localProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : [];
+    const incomingProjects = Array.isArray(newState.projects) ? newState.projects : [];
+    newState.projects = merger ? merger(localProjects, incomingProjects) : (localProjects.length > incomingProjects.length ? localProjects : incomingProjects);
 
     // 2. Track seen Raise Hand items
     const newQueue = Array.isArray(newState.raiseHandQueue) ? newState.raiseHandQueue : [];
@@ -1354,6 +1347,18 @@ function setupSocketListeners() {
 
   socket.on('admin:projectDeleted', (res) => {
     if (res && res.projectId) {
+      try {
+        const raw = localStorage.getItem('comsan_deleted_project_ids');
+        const arr = raw ? JSON.parse(raw) : [];
+        if (!arr.includes(res.projectId)) {
+          arr.push(res.projectId);
+          localStorage.setItem('comsan_deleted_project_ids', JSON.stringify(arr.slice(-200)));
+        }
+      } catch (e) {}
+      if (window.appState && Array.isArray(window.appState.projects)) {
+        window.appState.projects = window.appState.projects.filter(p => p && p.id !== res.projectId);
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+      }
       if (typeof window.getActiveDetailProjectId === 'function' && window.getActiveDetailProjectId() === res.projectId) {
         if (typeof window.closeProjectDetailModal === 'function') {
           window.closeProjectDetailModal();

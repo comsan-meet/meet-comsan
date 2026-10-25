@@ -191,15 +191,73 @@ function normalizeState(raw) {
   });
 
   const sampleProjectIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
-  const rawProjects = (Array.isArray(raw.projects) ? raw.projects : []).filter(p => p && p.id && !sampleProjectIds.has(p.id));
-  const uniqueProjects = [];
-  const seenPrjIds = new Set();
-  rawProjects.forEach(p => {
-    if (p && p.id && !seenPrjIds.has(p.id)) {
-      seenPrjIds.add(p.id);
-      uniqueProjects.push(p);
+
+  // Universal Safe Project Merger: ensures local created/edited projects are never lost
+  let deletedProjectIds = new Set();
+  try {
+    const rawDel = typeof localStorage !== 'undefined' ? localStorage.getItem('comsan_deleted_project_ids') : null;
+    if (rawDel) {
+      const parsedDel = JSON.parse(rawDel);
+      if (Array.isArray(parsedDel)) deletedProjectIds = new Set(parsedDel);
     }
-  });
+  } catch (e) {}
+
+  // Gather existing projects from local active memory or local storage
+  let existingProjects = [];
+  if (typeof window !== 'undefined' && window.appState && Array.isArray(window.appState.projects) && window.appState.projects.length > 0) {
+    existingProjects = window.appState.projects;
+  } else if (typeof localStorage !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.projects)) existingProjects = parsed.projects;
+      }
+    } catch (e) {}
+  }
+
+  const rawProjects = Array.isArray(raw.projects) ? raw.projects : [];
+  const projectMap = new Map();
+
+  function mergeProjectIntoMap(p) {
+    if (!p || !p.id) return;
+    const pid = String(p.id).trim();
+    if (sampleProjectIds.has(pid) || deletedProjectIds.has(pid)) return;
+
+    if (!projectMap.has(pid)) {
+      projectMap.set(pid, { ...p });
+    } else {
+      const current = projectMap.get(pid);
+      const currentTime = new Date(current.updatedAt || current.createdAt || 0).getTime();
+      const incomingTime = new Date(p.updatedAt || p.createdAt || 0).getTime();
+
+      if (incomingTime >= currentTime) {
+        projectMap.set(pid, {
+          ...current,
+          ...p,
+          photoFolderUrl: p.photoFolderUrl || current.photoFolderUrl || '',
+          photoCatalog: (Array.isArray(p.photoCatalog) && p.photoCatalog.length > 0) ? p.photoCatalog : (current.photoCatalog || []),
+          projectDocument: p.projectDocument || current.projectDocument,
+          budgetDocument: p.budgetDocument || current.budgetDocument
+        });
+      } else {
+        projectMap.set(pid, {
+          ...p,
+          ...current,
+          photoFolderUrl: current.photoFolderUrl || p.photoFolderUrl || '',
+          photoCatalog: (Array.isArray(current.photoCatalog) && current.photoCatalog.length > 0) ? current.photoCatalog : (p.photoCatalog || []),
+          projectDocument: current.projectDocument || p.projectDocument,
+          budgetDocument: current.budgetDocument || p.budgetDocument
+        });
+      }
+    }
+  }
+
+  // If raw has explicit project list, merge both local and raw
+  existingProjects.forEach(mergeProjectIntoMap);
+  rawProjects.forEach(mergeProjectIntoMap);
+
+  const uniqueProjects = Array.from(projectMap.values());
 
   return {
     meeting,
@@ -371,6 +429,53 @@ window.WHEEL_COLORS = WHEEL_COLORS;
 window.CUSTOM_PALETTE = CUSTOM_PALETTE;
 window.defaultState = defaultState;
 window.normalizeState = normalizeState;
+window.mergeProjectsSafely = function (localProjects, incomingProjects) {
+  const sampleProjectIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
+  let deletedProjectIds = new Set();
+  try {
+    const rawDel = typeof localStorage !== 'undefined' ? localStorage.getItem('comsan_deleted_project_ids') : null;
+    if (rawDel) {
+      const parsedDel = JSON.parse(rawDel);
+      if (Array.isArray(parsedDel)) deletedProjectIds = new Set(parsedDel);
+    }
+  } catch (e) {}
+
+  const map = new Map();
+  function processP(p) {
+    if (!p || !p.id) return;
+    const pid = String(p.id).trim();
+    if (sampleProjectIds.has(pid) || deletedProjectIds.has(pid)) return;
+    if (!map.has(pid)) {
+      map.set(pid, { ...p });
+    } else {
+      const current = map.get(pid);
+      const currentTime = new Date(current.updatedAt || current.createdAt || 0).getTime();
+      const incomingTime = new Date(p.updatedAt || p.createdAt || 0).getTime();
+      if (incomingTime >= currentTime) {
+        map.set(pid, {
+          ...current,
+          ...p,
+          photoFolderUrl: p.photoFolderUrl || current.photoFolderUrl || '',
+          photoCatalog: (Array.isArray(p.photoCatalog) && p.photoCatalog.length > 0) ? p.photoCatalog : (current.photoCatalog || []),
+          projectDocument: p.projectDocument || current.projectDocument,
+          budgetDocument: p.budgetDocument || current.budgetDocument
+        });
+      } else {
+        map.set(pid, {
+          ...p,
+          ...current,
+          photoFolderUrl: current.photoFolderUrl || p.photoFolderUrl || '',
+          photoCatalog: (Array.isArray(current.photoCatalog) && current.photoCatalog.length > 0) ? current.photoCatalog : (p.photoCatalog || []),
+          projectDocument: current.projectDocument || p.projectDocument,
+          budgetDocument: current.budgetDocument || p.budgetDocument
+        });
+      }
+    }
+  }
+  if (Array.isArray(localProjects)) localProjects.forEach(processP);
+  if (Array.isArray(incomingProjects)) incomingProjects.forEach(processP);
+  return Array.from(map.values());
+};
 window.saveLocalState = saveLocalState;
 window.emergencyResetCache = emergencyResetCache;
 

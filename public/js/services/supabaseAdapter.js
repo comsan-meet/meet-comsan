@@ -17,6 +17,8 @@
       this.attendanceTimer = null;
       this.lastSyncTimestamp = 0;
       this.isSaving = false;
+      this.lastKnownProjects = [];
+      window.supabaseSocketAdapter = this;
     }
 
     on(event, callback) {
@@ -189,19 +191,12 @@
         const stateToSave = this.prepareStateForBroadcast(this.pendingStateToSave);
         this.pendingStateToSave = null;
 
-        const sampleIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
-        if (!Array.isArray(stateToSave.projects)) {
-          if (Array.isArray(this.lastKnownProjects)) {
-            stateToSave.projects = this.lastKnownProjects.filter(p => p && p.id && !sampleIds.has(p.id));
-          } else if (window.appState && Array.isArray(window.appState.projects)) {
-            stateToSave.projects = window.appState.projects.filter(p => p && p.id && !sampleIds.has(p.id));
-          } else {
-            stateToSave.projects = [];
-          }
-        } else {
-          stateToSave.projects = stateToSave.projects.filter(p => p && p.id && !sampleIds.has(p.id));
-          this.lastKnownProjects = stateToSave.projects;
-        }
+        const merger = typeof window.mergeProjectsSafely === 'function' ? window.mergeProjectsSafely : null;
+        const localProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : (this.lastKnownProjects || []);
+        const targetProjects = Array.isArray(stateToSave.projects) ? stateToSave.projects : [];
+        const finalProjects = merger ? merger(localProjects, targetProjects) : (localProjects.length >= targetProjects.length ? localProjects : targetProjects);
+        stateToSave.projects = finalProjects;
+        this.lastKnownProjects = finalProjects;
 
         try {
           this.isSaving = true;
@@ -308,15 +303,17 @@
               this.lastSyncedUpdatedAt = full.updated_at;
               this.lastSyncTimestamp = new Date(full.updated_at).getTime();
 
-              // Preserve projects if remote state lacks projects
-              const sampleIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
-              if (Array.isArray(full.state.projects)) {
-                full.state.projects = full.state.projects.filter(p => p && p.id && !sampleIds.has(p.id));
-                this.lastKnownProjects = full.state.projects;
-              } else if (Array.isArray(this.lastKnownProjects)) {
-                full.state.projects = this.lastKnownProjects.filter(p => p && p.id && !sampleIds.has(p.id));
-              } else {
-                full.state.projects = [];
+              // Preserve projects with safe merger
+              const merger = typeof window.mergeProjectsSafely === 'function' ? window.mergeProjectsSafely : null;
+              const localProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : (this.lastKnownProjects || []);
+              const incomingProjects = Array.isArray(full.state.projects) ? full.state.projects : [];
+              const finalMerged = merger ? merger(localProjects, incomingProjects) : (localProjects.length >= incomingProjects.length ? localProjects : incomingProjects);
+              full.state.projects = finalMerged;
+              this.lastKnownProjects = finalMerged;
+
+              // If local had projects that remote DB was missing, heal remote DB immediately!
+              if (localProjects.length > incomingProjects.length) {
+                this.scheduleSaveToSupabase(window.appState, true);
               }
 
               if (typeof window.normalizeState === 'function') {
@@ -354,15 +351,17 @@
         if (data && data.state) {
           this.lastSyncTimestamp = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
 
-          // Preserve projects if remote state lacks projects
-          const sampleIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
-          if (Array.isArray(data.state.projects)) {
-            data.state.projects = data.state.projects.filter(p => p && p.id && !sampleIds.has(p.id));
-            this.lastKnownProjects = data.state.projects;
-          } else if (Array.isArray(this.lastKnownProjects)) {
-            data.state.projects = this.lastKnownProjects.filter(p => p && p.id && !sampleIds.has(p.id));
-          } else {
-            data.state.projects = [];
+          // Preserve projects with safe merger
+          const merger = typeof window.mergeProjectsSafely === 'function' ? window.mergeProjectsSafely : null;
+          const localProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : (this.lastKnownProjects || []);
+          const incomingProjects = Array.isArray(data.state.projects) ? data.state.projects : [];
+          const finalMerged = merger ? merger(localProjects, incomingProjects) : (localProjects.length >= incomingProjects.length ? localProjects : incomingProjects);
+          data.state.projects = finalMerged;
+          this.lastKnownProjects = finalMerged;
+
+          // If local had projects that remote DB was missing, heal remote DB immediately!
+          if (localProjects.length > incomingProjects.length) {
+            this.scheduleSaveToSupabase(window.appState, true);
           }
 
           if (typeof window.normalizeState === 'function') {
@@ -446,6 +445,14 @@
                 }
               });
             }
+            // Merge projects so broadcast never wipes out local projects
+            const merger = typeof window.mergeProjectsSafely === 'function' ? window.mergeProjectsSafely : null;
+            const localProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : (this.lastKnownProjects || []);
+            const incomingProjects = Array.isArray(payload.projects) ? payload.projects : [];
+            const finalMerged = merger ? merger(localProjects, incomingProjects) : (localProjects.length >= incomingProjects.length ? localProjects : incomingProjects);
+            payload.projects = finalMerged;
+            this.lastKnownProjects = finalMerged;
+
             if (typeof window.normalizeState === 'function') {
               window.appState = window.normalizeState(payload);
             } else {
@@ -579,12 +586,16 @@
       }, (payload) => {
         if (payload.new && payload.new.state && !this.isSaving) {
           const remoteState = payload.new.state;
-          if (Array.isArray(remoteState.projects)) {
-            this.lastKnownProjects = remoteState.projects;
-          } else if (Array.isArray(this.lastKnownProjects)) {
-            remoteState.projects = this.lastKnownProjects;
-          } else if (window.appState && Array.isArray(window.appState.projects)) {
-            remoteState.projects = window.appState.projects;
+          const merger = typeof window.mergeProjectsSafely === 'function' ? window.mergeProjectsSafely : null;
+          const localProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : (this.lastKnownProjects || []);
+          const incomingProjects = Array.isArray(remoteState.projects) ? remoteState.projects : [];
+          const finalMerged = merger ? merger(localProjects, incomingProjects) : (localProjects.length >= incomingProjects.length ? localProjects : incomingProjects);
+          remoteState.projects = finalMerged;
+          this.lastKnownProjects = finalMerged;
+
+          // If local had projects that remote DB was missing, heal remote DB immediately!
+          if (localProjects.length > incomingProjects.length) {
+            this.scheduleSaveToSupabase(window.appState, true);
           }
 
           if (typeof window.normalizeState === 'function') {
@@ -641,9 +652,10 @@
         });
 
         if (changed) {
-          if (!Array.isArray(state.projects)) {
-            state.projects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : (this.lastKnownProjects || []);
-          }
+          const merger = typeof window.mergeProjectsSafely === 'function' ? window.mergeProjectsSafely : null;
+          const localProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : (this.lastKnownProjects || []);
+          state.projects = merger ? merger(localProjects, state.projects || []) : localProjects;
+          this.lastKnownProjects = state.projects;
           if (typeof window.saveLocalState === 'function') window.saveLocalState();
           this.scheduleSaveToSupabase(state);
           this.broadcastEvent('state:update', state);

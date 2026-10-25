@@ -3497,12 +3497,18 @@
 
       // Guarantee immediate direct persistence to Supabase without delay
       try {
-        const sb = (window.socket && window.socket.engine && typeof window.socket.engine.scheduleSaveToSupabase === 'function')
-          ? window.socket.engine
-          : ((window.socket && typeof window.socket.scheduleSaveToSupabase === 'function') ? window.socket : null);
-        if (sb) {
-          sb.lastKnownProjects = window.appState.projects;
-          sb.scheduleSaveToSupabase(window.appState, true);
+        if (typeof window.persistProjectsToCloud === 'function') {
+          window.persistProjectsToCloud(true);
+        } else {
+          const sb = (window.supabaseSocketAdapter)
+            ? window.supabaseSocketAdapter
+            : ((window.socket && window.socket.engine && typeof window.socket.engine.scheduleSaveToSupabase === 'function')
+              ? window.socket.engine
+              : ((window.socket && typeof window.socket.scheduleSaveToSupabase === 'function') ? window.socket : null));
+          if (sb) {
+            sb.lastKnownProjects = window.appState.projects;
+            sb.scheduleSaveToSupabase(window.appState, true);
+          }
         }
       } catch (e) {}
     }
@@ -3542,6 +3548,14 @@
 
     if (!confirmed) return;
 
+    // Record in deleted projects list so it can never be accidentally revived by sync
+    try {
+      const raw = localStorage.getItem('comsan_deleted_project_ids');
+      const arr = raw ? JSON.parse(raw) : [];
+      if (!arr.includes(projectId)) arr.push(projectId);
+      localStorage.setItem('comsan_deleted_project_ids', JSON.stringify(arr.slice(-200)));
+    } catch (e) {}
+
     if (window.socket && typeof window.socket.emit === 'function') {
       window.socket.emit('admin:deleteProject', { projectId });
     }
@@ -3552,12 +3566,18 @@
 
       // Guarantee immediate direct persistence to Supabase without delay
       try {
-        const sb = (window.socket && window.socket.engine && typeof window.socket.engine.scheduleSaveToSupabase === 'function')
-          ? window.socket.engine
-          : ((window.socket && typeof window.socket.scheduleSaveToSupabase === 'function') ? window.socket : null);
-        if (sb) {
-          sb.lastKnownProjects = window.appState.projects;
-          sb.scheduleSaveToSupabase(window.appState, true);
+        if (typeof window.persistProjectsToCloud === 'function') {
+          window.persistProjectsToCloud(true);
+        } else {
+          const sb = (window.supabaseSocketAdapter)
+            ? window.supabaseSocketAdapter
+            : ((window.socket && window.socket.engine && typeof window.socket.engine.scheduleSaveToSupabase === 'function')
+              ? window.socket.engine
+              : ((window.socket && typeof window.socket.scheduleSaveToSupabase === 'function') ? window.socket : null));
+          if (sb) {
+            sb.lastKnownProjects = window.appState.projects;
+            sb.scheduleSaveToSupabase(window.appState, true);
+          }
         }
       } catch (e) {}
     }
