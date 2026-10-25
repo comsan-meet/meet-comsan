@@ -1118,6 +1118,15 @@
     return unique;
   }
 
+  function escapeJs(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;')
+      .replace(/\r?\n/g, ' ');
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -1466,7 +1475,19 @@
             return `
               <div class="pt-1 flex items-center gap-2.5">
                 <img src="${leaderAvatar}" alt="${escapeHtml(primaryLeader.name || 'ผู้รับผิดชอบ')}"
-                  class="w-7 h-7 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs"
+                  onclick="window.openPersonPhotoPreviewModal && window.openPersonPhotoPreviewModal({
+                    name: '${escapeJs(primaryLeader.name || '')}',
+                    nickname: '${escapeJs(primaryLeader.nickname || '')}',
+                    role: '${escapeJs(primaryLeader.role || '')}',
+                    department: '${escapeJs(primaryLeader.department || '')}',
+                    avatar: '${escapeJs(leaderAvatar)}',
+                    phone: '${escapeJs(primaryLeader.phone || '')}',
+                    kkuMail: '${escapeJs(primaryLeader.kkuMail || '')}',
+                    contactLink: '${escapeJs(primaryLeader.contactLink || '')}',
+                    details: '${escapeJs(primaryLeader.details || '')}'
+                  })"
+                  class="w-7 h-7 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs cursor-pointer hover:ring-2 hover:ring-primary hover:scale-110 transition-all duration-200"
+                  title="คลิกเพื่อดูรูปโปรไฟล์"
                   onerror="this.onerror=null; this.src='${leaderFallback}';" />
                 <div class="min-w-0 flex-1">
                   <p class="text-xs font-bold text-foreground truncate">
@@ -1880,7 +1901,15 @@
     const deleteBtn = document.getElementById('prjDetailDeleteBtn');
     const isAdmin = window.currentRole === 'ADMIN';
 
-    if (adminActions) adminActions.classList.toggle('hidden', !isAdmin);
+    if (adminActions) {
+      if (isAdmin) {
+        adminActions.classList.remove('hidden');
+        adminActions.classList.add('flex');
+      } else {
+        adminActions.classList.add('hidden');
+        adminActions.classList.remove('flex');
+      }
+    }
     if (editBtn) {
       editBtn.onclick = () => {
         closeProjectDetailModal();
@@ -1899,6 +1928,111 @@
     modal.classList.add('flex');
     if (typeof window.refreshIcons === 'function') window.refreshIcons();
     else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  // Person Photo Preview Lightbox Modal
+  function openPersonPhotoPreviewModal(person) {
+    if (!person) return;
+    const modal = document.getElementById('personPhotoPreviewModal');
+    if (!modal) return;
+
+    const nameEl = document.getElementById('personPhotoModalName');
+    const nicknameEl = document.getElementById('personPhotoModalNickname');
+    const roleEl = document.getElementById('personPhotoModalRole');
+    const deptEl = document.getElementById('personPhotoModalDept');
+    const imgEl = document.getElementById('personPhotoModalImg');
+    const fullLinkEl = document.getElementById('personPhotoModalFullLink');
+    const detailsWrapper = document.getElementById('personPhotoModalDetailsWrapper');
+    const detailsEl = document.getElementById('personPhotoModalDetails');
+    const phoneBtn = document.getElementById('personPhotoModalPhoneBtn');
+    const phoneText = document.getElementById('personPhotoModalPhoneText');
+    const mailBtn = document.getElementById('personPhotoModalMailBtn');
+    const mailText = document.getElementById('personPhotoModalMailText');
+    const linkBtn = document.getElementById('personPhotoModalLinkBtn');
+
+    const name = person.name || 'ไม่ระบุชื่อ';
+    const nickname = person.nickname ? `(${person.nickname})` : '';
+    const seed = person.nickname || person.name || 'member';
+    const fallback = getCuteAvatarUrl(seed);
+    const avatar = person.avatar || fallback;
+
+    if (nameEl) nameEl.textContent = name;
+    if (nicknameEl) nicknameEl.textContent = nickname;
+    if (roleEl) roleEl.textContent = person.role || 'สมาชิกโครงการ';
+
+    if (deptEl) {
+      if (person.department) {
+        deptEl.textContent = person.department;
+        deptEl.classList.remove('hidden');
+      } else {
+        deptEl.classList.add('hidden');
+      }
+    }
+
+    if (imgEl) {
+      imgEl.src = avatar;
+      imgEl.onerror = () => { imgEl.src = fallback; };
+    }
+
+    if (fullLinkEl) {
+      if (person.avatar && (person.avatar.startsWith('http') || person.avatar.startsWith('//'))) {
+        fullLinkEl.href = person.avatar;
+        fullLinkEl.classList.remove('hidden');
+      } else {
+        fullLinkEl.classList.add('hidden');
+      }
+    }
+
+    if (detailsWrapper && detailsEl) {
+      if (person.details && person.details.trim()) {
+        detailsEl.textContent = person.details.trim();
+        detailsWrapper.classList.remove('hidden');
+      } else {
+        detailsWrapper.classList.add('hidden');
+      }
+    }
+
+    if (phoneBtn && phoneText) {
+      if (person.phone) {
+        phoneBtn.href = `tel:${person.phone}`;
+        phoneText.textContent = person.phone;
+        phoneBtn.classList.remove('hidden');
+      } else {
+        phoneBtn.classList.add('hidden');
+      }
+    }
+
+    if (mailBtn && mailText) {
+      if (person.kkuMail) {
+        mailBtn.href = `mailto:${person.kkuMail}`;
+        mailText.textContent = person.kkuMail;
+        mailBtn.classList.remove('hidden');
+      } else {
+        mailBtn.classList.add('hidden');
+      }
+    }
+
+    if (linkBtn) {
+      if (person.contactLink) {
+        linkBtn.href = person.contactLink;
+        linkBtn.classList.remove('hidden');
+      } else {
+        linkBtn.classList.add('hidden');
+      }
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function closePersonPhotoPreviewModal() {
+    const modal = document.getElementById('personPhotoPreviewModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
   }
 
   function closeProjectDetailModal() {
@@ -2064,7 +2198,19 @@
           <td class="py-3 px-3">
             <div class="flex items-center gap-2.5">
               <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}"
-                class="w-8 h-8 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs"
+                onclick="window.openPersonPhotoPreviewModal && window.openPersonPhotoPreviewModal({
+                  name: '${escapeJs(name)}',
+                  nickname: '${escapeJs(m.nickname || '')}',
+                  role: '${escapeJs(m.role || '')}',
+                  department: '${escapeJs(dept)}',
+                  avatar: '${escapeJs(avatarUrl)}',
+                  phone: '${escapeJs(m.phone || '')}',
+                  kkuMail: '${escapeJs(m.kkuMail || '')}',
+                  contactLink: '${escapeJs(m.contactLink || '')}',
+                  details: '${escapeJs(m.details || '')}'
+                })"
+                class="w-8 h-8 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs cursor-pointer hover:ring-2 hover:ring-primary hover:scale-110 transition-all duration-200"
+                title="คลิกเพื่อดูรูปโปรไฟล์ขนาดเต็ม"
                 onerror="this.onerror=null; this.src='${fallbackUrl}';" />
               <div class="min-w-0">
                 <p class="font-bold text-foreground text-xs truncate" title="${escapeHtml(name)} ${escapeHtml(nickname)}">
@@ -2529,7 +2675,19 @@
           <div class="space-y-2">
             <div class="flex items-start gap-3">
               <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}"
-                class="w-12 h-12 rounded-2xl object-cover ring-2 ring-primary/20 shrink-0 shadow-sm"
+                onclick="window.openPersonPhotoPreviewModal && window.openPersonPhotoPreviewModal({
+                  name: '${escapeJs(name)}',
+                  nickname: '${escapeJs(person.nickname || '')}',
+                  role: '${escapeJs(role)}',
+                  department: '${escapeJs(person.department || '')}',
+                  avatar: '${escapeJs(avatarUrl)}',
+                  phone: '${escapeJs(person.phone || '')}',
+                  kkuMail: '${escapeJs(person.kkuMail || '')}',
+                  contactLink: '${escapeJs(person.contactLink || '')}',
+                  details: '${escapeJs(person.details || '')}'
+                })"
+                class="w-12 h-12 rounded-2xl object-cover ring-2 ring-primary/20 shrink-0 shadow-sm cursor-pointer hover:ring-primary hover:scale-105 transition-all duration-200"
+                title="คลิกเพื่อดูรูปโปรไฟล์ขนาดเต็ม"
                 onerror="this.onerror=null; this.src='${fallbackUrl}';" />
 
               <div class="min-w-0 flex-1">
@@ -3436,6 +3594,8 @@
     window.openDriveCatalogListModal = openDriveCatalogListModal;
     window.closeDriveCatalogListModal = closeDriveCatalogListModal;
     window.filterDriveCatalogGrid = filterDriveCatalogGrid;
+    window.openPersonPhotoPreviewModal = openPersonPhotoPreviewModal;
+    window.closePersonPhotoPreviewModal = closePersonPhotoPreviewModal;
   }
 
   return {
@@ -3512,6 +3672,8 @@
     closeDriveCatalogListModal,
     filterDriveCatalogGrid,
     extractDriveFolderId,
-    findPhotoInCatalog
+    findPhotoInCatalog,
+    openPersonPhotoPreviewModal,
+    closePersonPhotoPreviewModal
   };
 });
