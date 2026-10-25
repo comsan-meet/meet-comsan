@@ -1159,6 +1159,20 @@ function setupSocketListeners() {
     }
   });
 
+  socket.on('user:statusNote', (data) => {
+    if (!data || !data.userId) return;
+    const state = window.appState;
+    if (state && Array.isArray(state.users)) {
+      const u = state.users.find(user => user.id === data.userId);
+      if (u) {
+        u.statusNote = typeof data.statusNote === 'string' ? data.statusNote.trim().slice(0, 60) : '';
+        u.statusNoteUpdatedAt = u.statusNote ? (data.updatedAt || Date.now()) : null;
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+        if (typeof window.renderAll === 'function') window.renderAll();
+      }
+    }
+  });
+
   socket.on('stream:frameUpdate', (streamData) => {
     if (!streamData || !streamData.frameDataUrl) return;
     const uImg = document.getElementById('userLiveStreamViewer');

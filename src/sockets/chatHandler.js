@@ -72,6 +72,11 @@ module.exports = function registerChatHandlers(io, socket) {
       user.statusNote = payload.statusNote ? String(payload.statusNote).trim().slice(0, 60) : '';
       user.statusNoteUpdatedAt = user.statusNote ? Date.now() : null;
       stateService.persistAndBroadcast();
+      io.emit('user:statusNote', {
+        userId: payload.userId,
+        statusNote: user.statusNote,
+        updatedAt: user.statusNoteUpdatedAt
+      });
     }
   });
 };

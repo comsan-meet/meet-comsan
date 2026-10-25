@@ -472,7 +472,12 @@
           user.statusNote = statusNote ? String(statusNote).trim().slice(0, 60) : '';
           user.statusNoteUpdatedAt = user.statusNote ? Date.now() : null;
         }
-        result = { ok: true };
+        notify('user:statusNote', {
+          userId,
+          statusNote: user ? user.statusNote : '',
+          updatedAt: user ? user.statusNoteUpdatedAt : null
+        });
+        result = { ok: true, userId, statusNote: user ? user.statusNote : '' };
         break;
       }
 

@@ -331,6 +331,7 @@
         'notify:chat',
         'notify:event',
         'random:spin',
+        'user:statusNote',
         'file:upload',
         'file:delete',
         'stream:frameUpdate',
@@ -375,6 +376,17 @@
               state.files = state.files.filter(f => f.id !== payload);
               if (typeof window.saveLocalState === 'function') window.saveLocalState();
               if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
+            }
+          } else if (evt === 'user:statusNote' && payload) {
+            const state = window.appState;
+            if (state && Array.isArray(state.users)) {
+              const u = state.users.find(user => user.id === payload.userId);
+              if (u) {
+                u.statusNote = typeof payload.statusNote === 'string' ? payload.statusNote.trim().slice(0, 60) : '';
+                u.statusNoteUpdatedAt = u.statusNote ? (payload.updatedAt || Date.now()) : null;
+                if (typeof window.saveLocalState === 'function') window.saveLocalState();
+                if (typeof window.renderAll === 'function') window.renderAll();
+              }
             }
           }
           this.triggerLocal(evt, payload);
