@@ -190,9 +190,15 @@ function normalizeState(raw) {
     }
   });
 
-  const rawProjects = Array.isArray(raw.projects)
-    ? raw.projects
-    : ((typeof defaultProjects !== 'undefined') ? defaultProjects : (defaultState.projects || []));
+  let rawProjects;
+  if (Array.isArray(raw.projects)) {
+    rawProjects = raw.projects;
+  } else if (raw && raw.meeting && (raw.meeting.isStarted || (Array.isArray(raw.users) && raw.users.length > 0))) {
+    // Existing database/meeting state: NEVER resurrect deleted default projects!
+    rawProjects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : [];
+  } else {
+    rawProjects = (typeof defaultProjects !== 'undefined') ? defaultProjects : (defaultState.projects || []);
+  }
   const uniqueProjects = [];
   const seenPrjIds = new Set();
   rawProjects.forEach(p => {

@@ -1428,6 +1428,16 @@
     }
     if (typeof saveLocalState === 'function') saveLocalState();
 
+    try {
+      const sb = (window.socket && window.socket.engine && typeof window.socket.engine.scheduleSaveToSupabase === 'function')
+        ? window.socket.engine
+        : ((window.socket && typeof window.socket.scheduleSaveToSupabase === 'function') ? window.socket : null);
+      if (sb) {
+        sb.lastKnownProjects = window.appState.projects;
+        sb.scheduleSaveToSupabase(window.appState, true);
+      }
+    } catch (e) {}
+
     renderProjectMembersTableView(p);
     if (typeof showToast === 'function') {
       showToast(`ลบ "${memberName}" ออกจากโครงการแล้ว`, 'info');
@@ -2122,6 +2132,17 @@
       });
       window.appState.projects = uPrjs;
       if (typeof saveLocalState === 'function') saveLocalState();
+
+      // Guarantee immediate direct persistence to Supabase without delay
+      try {
+        const sb = (window.socket && window.socket.engine && typeof window.socket.engine.scheduleSaveToSupabase === 'function')
+          ? window.socket.engine
+          : ((window.socket && typeof window.socket.scheduleSaveToSupabase === 'function') ? window.socket : null);
+        if (sb) {
+          sb.lastKnownProjects = window.appState.projects;
+          sb.scheduleSaveToSupabase(window.appState, true);
+        }
+      } catch (e) {}
     }
 
     closeAdminProjectEditModal();
@@ -2166,6 +2187,17 @@
     if (window.appState && Array.isArray(window.appState.projects)) {
       window.appState.projects = window.appState.projects.filter(p => p && p.id !== projectId);
       if (typeof saveLocalState === 'function') saveLocalState();
+
+      // Guarantee immediate direct persistence to Supabase without delay
+      try {
+        const sb = (window.socket && window.socket.engine && typeof window.socket.engine.scheduleSaveToSupabase === 'function')
+          ? window.socket.engine
+          : ((window.socket && typeof window.socket.scheduleSaveToSupabase === 'function') ? window.socket : null);
+        if (sb) {
+          sb.lastKnownProjects = window.appState.projects;
+          sb.scheduleSaveToSupabase(window.appState, true);
+        }
+      } catch (e) {}
     }
 
     // If detail modal is currently showing the deleted project, close it!

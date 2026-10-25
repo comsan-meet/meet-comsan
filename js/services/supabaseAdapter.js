@@ -188,6 +188,19 @@
         const stateToSave = this.prepareStateForBroadcast(this.pendingStateToSave);
         this.pendingStateToSave = null;
 
+        // CRITICAL SAFEGUARD: Ensure projects array is ALWAYS preserved and never wiped out by partial updates
+        if (!Array.isArray(stateToSave.projects)) {
+          if (Array.isArray(this.lastKnownProjects)) {
+            stateToSave.projects = this.lastKnownProjects;
+          } else if (window.appState && Array.isArray(window.appState.projects)) {
+            stateToSave.projects = window.appState.projects;
+          } else {
+            stateToSave.projects = [];
+          }
+        } else {
+          this.lastKnownProjects = stateToSave.projects;
+        }
+
         try {
           this.isSaving = true;
           const newUpdatedAt = new Date().toISOString();
@@ -293,6 +306,15 @@
               this.lastSyncedUpdatedAt = full.updated_at;
               this.lastSyncTimestamp = new Date(full.updated_at).getTime();
 
+              // Preserve projects if remote state lacks projects
+              if (Array.isArray(full.state.projects)) {
+                this.lastKnownProjects = full.state.projects;
+              } else if (Array.isArray(this.lastKnownProjects)) {
+                full.state.projects = this.lastKnownProjects;
+              } else if (window.appState && Array.isArray(window.appState.projects)) {
+                full.state.projects = window.appState.projects;
+              }
+
               if (typeof window.normalizeState === 'function') {
                 window.appState = window.normalizeState(full.state);
               } else {
@@ -327,6 +349,16 @@
 
         if (data && data.state) {
           this.lastSyncTimestamp = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
+
+          // Preserve projects if remote state lacks projects
+          if (Array.isArray(data.state.projects)) {
+            this.lastKnownProjects = data.state.projects;
+          } else if (Array.isArray(this.lastKnownProjects)) {
+            data.state.projects = this.lastKnownProjects;
+          } else if (window.appState && Array.isArray(window.appState.projects) && window.appState.projects.length > 0) {
+            data.state.projects = window.appState.projects;
+          }
+
           if (typeof window.normalizeState === 'function') {
             window.appState = window.normalizeState(data.state);
           } else {
@@ -540,10 +572,19 @@
         filter: 'id=eq.current'
       }, (payload) => {
         if (payload.new && payload.new.state && !this.isSaving) {
+          const remoteState = payload.new.state;
+          if (Array.isArray(remoteState.projects)) {
+            this.lastKnownProjects = remoteState.projects;
+          } else if (Array.isArray(this.lastKnownProjects)) {
+            remoteState.projects = this.lastKnownProjects;
+          } else if (window.appState && Array.isArray(window.appState.projects)) {
+            remoteState.projects = window.appState.projects;
+          }
+
           if (typeof window.normalizeState === 'function') {
-            window.appState = window.normalizeState(payload.new.state);
+            window.appState = window.normalizeState(remoteState);
           } else {
-            window.appState = payload.new.state;
+            window.appState = remoteState;
           }
           if (typeof window.saveLocalState === 'function') window.saveLocalState();
           this.triggerLocal('state:update', window.appState);
@@ -594,6 +635,9 @@
         });
 
         if (changed) {
+          if (!Array.isArray(state.projects)) {
+            state.projects = (window.appState && Array.isArray(window.appState.projects)) ? window.appState.projects : (this.lastKnownProjects || []);
+          }
           if (typeof window.saveLocalState === 'function') window.saveLocalState();
           this.scheduleSaveToSupabase(state);
           this.broadcastEvent('state:update', state);
