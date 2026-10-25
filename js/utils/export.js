@@ -214,8 +214,11 @@ function exportSummaryExcel(customMeetingRecord) {
           title: state.lastMeetingSummary.meetingTitle || state.lastMeetingSummary.title,
           location: state.lastMeetingSummary.location,
           date: state.lastMeetingSummary.meetingDate || state.lastMeetingSummary.date,
+          endDate: state.lastMeetingSummary.endDate || state.lastMeetingSummary.meetingEndDate || state.lastMeetingSummary.date,
           startTime: state.lastMeetingSummary.startTime,
           endTime: state.lastMeetingSummary.endTime,
+          scheduledEndTime: state.lastMeetingSummary.scheduledEndTime || state.lastMeetingSummary.endTime,
+          actualEndTime: state.lastMeetingSummary.actualEndTime || state.lastMeetingSummary.endedTimeStr,
           lateTime: state.lastMeetingSummary.lateTime,
           format: state.lastMeetingSummary.format,
           onlinePlatform: state.lastMeetingSummary.onlinePlatform
@@ -227,7 +230,11 @@ function exportSummaryExcel(customMeetingRecord) {
   }
 
   const meetingTitle = m.title || m.meetingTitle || 'การประชุมชมรมสันทนาการ';
-  const meetingDate = m.date || m.meetingDate || (new Date().toISOString().slice(0, 10));
+  const meetingDate = (m.endDate && m.endDate !== m.date)
+    ? `${m.date} ถึง ${m.endDate}`
+    : (m.date || m.meetingDate || (new Date().toISOString().slice(0, 10)));
+  const schedEnd = m.scheduledEndTime || m.endTime || '-';
+  const actualEnd = m.actualEndTime || m.endedTimeStr || '-';
   const meetingFormat = m.format === 'ONLINE' ? `ออนไลน์ (${m.onlinePlatform || 'Online'})` : `ออนไซต์ (${m.location || '-'})`;
 
   const onTimeCount = users.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
@@ -240,7 +247,8 @@ function exportSummaryExcel(customMeetingRecord) {
     ['หัวข้อการประชุม', meetingTitle],
     ['รูปแบบการประชุม / สถานที่', meetingFormat],
     ['วัน เดือน ปี ที่ประชุม', meetingDate],
-    ['เวลาเริ่ม - เลิกประชุม', `${m.startTime || '-'} น. ถึง ${m.endTime || '-'} น. (ตัดสาย: ${m.lateTime || '-'} น.)`],
+    ['เวลากำหนดการประชุม', `เริ่ม ${m.startTime || '-'} น. ถึง ${schedEnd} น. (ตัดสาย: ${m.lateTime || '-'} น.)`],
+    ['เวลาปิดการประชุมจริง', actualEnd && actualEnd !== '-' ? `${actualEnd} น.` : '-'],
     ['สรุปภาพรวมการเข้าร่วม', `ทั้งหมด ${users.length} คน | มาทัน ${onTimeCount} คน | มาสาย ${lateCount} คน | ลา ${leaveCount} คน | ขาด ${absentCount} คน`],
     [],
     ['สรุปผลคะแนนโหวตในแต่ละญัตติ']

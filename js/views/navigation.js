@@ -712,6 +712,7 @@ function submitAdminLoginFromSettings() {
 }
 
 function logoutAdminFromSettings() {
+  window.isDatabaseUnlocked = false;
   if (typeof window.setSessionAdmin === 'function') {
     window.setSessionAdmin(false);
   } else {
@@ -824,6 +825,7 @@ function switchRoleView(role) {
     window.setSessionRole(role);
   }
   if (role === 'USER') {
+    window.isDatabaseUnlocked = false;
     if (typeof window.closeVersionPasscodeModal === 'function') window.closeVersionPasscodeModal();
     if (typeof window.closeAdminVersionEditModal === 'function') window.closeAdminVersionEditModal();
   }
@@ -1078,7 +1080,74 @@ function switchUserToolSubTab(subTab) {
   if (typeof window.refreshIcons === 'function') window.refreshIcons();
 }
 
+window.isDatabaseUnlocked = false;
+
+function openDatabaseUnlockModal() {
+  const modal = document.getElementById('databaseUnlockModal');
+  const input = document.getElementById('databaseUnlockPassInput');
+  const err = document.getElementById('databaseUnlockError');
+  if (err) err.classList.add('hidden');
+  if (input) {
+    input.value = '';
+    input.classList.remove('border-destructive');
+  }
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => { if (input) input.focus(); }, 100);
+  }
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
+  }
+}
+
+function closeDatabaseUnlockModal() {
+  const modal = document.getElementById('databaseUnlockModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function handleDatabaseUnlock(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const input = document.getElementById('databaseUnlockPassInput');
+  const err = document.getElementById('databaseUnlockError');
+  const pass = input ? input.value.trim() : '';
+  const validPass = window.ADMIN_PASSWORD || (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admincomsan26');
+
+  if (pass === validPass) {
+    window.isDatabaseUnlocked = true;
+    closeDatabaseUnlockModal();
+    actuallySwitchAdminTab('DATABASE');
+    if (typeof showToast === 'function') {
+      showToast('ปลดล็อกหน้าจัดการฐานข้อมูลสำเร็จ', 'success');
+    }
+  } else {
+    if (err) err.classList.remove('hidden');
+    if (input) {
+      input.classList.add('border-destructive');
+      input.focus();
+    }
+    if (typeof showToast === 'function') {
+      showToast('รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง', 'error');
+    }
+  }
+}
+
+function lockDatabaseTab() {
+  window.isDatabaseUnlocked = false;
+  actuallySwitchAdminTab('SETTINGS');
+  if (typeof showToast === 'function') {
+    showToast('ล็อกหน้าจัดการฐานข้อมูลเรียบร้อยแล้ว', 'info');
+  }
+}
+
 function switchAdminTab(tab) {
+  if (tab === 'DATABASE' && !window.isDatabaseUnlocked) {
+    openDatabaseUnlockModal();
+    return;
+  }
   if (tab === 'CHAT' && window.activeAdminTab !== 'CHAT') {
     showChatSplashScreen(() => {
       actuallySwitchAdminTab('CHAT');
@@ -1089,6 +1158,10 @@ function switchAdminTab(tab) {
 }
 
 function actuallySwitchAdminTab(tab) {
+  if (tab === 'DATABASE' && !window.isDatabaseUnlocked) {
+    openDatabaseUnlockModal();
+    return;
+  }
   window.activeAdminTab = tab;
   ['DASHBOARD', 'CHAT', 'SETTINGS', 'CHECKIN', 'VOTING', 'QUEUE', 'RANDOM', 'STREAM', 'FILES', 'NOTES', 'CALENDAR', 'SUMMARY', 'MEMBERS', 'DATABASE'].forEach(t => {
     const sec = document.getElementById(`aTab_${t}`);
@@ -1189,3 +1262,7 @@ window.updateSettingsAdminCardState = updateSettingsAdminCardState;
 window.toggleSettingAdminPassVis = toggleSettingAdminPassVis;
 window.submitAdminLoginFromSettings = submitAdminLoginFromSettings;
 window.logoutAdminFromSettings = logoutAdminFromSettings;
+window.openDatabaseUnlockModal = openDatabaseUnlockModal;
+window.closeDatabaseUnlockModal = closeDatabaseUnlockModal;
+window.handleDatabaseUnlock = handleDatabaseUnlock;
+window.lockDatabaseTab = lockDatabaseTab;

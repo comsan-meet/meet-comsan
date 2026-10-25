@@ -362,6 +362,13 @@ function renderDraftCustomOptions() {
 
 function createMotion(e) {
   if (e && e.preventDefault) e.preventDefault();
+  const state = window.appState;
+  if (!state?.meeting?.isStarted || state?.meeting?.isEnded) {
+    if (typeof showToast === 'function') {
+      showToast('กรุณาเปิดการประชุมก่อน จึงจะสามารถสร้างและเปิดญัตติได้', 'warning');
+    }
+    return;
+  }
   const titleInput = document.getElementById('motionTitleInput');
   const title = titleInput.value.trim();
   const type = document.getElementById('motionTypeSelect').value;
@@ -429,9 +436,9 @@ function toggleMotionStatus(motionId, explicitTargetState) {
 
   const targetState = (explicitTargetState !== undefined) ? Boolean(explicitTargetState) : !m.isOpen;
 
-  if (targetState && state.meeting && state.meeting.isEnded) {
+  if (targetState && (!state.meeting || !state.meeting.isStarted || state.meeting.isEnded)) {
     if (typeof showToast === 'function') {
-      showToast('ไม่สามารถเปิดโหวตได้เนื่องจากการประชุมจบลงแล้ว กรุณาเปิดการประชุมก่อน', 'error');
+      showToast('กรุณาเปิดการประชุมก่อน จึงจะสามารถเปิดรับคะแนนโหวตญัตตินี้ได้', 'warning');
     }
     return;
   }

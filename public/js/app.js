@@ -284,7 +284,8 @@ function updateMeetingTimersAndBanners() {
       heroCard.classList.remove('hero-card-gray');
     }
     if (userBannerTitle) userBannerTitle.textContent = m.title || 'การประชุมชมรมสันทนาการ (COMSAN)';
-    if (userBannerDateTime) userBannerDateTime.textContent = `${m.date || todayISO} • ${m.startTime || '17:00'}–${m.endTime || '19:00'} น. (ตัดสาย ${m.lateTime || '17:15'} น.)`;
+    const dateDisplay = (m.endDate && m.endDate !== m.date) ? `${m.date} ถึง ${m.endDate}` : (m.date || todayISO);
+    if (userBannerDateTime) userBannerDateTime.textContent = `${dateDisplay} • ${m.startTime || '17:00'}–${m.endTime || '19:00'} น. (ตัดสาย ${m.lateTime || '17:15'} น.)`;
 
     const heroUserCheckinPill = document.getElementById('heroUserCheckinPill');
     if (heroUserCheckinPill) heroUserCheckinPill.classList.remove('hidden');
@@ -434,9 +435,10 @@ function updateMeetingTimersAndBanners() {
     if (heroUserCheckinPill) heroUserCheckinPill.classList.add('hidden');
     if (userBannerTitle) userBannerTitle.textContent = 'ยังไม่มีการประชุมในขณะนี้';
     if (userBannerDateTime) userBannerDateTime.textContent = `การประชุมล่าสุด: ${m.title || '-'}`;
+    const dateDisplayInactive = (m.endDate && m.endDate !== m.date) ? `${m.date} ถึง ${m.endDate}` : (m.date || todayISO);
     if (userBannerLocation) {
       userBannerLocation.classList.remove('hidden');
-      userBannerLocation.textContent = `วันเวลาที่จัด: ${m.date || todayISO} • ${m.startTime || '17:00'}–${m.endTime || '19:00'} น.`;
+      userBannerLocation.textContent = `วันเวลาที่จัด: ${dateDisplayInactive} • ${m.startTime || '17:00'}–${m.endTime || '19:00'} น.`;
     }
     if (onlineContainer) {
       onlineContainer.classList.add('hidden');
@@ -630,7 +632,9 @@ function renderAll() {
     if (locIn && document.activeElement !== locIn) locIn.value = m.location || '';
     if (locDetailIn && document.activeElement !== locDetailIn) locDetailIn.value = m.locationDetail || '';
     if (onlineDetailIn && document.activeElement !== onlineDetailIn) onlineDetailIn.value = m.locationDetail || '';
+    const endDateIn = document.getElementById('cfgMeetingEndDate');
     if (dateIn && document.activeElement !== dateIn) dateIn.value = m.date || todayISO;
+    if (endDateIn && document.activeElement !== endDateIn) endDateIn.value = m.endDate || m.date || todayISO;
     if (startIn && document.activeElement !== startIn) startIn.value = m.startTime || '17:00';
     if (lateIn && document.activeElement !== lateIn) lateIn.value = m.lateTime || '17:15';
     if (endIn && document.activeElement !== endIn) endIn.value = m.endTime || '19:00';
@@ -683,6 +687,12 @@ function renderAll() {
     if (typeof window.checkOpenMotionsPopup === 'function') window.checkOpenMotionsPopup();
     if (typeof window.renderAdminAnalyticsChart === 'function' && window.currentRole === 'ADMIN') window.renderAdminAnalyticsChart();
     if (typeof window.renderTodayEventsBanner === 'function') window.renderTodayEventsBanner();
+
+    const isMeetingActiveForMotions = Boolean(m.isStarted && !m.isEnded);
+    const motionMeetingWarn = document.getElementById('motionMeetingStatusWarning');
+    if (motionMeetingWarn) {
+      motionMeetingWarn.classList.toggle('hidden', isMeetingActiveForMotions);
+    }
 
     // Admin motions list
     const adminMotionsEl = document.getElementById('adminMotionsList');
@@ -1330,6 +1340,17 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof window.initRecommendedFeaturesCarousel === 'function') window.initRecommendedFeaturesCarousel();
   if (typeof window.initAdminSupabaseSettingsUI === 'function') window.initAdminSupabaseSettingsUI();
   if (typeof window.initDbConfigUI === 'function') window.initDbConfigUI();
+
+  const dateInEl = document.getElementById('cfgMeetingDate');
+  const endDateInEl = document.getElementById('cfgMeetingEndDate');
+  if (dateInEl && endDateInEl) {
+    dateInEl.addEventListener('change', () => {
+      if (!endDateInEl.value || endDateInEl.value < dateInEl.value) {
+        endDateInEl.value = dateInEl.value;
+      }
+    });
+  }
+
   renderAll();
   setInterval(updateMeetingTimersAndBanners, 1000);
 

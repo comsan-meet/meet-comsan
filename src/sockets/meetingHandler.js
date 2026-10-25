@@ -29,6 +29,7 @@ module.exports = function registerMeetingHandlers(io, socket) {
     state.meeting.format = format;
     state.meeting.title = (info && info.title) ? String(info.title).trim() : 'การประชุมชมรมสันทนาการ (COMSAN)';
     state.meeting.date = (info && info.date) ? info.date : todayISO;
+    state.meeting.endDate = (info && info.endDate) ? info.endDate : state.meeting.date;
     state.meeting.startTime = (info && info.startTime) || '17:00';
     state.meeting.lateTime = (info && info.lateTime) || '17:15';
     state.meeting.endTime = (info && info.endTime) || '19:00';
@@ -120,13 +121,17 @@ module.exports = function registerMeetingHandlers(io, socket) {
       title: state.meeting.title || 'การประชุมชมรมสันทนาการ',
       meetingTitle: state.meeting.title || 'การประชุมชมรมสันทนาการ',
       date: state.meeting.date || todayISO,
+      endDate: state.meeting.endDate || state.meeting.date || todayISO,
       meetingDate: state.meeting.date || todayISO,
+      meetingEndDate: state.meeting.endDate || state.meeting.date || todayISO,
       location: state.meeting.location || '-',
       format: state.meeting.format || 'ONSITE',
       onlinePlatform: state.meeting.onlinePlatform || null,
       onlineUrl: state.meeting.onlineUrl || '',
       startTime: state.meeting.startTime || '17:00',
       endTime: state.meeting.endTime || '19:00',
+      scheduledEndTime: state.meeting.endTime || '19:00',
+      actualEndTime: timeStr,
       lateTime: state.meeting.lateTime || '17:15',
       startedAtMs: state.meeting.startedAtMs,
       endedAtMs: endedAt,

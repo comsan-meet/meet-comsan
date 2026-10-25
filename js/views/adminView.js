@@ -154,6 +154,7 @@ function startOfficialMeeting(e) {
   const title = (document.getElementById('cfgMeetingTitle')?.value || '').trim();
   const date = document.getElementById('cfgMeetingDate')?.value ||
     ((typeof window.getLocalDateString === 'function') ? window.getLocalDateString() : new Date().toLocaleDateString('en-CA'));
+  const endDate = document.getElementById('cfgMeetingEndDate')?.value || date;
   const startTime = document.getElementById('cfgStartTime')?.value || '17:00';
   const lateTime = document.getElementById('cfgLateTime')?.value || '17:15';
   const endTime = document.getElementById('cfgEndTime')?.value || '19:00';
@@ -167,6 +168,7 @@ function startOfficialMeeting(e) {
     format: currentMeetingFormat,
     title,
     date,
+    endDate: endDate || date,
     startTime,
     lateTime,
     endTime
@@ -458,8 +460,11 @@ function renderMeetingHistoryList() {
     const isSelected = window.selectedHistoryMeetingId === rec.id;
     const isOnline = rec.format === 'ONLINE';
     const st = rec.stats || { total: 0, onTime: 0, late: 0, leave: 0, absent: 0 };
-    const dateFormatted = rec.endedDateStr || rec.date || '-';
-    const timeFormatted = rec.endedTimeStr ? `จบเมื่อ ${rec.endedTimeStr} น.` : '';
+    const dateFormatted = (rec.endDate && rec.endDate !== rec.date)
+      ? `${rec.date} ถึง ${rec.endDate}`
+      : (rec.endedDateStr || rec.date || '-');
+    const schedTime = rec.scheduledEndTime || rec.endTime || '-';
+    const actualTime = rec.actualEndTime || rec.endedTimeStr || '-';
 
     return `
       <div class="p-3 rounded-xl border transition-all ${
@@ -480,7 +485,7 @@ function renderMeetingHistoryList() {
           </div>
           <div class="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
             <span class="inline-flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>${dateFormatted}</span>
-            ${timeFormatted ? `<span class="inline-flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>${timeFormatted}</span>` : ''}
+            <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>กำหนดเลิก: ${schedTime} น. • ปิดจริง: ${actualTime} น.</span>
           </div>
           <div class="flex items-center gap-1.5 text-[11px] flex-wrap pt-0.5">
             <span class="text-muted-foreground">ทั้งหมด <strong>${st.total}</strong></span>
@@ -714,12 +719,17 @@ function renderSummarySection() {
   const dlBtnText = document.getElementById('summaryDownloadBtnText');
 
   if (histMeeting) {
+    const histDateDisplay = (histMeeting.endDate && histMeeting.endDate !== histMeeting.date)
+      ? `${histMeeting.date} ถึง ${histMeeting.endDate}`
+      : (histMeeting.date || '-');
+    const histSchedTime = histMeeting.scheduledEndTime || histMeeting.endTime || '-';
+    const histActualTime = histMeeting.actualEndTime || histMeeting.endedTimeStr || '-';
     if (headerInfo) {
-      headerInfo.textContent = `ประวัติย้อนหลัง: ${histMeeting.title} • วันที่: ${histMeeting.date || '-'} • ปิดการประชุมเมื่อ: ${histMeeting.endedTimeStr || '-'}`;
+      headerInfo.textContent = `ประวัติย้อนหลัง: ${histMeeting.title} • วันที่: ${histDateDisplay} • กำหนดเลิก: ${histSchedTime} น. • ปิดจริง: ${histActualTime} น.`;
     }
     if (alertBanner) alertBanner.classList.remove('hidden');
     if (viewTitle) viewTitle.textContent = histMeeting.title || 'การประชุมย้อนหลัง';
-    if (viewDate) viewDate.textContent = `(วันที่: ${histMeeting.date || '-'} ${histMeeting.endedTimeStr ? '• ' + histMeeting.endedTimeStr + ' น.' : ''})`;
+    if (viewDate) viewDate.textContent = `(วันที่: ${histDateDisplay} • กำหนดเลิก ${histSchedTime} น. • ปิดจริง ${histActualTime} น.)`;
     if (dlBtnText) dlBtnText.textContent = 'ดาวน์โหลด (.xlsx)';
   } else {
     if (headerInfo) {

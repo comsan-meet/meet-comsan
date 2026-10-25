@@ -843,7 +843,11 @@ function renderUserMeetingHistoryList() {
   listEl.innerHTML = history.map(rec => {
     const isOnline = rec.format === 'ONLINE';
     const st = rec.stats || { total: 0, onTime: 0, late: 0, leave: 0, absent: 0 };
-    const dateFormatted = rec.endedDateStr || rec.date || '-';
+    const dateFormatted = (rec.endDate && rec.endDate !== rec.date)
+      ? `${rec.date} ถึง ${rec.endDate}`
+      : (rec.endedDateStr || rec.date || '-');
+    const schedTime = rec.scheduledEndTime || rec.endTime || '-';
+    const actualTime = rec.actualEndTime || rec.endedTimeStr || '-';
     const myRecord = window.currentUserId && Array.isArray(rec.users) ? rec.users.find(u => u.id === window.currentUserId) : null;
     let myBadge = '';
     if (myRecord) {
@@ -866,7 +870,7 @@ function renderUserMeetingHistoryList() {
             </span>
             ${myBadge}
             <span class="text-[10px] text-muted-foreground ml-auto inline-flex items-center gap-1">
-              <i data-lucide="calendar" class="w-3 h-3"></i>${dateFormatted} ${rec.endedTimeStr ? '• จบ ' + rec.endedTimeStr + ' น.' : ''}
+              <i data-lucide="calendar" class="w-3 h-3"></i>${dateFormatted} • กำหนดเลิก ${schedTime} น. (ปิดจริง ${actualTime} น.)
             </span>
           </div>
         </div>

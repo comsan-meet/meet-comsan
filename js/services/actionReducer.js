@@ -89,6 +89,7 @@
         state.meeting.format = format;
         state.meeting.title = (info.title && String(info.title).trim()) ? String(info.title).trim() : 'การประชุมชมรมสันทนาการ (COMSAN)';
         state.meeting.date = info.date || todayISO;
+        state.meeting.endDate = info.endDate || state.meeting.date;
         state.meeting.startTime = info.startTime || '17:00';
         state.meeting.lateTime = info.lateTime || '17:15';
         state.meeting.endTime = info.endTime || '19:00';
@@ -174,13 +175,17 @@
           title: state.meeting.title || 'การประชุมชมรมสันทนาการ',
           meetingTitle: state.meeting.title || 'การประชุมชมรมสันทนาการ',
           date: state.meeting.date || todayISO,
+          endDate: state.meeting.endDate || state.meeting.date || todayISO,
           meetingDate: state.meeting.date || todayISO,
+          meetingEndDate: state.meeting.endDate || state.meeting.date || todayISO,
           location: state.meeting.location || '-',
           format: state.meeting.format || 'ONSITE',
           onlinePlatform: state.meeting.onlinePlatform || null,
           onlineUrl: state.meeting.onlineUrl || '',
           startTime: state.meeting.startTime || '17:00',
           endTime: state.meeting.endTime || '19:00',
+          scheduledEndTime: state.meeting.endTime || '19:00',
+          actualEndTime: timeStr,
           lateTime: state.meeting.lateTime || '17:15',
           startedAtMs: state.meeting.startedAtMs,
           endedAtMs: endedAt,
@@ -538,6 +543,15 @@
           shouldPersist = false;
           break;
         }
+        if (!state.meeting || !state.meeting.isStarted || state.meeting.isEnded) {
+          notify('notify:event', {
+            type: 'warning',
+            text: '⚠️ กรุณาเปิดการประชุมก่อน จึงจะสามารถสร้างและเปิดญัตติได้'
+          });
+          shouldPersist = false;
+          result = { ok: false, error: 'Meeting not started or ended' };
+          break;
+        }
         const defaultStandardOptions = [
           { id: 'APPROVE', label: 'เห็นด้วย', image: null },
           { id: 'REJECT', label: 'ไม่เห็นด้วย', image: null },
@@ -583,9 +597,13 @@
         const m = (state.motions || []).find(item => item.id === motionId);
         if (m) {
           const nextState = (targetOpen !== undefined) ? Boolean(targetOpen) : !m.isOpen;
-          if (nextState && state.meeting && state.meeting.isEnded) {
+          if (nextState && (!state.meeting || !state.meeting.isStarted || state.meeting.isEnded)) {
+            notify('notify:event', {
+              type: 'warning',
+              text: '⚠️ กรุณาเปิดการประชุมก่อน จึงจะสามารถเปิดรับคะแนนโหวตญัตติได้'
+            });
             shouldPersist = false;
-            result = { ok: false, error: 'Meeting ended' };
+            result = { ok: false, error: 'Meeting not started or ended' };
             break;
           }
           m.isOpen = nextState;

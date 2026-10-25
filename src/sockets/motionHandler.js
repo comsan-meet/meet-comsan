@@ -5,6 +5,13 @@ module.exports = function registerMotionHandlers(io, socket) {
 
   socket.on('admin:createMotion', (motionPayload) => {
     if (!motionPayload || !motionPayload.title) return;
+    if (!state.meeting || !state.meeting.isStarted || state.meeting.isEnded) {
+      socket.emit('notify:event', {
+        type: 'warning',
+        text: '⚠️ กรุณาเปิดการประชุมก่อน จึงจะสามารถสร้างและเปิดญัตติได้'
+      });
+      return;
+    }
     const defaultStandardOptions = [
       { id: 'APPROVE', label: 'เห็นด้วย', image: null },
       { id: 'REJECT', label: 'ไม่เห็นด้วย', image: null },
@@ -41,8 +48,12 @@ module.exports = function registerMotionHandlers(io, socket) {
     const m = (state.motions || []).find(item => item.id === motionId);
     if (m) {
       const nextState = (targetOpen !== undefined) ? Boolean(targetOpen) : !m.isOpen;
-      if (nextState && state.meeting && state.meeting.isEnded) {
-        return; // Don't allow re-opening votes if meeting is ended
+      if (nextState && (!state.meeting || !state.meeting.isStarted || state.meeting.isEnded)) {
+        socket.emit('notify:event', {
+          type: 'warning',
+          text: '⚠️ กรุณาเปิดการประชุมก่อน จึงจะสามารถเปิดรับคะแนนโหวตญัตติได้'
+        });
+        return; // Don't allow re-opening votes if meeting is not started or ended
       }
       m.isOpen = nextState;
       stateService.persistAndBroadcast();

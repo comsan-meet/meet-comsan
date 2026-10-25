@@ -30,6 +30,7 @@ const defaultState = {
     title: '',
     location: '',
     date: todayISO,
+    endDate: todayISO,
     startTime: '17:00',
     lateTime: '17:15',
     endTime: '19:00',
