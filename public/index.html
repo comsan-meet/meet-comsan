@@ -2956,17 +2956,24 @@ label svg, label i {
               <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้รับผิดชอบ
             </button>
           </div>
-          <div id="prjFormLeadersContainer" class="space-y-2"></div>
+          <div id="prjFormLeadersContainer" class="space-y-2 max-h-[320px] overflow-y-auto pr-1"></div>
         </div>
 
-        <!-- 2. Members (รายชื่อผู้เกี่ยวข้องในโครงการ + นำเข้า Excel) -->
+        <!-- 2. Members (รายชื่อผู้เกี่ยวข้องในโครงการ + นำเข้า Excel + Accordion ย่อ/ขยาย + ตัวกรอง) -->
         <div class="border-t border-border pt-3 space-y-2.5">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <h4 class="text-xs font-bold text-foreground flex items-center gap-1.5">
               <i data-lucide="users" class="h-3.5 w-3.5 text-indigo-500"></i>
               รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด
+              <span id="prjFormMembersCountBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"></span>
             </h4>
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" id="prjFormToggleExpandBtn" onclick="toggleExpandAllMembersRepeater()"
+                class="px-2 py-1 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
+                title="ย่อหรือขยายรายการทั้งหมด">
+                <i data-lucide="chevrons-up-down" class="h-3 w-3"></i>
+                <span id="prjFormToggleExpandLabel">ขยายทั้งหมด</span>
+              </button>
               <button type="button" onclick="triggerImportProjectMembersXlsxForForm()"
                 class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1 cursor-pointer shadow-2xs"
                 title="นำเข้ารายชื่อจาก Excel (.xlsx) เข้าสู่แบบฟอร์ม">
@@ -2983,9 +2990,29 @@ label svg, label i {
               </button>
             </div>
           </div>
+
+          <!-- Quick Search & Filter bar for Members in Admin Edit Form -->
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"></i>
+              <input type="text" id="prjFormMembersSearch" oninput="filterFormMembersRepeater(this.value)"
+                placeholder="ค้นหารายชื่อ, ชื่อเล่น หรือฝ่ายงานในฟอร์ม..."
+                class="w-full pl-8 pr-7 py-1.5 rounded-xl bg-card border border-border text-xs focus:border-primary focus:outline-hidden" />
+              <button type="button" id="prjFormMembersSearchClear" onclick="clearFormMembersSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <i data-lucide="x" class="h-3 w-3"></i>
+              </button>
+            </div>
+            <select id="prjFormDeptFilterSelect" onchange="filterFormMembersByDept(this.value)"
+              class="py-1.5 px-2.5 rounded-xl bg-card border border-border text-xs text-foreground focus:border-primary focus:outline-hidden shrink-0">
+              <option value="ALL">ทุกฝ่ายงาน</option>
+            </select>
+          </div>
+
           <!-- Hidden Excel File Input for Admin Edit Form -->
           <input type="file" id="prjFormMembersExcelInput" accept=".xlsx,.xls" class="hidden" onchange="handleFormMembersExcelImport(event)">
-          <div id="prjFormMembersContainer" class="space-y-2"></div>
+
+          <!-- Scrollable Members Container with max-height to avoid endless scrolling -->
+          <div id="prjFormMembersContainer" class="space-y-2 max-h-[460px] overflow-y-auto pr-1"></div>
         </div>
 
         <!-- 3. Advisors -->
@@ -3000,7 +3027,7 @@ label svg, label i {
               <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มอาจารย์ที่ปรึกษา
             </button>
           </div>
-          <div id="prjFormAdvisorsContainer" class="space-y-2"></div>
+          <div id="prjFormAdvisorsContainer" class="space-y-2 max-h-[320px] overflow-y-auto pr-1"></div>
         </div>
 
         <!-- 4. SMO Officers -->
@@ -3015,7 +3042,7 @@ label svg, label i {
               <i data-lucide="plus" class="h-3 w-3"></i> เพิ่มผู้ดูแลจากสโมสร
             </button>
           </div>
-          <div id="prjFormSmoContainer" class="space-y-2"></div>
+          <div id="prjFormSmoContainer" class="space-y-2 max-h-[320px] overflow-y-auto pr-1"></div>
         </div>
 
         <!-- Form Actions -->

@@ -1,6 +1,7 @@
 /**
  * COMSAN Meeting System - Projects Component
  * Manages Club Projects, Stakeholders, Divisions/Departments, Table View, and XLSX Import/Export
+ * Enhanced with Accordion Collapsible Editor & Scroll Containment for Large Member Rosters (50+ members)
  */
 
 (function (root, factory) {
@@ -29,11 +30,20 @@
   let detailMemberDeptFilter = 'ALL';
   let detailMemberSearch = '';
 
-  // Temporary arrays for admin edit modal repeaters
+  // Form Repeaters State
   let prjFormLeaders = [];
   let prjFormMembers = [];
   let prjFormAdvisors = [];
   let prjFormSmoOfficers = [];
+
+  // Collapsible Accordion Sets for Form Repeaters
+  let expandedLeadersIndices = new Set();
+  let expandedMembersIndices = new Set();
+  let expandedAdvisorsIndices = new Set();
+  let expandedSmoIndices = new Set();
+
+  let formMembersSearch = '';
+  let formMembersDeptFilter = 'ALL';
 
   function getProjectsList() {
     if (window.appState && Array.isArray(window.appState.projects)) {
@@ -1147,37 +1157,22 @@
     if (!Array.isArray(rows) || rows.length === 0) return [];
 
     return rows.map((r, idx) => {
-      // Extract department
       const department = String(
         r['ฝ่าย'] || r['ฝ่ายงาน'] || r['แผนก'] || r['หมวด'] || r['Department'] || r['Dept'] || r['Team'] || 'ฝ่ายดำเนินงานทั่วไป'
       ).trim();
 
-      // Extract Name
       let name = String(r['ชื่อ-นามสกุล'] || r['ชื่อ - นามสกุล'] || r['ชื่อ-สกุล'] || r['ชื่อ นามสกุล'] || r['ชื่อ'] || r['Name'] || r['Full Name'] || '').trim();
       const lastName = String(r['นามสกุล'] || r['Last Name'] || '').trim();
       if (lastName && !name.includes(lastName)) {
         name = `${name} ${lastName}`.trim();
       }
 
-      // Extract Nickname
       const nickname = String(r['ชื่อเล่น'] || r['Nickname'] || r['Nick Name'] || '').trim();
-
-      // Extract Role
       const role = String(r['หน้าที่'] || r['ตำแหน่ง'] || r['บทบาท'] || r['หน้าที่ในโครงการ'] || r['Role'] || r['Position'] || 'ทีมงาน').trim();
-
-      // Extract Details
       const details = String(r['รายละเอียด'] || r['รายละเอียดหน้าที่'] || r['หน้าที่ความรับผิดชอบ'] || r['ความรับผิดชอบ'] || r['Details'] || r['Description'] || '').trim();
-
-      // Extract Phone
       const phone = String(r['เบอร์ติดต่อ'] || r['เบอร์โทร'] || r['เบอร์โทรศัพท์'] || r['เบอร์'] || r['Phone'] || r['Tel'] || '').trim();
-
-      // Extract KKU-MAIL
-      const kkuMail = String(r['KKU-MAIL'] || r['KKUMAIL'] || r['KKU Mail'] || r['อีเมล'] || r['Email'] || '').trim();
-
-      // Extract Contact Link
+      const kkuMail = String(r['KKU-MAIL'] || r['KKUMAIL'] || r['KKU Mail'] || r['kku-mail'] || r['อีเมล'] || r['Email'] || '').trim();
       const contactLink = String(r['ลิงก์ติดต่อ'] || r['ช่องทางติดต่อ'] || r['โซเชียล'] || r['Contact Link'] || r['Social'] || '').trim();
-
-      // Extract Avatar URL
       const avatar = String(r['รูปหน้า'] || r['ลิงก์รูปหน้า'] || r['รูป'] || r['Avatar'] || '').trim();
 
       return {
@@ -1219,7 +1214,6 @@
             return;
           }
 
-          // Count unique depts
           const depts = new Set(parsed.map(m => m.department));
 
           const confirmed = typeof window.showConfirmDialog === 'function'
@@ -1235,11 +1229,9 @@
 
           if (!confirmed) return;
 
-          // Merge into project members
           if (!Array.isArray(p.members)) p.members = [];
           p.members.push(...parsed);
 
-          // Emit to server
           if (window.socket && typeof window.socket.emit === 'function') {
             window.socket.emit('admin:updateProject', p);
           }
@@ -1312,7 +1304,6 @@
 
     const ws = XLSX.utils.aoa_to_sheet(templateData);
 
-    // Auto-fit column widths
     ws['!cols'] = [
       { wch: 25 }, // ฝ่าย
       { wch: 30 }, // ชื่อ-นามสกุล
@@ -1395,7 +1386,7 @@
     }
   }
 
-  // Delete a single member from active project
+  // Delete a single member from active project in table view
   async function confirmDeleteProjectMember(memberIdOrName) {
     if (window.currentRole !== 'ADMIN') return;
 
@@ -1508,7 +1499,7 @@
   }
 
   // ========================================================
-  // 4. ADMIN PROJECT EDITOR MODAL
+  // 4. ADMIN PROJECT EDITOR MODAL (ACCORDION & COMPACT ROWS)
   // ========================================================
   function openAdminProjectEditModal(projectId = null) {
     if (window.currentRole !== 'ADMIN') {
@@ -1522,6 +1513,19 @@
     const allProjects = getProjectsList();
     const isEdit = Boolean(projectId);
     const p = isEdit ? allProjects.find(item => item.id === projectId) : null;
+
+    // Reset repeater collapse/expand and search state
+    expandedLeadersIndices = new Set();
+    expandedMembersIndices = new Set();
+    expandedAdvisorsIndices = new Set();
+    expandedSmoIndices = new Set();
+    formMembersSearch = '';
+    formMembersDeptFilter = 'ALL';
+
+    const searchInput = document.getElementById('prjFormMembersSearch');
+    if (searchInput) searchInput.value = '';
+    const searchClear = document.getElementById('prjFormMembersSearchClear');
+    if (searchClear) searchClear.classList.add('hidden');
 
     // Set modal title
     const modalTitle = document.getElementById('adminPrjModalTitle');
@@ -1554,6 +1558,13 @@
     prjFormAdvisors = isEdit && Array.isArray(p.advisors) ? JSON.parse(JSON.stringify(p.advisors)) : [];
     prjFormSmoOfficers = isEdit && Array.isArray(p.smoOfficers) ? JSON.parse(JSON.stringify(p.smoOfficers)) : [];
 
+    // By default, for leaders, advisors, smo (small arrays), keep them expanded
+    prjFormLeaders.forEach((_, idx) => expandedLeadersIndices.add(idx));
+    prjFormAdvisors.forEach((_, idx) => expandedAdvisorsIndices.add(idx));
+    prjFormSmoOfficers.forEach((_, idx) => expandedSmoIndices.add(idx));
+    // For members: KEEP ALL COLLAPSED by default so 50+ members appear as a tidy list!
+    expandedMembersIndices.clear();
+
     // Render repeaters
     renderRepeater('LEADERS');
     renderRepeater('MEMBERS');
@@ -1574,136 +1585,324 @@
     }
   }
 
-  // Repeater helper for admin modal
+  // Toggle single item in repeater
+  function toggleRepeaterItem(type, index) {
+    let set;
+    if (type === 'LEADERS') set = expandedLeadersIndices;
+    else if (type === 'MEMBERS') set = expandedMembersIndices;
+    else if (type === 'ADVISORS') set = expandedAdvisorsIndices;
+    else if (type === 'SMO') set = expandedSmoIndices;
+
+    if (!set) return;
+
+    if (set.has(index)) {
+      set.delete(index);
+    } else {
+      set.add(index);
+    }
+
+    renderRepeater(type);
+  }
+
+  // Toggle expand / collapse all for Members repeater
+  function toggleExpandAllMembersRepeater() {
+    if (expandedMembersIndices.size === prjFormMembers.length) {
+      expandedMembersIndices.clear();
+    } else {
+      prjFormMembers.forEach((_, idx) => expandedMembersIndices.add(idx));
+    }
+    renderRepeater('MEMBERS');
+  }
+
+  // Filter members inside the admin edit form
+  function filterFormMembersRepeater(val) {
+    formMembersSearch = val || '';
+    const searchClear = document.getElementById('prjFormMembersSearchClear');
+    if (searchClear) searchClear.classList.toggle('hidden', !formMembersSearch);
+    renderRepeater('MEMBERS');
+  }
+
+  function clearFormMembersSearch() {
+    formMembersSearch = '';
+    const searchInput = document.getElementById('prjFormMembersSearch');
+    if (searchInput) searchInput.value = '';
+    const searchClear = document.getElementById('prjFormMembersSearchClear');
+    if (searchClear) searchClear.classList.add('hidden');
+    renderRepeater('MEMBERS');
+  }
+
+  function filterFormMembersByDept(dept) {
+    formMembersDeptFilter = dept || 'ALL';
+    renderRepeater('MEMBERS');
+  }
+
+  // Repeater helper with collapsible cards & smooth scrolling
   function renderRepeater(type) {
     let list;
     let containerId;
     let typeLabel;
+    let expandedSet;
 
     if (type === 'LEADERS') {
       list = prjFormLeaders;
       containerId = 'prjFormLeadersContainer';
       typeLabel = 'ผู้รับผิดชอบโครงการ';
+      expandedSet = expandedLeadersIndices;
     } else if (type === 'MEMBERS') {
       list = prjFormMembers;
       containerId = 'prjFormMembersContainer';
       typeLabel = 'ผู้เกี่ยวข้องกับโครงการ';
+      expandedSet = expandedMembersIndices;
     } else if (type === 'ADVISORS') {
       list = prjFormAdvisors;
       containerId = 'prjFormAdvisorsContainer';
       typeLabel = 'อาจารย์ที่ปรึกษา';
+      expandedSet = expandedAdvisorsIndices;
     } else if (type === 'SMO') {
       list = prjFormSmoOfficers;
       containerId = 'prjFormSmoContainer';
       typeLabel = 'ตัวแทนสโมสรนักศึกษา';
+      expandedSet = expandedSmoIndices;
     }
 
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    // Special Header & Dropdown sync for MEMBERS
+    if (type === 'MEMBERS') {
+      const countBadge = document.getElementById('prjFormMembersCountBadge');
+      if (countBadge) countBadge.textContent = `${list.length} คน`;
+
+      // Update Expand/Collapse All button label
+      const toggleExpandLabel = document.getElementById('prjFormToggleExpandLabel');
+      if (toggleExpandLabel) {
+        toggleExpandLabel.textContent = (expandedSet.size === list.length && list.length > 0) ? 'ย่อทั้งหมด' : 'ขยายทั้งหมด';
+      }
+
+      // Populate Department Filter Select
+      const deptSelect = document.getElementById('prjFormDeptFilterSelect');
+      if (deptSelect) {
+        const uniqueDepts = Array.from(new Set(list.map(m => (m.department || '').trim()).filter(Boolean)));
+        const currentVal = formMembersDeptFilter;
+        deptSelect.innerHTML = `
+          <option value="ALL" ${currentVal === 'ALL' ? 'selected' : ''}>ทุกฝ่ายงาน (${list.length})</option>
+          ${uniqueDepts.map(d => {
+            const count = list.filter(m => (m.department || '').trim() === d).length;
+            return `<option value="${escapeHtml(d)}" ${currentVal === d ? 'selected' : ''}>${escapeHtml(d)} (${count})</option>`;
+          }).join('')}
+        `;
+      }
+    }
+
     if (!list || list.length === 0) {
       container.innerHTML = `
-        <div class="p-3 rounded-xl bg-muted/20 border border-border/40 text-center text-xs text-muted-foreground">
-          ยังไม่มีรายการ${typeLabel} (กดปุ่มด้านบนเพื่อเพิ่มหรือนำเข้า Excel)
+        <div class="p-3.5 rounded-2xl bg-muted/20 border border-border/40 text-center text-xs text-muted-foreground space-y-1">
+          <p class="font-medium">ยังไม่มีรายการ${typeLabel}</p>
+          <p class="text-[11px]">กดปุ่มด้านบนเพื่อเพิ่ม หรือนำเข้าจากไฟล์ Excel (.xlsx)</p>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = list.map((item, idx) => `
-      <div class="bg-muted/30 border border-border/70 rounded-2xl p-3.5 space-y-3 relative">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-foreground flex items-center gap-1.5">
-            <span class="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">
-              ${idx + 1}
-            </span>
-            ${typeLabel} #${idx + 1}
-          </span>
-          <button type="button" onclick="removeRepeaterItem('${type}', ${idx})"
-            class="text-rose-500 hover:text-rose-600 text-xs flex items-center gap-1 cursor-pointer">
-            <i data-lucide="trash" class="h-3.5 w-3.5"></i> ลบ
+    // Filter list if MEMBERS
+    const q = (type === 'MEMBERS' ? formMembersSearch : '').trim().toLowerCase();
+    const deptFilter = type === 'MEMBERS' ? formMembersDeptFilter : 'ALL';
+
+    const itemsHtml = list.map((item, idx) => {
+      // Check filters for MEMBERS
+      if (type === 'MEMBERS') {
+        const itemDept = (item.department || '').trim();
+        if (deptFilter !== 'ALL' && itemDept !== deptFilter) return '';
+        if (q) {
+          const matchName = (item.name || '').toLowerCase().includes(q);
+          const matchNick = (item.nickname || '').toLowerCase().includes(q);
+          const matchDept = itemDept.toLowerCase().includes(q);
+          const matchRole = (item.role || '').toLowerCase().includes(q);
+          const matchPhone = (item.phone || '').toLowerCase().includes(q);
+          const matchMail = (item.kkuMail || '').toLowerCase().includes(q);
+          if (!matchName && !matchNick && !matchDept && !matchRole && !matchPhone && !matchMail) return '';
+        }
+      }
+
+      const isExpanded = expandedSet.has(idx);
+      const deptBadge = getDepartmentBadgeClass(item.department);
+
+      // Collapsed summary row
+      if (!isExpanded) {
+        return `
+          <div id="formMemberItem_${type}_${idx}" class="bg-card border border-border/80 hover:border-indigo-500/40 rounded-2xl p-2.5 sm:p-3 transition-all duration-150 shadow-2xs group">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer select-none" onclick="toggleRepeaterItem('${type}', ${idx})">
+                <span class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center justify-center shrink-0">
+                  ${idx + 1}
+                </span>
+
+                ${type === 'MEMBERS' && item.department ? `
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${deptBadge} shrink-0 max-w-[130px] truncate" title="${escapeHtml(item.department)}">
+                    ${escapeHtml(item.department)}
+                  </span>
+                ` : ''}
+
+                <div class="min-w-0 flex-1 flex items-center gap-1.5 flex-wrap">
+                  <span class="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                    ${escapeHtml(item.name || `คลิกเพื่อกรอกชื่อ-สกุล`)} ${item.nickname ? `<span class="text-muted-foreground font-normal">(${escapeHtml(item.nickname)})</span>` : ''}
+                  </span>
+                  ${item.role ? `
+                    <span class="text-[11px] text-muted-foreground font-normal truncate max-w-[130px]">· ${escapeHtml(item.role)}</span>
+                  ` : ''}
+                  ${item.phone ? `
+                    <span class="hidden sm:inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                      <i data-lucide="phone" class="h-2.5 w-2.5 text-emerald-500"></i> ${escapeHtml(item.phone)}
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" onclick="toggleRepeaterItem('${type}', ${idx})"
+                  class="px-2.5 py-1 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-foreground transition flex items-center gap-1 cursor-pointer"
+                  title="แก้ไขข้อมูล">
+                  <i data-lucide="chevron-down" class="h-3.5 w-3.5"></i>
+                  <span class="hidden sm:inline">แก้ไข</span>
+                </button>
+                <button type="button" onclick="removeRepeaterItem('${type}', ${idx})"
+                  class="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition cursor-pointer"
+                  title="ลบ">
+                  <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Expanded Card with all inputs
+      return `
+        <div id="formMemberItem_${type}_${idx}" class="bg-card border-2 border-indigo-500/40 rounded-2xl p-3.5 sm:p-4 space-y-3 transition-all duration-200 shadow-sm relative">
+          <!-- Expanded Card Header -->
+          <div class="flex items-center justify-between border-b border-border/60 pb-2.5">
+            <div class="flex items-center gap-2 cursor-pointer select-none min-w-0" onclick="toggleRepeaterItem('${type}', ${idx})">
+              <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                ${idx + 1}
+              </span>
+              <span class="text-xs font-bold text-foreground truncate">
+                ${escapeHtml(item.name || `${typeLabel} #${idx + 1}`)} ${item.nickname ? `(${escapeHtml(item.nickname)})` : ''}
+              </span>
+              ${type === 'MEMBERS' && item.department ? `
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${deptBadge}">
+                  ${escapeHtml(item.department)}
+                </span>
+              ` : ''}
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" onclick="toggleRepeaterItem('${type}', ${idx})"
+                class="px-2.5 py-1 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-foreground transition flex items-center gap-1 cursor-pointer"
+                title="ย่อเก็บ">
+                <i data-lucide="chevron-up" class="h-3.5 w-3.5"></i>
+                <span>ย่อเก็บ</span>
+              </button>
+              <button type="button" onclick="removeRepeaterItem('${type}', ${idx})"
+                class="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition cursor-pointer"
+                title="ลบ">
+                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+            ${type === 'MEMBERS' ? `
+              <div class="sm:col-span-2">
+                <label class="block text-[11px] font-bold text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-1">
+                  <i data-lucide="tag" class="h-3 w-3"></i> ฝ่ายงานที่สังกัด (Department / Division) *
+                </label>
+                <input type="text" value="${escapeHtml(item.department || '')}"
+                  oninput="updateRepeaterField('${type}', ${idx}, 'department', this.value)"
+                  placeholder="เช่น ฝ่ายกิจกรรมและสันทนาการ, ฝ่ายสถานที่และสวัสดิการ, ฝ่ายพยาบาล ฯลฯ"
+                  class="w-full px-3 py-1.5 rounded-lg bg-card border border-indigo-500/30 focus:border-indigo-500 text-xs font-semibold" />
+              </div>
+            ` : ''}
+
+            <div>
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">ชื่อ - สกุล *</label>
+              <input type="text" value="${escapeHtml(item.name || '')}"
+                oninput="updateRepeaterField('${type}', ${idx}, 'name', this.value)"
+                placeholder="เช่น นายอิทธิพัทธ์ พืชผักหวาน"
+                class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">ชื่อเล่น</label>
+              <input type="text" value="${escapeHtml(item.nickname || '')}"
+                oninput="updateRepeaterField('${type}', ${idx}, 'nickname', this.value)"
+                placeholder="เช่น บอม"
+                class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">หน้าที่ / ตำแหน่งในโครงการ</label>
+              <input type="text" value="${escapeHtml(item.role || '')}"
+                oninput="updateRepeaterField('${type}', ${idx}, 'role', this.value)"
+                placeholder="เช่น หัวหน้าฝ่ายกิจกรรม / สตาฟฟ์นันทนาการ / MC"
+                class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">เบอร์ติดต่อ</label>
+              <input type="text" value="${escapeHtml(item.phone || '')}"
+                oninput="updateRepeaterField('${type}', ${idx}, 'phone', this.value)"
+                placeholder="เช่น 081-234-5678"
+                class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">KKU-MAIL</label>
+              <input type="text" value="${escapeHtml(item.kkuMail || '')}"
+                oninput="updateRepeaterField('${type}', ${idx}, 'kkuMail', this.value)"
+                placeholder="เช่น user.p@kkumail.com"
+                class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">ลิงก์ช่องทางการติดต่อ (IG/FB/Line)</label>
+              <input type="url" value="${escapeHtml(item.contactLink || '')}"
+                oninput="updateRepeaterField('${type}', ${idx}, 'contactLink', this.value)"
+                placeholder="https://..."
+                class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">ลิงก์รูปหน้า (Avatar URL)</label>
+              <input type="url" value="${escapeHtml(item.avatar || '')}"
+                oninput="updateRepeaterField('${type}', ${idx}, 'avatar', this.value)"
+                placeholder="https://... (หากว่างระบบจะใช้รูปอักษรย่ออัตโนมัติ)"
+                class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">รายละเอียดหน้าที่ความรับผิดชอบ (ถ้ามี)</label>
+              <textarea rows="2"
+                oninput="updateRepeaterField('${type}', ${idx}, 'details', this.value)"
+                placeholder="ระบุรายละเอียดความรับผิดชอบในโครงการ..."
+                class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs resize-none">${escapeHtml(item.details || '')}</textarea>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (!itemsHtml.trim()) {
+      container.innerHTML = `
+        <div class="p-3.5 rounded-2xl bg-muted/20 border border-border/40 text-center text-xs text-muted-foreground space-y-1">
+          <p class="font-medium">ไม่พบสมาชิกที่ตรงกับคำค้นหาหรือฝ่ายที่เลือก</p>
+          <button type="button" onclick="clearFormMembersSearch()" class="text-xs text-primary font-semibold hover:underline">
+            ล้างคำค้นหา
           </button>
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-          ${type === 'MEMBERS' ? `
-            <div class="sm:col-span-2">
-              <label class="block text-[11px] font-bold text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-1">
-                <i data-lucide="tag" class="h-3 w-3"></i> ฝ่ายงานที่สังกัด (Department / Division) *
-              </label>
-              <input type="text" value="${escapeHtml(item.department || '')}"
-                oninput="updateRepeaterField('${type}', ${idx}, 'department', this.value)"
-                placeholder="เช่น ฝ่ายกิจกรรมและสันทนาการ, ฝ่ายสถานที่และสวัสดิการ, ฝ่ายพยาบาล ฯลฯ"
-                class="w-full px-3 py-1.5 rounded-lg bg-card border border-indigo-500/30 focus:border-indigo-500 text-xs font-semibold" />
-            </div>
-          ` : ''}
-
-          <div>
-            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ชื่อ - สกุล *</label>
-            <input type="text" value="${escapeHtml(item.name || '')}"
-              oninput="updateRepeaterField('${type}', ${idx}, 'name', this.value)"
-              placeholder="เช่น นายอิทธิพัทธ์ พืชผักหวาน"
-              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ชื่อเล่น</label>
-            <input type="text" value="${escapeHtml(item.nickname || '')}"
-              oninput="updateRepeaterField('${type}', ${idx}, 'nickname', this.value)"
-              placeholder="เช่น บอม"
-              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-medium text-muted-foreground mb-1">หน้าที่ / ตำแหน่งในโครงการ</label>
-            <input type="text" value="${escapeHtml(item.role || '')}"
-              oninput="updateRepeaterField('${type}', ${idx}, 'role', this.value)"
-              placeholder="เช่น หัวหน้าฝ่ายกิจกรรม / สตาฟฟ์นันทนาการ / MC"
-              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-medium text-muted-foreground mb-1">เบอร์ติดต่อ</label>
-            <input type="text" value="${escapeHtml(item.phone || '')}"
-              oninput="updateRepeaterField('${type}', ${idx}, 'phone', this.value)"
-              placeholder="เช่น 081-234-5678"
-              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-medium text-muted-foreground mb-1">KKU-MAIL</label>
-            <input type="text" value="${escapeHtml(item.kkuMail || '')}"
-              oninput="updateRepeaterField('${type}', ${idx}, 'kkuMail', this.value)"
-              placeholder="เช่น user.p@kkumail.com"
-              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ลิงก์ช่องทางการติดต่อ (IG/FB/Line)</label>
-            <input type="url" value="${escapeHtml(item.contactLink || '')}"
-              oninput="updateRepeaterField('${type}', ${idx}, 'contactLink', this.value)"
-              placeholder="https://..."
-              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
-          </div>
-
-          <div class="sm:col-span-2">
-            <label class="block text-[11px] font-medium text-muted-foreground mb-1">ลิงก์รูปหน้า (Avatar URL)</label>
-            <input type="url" value="${escapeHtml(item.avatar || '')}"
-              oninput="updateRepeaterField('${type}', ${idx}, 'avatar', this.value)"
-              placeholder="https://... (หากว่างระบบจะใช้รูปอักษรย่ออัตโนมัติ)"
-              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
-          </div>
-
-          <div class="sm:col-span-2">
-            <label class="block text-[11px] font-medium text-muted-foreground mb-1">รายละเอียดหน้าที่ความรับผิดชอบ (ถ้ามี)</label>
-            <textarea rows="2"
-              oninput="updateRepeaterField('${type}', ${idx}, 'details', this.value)"
-              placeholder="ระบุรายละเอียดความรับผิดชอบในโครงการ..."
-              class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs resize-none">${escapeHtml(item.details || '')}</textarea>
-          </div>
-        </div>
-      </div>
-    `).join('');
+      `;
+    } else {
+      container.innerHTML = itemsHtml;
+    }
 
     if (typeof window.refreshIcons === 'function') window.refreshIcons();
     else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
@@ -1712,7 +1911,7 @@
   function addRepeaterItem(type) {
     const newItem = {
       id: `p_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      department: type === 'MEMBERS' ? 'ฝ่ายกิจกรรมและสันทนาการ' : '',
+      department: type === 'MEMBERS' ? (formMembersDeptFilter !== 'ALL' ? formMembersDeptFilter : 'ฝ่ายกิจกรรมและสันทนาการ') : '',
       name: '',
       nickname: '',
       role: '',
@@ -1723,19 +1922,53 @@
       avatar: ''
     };
 
-    if (type === 'LEADERS') prjFormLeaders.push(newItem);
-    else if (type === 'MEMBERS') prjFormMembers.push(newItem);
-    else if (type === 'ADVISORS') prjFormAdvisors.push(newItem);
-    else if (type === 'SMO') prjFormSmoOfficers.push(newItem);
+    let newIdx = 0;
+    if (type === 'LEADERS') {
+      prjFormLeaders.push(newItem);
+      newIdx = prjFormLeaders.length - 1;
+      expandedLeadersIndices.add(newIdx);
+    } else if (type === 'MEMBERS') {
+      prjFormMembers.push(newItem);
+      newIdx = prjFormMembers.length - 1;
+      expandedMembersIndices.add(newIdx); // Auto-expand new item!
+    } else if (type === 'ADVISORS') {
+      prjFormAdvisors.push(newItem);
+      newIdx = prjFormAdvisors.length - 1;
+      expandedAdvisorsIndices.add(newIdx);
+    } else if (type === 'SMO') {
+      prjFormSmoOfficers.push(newItem);
+      newIdx = prjFormSmoOfficers.length - 1;
+      expandedSmoIndices.add(newIdx);
+    }
 
     renderRepeater(type);
+
+    // Smooth scroll to the newly added item
+    setTimeout(() => {
+      const el = document.getElementById(`formMemberItem_${type}_${newIdx}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 60);
   }
 
   function removeRepeaterItem(type, index) {
-    if (type === 'LEADERS') prjFormLeaders.splice(index, 1);
-    else if (type === 'MEMBERS') prjFormMembers.splice(index, 1);
-    else if (type === 'ADVISORS') prjFormAdvisors.splice(index, 1);
-    else if (type === 'SMO') prjFormSmoOfficers.splice(index, 1);
+    let set;
+    if (type === 'LEADERS') {
+      prjFormLeaders.splice(index, 1);
+      set = expandedLeadersIndices;
+    } else if (type === 'MEMBERS') {
+      prjFormMembers.splice(index, 1);
+      set = expandedMembersIndices;
+    } else if (type === 'ADVISORS') {
+      prjFormAdvisors.splice(index, 1);
+      set = expandedAdvisorsIndices;
+    } else if (type === 'SMO') {
+      prjFormSmoOfficers.splice(index, 1);
+      set = expandedSmoIndices;
+    }
+
+    if (set) {
+      set.delete(index);
+    }
 
     renderRepeater(type);
   }
@@ -1905,6 +2138,11 @@
     addRepeaterItem,
     removeRepeaterItem,
     updateRepeaterField,
+    toggleRepeaterItem,
+    toggleExpandAllMembersRepeater,
+    filterFormMembersRepeater,
+    clearFormMembersSearch,
+    filterFormMembersByDept,
     saveProjectFromAdminForm,
     confirmDeleteProject,
     setUserProjectFilter,
