@@ -50,9 +50,9 @@ function handleUserLogin(e) {
   const validAdminPass = window.ADMIN_PASSWORD || (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : 'admincomsan26');
   const isChoiceOrgLogin = (nameInput === 'comsan.meet@gmail.com' || nameInput === 'comsan.meet' || nameInput === 'meet' ||
                             nameInput === 'comsan.choice@gmail.com' || nameInput === 'comsan.choice' || nameInput === 'choice') &&
-                           (passInput === 'choice2025' || passInput === validAdminPass || passInput === 'admin' || passInput === '123');
+                           (passInput === validAdminPass);
   const isAdminLogin = ['admin', 'ผู้ดูแลระบบ', 'admincomsan'].includes(nameInput) &&
-                       (passInput === validAdminPass || passInput === 'admin' || passInput === 'choice2025' || passInput === '123');
+                       (passInput === validAdminPass);
 
   if (isChoiceOrgLogin || isAdminLogin) {
     const defaultUser = (state?.users && state.users[0]) ? state.users[0].id : 'COMSAN-01';
@@ -142,26 +142,34 @@ function handleUserLogin(e) {
   if (!found) {
     const err = document.getElementById('userLoginError');
     if (err) {
-      err.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ กรุณาตรวจสอบชื่อเล่น (เช่น บอม, พลอย, ฟีฟ่า)';
+      err.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ กรุณาตรวจสอบชื่อเล่น หรือรหัสประจำตัว';
       err.classList.remove('hidden');
     }
     return;
   }
 
-  // ตรวจสอบรหัสผ่าน (รองรับทั้งรหัสผ่านเฉพาะตัว, รหัสเริ่มต้น 123, a, choice2025, รหัสนักศึกษา หรือเว้นว่าง)
-  const isPassValid = !passInput ||
-                      !found.password ||
-                      found.password === passInput ||
-                      passInput === '123' ||
-                      passInput === 'a' ||
-                      passInput === 'choice2025' ||
-                      (found.id && passInput === found.id.trim().toLowerCase()) ||
-                      (found.studentId && passInput === String(found.studentId).trim().toLowerCase());
+  // ตรวจสอบว่ากรอกรหัสผ่านหรือไม่
+  if (!passInput) {
+    const err = document.getElementById('userLoginError');
+    if (err) {
+      err.textContent = 'กรุณากรอกรหัสผ่าน';
+      err.classList.remove('hidden');
+    }
+    return;
+  }
+
+  // ตรวจสอบรหัสผ่านของสมาชิก (ต้องตรงกับรหัสผ่านที่ตั้งไว้ หรือรหัสนักศึกษาของตนเองเท่านั้น)
+  const userPass = String(found.password || '').trim();
+  const studentId = String(found.studentId || '').trim();
+  const isPassValid = Boolean(
+    (userPass && passInput === userPass) ||
+    (studentId && passInput.toLowerCase() === studentId.toLowerCase())
+  );
 
   if (!isPassValid) {
     const err = document.getElementById('userLoginError');
     if (err) {
-      err.textContent = 'รหัสผ่านไม่ถูกต้อง (หากไม่ทราบสามารถกรอก 123)';
+      err.textContent = 'รหัสผ่านไม่ถูกต้อง';
       err.classList.remove('hidden');
     }
     return;
@@ -783,12 +791,12 @@ function showLoginHelpModal() {
   } else if (typeof window.showAlertDialog === 'function') {
     window.showAlertDialog({
       title: 'ช่วยเหลือการเข้าสู่ระบบ',
-      message: 'หากลืมรหัสผ่านหรือต้องการความช่วยเหลือ กรุณาติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com\n\nสำหรับสมาชิกชมรม: รหัสผ่านเริ่มต้นคือ 123',
+      message: 'หากลืมรหัสผ่านหรือต้องการความช่วยเหลือ กรุณาติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com',
       confirmText: 'รับทราบ',
       icon: 'help-circle'
     });
   } else if (typeof window.showToast === 'function') {
-    window.showToast('ติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com (รหัสผ่านเริ่มต้น 123)', 'info');
+    window.showToast('ติดต่อผู้ดูแลระบบที่ comsan.meet@gmail.com', 'info');
   }
 }
 

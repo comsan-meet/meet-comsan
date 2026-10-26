@@ -775,17 +775,37 @@ function handleUserLoginFromPopup(e) {
   const nameVal = (document.getElementById('popupUserLoginName')?.value || '').trim().toLowerCase();
   const passVal = (document.getElementById('popupUserLoginPass')?.value || '').trim();
   const users = (window.appState && window.appState.users) || [];
+  const err = document.getElementById('popupUserLoginError');
 
-  const found = users.find(u => (
-    (u.nickname && u.nickname.toLowerCase() === nameVal) ||
-    (u.firstName && u.firstName.toLowerCase() === nameVal) ||
-    (u.id && u.id.toLowerCase() === nameVal) ||
-    (u.studentId && String(u.studentId).toLowerCase() === nameVal)
-  ) && (u.password === passVal || passVal === '123' || passVal === 'a' || passVal === 'choice2025' || (u.id && passVal === u.id.toLowerCase())));
+  if (!nameVal || !passVal) {
+    if (err) {
+      err.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+      err.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const found = users.find(u => {
+    const nameMatch = (
+      (u.nickname && u.nickname.toLowerCase() === nameVal) ||
+      (u.firstName && u.firstName.toLowerCase() === nameVal) ||
+      (u.id && u.id.toLowerCase() === nameVal) ||
+      (u.studentId && String(u.studentId).toLowerCase() === nameVal)
+    );
+    if (!nameMatch) return false;
+    const uPass = String(u.password || '').trim();
+    const uStdId = String(u.studentId || '').trim();
+    return Boolean(
+      (uPass && passVal === uPass) ||
+      (uStdId && passVal.toLowerCase() === uStdId.toLowerCase())
+    );
+  });
 
   if (!found) {
-    const err = document.getElementById('popupUserLoginError');
-    if (err) err.classList.remove('hidden');
+    if (err) {
+      err.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+      err.classList.remove('hidden');
+    }
     return;
   }
 
