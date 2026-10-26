@@ -2751,7 +2751,15 @@ label svg, label i {
               <i data-lucide="layers" class="h-3.5 w-3.5 text-indigo-500"></i>
               ฝ่ายงานในโครงการนี้:
             </span>
-            <span id="prjDetailDeptCountText" class="text-[11px] text-muted-foreground font-medium"></span>
+            <div class="flex items-center gap-2">
+              <span id="prjDetailDeptCountText" class="text-[11px] text-muted-foreground font-medium"></span>
+              <button type="button" id="prjDetailDeptColorConfigBtn" onclick="openDepartmentColorConfigModal()"
+                class="hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 transition cursor-pointer"
+                title="ปรับแต่งสีของฝ่ายงาน (เฉพาะ Admin)">
+                <i data-lucide="palette" class="h-3.5 w-3.5"></i>
+                <span>ตั้งค่าสีฝ่ายงาน</span>
+              </button>
+            </div>
           </div>
           <!-- Department Filter Pills -->
           <div id="prjDetailDeptSummary" class="flex items-center gap-1.5 flex-wrap"></div>
@@ -6657,6 +6665,105 @@ label svg, label i {
   </div>
 
   <!-- ========================================================= -->
+  <!-- MODAL: DEPARTMENT COLOR SETTINGS (ADMIN ONLY)             -->
+  <!-- ========================================================= -->
+  <div id="prjDeptColorSettingsModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-[130] p-3 sm:p-4 select-none animate-fadeIn" onclick="if(event.target === this) closeDepartmentColorConfigModal();">
+    <div class="bg-card border border-border rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-card-foreground space-y-4 max-h-[90vh] flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-border/70 pb-3 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <i data-lucide="palette" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-foreground">ปรับแต่งสีของฝ่ายงาน</h3>
+            <p id="prjDeptColorModalSubtitle" class="text-[11px] text-muted-foreground truncate max-w-[280px]">กำหนดรูปแบบสีของแต่ละฝ่ายในโครงการ</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeDepartmentColorConfigModal()" class="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer shrink-0">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <!-- Body (Scrollable) -->
+      <div class="space-y-4 overflow-y-auto flex-1 pr-1 text-xs">
+        <!-- Mode Selection -->
+        <div>
+          <label class="block font-bold text-foreground mb-1.5">เลือกรูปแบบการกำหนดสี</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button type="button" onclick="setDeptColorEditMode('AUTO')" id="btnColorModeAuto"
+              class="p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
+              <div class="flex items-center justify-between">
+                <i data-lucide="sparkles" class="h-4 w-4 text-indigo-500"></i>
+                <span class="w-3.5 h-3.5 rounded-full border border-border flex items-center justify-center" id="radioColorModeAuto"></span>
+              </div>
+              <div>
+                <p class="font-bold text-foreground text-xs">อัตโนมัติ</p>
+                <p class="text-[10px] text-muted-foreground">ระบบจัดสีให้แต่ละฝ่าย</p>
+              </div>
+            </button>
+
+            <button type="button" onclick="setDeptColorEditMode('UNIFIED')" id="btnColorModeUnified"
+              class="p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
+              <div class="flex items-center justify-between">
+                <i data-lucide="paint-bucket" class="h-4 w-4 text-emerald-500"></i>
+                <span class="w-3.5 h-3.5 rounded-full border border-border flex items-center justify-center" id="radioColorModeUnified"></span>
+              </div>
+              <div>
+                <p class="font-bold text-foreground text-xs">สีเดียวกันทุกฝ่าย</p>
+                <p class="text-[10px] text-muted-foreground">ใช้สีเดียวทั้งโครงการ</p>
+              </div>
+            </button>
+
+            <button type="button" onclick="setDeptColorEditMode('CUSTOM')" id="btnColorModeCustom"
+              class="p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
+              <div class="flex items-center justify-between">
+                <i data-lucide="sliders" class="h-4 w-4 text-amber-500"></i>
+                <span class="w-3.5 h-3.5 rounded-full border border-border flex items-center justify-center" id="radioColorModeCustom"></span>
+              </div>
+              <div>
+                <p class="font-bold text-foreground text-xs">กำหนดเองตามฝ่าย</p>
+                <p class="text-[10px] text-muted-foreground">เลือกสีให้แต่ละฝ่ายอิสระ</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Unified Color Picker Section (Shown when UNIFIED) -->
+        <div id="deptColorUnifiedSection" class="p-3.5 rounded-2xl bg-muted/30 border border-border/70 space-y-2.5 hidden">
+          <label class="block font-semibold text-foreground">เลือกสีหลักสำหรับทุกฝ่าย:</label>
+          <div id="deptColorUnifiedPaletteGrid" class="grid grid-cols-4 sm:grid-cols-6 gap-2"></div>
+        </div>
+
+        <!-- Custom Colors List Section (Shown when CUSTOM) -->
+        <div id="deptColorCustomSection" class="space-y-2 hidden">
+          <label class="block font-semibold text-foreground">เลือกสีสำหรับแต่ละฝ่ายงาน:</label>
+          <div id="deptColorCustomDeptsList" class="space-y-2"></div>
+        </div>
+
+        <!-- Auto Mode Preview Section (Shown when AUTO) -->
+        <div id="deptColorAutoSection" class="p-3.5 rounded-2xl bg-muted/30 border border-border/70 space-y-2 hidden">
+          <p class="text-[11px] text-muted-foreground">ระบบจะจัดสรรสีสันสดใสที่แตกต่างกันให้แต่ละฝ่ายงานโดยอัตโนมัติ:</p>
+          <div id="deptColorAutoPreviewGrid" class="flex flex-wrap gap-1.5 pt-1"></div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end gap-2 border-t border-border/70 pt-3 shrink-0">
+        <button type="button" onclick="closeDepartmentColorConfigModal()"
+          class="px-4 py-2 rounded-xl border border-border text-foreground hover:bg-muted font-medium text-xs transition cursor-pointer">
+          ยกเลิก
+        </button>
+        <button type="button" onclick="saveDepartmentColorConfig()"
+          class="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer flex items-center gap-1.5">
+          <i data-lucide="save" class="h-3.5 w-3.5"></i>
+          <span>บันทึกการตั้งค่าสี</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
   <!-- POP-UP MODAL: IN-WEB PROMPT (แทน browser prompt)           -->
   <!-- ========================================================= -->
   <div id="globalPromptModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-[250] p-4 select-none animate-fadeIn" onclick="if(event.target === this) closeGlobalPromptDialog(null)">
@@ -6721,7 +6828,7 @@ label svg, label i {
   <script src="js/components/stream.js?v=20261026_01"></script>
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
   <script src="js/components/calendar.js?v=20261026_01"></script>
-  <script src="js/components/projects.js?v=20261027_01"></script>
+  <script src="js/components/projects.js?v=20261027_02"></script>
   <script src="js/views/navigation.js?v=20261026_02"></script>
   <script src="js/views/userView.js?v=20261026_02"></script>
   <script src="js/views/adminView.js?v=20261026_01"></script>
