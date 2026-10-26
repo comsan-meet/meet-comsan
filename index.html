@@ -2704,6 +2704,13 @@ label svg, label i {
               <span>นำเข้าจาก Excel (.xlsx)</span>
             </button>
 
+            <button type="button" id="prjDetailBtnClearAllMembers" onclick="clearAllProjectDetailMembers()"
+              class="hidden px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-500 hover:bg-rose-500/10 border border-rose-500/30 shadow-2xs transition flex items-center gap-1 cursor-pointer"
+              title="ล้างรายชื่อสมาชิกทั้งหมดในโครงการนี้">
+              <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+              <span>ล้างรายชื่อทั้งหมด</span>
+            </button>
+
             <button type="button" onclick="downloadProjectMembersTemplate()"
               class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border shadow-2xs transition flex items-center gap-1 cursor-pointer"
               title="ดาวน์โหลดไฟล์ตัวอย่าง Excel สำหรับกรอกรายชื่อ">
@@ -3145,6 +3152,11 @@ label svg, label i {
                 class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/20 transition flex items-center gap-1 cursor-pointer"
                 title="ตั้งค่าหรือเชื่อมต่อโฟลเดอร์รูป Google Drive สำหรับโครงการนี้">
                 <i data-lucide="folder-search" class="h-3 w-3"></i> โฟลเดอร์รูป Drive
+              </button>
+              <button type="button" onclick="clearAllRepeaterMembers('MEMBERS')"
+                class="px-2 py-1 rounded-lg text-xs font-medium text-rose-500 hover:bg-rose-500/10 border border-rose-500/30 transition flex items-center gap-1 cursor-pointer"
+                title="ล้างรายชื่อสมาชิกทั้งหมดในแบบฟอร์ม">
+                <i data-lucide="trash-2" class="h-3 w-3"></i> ล้างรายชื่อทั้งหมด
               </button>
               <button type="button" onclick="addRepeaterItem('MEMBERS')"
                 class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 transition flex items-center gap-1 cursor-pointer">
@@ -6471,7 +6483,7 @@ label svg, label i {
   <script src="js/components/stream.js?v=20261026_01"></script>
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
   <script src="js/components/calendar.js?v=20261026_01"></script>
-  <script src="js/components/projects.js?v=20261026_01"></script>
+  <script src="js/components/projects.js?v=20261026_02"></script>
   <script src="js/views/navigation.js?v=20261026_01"></script>
   <script src="js/views/userView.js?v=20261026_01"></script>
   <script src="js/views/adminView.js?v=20261026_01"></script>

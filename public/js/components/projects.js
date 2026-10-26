@@ -1195,6 +1195,20 @@
     return `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`;
   }
 
+  // Helper to extract an array of clean department names from a member object (supports multiple departments)
+  function getMemberDepartments(m) {
+    if (!m) return ['ฝ่ายดำเนินงานทั่วไป'];
+    if (Array.isArray(m.departments) && m.departments.length > 0) {
+      const list = m.departments.map(d => String(d).trim()).filter(Boolean);
+      if (list.length > 0) return Array.from(new Set(list));
+    }
+    if (m.department && typeof m.department === 'string') {
+      const list = m.department.split(/[,،、/]/).map(d => d.trim()).filter(Boolean);
+      if (list.length > 0) return Array.from(new Set(list));
+    }
+    return ['ฝ่ายดำเนินงานทั่วไป'];
+  }
+
   // Get visually distinct Tailwind color class based on department name
   function getDepartmentBadgeClass(deptName) {
     if (!deptName) return 'bg-muted text-muted-foreground border-border';
@@ -1931,8 +1945,22 @@
   }
 
   // Person Photo Preview Lightbox Modal
-  function openPersonPhotoPreviewModal(person) {
-    if (!person) return;
+  function openPersonPhotoPreviewModal(personOrId) {
+    if (!personOrId) return;
+    let person = personOrId;
+    if (typeof personOrId === 'string' && activeDetailProjectId) {
+      const allProjects = getProjectsList();
+      const prj = allProjects.find(item => item.id === activeDetailProjectId);
+      if (prj) {
+        const found = (prj.members || []).find(m => m.id === personOrId || m.name === personOrId)
+          || (prj.leaders || []).find(l => l.id === personOrId || l.name === personOrId)
+          || (prj.advisors || []).find(a => a.id === personOrId || a.name === personOrId)
+          || (prj.smoOfficers || []).find(s => s.id === personOrId || s.name === personOrId);
+        if (found) person = found;
+      }
+    }
+    if (!person || typeof person !== 'object') return;
+
     const modal = document.getElementById('personPhotoPreviewModal');
     if (!modal) return;
 
@@ -1961,7 +1989,11 @@
     if (roleEl) roleEl.textContent = person.role || 'สมาชิกโครงการ';
 
     if (deptEl) {
-      if (person.department) {
+      const depts = getMemberDepartments(person);
+      if (depts.length > 0 && depts[0] !== 'ฝ่ายดำเนินงานทั่วไป') {
+        deptEl.innerHTML = depts.map(d => `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${getDepartmentBadgeClass(d)}">${escapeHtml(d)}</span>`).join(' ');
+        deptEl.classList.remove('hidden');
+      } else if (person.department) {
         deptEl.textContent = person.department;
         deptEl.classList.remove('hidden');
       } else {
@@ -1984,7 +2016,25 @@
     }
 
     if (detailsWrapper && detailsEl) {
-      if (person.details && person.details.trim()) {
+      if (Array.isArray(person.rolesList) && person.rolesList.length > 1) {
+        detailsEl.innerHTML = `
+          <div class="space-y-1.5">
+            <p class="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1">หน้าที่และความรับผิดชอบในโครงการ (${person.rolesList.length} หน้าที่):</p>
+            ${person.rolesList.map(r => `
+              <div class="p-2 rounded-xl bg-card border border-border/70 space-y-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="w-5 h-5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold flex items-center justify-center shrink-0">${r.index}</span>
+                  ${r.position ? `<span class="font-bold text-foreground text-xs">${escapeHtml(r.position)}</span>` : ''}
+                  ${r.duty ? `<span class="text-xs text-primary font-medium">· ${escapeHtml(r.duty)}</span>` : ''}
+                  ${r.department ? `<span class="text-[10px] px-1.5 py-0.2 rounded-md font-semibold border ${getDepartmentBadgeClass(r.department)} ml-auto">${escapeHtml(r.department)}</span>` : ''}
+                </div>
+                ${r.description ? `<p class="text-[11px] text-muted-foreground pl-6 leading-relaxed">${escapeHtml(r.description)}</p>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        `;
+        detailsWrapper.classList.remove('hidden');
+      } else if (person.details && person.details.trim()) {
         detailsEl.textContent = person.details.trim();
         detailsWrapper.classList.remove('hidden');
       } else {
@@ -2056,15 +2106,21 @@
     const importBtn = document.getElementById('prjDetailBtnImportXlsx');
     if (importBtn) importBtn.classList.toggle('hidden', !isAdmin);
 
+    // Show/hide Clear All button based on role & member count
+    const clearAllBtn = document.getElementById('prjDetailBtnClearAllMembers');
+    if (clearAllBtn) clearAllBtn.classList.toggle('hidden', !isAdmin || members.length === 0);
+
     // Show/hide Table Action Header
     const actionTh = document.getElementById('prjDetailTableActionTh');
     if (actionTh) actionTh.classList.toggle('hidden', !isAdmin);
 
-    // Count departments
+    // Count departments (supports multiple departments per person)
     const deptMap = {};
     members.forEach(m => {
-      const dept = (m.department && m.department.trim()) ? m.department.trim() : 'ฝ่ายดำเนินงานทั่วไป';
-      deptMap[dept] = (deptMap[dept] || 0) + 1;
+      const deptsList = getMemberDepartments(m);
+      deptsList.forEach(d => {
+        deptMap[d] = (deptMap[d] || 0) + 1;
+      });
     });
     const depts = Object.keys(deptMap);
 
@@ -2133,12 +2189,12 @@
 
     const q = detailMemberSearch.trim().toLowerCase();
     const filtered = members.filter(m => {
-      const dept = (m.department && m.department.trim()) ? m.department.trim() : 'ฝ่ายดำเนินงานทั่วไป';
-      if (detailMemberDeptFilter !== 'ALL' && dept !== detailMemberDeptFilter) return false;
+      const memberDepts = getMemberDepartments(m);
+      if (detailMemberDeptFilter !== 'ALL' && !memberDepts.includes(detailMemberDeptFilter)) return false;
       if (q) {
         const nameMatch = (m.name || '').toLowerCase().includes(q);
         const nickMatch = (m.nickname || '').toLowerCase().includes(q);
-        const deptMatch = dept.toLowerCase().includes(q);
+        const deptMatch = memberDepts.some(d => d.toLowerCase().includes(q));
         const roleMatch = (m.role || '').toLowerCase().includes(q);
         const detailMatch = (m.details || '').toLowerCase().includes(q);
         const phoneMatch = (m.phone || '').toLowerCase().includes(q);
@@ -2179,8 +2235,7 @@
     }
 
     tbody.innerHTML = filtered.map((m, idx) => {
-      const dept = (m.department && m.department.trim()) ? m.department.trim() : 'ฝ่ายดำเนินงานทั่วไป';
-      const deptBadge = getDepartmentBadgeClass(dept);
+      const depts = getMemberDepartments(m);
       const name = m.name || 'ไม่ระบุชื่อ';
       const nickname = m.nickname ? `(${m.nickname})` : '';
       const seed = m.nickname || m.name || m.id || `member_${idx}`;
@@ -2198,19 +2253,9 @@
           <td class="py-3 px-3">
             <div class="flex items-center gap-2.5">
               <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}"
-                onclick="window.openPersonPhotoPreviewModal && window.openPersonPhotoPreviewModal({
-                  name: '${escapeJs(name)}',
-                  nickname: '${escapeJs(m.nickname || '')}',
-                  role: '${escapeJs(m.role || '')}',
-                  department: '${escapeJs(dept)}',
-                  avatar: '${escapeJs(avatarUrl)}',
-                  phone: '${escapeJs(m.phone || '')}',
-                  kkuMail: '${escapeJs(m.kkuMail || '')}',
-                  contactLink: '${escapeJs(m.contactLink || '')}',
-                  details: '${escapeJs(m.details || '')}'
-                })"
+                onclick="window.openPersonPhotoPreviewModal && window.openPersonPhotoPreviewModal('${escapeJs(m.id || m.name)}')"
                 class="w-8 h-8 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs cursor-pointer hover:ring-2 hover:ring-primary hover:scale-110 transition-all duration-200"
-                title="คลิกเพื่อดูรูปโปรไฟล์ขนาดเต็ม"
+                title="คลิกเพื่อดูรูปโปรไฟล์และรายละเอียด"
                 onerror="this.onerror=null; this.src='${fallbackUrl}';" />
               <div class="min-w-0">
                 <p class="font-bold text-foreground text-xs truncate" title="${escapeHtml(name)} ${escapeHtml(nickname)}">
@@ -2222,22 +2267,49 @@
 
           <!-- Department (ฝ่าย) -->
           <td class="py-3 px-3">
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${deptBadge}">
-              <i data-lucide="tag" class="h-3 w-3 shrink-0"></i>
-              <span class="truncate max-w-[140px]" title="${escapeHtml(dept)}">${escapeHtml(dept)}</span>
-            </span>
+            <div class="flex items-center gap-1 flex-wrap">
+              ${depts.map(d => `
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${getDepartmentBadgeClass(d)}">
+                  <i data-lucide="tag" class="h-3 w-3 shrink-0"></i>
+                  <span class="truncate max-w-[130px]" title="${escapeHtml(d)}">${escapeHtml(d)}</span>
+                </span>
+              `).join('')}
+            </div>
           </td>
 
           <!-- Role (หน้าที่ในโครงการ) -->
           <td class="py-3 px-3">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-foreground border border-border">
-              <span class="truncate max-w-[130px]" title="${escapeHtml(m.role || 'ทีมงาน')}">${escapeHtml(m.role || 'ทีมงาน')}</span>
-            </span>
+            ${Array.isArray(m.rolesList) && m.rolesList.length > 1 ? `
+              <div class="flex flex-col gap-1">
+                ${m.rolesList.map(r => `
+                  <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-foreground border border-border">
+                    ${r.position ? `<span class="text-primary font-bold">${escapeHtml(r.position)}</span>` : ''}
+                    ${r.duty ? `<span>${escapeHtml(r.duty)}</span>` : ''}
+                    ${r.department && depts.length > 1 ? `<span class="text-[10px] text-muted-foreground font-normal">(${escapeHtml(r.department)})</span>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            ` : `
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-foreground border border-border">
+                <span class="truncate max-w-[140px]" title="${escapeHtml(m.role || 'ทีมงาน')}">${escapeHtml(m.role || 'ทีมงาน')}</span>
+              </span>
+            `}
           </td>
 
           <!-- Details (รายละเอียดหน้าที่) -->
           <td class="py-3 px-3 text-muted-foreground text-[11px] leading-relaxed">
-            <span class="line-clamp-2" title="${escapeHtml(m.details || '-')}">${escapeHtml(m.details || '-')}</span>
+            ${Array.isArray(m.rolesList) && m.rolesList.length > 1 ? `
+              <div class="flex flex-col gap-1">
+                ${m.rolesList.map(r => r.description ? `
+                  <div>
+                    <span class="font-semibold text-foreground">${escapeHtml(r.duty || r.position || `หน้าที่ ${r.index}`)}: </span>
+                    <span>${escapeHtml(r.description)}</span>
+                  </div>
+                ` : '').join('') || `<span class="italic text-muted-foreground/60">-</span>`}
+              </div>
+            ` : `
+              <span class="line-clamp-2" title="${escapeHtml(m.details || '-')}">${escapeHtml(m.details || '-')}</span>
+            `}
           </td>
 
           <!-- Phone -->
@@ -2366,11 +2438,72 @@
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
     if (!Array.isArray(rows) || rows.length === 0) return [];
 
-    return rows.map((r, idx) => {
-      const department = String(
-        r['ฝ่าย'] || r['ฝ่ายงาน'] || r['แผนก'] || r['หมวด'] || r['Department'] || r['Dept'] || r['Team'] || 'ฝ่ายดำเนินงานทั่วไป'
-      ).trim();
+    const splitByComma = (val) => {
+      if (!val) return [];
+      return String(val)
+        .split(/[,،、\n]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+    };
 
+    return rows.map((r, idx) => {
+      // 1. Departments (support multi-department)
+      const rawDeptStr = String(
+        r['ฝ่าย'] || r['ฝ่ายงาน'] || r['แผนก'] || r['หมวด'] || r['Department'] || r['Dept'] || r['Team'] || ''
+      ).trim();
+      const rawDepts = splitByComma(rawDeptStr);
+
+      // 2. Positions, Duties, Descriptions (comma-separated alignment matching)
+      const rawPositions = splitByComma(r['ตำแหน่ง'] || r['Position'] || '');
+      const rawDuties = splitByComma(r['หน้าที่'] || r['หน้าที่รับผิดชอบ'] || r['บทบาท'] || r['หน้าที่ในโครงการ'] || r['Role'] || '');
+      const rawDescs = splitByComma(r['อธิบาย'] || r['รายละเอียด'] || r['รายละเอียดหน้าที่'] || r['หน้าที่ความรับผิดชอบ'] || r['ความรับผิดชอบ'] || r['Details'] || r['Description'] || '');
+
+      const maxLen = Math.max(rawDuties.length, rawPositions.length, rawDescs.length, rawDepts.length, 1);
+      const rolesList = [];
+
+      for (let i = 0; i < maxLen; i++) {
+        const pos = rawPositions[i] || (rawPositions.length === 1 ? rawPositions[0] : '');
+        const duty = rawDuties[i] || (rawDuties.length === 1 ? rawDuties[0] : (pos || 'ทีมงาน'));
+        const desc = rawDescs[i] || (rawDescs.length === 1 ? rawDescs[0] : '');
+        const dept = rawDepts[i] || (rawDepts.length === 1 ? rawDepts[0] : 'ฝ่ายดำเนินงานทั่วไป');
+
+        if (pos || duty || desc || maxLen === 1) {
+          rolesList.push({
+            index: i + 1,
+            position: pos,
+            duty: duty || 'ทีมงาน',
+            description: desc,
+            department: dept || 'ฝ่ายดำเนินงานทั่วไป'
+          });
+        }
+      }
+
+      // Unique departments
+      const uniqueDepts = Array.from(new Set(
+        rawDepts.length > 0 ? rawDepts : rolesList.map(item => item.department).filter(Boolean)
+      ));
+      if (uniqueDepts.length === 0) uniqueDepts.push('ฝ่ายดำเนินงานทั่วไป');
+      const departmentSummary = uniqueDepts.join(', ');
+
+      // Role summary string
+      let roleSummary = '';
+      if (rolesList.length > 0) {
+        roleSummary = rolesList.map(item => {
+          if (item.position && item.duty && item.position !== item.duty) {
+            return `${item.position} (${item.duty})`;
+          }
+          return item.position || item.duty || 'ทีมงาน';
+        }).join(', ');
+      } else {
+        roleSummary = 'ทีมงาน';
+      }
+
+      // Details summary string
+      const detailsSummary = rawDescs.length > 0
+        ? rawDescs.join('; ')
+        : (rolesList.map(item => item.description).filter(Boolean).join('; ') || '');
+
+      // Name & Nickname
       let name = String(r['ชื่อ-นามสกุล'] || r['ชื่อ - นามสกุล'] || r['ชื่อ-สกุล'] || r['ชื่อ นามสกุล'] || r['ชื่อ'] || r['Name'] || r['Full Name'] || '').trim();
       const lastName = String(r['นามสกุล'] || r['Last Name'] || '').trim();
       if (lastName && !name.includes(lastName)) {
@@ -2378,8 +2511,6 @@
       }
 
       const nickname = String(r['ชื่อเล่น'] || r['Nickname'] || r['Nick Name'] || '').trim();
-      const role = String(r['หน้าที่'] || r['ตำแหน่ง'] || r['บทบาท'] || r['หน้าที่ในโครงการ'] || r['Role'] || r['Position'] || 'ทีมงาน').trim();
-      const details = String(r['รายละเอียด'] || r['รายละเอียดหน้าที่'] || r['หน้าที่ความรับผิดชอบ'] || r['ความรับผิดชอบ'] || r['Details'] || r['Description'] || '').trim();
       const phone = String(r['เบอร์ติดต่อ'] || r['เบอร์โทร'] || r['เบอร์โทรศัพท์'] || r['เบอร์'] || r['Phone'] || r['Tel'] || '').trim();
       const kkuMail = String(r['KKU-MAIL'] || r['KKUMAIL'] || r['KKU Mail'] || r['kku-mail'] || r['อีเมล'] || r['Email'] || '').trim();
       const contactLink = String(r['ลิงก์ติดต่อ'] || r['ช่องทางติดต่อ'] || r['โซเชียล'] || r['Contact Link'] || r['Social'] || '').trim();
@@ -2390,17 +2521,89 @@
 
       return {
         id: `MBR-${Date.now()}-${idx + 1}`,
-        department,
         name: name || `สมาชิก #${idx + 1}`,
         nickname,
-        role,
-        details,
+        department: departmentSummary,
+        departments: uniqueDepts,
+        role: roleSummary,
+        position: rawPositions.join(', ') || '',
+        details: detailsSummary,
+        rolesList,
         phone,
         kkuMail,
         contactLink,
         avatar
       };
     }).filter(m => m.name && m.name.trim());
+  }
+
+  // Smart Upsert: matches existing members by name/email, updating details while PRESERVING avatars & contacts
+  function upsertMembersList(targetList, incomingList) {
+    let updatedCount = 0;
+    let addedCount = 0;
+
+    function normalizePersonName(name) {
+      if (!name) return '';
+      return String(name)
+        .replace(/^(นาย|นางสาว|นาง|ด\.ช\.|ด\.ญ\.|mr\.|ms\.|mrs\.)\s*/i, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+    }
+
+    incomingList.forEach(incoming => {
+      const incNorm = normalizePersonName(incoming.name);
+      const incMail = (incoming.kkuMail || '').trim().toLowerCase();
+
+      // Find match in targetList
+      const existingIdx = targetList.findIndex(existing => {
+        if (incMail && existing.kkuMail && existing.kkuMail.trim().toLowerCase() === incMail) {
+          return true;
+        }
+        if (incNorm && normalizePersonName(existing.name) === incNorm) {
+          return true;
+        }
+        return false;
+      });
+
+      if (existingIdx !== -1) {
+        // UPDATE existing person while PRESERVING connected data (avatar, contact channels, etc.)
+        const existing = targetList[existingIdx];
+
+        // Merge departments
+        const existingDepts = getMemberDepartments(existing);
+        const incomingDepts = getMemberDepartments(incoming);
+        const combinedDepts = Array.from(new Set([...incomingDepts, ...existingDepts])).filter(Boolean);
+
+        targetList[existingIdx] = {
+          ...existing,
+          // Update name/nickname
+          name: incoming.name || existing.name,
+          nickname: incoming.nickname || existing.nickname || '',
+          // Departments
+          department: combinedDepts.join(', ') || 'ฝ่ายดำเนินงานทั่วไป',
+          departments: combinedDepts.length > 0 ? combinedDepts : ['ฝ่ายดำเนินงานทั่วไป'],
+          // Roles & Duties
+          role: incoming.role || existing.role || 'ทีมงาน',
+          position: incoming.position || existing.position || '',
+          details: incoming.details || existing.details || '',
+          rolesList: (Array.isArray(incoming.rolesList) && incoming.rolesList.length > 0) ? incoming.rolesList : (existing.rolesList || []),
+          // Contacts: update if provided, preserve if empty!
+          phone: incoming.phone || existing.phone || '',
+          kkuMail: incoming.kkuMail || existing.kkuMail || '',
+          contactLink: incoming.contactLink || existing.contactLink || '',
+          // Avatar: PRESERVE existing avatar if incoming is empty!
+          avatar: incoming.avatar || existing.avatar || ''
+        };
+        updatedCount++;
+      } else {
+        // INSERT new person
+        targetList.push(incoming);
+        addedCount++;
+      }
+    });
+
+    return { updatedCount, addedCount, total: targetList.length };
   }
 
   // Handle Excel Import inside Project Detail Modal
@@ -2427,13 +2630,28 @@
             return;
           }
 
-          const depts = new Set(parsed.map(m => m.department));
+          if (!Array.isArray(p.members)) p.members = [];
+
+          // Pre-count matches for the confirm dialog
+          function normalizePersonName(name) {
+            if (!name) return '';
+            return String(name).replace(/^(นาย|นางสาว|นาง|ด\.ช\.|ด\.ญ\.|mr\.|ms\.|mrs\.)\s*/i, '').replace(/\s+/g, ' ').trim().toLowerCase();
+          }
+          let matchCount = 0;
+          let newCount = 0;
+          parsed.forEach(inc => {
+            const incNorm = normalizePersonName(inc.name);
+            const incMail = (inc.kkuMail || '').trim().toLowerCase();
+            const exists = p.members.some(m => (incMail && m.kkuMail && m.kkuMail.trim().toLowerCase() === incMail) || (incNorm && normalizePersonName(m.name) === incNorm));
+            if (exists) matchCount++;
+            else newCount++;
+          });
 
           const confirmed = typeof window.showConfirmDialog === 'function'
             ? await window.showConfirmDialog({
-                title: 'ยืนยันการนำเข้ารายชื่อจาก Excel',
-                message: `พบรายชื่อสมาชิกในไฟล์จำนวน ${parsed.length} คน จาก ${depts.size} ฝ่ายงาน\nต้องการเพิ่มรายชื่อเข้าสู่โครงการ "${p.title}" ใช่หรือไม่?`,
-                confirmText: 'เพิ่มรายชื่อสู่โครงการ',
+                title: 'ยืนยันการอัปเดตและนำเข้ารายชื่อ',
+                message: `พบรายชื่อในไฟล์ Excel ทั้งหมด ${parsed.length} คน\n• มีข้อมูลเดิมในระบบ: ${matchCount} คน (จะอัปเดตหน้าที่/ฝ่าย โดยคงรูปโปรไฟล์และข้อมูลเดิมไว้)\n• รายชื่อสมาชิกใหม่: ${newCount} คน\n\nต้องการดำเนินการเข้าสู่โครงการ "${p.title}" ใช่หรือไม่?`,
+                confirmText: 'อัปเดตและนำเข้าข้อมูล',
                 cancelText: 'ยกเลิก',
                 isDanger: false,
                 icon: 'file-spreadsheet'
@@ -2442,27 +2660,32 @@
 
           if (!confirmed) return;
 
-          if (!Array.isArray(p.members)) p.members = [];
-          p.members.push(...parsed);
+          const res = upsertMembersList(p.members, parsed);
 
           if (window.socket && typeof window.socket.emit === 'function') {
             window.socket.emit('admin:updateProject', p);
           }
 
           if (typeof saveLocalState === 'function') saveLocalState();
+          if (typeof window.persistProjectsToCloud === 'function') {
+            window.persistProjectsToCloud(true);
+          }
 
           renderProjectMembersTableView(p);
           if (typeof showToast === 'function') {
-            showToast(`นำเข้ารายชื่อสำเร็จ ${parsed.length} คน (${depts.size} ฝ่ายงาน)`, 'success');
+            showToast(`นำเข้าสำเร็จ: ปรับปรุงข้อมูล ${res.updatedCount} คน, เพิ่มสมาชิกใหม่ ${res.addedCount} คน`, 'success');
           }
         } catch (err) {
           console.error('Error importing Excel:', err);
           if (typeof showToast === 'function') showToast('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel: ' + err.message, 'error');
+        } finally {
+          event.target.value = '';
         }
       };
       reader.readAsArrayBuffer(file);
     } catch (err) {
       console.error(err);
+      event.target.value = '';
     }
   }
 
@@ -2473,7 +2696,7 @@
 
     try {
       const reader = new FileReader();
-      reader.onload = function (e) {
+      reader.onload = async function (e) {
         try {
           const parsed = parseMembersFromExcelBuffer(e.target.result);
           if (parsed.length === 0) {
@@ -2481,19 +2704,92 @@
             return;
           }
 
-          prjFormMembers.push(...parsed);
+          function normalizePersonName(name) {
+            if (!name) return '';
+            return String(name).replace(/^(นาย|นางสาว|นาง|ด\.ช\.|ด\.ญ\.|mr\.|ms\.|mrs\.)\s*/i, '').replace(/\s+/g, ' ').trim().toLowerCase();
+          }
+          let matchCount = 0;
+          let newCount = 0;
+          parsed.forEach(inc => {
+            const incNorm = normalizePersonName(inc.name);
+            const incMail = (inc.kkuMail || '').trim().toLowerCase();
+            const exists = prjFormMembers.some(m => (incMail && m.kkuMail && m.kkuMail.trim().toLowerCase() === incMail) || (incNorm && normalizePersonName(m.name) === incNorm));
+            if (exists) matchCount++;
+            else newCount++;
+          });
+
+          const confirmed = typeof window.showConfirmDialog === 'function'
+            ? await window.showConfirmDialog({
+                title: 'ยืนยันการอัปเดตและนำเข้ารายชื่อเข้าสู่ฟอร์ม',
+                message: `พบรายชื่อในไฟล์ Excel ทั้งหมด ${parsed.length} คน\n• มีข้อมูลเดิมในฟอร์ม: ${matchCount} คน (จะอัปเดตข้อมูลโดยคงรูปภาพและข้อมูลเดิมไว้)\n• รายชื่อใหม่: ${newCount} คน\n\nต้องการนำเข้าข้อมูลใช่หรือไม่?`,
+                confirmText: 'อัปเดตและเพิ่มรายชื่อ',
+                cancelText: 'ยกเลิก',
+                isDanger: false,
+                icon: 'file-spreadsheet'
+              })
+            : true;
+
+          if (!confirmed) return;
+
+          const res = upsertMembersList(prjFormMembers, parsed);
           renderRepeater('MEMBERS');
           if (typeof showToast === 'function') {
-            showToast(`นำเข้ารายชื่อเข้าสู่แบบฟอร์มแล้ว ${parsed.length} คน`, 'success');
+            showToast(`นำเข้าสำเร็จ: ปรับปรุงข้อมูล ${res.updatedCount} คน, เพิ่มใหม่ ${res.addedCount} คน`, 'success');
           }
         } catch (err) {
           console.error(err);
           if (typeof showToast === 'function') showToast('เกิดข้อผิดพลาดในการนำเข้า: ' + err.message, 'error');
+        } finally {
+          event.target.value = '';
         }
       };
       reader.readAsArrayBuffer(file);
     } catch (err) {
       console.error(err);
+      event.target.value = '';
+    }
+  }
+
+  // Clear all members in Project Detail Modal Table
+  async function clearAllProjectDetailMembers() {
+    if (window.currentRole !== 'ADMIN') {
+      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถล้างรายชื่อได้', 'warning');
+      return;
+    }
+    if (!activeDetailProjectId) return;
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p || !Array.isArray(p.members) || p.members.length === 0) {
+      if (typeof showToast === 'function') showToast('ไม่มีรายชื่อสมาชิกให้ล้าง', 'info');
+      return;
+    }
+
+    const count = p.members.length;
+    const confirmed = typeof window.showConfirmDialog === 'function'
+      ? await window.showConfirmDialog({
+          title: 'ยืนยันการล้างรายชื่อทั้งหมดในโครงการ',
+          message: `คุณต้องการลบรายชื่อสมาชิกทั้งหมดจำนวน ${count} คน ออกจากโครงการ "${p.title}" ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`,
+          confirmText: `ล้างรายชื่อทั้งหมด (${count} คน)`,
+          cancelText: 'ยกเลิก',
+          isDanger: true,
+          icon: 'trash-2'
+        })
+      : false;
+
+    if (!confirmed) return;
+
+    p.members = [];
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('admin:updateProject', p);
+    }
+    if (typeof saveLocalState === 'function') saveLocalState();
+    if (typeof window.persistProjectsToCloud === 'function') {
+      window.persistProjectsToCloud(true);
+    }
+
+    renderProjectMembersTableView(p);
+    if (typeof showToast === 'function') {
+      showToast(`ล้างรายชื่อสมาชิกทั้งหมด (${count} คน) เรียบร้อยแล้ว`, 'info');
     }
   }
 
@@ -2505,28 +2801,29 @@
     }
 
     const templateData = [
-      ['ฝ่าย', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'หน้าที่', 'รายละเอียดหน้าที่', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ติดต่อ', 'ลิงก์รูปหน้า'],
-      ['ฝ่ายกิจกรรมและสันทนาการ', 'นางสาวพิมพ์ชนก รัตนสุวรรณ', 'พลอย', 'หัวหน้าฝ่ายกิจกรรมและเกม', 'ออกแบบฐานกิจกรรม กลุ่มสัมพันธ์ และเกมสันทนาการ', '089-876-5432', 'pimchanok.r@kkumail.com', 'https://instagram.com/ploy_cs', ''],
-      ['ฝ่ายกิจกรรมและสันทนาการ', 'นายธนกฤต มั่นคง', 'เจมส์', 'สตาฟฟ์นันทนาการและเพลง', 'ดูแลกิจกรรมร้องเพลง เต้นประกอบจังหวะ และนำเกมกลุ่มย่อย', '085-111-2233', 'thanakrit.m@kkumail.com', 'https://facebook.com/james.comsan', ''],
-      ['ฝ่ายสถานที่และสวัสดิการ', 'นายกิตติศักดิ์ พรหมดี', 'ฟีฟ่า', 'หัวหน้าฝ่ายสถานที่และสวัสดิการ', 'จัดเตรียมอุปกรณ์ค่าย อาหาร น้ำดื่ม และการประสานงานพื้นที่', '082-345-6789', 'kittisak.p@kkumail.com', 'https://line.me/ti/p/~fifa_cs', ''],
-      ['ฝ่ายสถานที่และสวัสดิการ', 'นายชินวัตร วิเศษศักดิ์', 'อาร์ม', 'สตาฟฟ์ฝ่ายสถานที่และยานพาหนะ', 'ดูแลการเดินทาง การจัดเต็นท์พักแรม และระบบไฟฟ้าส่องสว่าง', '084-999-8877', 'chinawat.w@kkumail.com', 'https://line.me/ti/p/~arm_cs', ''],
-      ['ฝ่ายพยาบาลและสุขอนามัย', 'นางสาวสุชาวดี มีสุข', 'ฟ้า', 'เจ้าหน้าที่พยาบาลประจำค่าย', 'จัดเตรียมกระเป๋ายา เวชภัณฑ์ และดูแลสุขภาพของชาวค่าย', '086-444-5566', 'suchawadee.m@kkumail.com', 'https://instagram.com/fah_care', ''],
-      ['ฝ่ายสื่อและประชาสัมพันธ์', 'นายวรเมธ ศรีสวัสดิ์', 'นิว', 'หัวหน้าฝ่ายสื่อและบันทึกภาพ', 'บันทึกภาพนิ่ง วิดีโอกิจกรรม และผลิตสื่อสรุปผลโครงการ', '087-333-2211', 'worameth.s@kkumail.com', 'https://instagram.com/new_photo', ''],
-      ['ฝ่ายทะเบียนและประเมินผล', 'นางสาวกานดา นวลจันทร์', 'มายด์', 'เจ้าหน้าที่ทะเบียนและประเมินผล', 'รับลงทะเบียน แจกป้ายชื่อ รวบรวมแบบประเมินและสรุปรายงานสถิติ', '083-222-1100', 'kanda.n@kkumail.com', 'https://line.me/ti/p/~mind_kanda', '']
+      ['ฝ่าย', 'ตำแหน่ง', 'หน้าที่', 'รายละเอียดหน้าที่', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ติดต่อ', 'ลิงก์รูปหน้า'],
+      ['ฝ่ายกิจกรรมและสันทนาการ, ฝ่ายสถานที่และสวัสดิการ', 'หัวหน้าฝ่ายกิจกรรม, สตาฟฟ์ฝ่ายสถานที่', 'ออกแบบเกมสันทนาการ, จัดเตรียมอุปกรณ์', 'ดูแลเกมค่ายและกลุ่มสัมพันธ์, จัดเตรียมห้อง CP9127 และระบบเสียง', 'นางสาวพิมพ์ชนก รัตนสุวรรณ', 'พลอย', '089-876-5432', 'pimchanok.r@kkumail.com', 'https://instagram.com/ploy_cs', ''],
+      ['ฝ่ายกิจกรรมและสันทนาการ', 'สตาฟฟ์นันทนาการ', 'สตาฟฟ์นันทนาการและเพลง', 'ดูแลกิจกรรมร้องเพลง เต้นประกอบจังหวะ และนำเกมกลุ่มย่อย', 'นายธนกฤต มั่นคง', 'เจมส์', '085-111-2233', 'thanakrit.m@kkumail.com', 'https://facebook.com/james.comsan', ''],
+      ['ฝ่ายสถานที่และสวัสดิการ', 'หัวหน้าฝ่ายสถานที่', 'หัวหน้าฝ่ายสถานที่และสวัสดิการ', 'จัดเตรียมอุปกรณ์ค่าย อาหาร น้ำดื่ม และการประสานงานพื้นที่', 'นายกิตติศักดิ์ พรหมดี', 'ฟีฟ่า', '082-345-6789', 'kittisak.p@kkumail.com', 'https://line.me/ti/p/~fifa_cs', ''],
+      ['ฝ่ายสถานที่และสวัสดิการ, ฝ่ายยานพาหนะ', 'สตาฟฟ์สถานที่, ผู้ดูแลยานพาหนะ', 'จัดเต็นท์พักแรม, ประสานงานรถตู้', 'ดูแลการเดินทางและระบบไฟฟ้าส่องสว่าง, ประสานงานรถรับส่งนักศึกษา', 'นายชินวัตร วิเศษศักดิ์', 'อาร์ม', '084-999-8877', 'chinawat.w@kkumail.com', 'https://line.me/ti/p/~arm_cs', ''],
+      ['ฝ่ายพยาบาลและสุขอนามัย', 'เจ้าหน้าที่พยาบาล', 'เจ้าหน้าที่พยาบาลประจำค่าย', 'จัดเตรียมกระเป๋ายา เวชภัณฑ์ และดูแลสุขภาพของชาวค่าย', 'นางสาวสุชาวดี มีสุข', 'ฟ้า', '086-444-5566', 'suchawadee.m@kkumail.com', 'https://instagram.com/fah_care', ''],
+      ['ฝ่ายสื่อและประชาสัมพันธ์', 'หัวหน้าฝ่ายสื่อ', 'บันทึกภาพและผลิตสื่อ', 'บันทึกภาพนิ่ง วิดีโอกิจกรรม และผลิตสื่อสรุปผลโครงการ', 'นายวรเมธ ศรีสวัสดิ์', 'นิว', '087-333-2211', 'worameth.s@kkumail.com', 'https://instagram.com/new_photo', ''],
+      ['ฝ่ายทะเบียนและประเมินผล', 'เจ้าหน้าที่ทะเบียน', 'รับลงทะเบียนและประเมินผล', 'รับลงทะเบียน แจกป้ายชื่อ รวบรวมแบบประเมินและสรุปรายงานสถิติ', 'นางสาวกานดา นวลจันทร์', 'มายด์', '083-222-1100', 'kanda.n@kkumail.com', 'https://line.me/ti/p/~mind_kanda', '']
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(templateData);
 
     ws['!cols'] = [
-      { wch: 25 }, // ฝ่าย
-      { wch: 30 }, // ชื่อ-นามสกุล
+      { wch: 32 }, // ฝ่าย
+      { wch: 28 }, // ตำแหน่ง
+      { wch: 30 }, // หน้าที่
+      { wch: 50 }, // รายละเอียดหน้าที่
+      { wch: 28 }, // ชื่อ-นามสกุล
       { wch: 12 }, // ชื่อเล่น
-      { wch: 28 }, // หน้าที่
-      { wch: 45 }, // รายละเอียดหน้าที่
       { wch: 16 }, // เบอร์ติดต่อ
       { wch: 28 }, // KKU-MAIL
-      { wch: 35 }, // ลิงก์ติดต่อ
-      { wch: 25 }  // ลิงก์รูปหน้า
+      { wch: 32 }, // ลิงก์ติดต่อ
+      { wch: 22 }  // ลิงก์รูปหน้า
     ];
 
     const wb = XLSX.utils.book_new();
@@ -2559,17 +2856,29 @@
     }
 
     const rows = [
-      ['ลำดับ', 'ฝ่ายงาน', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'หน้าที่ / บทบาท', 'รายละเอียดหน้าที่', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ช่องทางติดต่อ']
+      ['ลำดับ', 'ฝ่ายงาน', 'ตำแหน่ง', 'หน้าที่ / บทบาท', 'รายละเอียดหน้าที่', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ช่องทางติดต่อ']
     ];
 
     members.forEach((m, idx) => {
+      const depts = getMemberDepartments(m);
+      let positions = m.position || '';
+      let duties = m.role || 'ทีมงาน';
+      let descs = m.details || '';
+
+      if (Array.isArray(m.rolesList) && m.rolesList.length > 0) {
+        positions = m.rolesList.map(r => r.position).filter(Boolean).join(', ') || positions;
+        duties = m.rolesList.map(r => r.duty).filter(Boolean).join(', ') || duties;
+        descs = m.rolesList.map(r => r.description).filter(Boolean).join('; ') || descs;
+      }
+
       rows.push([
         idx + 1,
-        m.department || 'ฝ่ายดำเนินงานทั่วไป',
+        depts.join(', '),
+        positions,
+        duties,
+        descs,
         m.name || '',
         m.nickname || '',
-        m.role || 'ทีมงาน',
-        m.details || '',
         m.phone || '',
         m.kkuMail || '',
         m.contactLink || ''
@@ -2579,14 +2888,15 @@
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [
       { wch: 8 },  // ลำดับ
-      { wch: 26 }, // ฝ่ายงาน
-      { wch: 30 }, // ชื่อ-นามสกุล
-      { wch: 12 }, // ชื่อเล่น
-      { wch: 26 }, // หน้าที่
+      { wch: 30 }, // ฝ่ายงาน
+      { wch: 25 }, // ตำแหน่ง
+      { wch: 30 }, // หน้าที่
       { wch: 45 }, // รายละเอียดหน้าที่
+      { wch: 28 }, // ชื่อ-นามสกุล
+      { wch: 12 }, // ชื่อเล่น
       { wch: 16 }, // เบอร์ติดต่อ
       { wch: 28 }, // KKU-MAIL
-      { wch: 35 }  // ลิงก์ช่องทางติดต่อ
+      { wch: 32 }  // ลิงก์ช่องทางติดต่อ
     ];
 
     const wb = XLSX.utils.book_new();
@@ -2958,12 +3268,12 @@
     const itemsHtml = list.map((item, idx) => {
       // Check filters for MEMBERS
       if (type === 'MEMBERS') {
-        const itemDept = (item.department || '').trim();
-        if (deptFilter !== 'ALL' && itemDept !== deptFilter) return '';
+        const itemDepts = getMemberDepartments(item);
+        if (deptFilter !== 'ALL' && !itemDepts.includes(deptFilter)) return '';
         if (q) {
           const matchName = (item.name || '').toLowerCase().includes(q);
           const matchNick = (item.nickname || '').toLowerCase().includes(q);
-          const matchDept = itemDept.toLowerCase().includes(q);
+          const matchDept = itemDepts.some(d => d.toLowerCase().includes(q)) || (item.department || '').toLowerCase().includes(q);
           const matchRole = (item.role || '').toLowerCase().includes(q);
           const matchPhone = (item.phone || '').toLowerCase().includes(q);
           const matchMail = (item.kkuMail || '').toLowerCase().includes(q);
@@ -2972,7 +3282,6 @@
       }
 
       const isExpanded = expandedSet.has(idx);
-      const deptBadge = getDepartmentBadgeClass(item.department);
       const seed = item.nickname || item.name || item.id || `${type}_${idx}`;
       const itemFallbackUrl = getCuteAvatarUrl(seed);
       const itemAvatarUrl = item.avatar || itemFallbackUrl;
@@ -2991,11 +3300,19 @@
                   class="w-7 h-7 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs"
                   onerror="this.onerror=null; this.src='${itemFallbackUrl}';" />
 
-                ${type === 'MEMBERS' && item.department ? `
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${deptBadge} shrink-0 max-w-[130px] truncate" title="${escapeHtml(item.department)}">
-                    ${escapeHtml(item.department)}
-                  </span>
-                ` : ''}
+                ${type === 'MEMBERS' ? (() => {
+                  const depts = getMemberDepartments(item);
+                  if (depts.length === 0 || (depts.length === 1 && depts[0] === 'ฝ่ายดำเนินงานทั่วไป' && !item.department)) return '';
+                  return `
+                    <div class="flex items-center gap-1 flex-wrap shrink-0">
+                      ${depts.map(d => `
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${getDepartmentBadgeClass(d)} max-w-[130px] truncate" title="${escapeHtml(d)}">
+                          ${escapeHtml(d)}
+                        </span>
+                      `).join('')}
+                    </div>
+                  `;
+                })() : ''}
 
                 <div class="min-w-0 flex-1 flex items-center gap-1.5 flex-wrap">
                   <span class="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
@@ -3045,11 +3362,19 @@
               <span class="text-xs font-bold text-foreground truncate">
                 ${escapeHtml(item.name || `${typeLabel} #${idx + 1}`)} ${item.nickname ? `(${escapeHtml(item.nickname)})` : ''}
               </span>
-              ${type === 'MEMBERS' && item.department ? `
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${deptBadge}">
-                  ${escapeHtml(item.department)}
-                </span>
-              ` : ''}
+              ${type === 'MEMBERS' ? (() => {
+                const depts = getMemberDepartments(item);
+                if (depts.length === 0 || (depts.length === 1 && depts[0] === 'ฝ่ายดำเนินงานทั่วไป' && !item.department)) return '';
+                return `
+                  <div class="flex items-center gap-1 flex-wrap shrink-0">
+                    ${depts.map(d => `
+                      <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${getDepartmentBadgeClass(d)}">
+                        ${escapeHtml(d)}
+                      </span>
+                    `).join('')}
+                  </div>
+                `;
+              })() : ''}
             </div>
 
             <div class="flex items-center gap-1.5 shrink-0">
@@ -3070,8 +3395,11 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
             ${type === 'MEMBERS' ? `
               <div class="sm:col-span-2">
-                <label class="block text-[11px] font-bold text-indigo-600 dark:text-indigo-400 mb-1 flex items-center gap-1">
-                  <i data-lucide="tag" class="h-3 w-3"></i> ฝ่ายงานที่สังกัด (Department / Division) *
+                <label class="block text-[11px] font-bold text-indigo-600 dark:text-indigo-400 mb-1 flex items-center justify-between flex-wrap gap-1">
+                  <span class="flex items-center gap-1">
+                    <i data-lucide="tag" class="h-3 w-3"></i> ฝ่ายงานที่สังกัด (Department / Division) *
+                  </span>
+                  <span class="text-[10px] font-normal text-muted-foreground">สังกัดได้มากกว่า 1 ฝ่าย โดยคั่นด้วยเครื่องหมายจุลภาค (,)</span>
                 </label>
                 <input type="text" value="${escapeHtml(item.department || '')}"
                   oninput="updateRepeaterField('${type}', ${idx}, 'department', this.value)"
@@ -3097,10 +3425,12 @@
             </div>
 
             <div>
-              <label class="block text-[11px] font-medium text-muted-foreground mb-1">หน้าที่ / ตำแหน่งในโครงการ</label>
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">
+                หน้าที่ / ตำแหน่งในโครงการ <span class="text-[10px] opacity-75">(คั่นด้วย , หากมีหลายหน้าที่)</span>
+              </label>
               <input type="text" value="${escapeHtml(item.role || '')}"
                 oninput="updateRepeaterField('${type}', ${idx}, 'role', this.value)"
-                placeholder="เช่น หัวหน้าฝ่ายกิจกรรม / สตาฟฟ์นันทนาการ / MC"
+                placeholder="เช่น หัวหน้าฝ่ายกิจกรรม, สตาฟฟ์นันทนาการ"
                 class="w-full px-3 py-1.5 rounded-lg bg-card border border-border focus:border-primary text-xs" />
             </div>
 
@@ -3262,7 +3592,9 @@
             </div>
 
             <div class="sm:col-span-2">
-              <label class="block text-[11px] font-medium text-muted-foreground mb-1">รายละเอียดหน้าที่ความรับผิดชอบ (ถ้ามี)</label>
+              <label class="block text-[11px] font-medium text-muted-foreground mb-1">
+                รายละเอียดหน้าที่ความรับผิดชอบ <span class="text-[10px] opacity-75">(ถ้ามี - หากมีหลายหน้าที่ ให้คั่นด้วยเครื่องหมายจุลภาค , ให้ตรงกับหน้าที่)</span>
+              </label>
               <textarea rows="2"
                 oninput="updateRepeaterField('${type}', ${idx}, 'details', this.value)"
                 placeholder="ระบุรายละเอียดความรับผิดชอบในโครงการ..."
@@ -3332,7 +3664,30 @@
     }, 60);
   }
 
-  function removeRepeaterItem(type, index) {
+  async function removeRepeaterItem(type, index) {
+    let list;
+    let label = 'บุคคล';
+    if (type === 'LEADERS') { list = prjFormLeaders; label = 'ผู้รับผิดชอบโครงการ'; }
+    else if (type === 'MEMBERS') { list = prjFormMembers; label = 'สมาชิกผู้เกี่ยวข้อง'; }
+    else if (type === 'ADVISORS') { list = prjFormAdvisors; label = 'ที่ปรึกษาโครงการ'; }
+    else if (type === 'SMO') { list = prjFormSmoOfficers; label = 'สโมสรนักศึกษา'; }
+
+    const item = list && list[index];
+    const name = item ? (item.name || `${label} #${index + 1}`) : label;
+
+    const confirmed = typeof window.showConfirmDialog === 'function'
+      ? await window.showConfirmDialog({
+          title: 'ยืนยันการลบรายชื่อ',
+          message: `คุณต้องการลบ "${name}" ออกจากรายชื่อโครงการใช่หรือไม่?`,
+          confirmText: 'ลบรายชื่อ',
+          cancelText: 'ยกเลิก',
+          isDanger: true,
+          icon: 'trash-2'
+        })
+      : true;
+
+    if (!confirmed) return;
+
     let set;
     if (type === 'LEADERS') {
       prjFormLeaders.splice(index, 1);
@@ -3353,6 +3708,57 @@
     }
 
     renderRepeater(type);
+    if (typeof showToast === 'function') {
+      showToast(`ลบ "${name}" เรียบร้อยแล้ว`, 'info');
+    }
+  }
+
+  // Clear all members in Project Edit Form Repeater
+  async function clearAllRepeaterMembers(type = 'MEMBERS') {
+    let list;
+    let label = 'บุคคลในโครงการ';
+    if (type === 'LEADERS') { list = prjFormLeaders; label = 'ผู้รับผิดชอบโครงการ'; }
+    else if (type === 'MEMBERS') { list = prjFormMembers; label = 'สมาชิกผู้เกี่ยวข้อง'; }
+    else if (type === 'ADVISORS') { list = prjFormAdvisors; label = 'ที่ปรึกษาโครงการ'; }
+    else if (type === 'SMO') { list = prjFormSmoOfficers; label = 'สโมสรนักศึกษา'; }
+
+    if (!list || list.length === 0) {
+      if (typeof showToast === 'function') showToast(`ไม่มีรายชื่อ${label}ให้ล้าง`, 'info');
+      return;
+    }
+
+    const count = list.length;
+    const confirmed = typeof window.showConfirmDialog === 'function'
+      ? await window.showConfirmDialog({
+          title: `ยืนยันการล้างรายชื่อ${label}ทั้งหมด`,
+          message: `คุณต้องการล้างรายชื่อ${label}ทั้งหมดจำนวน ${count} คน ออกจากฟอร์มใช่หรือไม่?`,
+          confirmText: `ล้างทั้งหมด (${count} คน)`,
+          cancelText: 'ยกเลิก',
+          isDanger: true,
+          icon: 'trash-2'
+        })
+      : false;
+
+    if (!confirmed) return;
+
+    if (type === 'LEADERS') {
+      prjFormLeaders.length = 0;
+      expandedLeadersIndices.clear();
+    } else if (type === 'MEMBERS') {
+      prjFormMembers.length = 0;
+      expandedMembersIndices.clear();
+    } else if (type === 'ADVISORS') {
+      prjFormAdvisors.length = 0;
+      expandedAdvisorsIndices.clear();
+    } else if (type === 'SMO') {
+      prjFormSmoOfficers.length = 0;
+      expandedSmoIndices.clear();
+    }
+
+    renderRepeater(type);
+    if (typeof showToast === 'function') {
+      showToast(`ล้างรายชื่อ${label}ทั้งหมด (${count} คน) เรียบร้อยแล้ว`, 'info');
+    }
   }
 
   function updateRepeaterField(type, index, field, value) {
@@ -3364,6 +3770,10 @@
 
     if (list && list[index]) {
       list[index][field] = value;
+      if (field === 'department') {
+        const depts = String(value).split(/[,،、/]/).map(d => d.trim()).filter(Boolean);
+        list[index].departments = depts.length > 0 ? depts : ['ฝ่ายดำเนินงานทั่วไป'];
+      }
     }
   }
 
@@ -3616,6 +4026,10 @@
     window.filterDriveCatalogGrid = filterDriveCatalogGrid;
     window.openPersonPhotoPreviewModal = openPersonPhotoPreviewModal;
     window.closePersonPhotoPreviewModal = closePersonPhotoPreviewModal;
+    window.clearAllRepeaterMembers = clearAllRepeaterMembers;
+    window.clearAllProjectDetailMembers = clearAllProjectDetailMembers;
+    window.getMemberDepartments = getMemberDepartments;
+    window.upsertMembersList = upsertMembersList;
   }
 
   return {
@@ -3627,6 +4041,10 @@
     closeAdminProjectEditModal,
     addRepeaterItem,
     removeRepeaterItem,
+    clearAllRepeaterMembers,
+    clearAllProjectDetailMembers,
+    getMemberDepartments,
+    upsertMembersList,
     updateRepeaterField,
     toggleRepeaterItem,
     toggleExpandAllMembersRepeater,
