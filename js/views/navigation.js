@@ -584,24 +584,20 @@ function updateRoleSwitcherPill(role, immediate) {
     if (immediate) {
       glider.style.transition = 'none';
       glider.style.transform = isAdmin ? 'translate3d(100%, 0, 0)' : 'translate3d(0, 0, 0)';
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (glider) glider.style.transition = '';
-        });
-      });
+      void glider.offsetHeight;
+      glider.style.transition = '';
     } else {
+      glider.style.transition = '';
       glider.style.transform = isAdmin ? 'translate3d(100%, 0, 0)' : 'translate3d(0, 0, 0)';
     }
   }
 
   if (btnUser) {
     btnUser.classList.toggle('text-white', !isAdmin);
-    btnUser.classList.toggle('font-bold', !isAdmin);
     btnUser.classList.toggle('text-muted-foreground', isAdmin);
   }
   if (btnAdmin) {
     btnAdmin.classList.toggle('text-white', isAdmin);
-    btnAdmin.classList.toggle('font-bold', isAdmin);
     btnAdmin.classList.toggle('text-muted-foreground', !isAdmin);
   }
 
@@ -614,12 +610,10 @@ function updateRoleSwitcherPill(role, immediate) {
     if (immediate) {
       gliderMobile.style.transition = 'none';
       gliderMobile.style.transform = isAdmin ? 'translate3d(100%, 0, 0)' : 'translate3d(0, 0, 0)';
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (gliderMobile) gliderMobile.style.transition = '';
-        });
-      });
+      void gliderMobile.offsetHeight;
+      gliderMobile.style.transition = '';
     } else {
+      gliderMobile.style.transition = '';
       gliderMobile.style.transform = isAdmin ? 'translate3d(100%, 0, 0)' : 'translate3d(0, 0, 0)';
     }
   }
@@ -641,12 +635,15 @@ function updateHeaderRoleSwitcherVisibility() {
 
   const isAdminAuth = Boolean(window.isAdminAuthenticated);
   if (isAdminAuth) {
+    const wasHidden = switcher.classList.contains('hidden');
     switcher.classList.remove('hidden');
-    switcher.classList.add('flex');
-    updateRoleSwitcherPill(window.currentRole, true);
+    switcher.classList.add('grid');
+    if (wasHidden) {
+      updateRoleSwitcherPill(window.currentRole, true);
+    }
   } else {
     switcher.classList.add('hidden');
-    switcher.classList.remove('flex');
+    switcher.classList.remove('grid', 'flex');
   }
 }
 
@@ -907,7 +904,7 @@ function switchRoleView(role) {
   }
 
   // 1. Immediately trigger the GPU glider animation (0ms latency!)
-  updateRoleSwitcherPill(role);
+  updateRoleSwitcherPill(role, false);
 
   if (role === 'USER') {
     window.isDatabaseUnlocked = false;
@@ -936,25 +933,24 @@ function switchRoleView(role) {
     const aChat = document.getElementById('aTab_CHAT');
     if (aChat) aChat.classList.add('hidden');
 
-    switchUserTab(window.activeUserTab || 'HOME');
+    switchUserTab(window.activeUserTab || 'HOME', true);
   }
 
   // Fast UI sync
   updateSidebarVisibility();
-  updateHeaderRoleSwitcherVisibility();
   if (typeof window.updateAdminSidebarBadges === 'function' && window.appState) {
     window.updateAdminSidebarBadges(window.appState);
   }
 
-  // 3. Defer heavy background components to requestAnimationFrame so animation runs silky-smooth at 60/120 FPS
-  requestAnimationFrame(() => {
+  // 3. Defer background components until AFTER the 200ms glider animation completes
+  setTimeout(() => {
     if (role === 'USER' && window.currentUserId && typeof window.renderUserQrCode === 'function') {
       window.renderUserQrCode(window.currentUserId);
     }
     if (typeof window.renderAll === 'function') {
       window.renderAll();
     }
-  });
+  }, 220);
 }
 
 let isChatSplashActive = false;
@@ -1003,7 +999,7 @@ function showChatSplashScreen(onCovered) {
   }, 1300);
 }
 
-function switchUserTab(tab) {
+function switchUserTab(tab, skipRenderAll) {
   if (tab === 'CHAT' && window.currentRole === 'ADMIN') {
     switchAdminTab('CHAT');
     return;
@@ -1013,24 +1009,24 @@ function switchUserTab(tab) {
   const toolSubTabs = ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'PROJECTS', 'SEATS', 'RANDOM'];
   if (toolSubTabs.includes(tab)) {
     window.activeUserToolSubTab = tab;
-    switchUserTab('HOME');
+    switchUserTab('HOME', skipRenderAll);
     switchUserToolSubTab(tab);
     return;
   }
 
   if (tab === 'CHAT' && window.activeUserTab !== 'CHAT') {
     showChatSplashScreen(() => {
-      actuallySwitchUserTab('CHAT');
+      actuallySwitchUserTab('CHAT', skipRenderAll);
     });
     return;
   }
   if (tab === 'HOME' && !window.activeUserToolSubTab) {
     window.activeUserToolSubTab = 'FILES';
   }
-  actuallySwitchUserTab(tab);
+  actuallySwitchUserTab(tab, skipRenderAll);
 }
 
-function actuallySwitchUserTab(tab) {
+function actuallySwitchUserTab(tab, skipRenderAll) {
   if (window.isAdminAuthenticated && !window.isUserAuthenticated) {
     showUserLoginPopup();
     return;
@@ -1110,7 +1106,7 @@ function actuallySwitchUserTab(tab) {
   updateSidebarVisibility();
   updateDesktopHeader();
   updateChatFloatingButtons();
-  if (typeof window.renderAll === 'function') window.renderAll();
+  if (!skipRenderAll && typeof window.renderAll === 'function') window.renderAll();
 }
 
 function switchUserToolSubTab(subTab) {
