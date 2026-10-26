@@ -196,7 +196,12 @@ function triggerAdminSpin() {
   const mode = (window.randomizerMode || 'WHEEL').toUpperCase();
   const winnerIndex = pickWeightedIndex(items);
   const winnerLabel = items[winnerIndex].label;
+  const spinId = Date.now();
+  const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
   const spinPayload = {
+    recordId: spinId,
+    time: timeStr,
     mode: mode,
     items: items.map(i => ({ id: i.id, label: i.label })),
     winnerIndex,
@@ -204,23 +209,25 @@ function triggerAdminSpin() {
   };
 
   const record = {
-    id: Date.now(),
+    id: spinId,
     mode: mode,
     winnerLabel,
-    time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    time: timeStr
   };
-  const state = window.appState;
-  if (state) {
-    if (!state.randomizer) state.randomizer = { lastWinner: null, history: [] };
-    state.randomizer.lastWinner = record;
-    state.randomizer.history.unshift(record);
-    state.randomizer.history = state.randomizer.history.slice(0, 15);
-    if (typeof window.saveLocalState === 'function') window.saveLocalState();
-  }
 
-  // 1. Send over socket to broadcast to all other clients
+  // 1. Send over socket to broadcast and process through ActionReducer (avoid double-unshift)
   if (window.socket && typeof window.socket.emit === 'function') {
     window.socket.emit('admin:startRandomSpin', spinPayload);
+  } else {
+    // Offline fallback only when socket is unavailable
+    const state = window.appState;
+    if (state) {
+      if (!state.randomizer) state.randomizer = { lastWinner: null, history: [] };
+      state.randomizer.lastWinner = record;
+      state.randomizer.history.unshift(record);
+      state.randomizer.history = state.randomizer.history.slice(0, 15);
+      if (typeof window.saveLocalState === 'function') window.saveLocalState();
+    }
   }
 
   // 2. ALWAYS play popup animation for Admin immediately (zero lag)

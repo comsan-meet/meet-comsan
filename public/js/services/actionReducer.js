@@ -723,15 +723,32 @@
           shouldPersist = false;
           break;
         }
+        if (!state.randomizer) state.randomizer = { lastWinner: null, history: [] };
+        if (!Array.isArray(state.randomizer.history)) state.randomizer.history = [];
+
+        const recordId = spinPayload.recordId || Date.now();
+        const timeStr = spinPayload.time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
         const record = {
-          id: Date.now(),
+          id: recordId,
           mode: spinPayload.mode || 'WHEEL',
           winnerLabel: spinPayload.winnerLabel,
-          time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          time: timeStr
         };
+
         state.randomizer.lastWinner = record;
-        state.randomizer.history.unshift(record);
-        state.randomizer.history = state.randomizer.history.slice(0, 15);
+
+        // Idempotency & deduplication guard
+        const isDuplicate = state.randomizer.history.some(h => 
+          (h.id && h.id === record.id) || 
+          (h.winnerLabel === record.winnerLabel && h.time === record.time)
+        );
+
+        if (!isDuplicate) {
+          state.randomizer.history.unshift(record);
+          state.randomizer.history = state.randomizer.history.slice(0, 15);
+        }
+
         notify('random:spin', spinPayload);
         result = { ok: true, record };
         break;

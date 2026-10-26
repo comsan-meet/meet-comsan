@@ -267,7 +267,22 @@ function normalizeState(raw) {
     chats: Array.isArray(raw.chats) ? raw.chats : [],
     files: Array.isArray(raw.files) ? raw.files : [],
     chatLogs: Array.isArray(raw.chatLogs) ? raw.chatLogs : [],
-    randomizer: raw.randomizer || { lastWinner: null, history: [] },
+    randomizer: (function () {
+      const r = raw.randomizer || { lastWinner: null, history: [] };
+      const rawHist = Array.isArray(r.history) ? r.history : [];
+      const seen = new Set();
+      const cleanHist = rawHist.filter(h => {
+        if (!h || !h.winnerLabel) return false;
+        const key = (h.winnerLabel || '') + '_' + (h.time || '');
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return {
+        lastWinner: r.lastWinner || null,
+        history: cleanHist.slice(0, 15)
+      };
+    })(),
     activeStream: raw.activeStream || null,
     lastMeetingSummary: raw.lastMeetingSummary || null,
     meetingHistory: Array.isArray(raw.meetingHistory) ? raw.meetingHistory : [],

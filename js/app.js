@@ -661,14 +661,25 @@ function renderAll() {
     const aQueueBadge = document.getElementById('aBadge_QUEUE');
     if (aQueueBadge) aQueueBadge.textContent = (state.raiseHandQueue || []).length;
 
-    // Randomizer history
+    // Randomizer history (deduplicated)
     if (state.randomizer && state.randomizer.lastWinner) {
       const lw = state.randomizer.lastWinner;
       const uRandText = document.getElementById('userRandomLastWinnerText');
       if (uRandText) uRandText.textContent = `🎉 ${lw.winnerLabel} (${lw.time})`;
     }
-    const historyHTML = (state.randomizer && Array.isArray(state.randomizer.history) && state.randomizer.history.length > 0)
-      ? state.randomizer.history.map((h, idx) => `<div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between"><span class="font-bold"><span class="text-indigo-600 mr-1">#${idx + 1}</span> 🎉 ${h.winnerLabel}</span><span class="text-[11px] text-slate-400">${h.time}</span></div>`).join('')
+    const rawHist = (state.randomizer && Array.isArray(state.randomizer.history)) ? state.randomizer.history : [];
+    const seenHist = new Set();
+    const cleanHist = rawHist.filter(h => {
+      if (!h || !h.winnerLabel) return false;
+      const key = (h.winnerLabel || '') + '_' + (h.time || '');
+      if (seenHist.has(key)) return false;
+      seenHist.add(key);
+      return true;
+    });
+    if (state.randomizer) state.randomizer.history = cleanHist;
+
+    const historyHTML = cleanHist.length > 0
+      ? cleanHist.map((h, idx) => `<div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between"><span class="font-bold"><span class="text-indigo-600 mr-1">#${idx + 1}</span> 🎉 ${h.winnerLabel}</span><span class="text-[11px] text-slate-400">${h.time}</span></div>`).join('')
       : `<p class="text-slate-400 text-center py-4">ยังไม่มีประวัติการสุ่มในรอบนี้</p>`;
     const adminRandList = document.getElementById('adminRandomHistoryList');
     const userRandList = document.getElementById('userRandomHistoryList');
