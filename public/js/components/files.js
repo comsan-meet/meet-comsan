@@ -44,6 +44,9 @@ function adminSetFilePermission(userId, status) {
   if (window.socket) {
     window.socket.emit('admin:setFilePermission', { userId, status });
   }
+  if (typeof window.updateAdminSidebarBadges === 'function' && window.appState) {
+    window.updateAdminSidebarBadges(window.appState);
+  }
   renderFileDropSection();
   if (user && typeof showToast === 'function') {
     showToast(status === 'APPROVED' ? `อนุมัติให้ ${user.nickname} อัปโหลดเอกสารแล้ว` : `คืนสถานะสิทธิ์ของ ${user.nickname} แล้ว`, 'success');

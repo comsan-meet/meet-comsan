@@ -1205,6 +1205,18 @@ function actuallySwitchAdminTab(tab) {
     if (typeof window.renderAdminProjectsSection === 'function') window.renderAdminProjectsSection();
   }
 
+  if (tab === 'STREAM') {
+    if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
+  }
+
+  if (tab === 'FILES') {
+    if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
+  }
+
+  if (typeof window.updateAdminSidebarBadges === 'function' && window.appState) {
+    window.updateAdminSidebarBadges(window.appState);
+  }
+
   if (tab === 'CHAT') {
     const b = document.getElementById('aBadge_CHAT');
     if (b) b.classList.add('hidden');

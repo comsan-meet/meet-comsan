@@ -34,6 +34,9 @@ function adminSetStreamPermission(userId, status) {
   if (window.socket) {
     window.socket.emit('admin:setStreamPermission', { userId, status });
   }
+  if (typeof window.updateAdminSidebarBadges === 'function' && window.appState) {
+    window.updateAdminSidebarBadges(window.appState);
+  }
   renderStreamSection();
   if (user && typeof showToast === 'function') {
     showToast(status === 'APPROVED' ? `อนุมัติให้ ${user.nickname} แชร์หน้าจอ/กล้องแล้ว` : `คืนสถานะสิทธิ์ของ ${user.nickname} แล้ว`, 'success');

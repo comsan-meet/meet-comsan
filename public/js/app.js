@@ -658,8 +658,7 @@ function renderAll() {
       if (openMotionsCount > 0) mBadgeVote.classList.add('flex');
     }
 
-    const aQueueBadge = document.getElementById('aBadge_QUEUE');
-    if (aQueueBadge) aQueueBadge.textContent = (state.raiseHandQueue || []).length;
+    updateAdminSidebarBadges(state);
 
     // Randomizer history (deduplicated)
     if (state.randomizer && state.randomizer.lastWinner) {
@@ -1386,6 +1385,48 @@ function setupSocketListeners() {
     }
   });
 }
+
+function updateAdminSidebarBadges(state) {
+  if (!state) return;
+
+  const setBadge = (elId, count) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const num = Number(count) || 0;
+    if (num > 0) {
+      el.textContent = num > 99 ? '99+' : String(num);
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    } else {
+      el.textContent = '';
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+  };
+
+  // 1. คิวยกมือ (QUEUE): Count users waiting in raiseHandQueue
+  const queueCount = Array.isArray(state.raiseHandQueue) ? state.raiseHandQueue.length : 0;
+  setBadge('aBadge_QUEUE', queueCount);
+
+  // 2. การถ่ายทอดสด (STREAM): Count users requesting stream/screen share permission
+  const streamReqCount = Array.isArray(state.users)
+    ? state.users.filter(u => u && u.streamPermission === 'PENDING').length
+    : 0;
+  setBadge('aBadge_STREAM', streamReqCount);
+
+  // 3. เอกสารแนบ (FILES): Count users requesting upload permission
+  const fileReqCount = Array.isArray(state.users)
+    ? state.users.filter(u => u && u.filePermission === 'PENDING').length
+    : 0;
+  setBadge('aBadge_FILES', fileReqCount);
+
+  // 4. การโหวต (VOTING): Count active open voting motions
+  const openMotions = Array.isArray(state.motions)
+    ? state.motions.filter(m => m && m.isOpen).length
+    : 0;
+  setBadge('aBadge_VOTING', openMotions);
+}
+window.updateAdminSidebarBadges = updateAdminSidebarBadges;
 
 // Window attachments
 window.renderAll = renderAll;

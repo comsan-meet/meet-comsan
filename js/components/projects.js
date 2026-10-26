@@ -2331,6 +2331,8 @@
 
     const editBtn = document.getElementById('personPhotoModalEditBtn');
     if (editBtn) editBtn.classList.toggle('hidden', window.currentRole !== 'ADMIN');
+    const deleteBtn = document.getElementById('personPhotoModalDeleteBtn');
+    if (deleteBtn) deleteBtn.classList.toggle('hidden', window.currentRole !== 'ADMIN');
 
     const name = person.name || 'ไม่ระบุชื่อ';
     const nickname = person.nickname ? `(${person.nickname})` : '';
@@ -2568,7 +2570,7 @@
     });
 
     if (filtered.length === 0) {
-      const colSpan = isAdmin ? 9 : 8;
+      const colSpan = 4;
       tbody.innerHTML = `
         <tr>
           <td colspan="${colSpan}" class="py-8 px-4 text-center text-muted-foreground text-xs bg-muted/10">
@@ -2606,7 +2608,9 @@
       const avatarUrl = m.avatar || fallbackUrl;
 
       return `
-        <tr class="hover:bg-muted/40 transition-colors">
+        <tr onclick="window.openPersonPhotoPreviewModal && window.openPersonPhotoPreviewModal('${escapeJs(m.id || m.name)}')"
+            class="hover:bg-muted/50 cursor-pointer transition-colors group select-none"
+            title="คลิกเพื่อดูโปรไฟล์และรายละเอียดฉบับเต็ม">
           <!-- # -->
           <td class="py-3 px-3 text-center font-mono font-medium text-muted-foreground text-[11px]">
             ${idx + 1}
@@ -2616,14 +2620,17 @@
           <td class="py-3 px-3">
             <div class="flex items-center gap-2.5">
               <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}"
-                onclick="window.openPersonPhotoPreviewModal && window.openPersonPhotoPreviewModal('${escapeJs(m.id || m.name)}')"
-                class="w-8 h-8 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs cursor-pointer hover:ring-2 hover:ring-primary hover:scale-110 transition-all duration-200"
-                title="คลิกเพื่อดูรูปโปรไฟล์และรายละเอียด"
+                class="w-8 h-8 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs group-hover:ring-2 group-hover:ring-primary group-hover:scale-105 transition-all duration-200"
                 onerror="this.onerror=null; this.src='${fallbackUrl}';" />
               <div class="min-w-0">
-                <p class="font-bold text-foreground text-xs truncate" title="${escapeHtml(name)} ${escapeHtml(nickname)}">
-                  ${escapeHtml(name)} ${nickname ? `<span class="font-normal text-muted-foreground">${escapeHtml(nickname)}</span>` : ''}
+                <p class="font-bold text-foreground text-xs truncate group-hover:text-primary transition-colors" title="${escapeHtml(name)} ${escapeHtml(nickname)}">
+                  ${escapeHtml(name)} ${nickname ? `<span class="font-normal text-muted-foreground">(${escapeHtml(m.nickname)})</span>` : ''}
                 </p>
+                ${m.phone || m.kkuMail ? `
+                  <p class="text-[10px] text-muted-foreground/80 truncate font-mono">
+                    ${escapeHtml(m.phone || m.kkuMail)}
+                  </p>
+                ` : ''}
               </div>
             </div>
           </td>
@@ -2660,70 +2667,6 @@
               </span>
             `}
           </td>
-
-          <!-- Details (รายละเอียดหน้าที่) -->
-          <td class="py-3 px-3 text-muted-foreground text-[11px] leading-relaxed">
-            ${Array.isArray(m.rolesList) && m.rolesList.length > 1 ? `
-              <div class="flex flex-col gap-1">
-                ${m.rolesList.map(r => r.description ? `
-                  <div>
-                    <span class="font-semibold text-foreground">${escapeHtml(r.duty || r.position || `หน้าที่ ${r.index}`)}: </span>
-                    <span>${escapeHtml(r.description)}</span>
-                  </div>
-                ` : '').join('') || `<span class="italic text-muted-foreground/60">-</span>`}
-              </div>
-            ` : `
-              <span class="line-clamp-2" title="${escapeHtml(m.details || '-')}">${escapeHtml(m.details || '-')}</span>
-            `}
-          </td>
-
-          <!-- Phone -->
-          <td class="py-3 px-3 whitespace-nowrap">
-            ${m.phone ? `
-              <a href="tel:${escapeHtml(m.phone)}" class="inline-flex items-center gap-1 text-xs text-foreground hover:text-primary transition font-medium" title="โทร: ${escapeHtml(m.phone)}">
-                <i data-lucide="phone" class="h-3 w-3 text-emerald-500"></i>
-                <span>${escapeHtml(m.phone)}</span>
-              </a>
-            ` : `<span class="text-muted-foreground text-[11px]">-</span>`}
-          </td>
-
-          <!-- KKUMAIL -->
-          <td class="py-3 px-3 whitespace-nowrap">
-            ${m.kkuMail ? `
-              <a href="mailto:${escapeHtml(m.kkuMail)}" class="inline-flex items-center gap-1 text-xs text-foreground hover:text-primary transition font-mono" title="อีเมล: ${escapeHtml(m.kkuMail)}">
-                <i data-lucide="mail" class="h-3 w-3 text-primary"></i>
-                <span class="truncate max-w-[150px]">${escapeHtml(m.kkuMail)}</span>
-              </a>
-            ` : `<span class="text-muted-foreground text-[11px]">-</span>`}
-          </td>
-
-          <!-- Contact Link Button -->
-          <td class="py-3 px-3 text-center">
-            ${m.contactLink ? `
-              <a href="${escapeHtml(m.contactLink)}" target="_blank" rel="noopener noreferrer"
-                class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition" title="เปิดช่องทางติดต่อ">
-                <i data-lucide="external-link" class="h-3.5 w-3.5"></i>
-              </a>
-            ` : `<span class="text-muted-foreground text-[11px]">-</span>`}
-          </td>
-
-          <!-- Admin Actions -->
-          ${isAdmin ? `
-            <td class="py-3 px-3 text-center whitespace-nowrap">
-              <div class="inline-flex items-center gap-1">
-                <button type="button" onclick="openEditProjectMemberModal('${escapeJs(m.id || m.name)}')"
-                  class="w-7 h-7 rounded-lg hover:bg-indigo-500/10 text-muted-foreground hover:text-indigo-600 transition inline-flex items-center justify-center cursor-pointer"
-                  title="แก้ไขข้อมูลผู้เกี่ยวข้องรายนี้">
-                  <i data-lucide="edit-3" class="h-3.5 w-3.5"></i>
-                </button>
-                <button type="button" onclick="confirmDeleteProjectMember('${escapeJs(m.id || m.name)}')"
-                  class="w-7 h-7 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition inline-flex items-center justify-center cursor-pointer"
-                  title="ลบสมาชิกคนนี้ออกจากโครงการ">
-                  <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
-                </button>
-              </div>
-            </td>
-          ` : ''}
         </tr>
       `;
     }).join('');
@@ -4923,6 +4866,13 @@
     openEditProjectMemberModal(target.id || target.name);
   }
 
+  function deleteProjectMemberFromPreview() {
+    if (!activePreviewPerson) return;
+    const target = activePreviewPerson;
+    closePersonPhotoPreviewModal();
+    confirmDeleteProjectMember(target.id || target.name);
+  }
+
   if (typeof window !== 'undefined') {
     window.focusDrivePhotoFolderInput = focusDrivePhotoFolderInput;
     window.onDrivePhotoFolderInputChanged = onDrivePhotoFolderInputChanged;
@@ -4962,6 +4912,7 @@
     window.resetMemberEditModalPhotoToCute = resetMemberEditModalPhotoToCute;
     window.matchPhotoForMemberEditModal = matchPhotoForMemberEditModal;
     window.openEditProjectMemberModalFromPreview = openEditProjectMemberModalFromPreview;
+    window.deleteProjectMemberFromPreview = deleteProjectMemberFromPreview;
   }
 
   return {
@@ -4986,6 +4937,7 @@
     resetMemberEditModalPhotoToCute,
     matchPhotoForMemberEditModal,
     openEditProjectMemberModalFromPreview,
+    deleteProjectMemberFromPreview,
     updateRepeaterField,
     toggleRepeaterItem,
     toggleExpandAllMembersRepeater,
