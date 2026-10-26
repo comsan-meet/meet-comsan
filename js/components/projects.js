@@ -12,229 +12,7 @@
   if (typeof root !== 'undefined') {
     Object.assign(root, mod);
   }
-
-  // -------------------------------------------------------------
-  // DEPARTMENT COLOR CONFIGURATION SYSTEM (ADMIN ONLY)
-  // -------------------------------------------------------------
-  let editingColorProjectId = null;
-  let tempDeptColorConfig = { mode: 'AUTO', unifiedColor: 'indigo', customColors: {} };
-
-  function openDepartmentColorConfigModal(projectId = null) {
-    if (window.currentRole !== 'ADMIN') {
-      if (typeof showToast === 'function') showToast('เฉพาะ Admin เท่านั้นที่สามารถปรับแต่งสีได้', 'warning');
-      return;
-    }
-
-    const prjId = projectId || activeDetailProjectId;
-    const allProjects = getProjectsList();
-    const p = allProjects.find(item => item.id === prjId);
-    if (!p) {
-      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลโครงการ', 'error');
-      return;
-    }
-
-    editingColorProjectId = prjId;
-    const existing = p.departmentColorConfig || {};
-    tempDeptColorConfig = {
-      mode: existing.mode || 'AUTO',
-      unifiedColor: existing.unifiedColor || 'indigo',
-      customColors: { ...(existing.customColors || {}) }
-    };
-
-    const subtitle = document.getElementById('prjDeptColorModalSubtitle');
-    if (subtitle) subtitle.textContent = `โครงการ: ${p.title || prjId}`;
-
-    renderDeptColorModalUi(p);
-
-    const modal = document.getElementById('prjDeptColorSettingsModal');
-    if (modal) {
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      if (typeof window.refreshIcons === 'function') window.refreshIcons();
-      else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-    }
-  }
-
-  function closeDepartmentColorConfigModal() {
-    const modal = document.getElementById('prjDeptColorSettingsModal');
-    if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-    editingColorProjectId = null;
-  }
-
-  function setDeptColorEditMode(mode) {
-    tempDeptColorConfig.mode = mode;
-    const allProjects = getProjectsList();
-    const p = allProjects.find(item => item.id === editingColorProjectId);
-    renderDeptColorModalUi(p);
-  }
-
-  function selectUnifiedColor(colorKey) {
-    tempDeptColorConfig.unifiedColor = colorKey;
-    const allProjects = getProjectsList();
-    const p = allProjects.find(item => item.id === editingColorProjectId);
-    renderDeptColorModalUi(p);
-  }
-
-  function selectDeptCustomColor(deptName, colorKey) {
-    if (!tempDeptColorConfig.customColors) tempDeptColorConfig.customColors = {};
-    tempDeptColorConfig.customColors[deptName] = colorKey;
-    const allProjects = getProjectsList();
-    const p = allProjects.find(item => item.id === editingColorProjectId);
-    renderDeptColorModalUi(p);
-  }
-
-  function renderDeptColorModalUi(p) {
-    const mode = tempDeptColorConfig.mode || 'AUTO';
-    const unifiedColor = tempDeptColorConfig.unifiedColor || 'indigo';
-
-    // 1. Update Mode Cards
-    const modes = ['AUTO', 'UNIFIED', 'CUSTOM'];
-    modes.forEach(m => {
-      const btn = document.getElementById(`btnColorMode${m.charAt(0) + m.slice(1).toLowerCase()}`);
-      const radio = document.getElementById(`radioColorMode${m.charAt(0) + m.slice(1).toLowerCase()}`);
-      const isSelected = mode === m;
-      if (btn) {
-        btn.className = `p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
-          isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs' : 'border-border bg-card hover:bg-muted/40'
-        }`;
-      }
-      if (radio) {
-        radio.className = `w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-          isSelected ? 'border-primary bg-primary text-white' : 'border-border'
-        }`;
-        radio.innerHTML = isSelected ? `<span class="w-1.5 h-1.5 rounded-full bg-white"></span>` : '';
-      }
-    });
-
-    // 2. Toggle sections
-    const autoSec = document.getElementById('deptColorAutoSection');
-    const unifiedSec = document.getElementById('deptColorUnifiedSection');
-    const customSec = document.getElementById('deptColorCustomSection');
-
-    if (autoSec) autoSec.classList.toggle('hidden', mode !== 'AUTO');
-    if (unifiedSec) unifiedSec.classList.toggle('hidden', mode !== 'UNIFIED');
-    if (customSec) customSec.classList.toggle('hidden', mode !== 'CUSTOM');
-
-    // Get departments in this project
-    const members = p && Array.isArray(p.members) ? p.members : [];
-    const deptsSet = new Set();
-    members.forEach(m => {
-      getMemberDepartments(m).forEach(d => deptsSet.add(d));
-    });
-    const depts = Array.from(deptsSet);
-
-    // 3. Render Unified Palette Grid
-    const unifiedGrid = document.getElementById('deptColorUnifiedPaletteGrid');
-    if (unifiedGrid) {
-      unifiedGrid.innerHTML = Object.keys(DEPARTMENT_COLOR_PALETTES).map(key => {
-        const pal = DEPARTMENT_COLOR_PALETTES[key];
-        const isSel = unifiedColor === key;
-        return `
-          <button type="button" onclick="selectUnifiedColor('${key}')"
-            class="p-2 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer ${
-              isSel ? 'border-primary ring-2 ring-primary/40 bg-card shadow-xs' : 'border-border hover:bg-muted/40'
-            }">
-            <span class="w-5 h-5 rounded-full ${pal.bgClass} flex items-center justify-center shadow-xs">
-              ${isSel ? `<i data-lucide="check" class="h-3 w-3 text-white"></i>` : ''}
-            </span>
-            <span class="text-[10px] font-medium text-foreground truncate max-w-full">${pal.name}</span>
-          </button>
-        `;
-      }).join('');
-    }
-
-    // 4. Render Custom Depts List
-    const customList = document.getElementById('deptColorCustomDeptsList');
-    if (customList) {
-      if (depts.length === 0) {
-        customList.innerHTML = `<p class="text-xs text-muted-foreground italic p-3 text-center">ยังไม่มีรายชื่อฝ่ายในโครงการนี้</p>`;
-      } else {
-        customList.innerHTML = depts.map(dept => {
-          const currentKey = tempDeptColorConfig.customColors?.[dept] || getAutoColorForDept(dept);
-          const activePal = DEPARTMENT_COLOR_PALETTES[currentKey] || DEPARTMENT_COLOR_PALETTES.indigo;
-          return `
-            <div class="p-2.5 rounded-xl border border-border/70 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div class="min-w-0">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${activePal.class}">
-                  <span class="w-2 h-2 rounded-full ${activePal.bgClass}"></span>
-                  <span class="truncate max-w-[200px]">${escapeHtml(dept)}</span>
-                </span>
-              </div>
-              <div class="flex items-center gap-1 flex-wrap">
-                ${Object.keys(DEPARTMENT_COLOR_PALETTES).map(k => {
-                  const pal = DEPARTMENT_COLOR_PALETTES[k];
-                  const isCur = currentKey === k;
-                  return `
-                    <button type="button" onclick="selectDeptCustomColor('${escapeJs(dept)}', '${k}')"
-                      class="w-6 h-6 rounded-lg ${pal.bgClass} transition hover:scale-110 flex items-center justify-center cursor-pointer ${
-                        isCur ? 'ring-2 ring-offset-1 ring-primary shadow-xs scale-105' : 'opacity-70 hover:opacity-100'
-                      }"
-                      title="${pal.name}">
-                      ${isCur ? `<i data-lucide="check" class="h-3 w-3 text-white"></i>` : ''}
-                    </button>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-    }
-
-    // 5. Render Auto Preview Grid
-    const autoGrid = document.getElementById('deptColorAutoPreviewGrid');
-    if (autoGrid) {
-      autoGrid.innerHTML = depts.map(dept => {
-        const autoKey = getAutoColorForDept(dept);
-        const pal = DEPARTMENT_COLOR_PALETTES[autoKey] || DEPARTMENT_COLOR_PALETTES.indigo;
-        return `
-          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${pal.class}">
-            <span class="w-2 h-2 rounded-full ${pal.bgClass}"></span>
-            <span>${escapeHtml(dept)}</span>
-          </span>
-        `;
-      }).join('');
-    }
-
-    if (typeof window.refreshIcons === 'function') window.refreshIcons();
-    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-  }
-
-  function saveDepartmentColorConfig() {
-    if (!editingColorProjectId) return;
-    const allProjects = getProjectsList();
-    const p = allProjects.find(item => item.id === editingColorProjectId);
-    if (!p) return;
-
-    p.departmentColorConfig = {
-      mode: tempDeptColorConfig.mode || 'AUTO',
-      unifiedColor: tempDeptColorConfig.unifiedColor || 'indigo',
-      customColors: { ...(tempDeptColorConfig.customColors || {}) }
-    };
-
-    // Emit socket update
-    if (window.socket && typeof window.socket.emit === 'function') {
-      window.socket.emit('admin:updateProject', p);
-    }
-    if (typeof saveLocalState === 'function') saveLocalState();
-    if (typeof window.persistProjectsToCloud === 'function') {
-      window.persistProjectsToCloud(true);
-    }
-
-    // Refresh UI
-    renderProjectDetailView(p);
-    renderProjectsGrid();
-    closeDepartmentColorConfigModal();
-
-    if (typeof showToast === 'function') {
-      showToast('บันทึกการตั้งค่าสีฝ่ายงานเรียบร้อยแล้ว', 'success');
-    }
-  }
-
-    if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     Object.assign(window, mod);
   }
 })(typeof self !== 'undefined' ? self : this, function () {
@@ -1485,6 +1263,229 @@
     const autoKey = getAutoColorForDept(deptName);
     return DEPARTMENT_COLOR_PALETTES[autoKey]?.class || DEPARTMENT_COLOR_PALETTES.indigo.class;
   }
+
+// -------------------------------------------------------------
+  // DEPARTMENT COLOR CONFIGURATION SYSTEM (ADMIN ONLY)
+  // -------------------------------------------------------------
+  let editingColorProjectId = null;
+  let tempDeptColorConfig = { mode: 'AUTO', unifiedColor: 'indigo', customColors: {} };
+
+  function openDepartmentColorConfigModal(projectId = null) {
+    if (window.currentRole !== 'ADMIN') {
+      if (typeof showToast === 'function') showToast('เฉพาะ Admin เท่านั้นที่สามารถปรับแต่งสีได้', 'warning');
+      return;
+    }
+
+    const prjId = projectId || activeDetailProjectId;
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === prjId);
+    if (!p) {
+      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลโครงการ', 'error');
+      return;
+    }
+
+    editingColorProjectId = prjId;
+    const existing = p.departmentColorConfig || {};
+    tempDeptColorConfig = {
+      mode: existing.mode || 'AUTO',
+      unifiedColor: existing.unifiedColor || 'indigo',
+      customColors: { ...(existing.customColors || {}) }
+    };
+
+    const subtitle = document.getElementById('prjDeptColorModalSubtitle');
+    if (subtitle) subtitle.textContent = `โครงการ: ${p.title || prjId}`;
+
+    renderDeptColorModalUi(p);
+
+    const modal = document.getElementById('prjDeptColorSettingsModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (typeof window.refreshIcons === 'function') window.refreshIcons();
+      else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    }
+  }
+
+  function closeDepartmentColorConfigModal() {
+    const modal = document.getElementById('prjDeptColorSettingsModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    editingColorProjectId = null;
+  }
+
+  function setDeptColorEditMode(mode) {
+    tempDeptColorConfig.mode = mode;
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === editingColorProjectId);
+    renderDeptColorModalUi(p);
+  }
+
+  function selectUnifiedColor(colorKey) {
+    tempDeptColorConfig.unifiedColor = colorKey;
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === editingColorProjectId);
+    renderDeptColorModalUi(p);
+  }
+
+  function selectDeptCustomColor(deptName, colorKey) {
+    if (!tempDeptColorConfig.customColors) tempDeptColorConfig.customColors = {};
+    tempDeptColorConfig.customColors[deptName] = colorKey;
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === editingColorProjectId);
+    renderDeptColorModalUi(p);
+  }
+
+  function renderDeptColorModalUi(p) {
+    const mode = tempDeptColorConfig.mode || 'AUTO';
+    const unifiedColor = tempDeptColorConfig.unifiedColor || 'indigo';
+
+    // 1. Update Mode Cards
+    const modes = ['AUTO', 'UNIFIED', 'CUSTOM'];
+    modes.forEach(m => {
+      const btn = document.getElementById(`btnColorMode${m.charAt(0) + m.slice(1).toLowerCase()}`);
+      const radio = document.getElementById(`radioColorMode${m.charAt(0) + m.slice(1).toLowerCase()}`);
+      const isSelected = mode === m;
+      if (btn) {
+        btn.className = `p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
+          isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs' : 'border-border bg-card hover:bg-muted/40'
+        }`;
+      }
+      if (radio) {
+        radio.className = `w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+          isSelected ? 'border-primary bg-primary text-white' : 'border-border'
+        }`;
+        radio.innerHTML = isSelected ? `<span class="w-1.5 h-1.5 rounded-full bg-white"></span>` : '';
+      }
+    });
+
+    // 2. Toggle sections
+    const autoSec = document.getElementById('deptColorAutoSection');
+    const unifiedSec = document.getElementById('deptColorUnifiedSection');
+    const customSec = document.getElementById('deptColorCustomSection');
+
+    if (autoSec) autoSec.classList.toggle('hidden', mode !== 'AUTO');
+    if (unifiedSec) unifiedSec.classList.toggle('hidden', mode !== 'UNIFIED');
+    if (customSec) customSec.classList.toggle('hidden', mode !== 'CUSTOM');
+
+    // Get departments in this project
+    const members = p && Array.isArray(p.members) ? p.members : [];
+    const deptsSet = new Set();
+    members.forEach(m => {
+      getMemberDepartments(m).forEach(d => deptsSet.add(d));
+    });
+    const depts = Array.from(deptsSet);
+
+    // 3. Render Unified Palette Grid
+    const unifiedGrid = document.getElementById('deptColorUnifiedPaletteGrid');
+    if (unifiedGrid) {
+      unifiedGrid.innerHTML = Object.keys(DEPARTMENT_COLOR_PALETTES).map(key => {
+        const pal = DEPARTMENT_COLOR_PALETTES[key];
+        const isSel = unifiedColor === key;
+        return `
+          <button type="button" onclick="selectUnifiedColor('${key}')"
+            class="p-2 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer ${
+              isSel ? 'border-primary ring-2 ring-primary/40 bg-card shadow-xs' : 'border-border hover:bg-muted/40'
+            }">
+            <span class="w-5 h-5 rounded-full ${pal.bgClass} flex items-center justify-center shadow-xs">
+              ${isSel ? `<i data-lucide="check" class="h-3 w-3 text-white"></i>` : ''}
+            </span>
+            <span class="text-[10px] font-medium text-foreground truncate max-w-full">${pal.name}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    // 4. Render Custom Depts List
+    const customList = document.getElementById('deptColorCustomDeptsList');
+    if (customList) {
+      if (depts.length === 0) {
+        customList.innerHTML = `<p class="text-xs text-muted-foreground italic p-3 text-center">ยังไม่มีรายชื่อฝ่ายในโครงการนี้</p>`;
+      } else {
+        customList.innerHTML = depts.map(dept => {
+          const currentKey = tempDeptColorConfig.customColors?.[dept] || getAutoColorForDept(dept);
+          const activePal = DEPARTMENT_COLOR_PALETTES[currentKey] || DEPARTMENT_COLOR_PALETTES.indigo;
+          return `
+            <div class="p-2.5 rounded-xl border border-border/70 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="min-w-0">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${activePal.class}">
+                  <span class="w-2 h-2 rounded-full ${activePal.bgClass}"></span>
+                  <span class="truncate max-w-[200px]">${escapeHtml(dept)}</span>
+                </span>
+              </div>
+              <div class="flex items-center gap-1 flex-wrap">
+                ${Object.keys(DEPARTMENT_COLOR_PALETTES).map(k => {
+                  const pal = DEPARTMENT_COLOR_PALETTES[k];
+                  const isCur = currentKey === k;
+                  return `
+                    <button type="button" onclick="selectDeptCustomColor('${escapeJs(dept)}', '${k}')"
+                      class="w-6 h-6 rounded-lg ${pal.bgClass} transition hover:scale-110 flex items-center justify-center cursor-pointer ${
+                        isCur ? 'ring-2 ring-offset-1 ring-primary shadow-xs scale-105' : 'opacity-70 hover:opacity-100'
+                      }"
+                      title="${pal.name}">
+                      ${isCur ? `<i data-lucide="check" class="h-3 w-3 text-white"></i>` : ''}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // 5. Render Auto Preview Grid
+    const autoGrid = document.getElementById('deptColorAutoPreviewGrid');
+    if (autoGrid) {
+      autoGrid.innerHTML = depts.map(dept => {
+        const autoKey = getAutoColorForDept(dept);
+        const pal = DEPARTMENT_COLOR_PALETTES[autoKey] || DEPARTMENT_COLOR_PALETTES.indigo;
+        return `
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${pal.class}">
+            <span class="w-2 h-2 rounded-full ${pal.bgClass}"></span>
+            <span>${escapeHtml(dept)}</span>
+          </span>
+        `;
+      }).join('');
+    }
+
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function saveDepartmentColorConfig() {
+    if (!editingColorProjectId) return;
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === editingColorProjectId);
+    if (!p) return;
+
+    p.departmentColorConfig = {
+      mode: tempDeptColorConfig.mode || 'AUTO',
+      unifiedColor: tempDeptColorConfig.unifiedColor || 'indigo',
+      customColors: { ...(tempDeptColorConfig.customColors || {}) }
+    };
+
+    // Emit socket update
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('admin:updateProject', p);
+    }
+    if (typeof saveLocalState === 'function') saveLocalState();
+    if (typeof window.persistProjectsToCloud === 'function') {
+      window.persistProjectsToCloud(true);
+    }
+
+    // Refresh UI
+    renderProjectDetailView(p);
+    renderProjectsGrid();
+    closeDepartmentColorConfigModal();
+
+    if (typeof showToast === 'function') {
+      showToast('บันทึกการตั้งค่าสีฝ่ายงานเรียบร้อยแล้ว', 'success');
+    }
+  }
+
+
 
   // ========================================================
   // 1. USER VIEW RENDERING
