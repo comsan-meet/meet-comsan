@@ -1159,6 +1159,7 @@ function showConfirmDialog({
   cancelText = 'ยกเลิก',
   isDanger = true,
   icon = 'trash-2',
+  actionIcon = null,
   isAlert = false
 } = {}) {
   return new Promise((resolve) => {
@@ -1170,6 +1171,7 @@ function showConfirmDialog({
     const actionText = document.getElementById('globalConfirmActionText');
     const cancelBtn = document.getElementById('globalConfirmCancelBtn');
     const iconWrap = document.getElementById('globalConfirmIconWrap');
+    const actionIconWrap = document.getElementById('globalConfirmActionIcon');
 
     if (!modal) {
       if (typeof window.showToast === 'function') {
@@ -1188,6 +1190,11 @@ function showConfirmDialog({
       } else {
         cancelBtn.classList.remove('hidden');
       }
+    }
+
+    const resolvedBtnIcon = actionIcon || (isDanger ? 'trash-2' : (icon && icon !== 'trash-2' ? icon : 'check'));
+    if (actionIconWrap) {
+      actionIconWrap.innerHTML = `<i data-lucide="${resolvedBtnIcon}" class="h-3.5 w-3.5"></i>`;
     }
 
     if (actionBtn) {

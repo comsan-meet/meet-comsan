@@ -12,7 +12,378 @@
   if (typeof root !== 'undefined') {
     Object.assign(root, mod);
   }
-  if (typeof window !== 'undefined') {
+
+  // ========================================================
+  // IN-WEB MEMBER EDIT & ADD ENGINE (DIRECT WEB EDITING)
+  // ========================================================
+  let editingMemberId = null;
+  let editingMemberAvatar = '';
+
+  function openEditProjectMemberModal(memberIdOrName) {
+    if (window.currentRole !== 'ADMIN') {
+      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถแก้ไขข้อมูลได้', 'warning');
+      return;
+    }
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p || !Array.isArray(p.members)) return;
+
+    const member = p.members.find(m => m.id === memberIdOrName || m.name === memberIdOrName);
+    if (!member) {
+      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลผู้เกี่ยวข้องรายนี้', 'warning');
+      return;
+    }
+
+    editingMemberId = member.id || member.name;
+    editingMemberAvatar = member.avatar || '';
+
+    const modal = document.getElementById('projectMemberEditModal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('prjMemberEditModalTitle');
+    const subtitleEl = document.getElementById('prjMemberEditModalSubtitle');
+    if (titleEl) titleEl.textContent = 'แก้ไขข้อมูลผู้เกี่ยวข้องในโครงการ';
+    if (subtitleEl) subtitleEl.textContent = `โครงการ: ${p.title}`;
+
+    const idInput = document.getElementById('prjMemberEditMemberId');
+    if (idInput) idInput.value = member.id || '';
+
+    const nameInput = document.getElementById('prjMemberEditName');
+    if (nameInput) nameInput.value = member.name || '';
+
+    const nickInput = document.getElementById('prjMemberEditNickname');
+    if (nickInput) nickInput.value = member.nickname || '';
+
+    const depts = getMemberDepartments(member);
+    const deptInput = document.getElementById('prjMemberEditDept');
+    if (deptInput) deptInput.value = member.department || depts.join(', ');
+
+    const dutyInput = document.getElementById('prjMemberEditDuty');
+    if (dutyInput) dutyInput.value = member.role || '';
+
+    const posInput = document.getElementById('prjMemberEditPosition');
+    if (posInput) posInput.value = member.position || '';
+
+    const detailsInput = document.getElementById('prjMemberEditDetails');
+    if (detailsInput) detailsInput.value = member.details || '';
+
+    const phoneInput = document.getElementById('prjMemberEditPhone');
+    if (phoneInput) phoneInput.value = member.phone || '';
+
+    const emailInput = document.getElementById('prjMemberEditEmail');
+    if (emailInput) emailInput.value = member.kkuMail || '';
+
+    const linkInput = document.getElementById('prjMemberEditContactLink');
+    if (linkInput) linkInput.value = member.contactLink || '';
+
+    updateMemberEditModalPhotoUi(member.name, member.nickname, member.avatar);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function openAddProjectMemberModal() {
+    if (window.currentRole !== 'ADMIN') {
+      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถเพิ่มสมาชิกได้', 'warning');
+      return;
+    }
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p) return;
+
+    editingMemberId = null;
+    editingMemberAvatar = '';
+
+    const modal = document.getElementById('projectMemberEditModal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('prjMemberEditModalTitle');
+    const subtitleEl = document.getElementById('prjMemberEditModalSubtitle');
+    if (titleEl) titleEl.textContent = 'เพิ่มผู้เกี่ยวข้องในโครงการ';
+    if (subtitleEl) subtitleEl.textContent = `โครงการ: ${p.title}`;
+
+    const idInput = document.getElementById('prjMemberEditMemberId');
+    if (idInput) idInput.value = '';
+
+    const nameInput = document.getElementById('prjMemberEditName');
+    if (nameInput) {
+      nameInput.value = '';
+      setTimeout(() => nameInput.focus(), 100);
+    }
+
+    const nickInput = document.getElementById('prjMemberEditNickname');
+    if (nickInput) nickInput.value = '';
+
+    const defaultDept = (detailMemberDeptFilter && detailMemberDeptFilter !== 'ALL')
+      ? detailMemberDeptFilter
+      : 'ฝ่ายกิจกรรมและสันทนาการ';
+    const deptInput = document.getElementById('prjMemberEditDept');
+    if (deptInput) deptInput.value = defaultDept;
+
+    const dutyInput = document.getElementById('prjMemberEditDuty');
+    if (dutyInput) dutyInput.value = 'ทีมงาน';
+
+    const posInput = document.getElementById('prjMemberEditPosition');
+    if (posInput) posInput.value = '';
+
+    const detailsInput = document.getElementById('prjMemberEditDetails');
+    if (detailsInput) detailsInput.value = '';
+
+    const phoneInput = document.getElementById('prjMemberEditPhone');
+    if (phoneInput) phoneInput.value = '';
+
+    const emailInput = document.getElementById('prjMemberEditEmail');
+    if (emailInput) emailInput.value = '';
+
+    const linkInput = document.getElementById('prjMemberEditContactLink');
+    if (linkInput) linkInput.value = '';
+
+    updateMemberEditModalPhotoUi('new_member', '', '');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function closeProjectMemberEditModal() {
+    const modal = document.getElementById('projectMemberEditModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    editingMemberId = null;
+    editingMemberAvatar = '';
+  }
+
+  function updateMemberEditModalPhotoUi(name, nickname, avatar) {
+    const previewImg = document.getElementById('prjMemberEditPhotoPreview');
+    const statusEl = document.getElementById('prjMemberEditPhotoStatus');
+    const seed = nickname || name || 'person';
+    const fallbackUrl = getCuteAvatarUrl(seed);
+    const photoUrl = avatar || fallbackUrl;
+
+    if (previewImg) {
+      previewImg.src = photoUrl;
+      previewImg.onerror = () => { previewImg.src = fallbackUrl; };
+    }
+
+    if (statusEl) {
+      if (avatar) {
+        statusEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+        statusEl.textContent = '✓ มีรูปโปรไฟล์กำหนดเอง';
+      } else {
+        statusEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
+        statusEl.textContent = 'รูปเริ่มต้น (DiceBear)';
+      }
+    }
+  }
+
+  function handleMemberEditModalFileUpload(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      openImageCropperModal({
+        imageSrc: e.target.result,
+        title: 'ครอบตัดรูปโปรไฟล์',
+        onSave: (croppedBase64) => {
+          editingMemberAvatar = croppedBase64;
+          const nameInput = document.getElementById('prjMemberEditName');
+          const nickInput = document.getElementById('prjMemberEditNickname');
+          const name = nameInput ? nameInput.value.trim() : '';
+          const nick = nickInput ? nickInput.value.trim() : '';
+          updateMemberEditModalPhotoUi(name, nick, croppedBase64);
+          if (typeof showToast === 'function') showToast('อัปโหลดและครอบตัดรูปเรียบร้อยแล้ว', 'success');
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function triggerCropForMemberEditModal() {
+    const previewImg = document.getElementById('prjMemberEditPhotoPreview');
+    const currentSrc = editingMemberAvatar || (previewImg ? previewImg.src : '');
+    if (!currentSrc) {
+      if (typeof showToast === 'function') showToast('ยังไม่มีรูปสำหรับครอบตัด กรุณาอัปโหลดรูปก่อน', 'warning');
+      return;
+    }
+    openImageCropperModal({
+      imageSrc: currentSrc,
+      title: 'ครอบตัดและปรับแต่งรูปภาพ',
+      onSave: (croppedBase64) => {
+        editingMemberAvatar = croppedBase64;
+        const nameInput = document.getElementById('prjMemberEditName');
+        const nickInput = document.getElementById('prjMemberEditNickname');
+        const name = nameInput ? nameInput.value.trim() : '';
+        const nick = nickInput ? nickInput.value.trim() : '';
+        updateMemberEditModalPhotoUi(name, nick, croppedBase64);
+        if (typeof showToast === 'function') showToast('ครอบตัดรูปเรียบร้อยแล้ว', 'success');
+      }
+    });
+  }
+
+  function resetMemberEditModalPhotoToCute() {
+    editingMemberAvatar = '';
+    const nameInput = document.getElementById('prjMemberEditName');
+    const nickInput = document.getElementById('prjMemberEditNickname');
+    const name = nameInput ? nameInput.value.trim() : '';
+    const nick = nickInput ? nickInput.value.trim() : '';
+    updateMemberEditModalPhotoUi(name, nick, '');
+    if (typeof showToast === 'function') showToast('คืนค่ารูปเป็นรูปเริ่มต้นแล้ว', 'info');
+  }
+
+  function matchPhotoForMemberEditModal() {
+    const input = document.getElementById('prjMemberEditDriveFileName');
+    const query = input ? input.value.trim() : '';
+    if (!query) {
+      if (typeof showToast === 'function') showToast('กรุณาพิมพ์ชื่อรูปหรือรหัสรูปในไดรฟ์', 'warning');
+      return;
+    }
+    const found = findPhotoInCatalog(query);
+    if (found) {
+      const url = `https://lh3.googleusercontent.com/d/${found.id}`;
+      editingMemberAvatar = url;
+      const name = document.getElementById('prjMemberEditName').value.trim();
+      const nick = document.getElementById('prjMemberEditNickname').value.trim();
+      updateMemberEditModalPhotoUi(name, nick, url);
+      if (typeof showToast === 'function') showToast(`ดึงรูป "${found.name}" จากไดรฟ์สำเร็จ!`, 'success');
+    } else {
+      const extractedId = extractDriveFileId(query);
+      if (extractedId) {
+        const url = `https://lh3.googleusercontent.com/d/${extractedId}`;
+        editingMemberAvatar = url;
+        const name = document.getElementById('prjMemberEditName').value.trim();
+        const nick = document.getElementById('prjMemberEditNickname').value.trim();
+        updateMemberEditModalPhotoUi(name, nick, url);
+        if (typeof showToast === 'function') showToast('ดึงรูปจากรหัส Google Drive สำเร็จ', 'success');
+      } else {
+        if (typeof showToast === 'function') showToast(`ไม่พบรูป "${query}" ในไดรฟ์ กรุณาตรวจสอบชื่อไฟล์`, 'warning');
+      }
+    }
+  }
+
+  function saveProjectMemberFromModal() {
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p) {
+      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลโครงการ', 'error');
+      return;
+    }
+
+    const name = document.getElementById('prjMemberEditName').value.trim();
+    if (!name) {
+      if (typeof showToast === 'function') showToast('กรุณากรอกชื่อ-นามสกุล', 'warning');
+      document.getElementById('prjMemberEditName').focus();
+      return;
+    }
+
+    const nickname = document.getElementById('prjMemberEditNickname').value.trim();
+    const rawDeptStr = document.getElementById('prjMemberEditDept').value.trim();
+    const rawDutyStr = document.getElementById('prjMemberEditDuty').value.trim();
+    const rawPosStr = document.getElementById('prjMemberEditPosition').value.trim();
+    const details = document.getElementById('prjMemberEditDetails').value.trim();
+    const phone = document.getElementById('prjMemberEditPhone').value.trim();
+    const kkuMail = document.getElementById('prjMemberEditEmail').value.trim();
+    const contactLink = document.getElementById('prjMemberEditContactLink').value.trim();
+
+    const splitByComma = val => String(val || '').split(/[,،、\n;]/).map(s => s.trim()).filter(Boolean);
+    const depts = splitByComma(rawDeptStr);
+    const uniqueDepts = depts.length > 0 ? Array.from(new Set(depts)) : ['ฝ่ายดำเนินงานทั่วไป'];
+    const deptSummary = uniqueDepts.join(', ');
+
+    const rawDuties = splitByComma(rawDutyStr);
+    const rawPositions = splitByComma(rawPosStr);
+    const rawDescs = splitByComma(details);
+
+    const maxLen = Math.max(rawDuties.length, rawPositions.length, rawDescs.length, uniqueDepts.length, 1);
+    const rolesList = [];
+    for (let i = 0; i < maxLen; i++) {
+      const d = uniqueDepts[i] || (uniqueDepts.length === 1 ? uniqueDepts[0] : (uniqueDepts[uniqueDepts.length - 1] || 'ฝ่ายดำเนินงานทั่วไป'));
+      const duty = rawDuties[i] || (rawDuties.length === 1 ? rawDuties[0] : (rawPositions[i] || 'ทีมงาน'));
+      const pos = rawPositions[i] || (rawPositions.length === 1 ? rawPositions[0] : '');
+      const desc = rawDescs[i] || (rawDescs.length === 1 ? rawDescs[0] : '');
+
+      if (d || duty || pos || desc || maxLen === 1) {
+        rolesList.push({
+          index: i + 1,
+          position: pos,
+          duty: duty || 'ทีมงาน',
+          description: desc,
+          department: d
+        });
+      }
+    }
+
+    const roleSummary = rawDuties.join(', ') || rawPositions.join(', ') || (rolesList.length > 0 ? rolesList.map(r => r.duty || r.position).join(', ') : 'ทีมงาน');
+
+    if (!Array.isArray(p.members)) p.members = [];
+
+    if (editingMemberId) {
+      // Edit existing member
+      const idx = p.members.findIndex(m => m.id === editingMemberId || m.name === editingMemberId);
+      if (idx !== -1) {
+        const existing = p.members[idx];
+        p.members[idx] = {
+          ...existing,
+          name,
+          nickname,
+          department: deptSummary,
+          departments: uniqueDepts,
+          role: roleSummary,
+          position: rawPositions.join(', ') || '',
+          details,
+          rolesList,
+          phone,
+          kkuMail,
+          contactLink,
+          avatar: editingMemberAvatar || existing.avatar || ''
+        };
+      }
+    } else {
+      // Add new member
+      p.members.push({
+        id: `MBR-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        name,
+        nickname,
+        department: deptSummary,
+        departments: uniqueDepts,
+        role: roleSummary,
+        position: rawPositions.join(', ') || '',
+        details,
+        rolesList,
+        phone,
+        kkuMail,
+        contactLink,
+        avatar: editingMemberAvatar || ''
+      });
+    }
+
+    // Emit socket & persist
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('admin:updateProject', p);
+    }
+    if (typeof saveLocalState === 'function') saveLocalState();
+    if (typeof window.persistProjectsToCloud === 'function') {
+      window.persistProjectsToCloud(true);
+    }
+
+    renderProjectMembersTableView(p);
+    closeProjectMemberEditModal();
+    if (typeof showToast === 'function') {
+      showToast(editingMemberId ? `บันทึกข้อมูล "${name}" เรียบร้อยแล้ว` : `เพิ่ม "${name}" เข้าสู่โครงการเรียบร้อยแล้ว`, 'success');
+    }
+  }
+
+  function openEditProjectMemberModalFromPreview() {
+    if (!activePreviewPerson) return;
+    const target = activePreviewPerson;
+    closePersonPhotoPreviewModal();
+    openEditProjectMemberModal(target.id || target.name);
+  }
+
+    if (typeof window !== 'undefined') {
     Object.assign(window, mod);
   }
 })(typeof self !== 'undefined' ? self : this, function () {
@@ -1203,7 +1574,7 @@
       if (list.length > 0) return Array.from(new Set(list));
     }
     if (m.department && typeof m.department === 'string') {
-      const list = m.department.split(/[,،、/]/).map(d => d.trim()).filter(Boolean);
+      const list = m.department.split(/[,،、\n;]/).map(d => d.trim()).filter(Boolean);
       if (list.length > 0) return Array.from(new Set(list));
     }
     return ['ฝ่ายดำเนินงานทั่วไป'];
@@ -1944,6 +2315,8 @@
     else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
   }
 
+  let activePreviewPerson = null;
+
   // Person Photo Preview Lightbox Modal
   function openPersonPhotoPreviewModal(personOrId) {
     if (!personOrId) return;
@@ -1977,6 +2350,10 @@
     const mailBtn = document.getElementById('personPhotoModalMailBtn');
     const mailText = document.getElementById('personPhotoModalMailText');
     const linkBtn = document.getElementById('personPhotoModalLinkBtn');
+    activePreviewPerson = person;
+
+    const editBtn = document.getElementById('personPhotoModalEditBtn');
+    if (editBtn) editBtn.classList.toggle('hidden', window.currentRole !== 'ADMIN');
 
     const name = person.name || 'ไม่ระบุชื่อ';
     const nickname = person.nickname ? `(${person.nickname})` : '';
@@ -2106,9 +2483,11 @@
     const importBtn = document.getElementById('prjDetailBtnImportXlsx');
     if (importBtn) importBtn.classList.toggle('hidden', !isAdmin);
 
-    // Show/hide Clear All button based on role & member count
+    // Show/hide Clear All & Add Member buttons based on role
     const clearAllBtn = document.getElementById('prjDetailBtnClearAllMembers');
     if (clearAllBtn) clearAllBtn.classList.toggle('hidden', !isAdmin || members.length === 0);
+    const addBtn = document.getElementById('prjDetailBtnAddMember');
+    if (addBtn) addBtn.classList.toggle('hidden', !isAdmin);
 
     // Show/hide Table Action Header
     const actionTh = document.getElementById('prjDetailTableActionTh');
@@ -2344,12 +2723,19 @@
 
           <!-- Admin Actions -->
           ${isAdmin ? `
-            <td class="py-3 px-3 text-center">
-              <button type="button" onclick="confirmDeleteProjectMember('${escapeHtml(m.id || m.name)}')"
-                class="w-7 h-7 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition inline-flex items-center justify-center cursor-pointer"
-                title="ลบสมาชิกคนนี้ออกจากโครงการ">
-                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
-              </button>
+            <td class="py-3 px-3 text-center whitespace-nowrap">
+              <div class="inline-flex items-center gap-1">
+                <button type="button" onclick="openEditProjectMemberModal('${escapeJs(m.id || m.name)}')"
+                  class="w-7 h-7 rounded-lg hover:bg-indigo-500/10 text-muted-foreground hover:text-indigo-600 transition inline-flex items-center justify-center cursor-pointer"
+                  title="แก้ไขข้อมูลผู้เกี่ยวข้องรายนี้">
+                  <i data-lucide="edit-3" class="h-3.5 w-3.5"></i>
+                </button>
+                <button type="button" onclick="confirmDeleteProjectMember('${escapeJs(m.id || m.name)}')"
+                  class="w-7 h-7 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition inline-flex items-center justify-center cursor-pointer"
+                  title="ลบสมาชิกคนนี้ออกจากโครงการ">
+                  <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                </button>
+              </div>
             </td>
           ` : ''}
         </tr>
@@ -2441,37 +2827,91 @@
     const splitByComma = (val) => {
       if (!val) return [];
       return String(val)
-        .split(/[,،、\n]/)
+        .split(/[,،、\n;]/)
         .map(s => s.trim())
         .filter(s => s.length > 0);
     };
 
+    const getRowValue = (row, possibleKeys) => {
+      if (!row || typeof row !== 'object') return '';
+      const rowKeys = Object.keys(row);
+
+      // Phase 1: exact trimmed case-insensitive
+      for (const pKey of possibleKeys) {
+        const cleanP = pKey.trim().toLowerCase();
+        for (const k of rowKeys) {
+          if (k.trim().toLowerCase() === cleanP) {
+            const v = row[k];
+            if (v !== undefined && v !== null && String(v).trim() !== '') {
+              return String(v).trim();
+            }
+          }
+        }
+      }
+
+      // Phase 2: normalized (strip spaces, slashes, dashes, colons)
+      const norm = str => String(str).toLowerCase().replace(/[\s\-_/\\|:]/g, '');
+      for (const pKey of possibleKeys) {
+        const normP = norm(pKey);
+        for (const k of rowKeys) {
+          if (norm(k) === normP) {
+            const v = row[k];
+            if (v !== undefined && v !== null && String(v).trim() !== '') {
+              return String(v).trim();
+            }
+          }
+        }
+      }
+
+      return '';
+    };
+
     return rows.map((r, idx) => {
       // 1. Departments (support multi-department)
-      const rawDeptStr = String(
-        r['ฝ่าย'] || r['ฝ่ายงาน'] || r['แผนก'] || r['หมวด'] || r['Department'] || r['Dept'] || r['Team'] || ''
-      ).trim();
+      const rawDeptStr = getRowValue(r, [
+        'ฝ่ายที่สังกัด', 'ฝ่ายงาน', 'ฝ่าย', 'แผนก', 'หมวด', 'สังกัด', 'department', 'dept', 'division', 'team'
+      ]);
+      const hasExplicitDept = Boolean(rawDeptStr);
       const rawDepts = splitByComma(rawDeptStr);
 
       // 2. Positions, Duties, Descriptions (comma-separated alignment matching)
-      const rawPositions = splitByComma(r['ตำแหน่ง'] || r['Position'] || '');
-      const rawDuties = splitByComma(r['หน้าที่'] || r['หน้าที่รับผิดชอบ'] || r['บทบาท'] || r['หน้าที่ในโครงการ'] || r['Role'] || '');
-      const rawDescs = splitByComma(r['อธิบาย'] || r['รายละเอียด'] || r['รายละเอียดหน้าที่'] || r['หน้าที่ความรับผิดชอบ'] || r['ความรับผิดชอบ'] || r['Details'] || r['Description'] || '');
+      const rawDutyStr = getRowValue(r, [
+        'หน้าที่ / บทบาท', 'หน้าที่/บทบาท', 'บทบาท / หน้าที่', 'บทบาท/หน้าที่', 'หน้าที่ในโครงการ', 'หน้าที่รับผิดชอบ',
+        'หน้าที่และความรับผิดชอบ', 'หน้าที่', 'บทบาท', 'ภาระงาน', 'role', 'roles', 'duty', 'duties'
+      ]);
+      const hasExplicitDuty = Boolean(rawDutyStr);
+      const rawDuties = splitByComma(rawDutyStr);
+
+      const rawPosStr = getRowValue(r, [
+        'ตำแหน่งในโครงการ', 'ตำแหน่ง / หน้าที่', 'ตำแหน่ง/หน้าที่', 'ตำแหน่ง', 'position', 'title'
+      ]);
+      const hasExplicitPos = Boolean(rawPosStr);
+      const rawPositions = splitByComma(rawPosStr);
+
+      const rawDescStr = getRowValue(r, [
+        'รายละเอียดหน้าที่ความรับผิดชอบ', 'รายละเอียดหน้าที่', 'หน้าที่ความรับผิดชอบ', 'ความรับผิดชอบ',
+        'รายละเอียด', 'คำอธิบาย', 'อธิบาย', 'details', 'description', 'desc'
+      ]);
+      const hasExplicitDesc = Boolean(rawDescStr);
+      const rawDescs = splitByComma(rawDescStr);
+
+      const hasExplicitRole = hasExplicitDuty || hasExplicitPos || hasExplicitDesc;
 
       const maxLen = Math.max(rawDuties.length, rawPositions.length, rawDescs.length, rawDepts.length, 1);
       const rolesList = [];
 
       for (let i = 0; i < maxLen; i++) {
+        // Connect index i of duty with index i of department
+        const dept = rawDepts[i] || (rawDepts.length === 1 ? rawDepts[0] : (rawDepts[rawDepts.length - 1] || (hasExplicitDept ? rawDeptStr : 'ฝ่ายดำเนินงานทั่วไป')));
+        const duty = rawDuties[i] || (rawDuties.length === 1 ? rawDuties[0] : (rawPositions[i] || ''));
         const pos = rawPositions[i] || (rawPositions.length === 1 ? rawPositions[0] : '');
-        const duty = rawDuties[i] || (rawDuties.length === 1 ? rawDuties[0] : (pos || 'ทีมงาน'));
         const desc = rawDescs[i] || (rawDescs.length === 1 ? rawDescs[0] : '');
-        const dept = rawDepts[i] || (rawDepts.length === 1 ? rawDepts[0] : 'ฝ่ายดำเนินงานทั่วไป');
 
-        if (pos || duty || desc || maxLen === 1) {
+        if (dept || duty || pos || desc || maxLen === 1) {
           rolesList.push({
             index: i + 1,
             position: pos,
-            duty: duty || 'ทีมงาน',
+            duty: duty || pos || (hasExplicitRole ? '' : 'ทีมงาน'),
             description: desc,
             department: dept || 'ฝ่ายดำเนินงานทั่วไป'
           });
@@ -2482,18 +2922,17 @@
       const uniqueDepts = Array.from(new Set(
         rawDepts.length > 0 ? rawDepts : rolesList.map(item => item.department).filter(Boolean)
       ));
-      if (uniqueDepts.length === 0) uniqueDepts.push('ฝ่ายดำเนินงานทั่วไป');
+      if (uniqueDepts.length === 0 && !hasExplicitDept) uniqueDepts.push('ฝ่ายดำเนินงานทั่วไป');
       const departmentSummary = uniqueDepts.join(', ');
 
       // Role summary string
       let roleSummary = '';
-      if (rolesList.length > 0) {
-        roleSummary = rolesList.map(item => {
-          if (item.position && item.duty && item.position !== item.duty) {
-            return `${item.position} (${item.duty})`;
-          }
-          return item.position || item.duty || 'ทีมงาน';
-        }).join(', ');
+      if (rawDuties.length > 0) {
+        roleSummary = rawDuties.join(', ');
+      } else if (rawPositions.length > 0) {
+        roleSummary = rawPositions.join(', ');
+      } else if (hasExplicitRole) {
+        roleSummary = rolesList.map(item => item.duty || item.position).filter(Boolean).join(', ') || 'ทีมงาน';
       } else {
         roleSummary = 'ทีมงาน';
       }
@@ -2504,17 +2943,19 @@
         : (rolesList.map(item => item.description).filter(Boolean).join('; ') || '');
 
       // Name & Nickname
-      let name = String(r['ชื่อ-นามสกุล'] || r['ชื่อ - นามสกุล'] || r['ชื่อ-สกุล'] || r['ชื่อ นามสกุล'] || r['ชื่อ'] || r['Name'] || r['Full Name'] || '').trim();
-      const lastName = String(r['นามสกุล'] || r['Last Name'] || '').trim();
+      let name = getRowValue(r, [
+        'ชื่อ-นามสกุล', 'ชื่อ - นามสกุล', 'ชื่อ-สกุล', 'ชื่อ สกุล', 'ชื่อ นามสกุล', 'ชื่อ', 'รายชื่อ', 'สมาชิก', 'ผู้เกี่ยวข้อง', 'name', 'full name', 'fullname'
+      ]);
+      const lastName = getRowValue(r, ['นามสกุล', 'last name', 'lastname']);
       if (lastName && !name.includes(lastName)) {
         name = `${name} ${lastName}`.trim();
       }
 
-      const nickname = String(r['ชื่อเล่น'] || r['Nickname'] || r['Nick Name'] || '').trim();
-      const phone = String(r['เบอร์ติดต่อ'] || r['เบอร์โทร'] || r['เบอร์โทรศัพท์'] || r['เบอร์'] || r['Phone'] || r['Tel'] || '').trim();
-      const kkuMail = String(r['KKU-MAIL'] || r['KKUMAIL'] || r['KKU Mail'] || r['kku-mail'] || r['อีเมล'] || r['Email'] || '').trim();
-      const contactLink = String(r['ลิงก์ติดต่อ'] || r['ช่องทางติดต่อ'] || r['โซเชียล'] || r['Contact Link'] || r['Social'] || '').trim();
-      let avatar = String(r['รูปหน้า'] || r['ลิงก์รูปหน้า'] || r['รูป'] || r['Avatar'] || '').trim();
+      const nickname = getRowValue(r, ['ชื่อเล่น', 'nickname', 'nick name', 'nick']);
+      const phone = getRowValue(r, ['เบอร์ติดต่อ', 'เบอร์โทร', 'เบอร์โทรศัพท์', 'เบอร์', 'โทรศัพท์', 'phone', 'tel', 'mobile']);
+      const kkuMail = getRowValue(r, ['kku-mail', 'kkumail', 'kku mail', 'อีเมล kku', 'อีเมล', 'email', 'mail']);
+      const contactLink = getRowValue(r, ['ลิงก์ช่องทางติดต่อ', 'ลิงก์ติดต่อ', 'ช่องทางติดต่อ', 'ลิงก์', 'โซเชียล', 'contact link', 'contact', 'social', 'ig', 'facebook', 'line']);
+      let avatar = getRowValue(r, ['ลิงก์รูปหน้า', 'รูปหน้า', 'รูปโปรไฟล์', 'รูปภาพ', 'รูป', 'โปรไฟล์', 'avatar', 'photo', 'image']);
       if (avatar) {
         avatar = resolveGoogleDriveImageUrl(avatar);
       }
@@ -2525,6 +2966,9 @@
         nickname,
         department: departmentSummary,
         departments: uniqueDepts,
+        hasExplicitDept,
+        hasExplicitRole,
+        hasExplicitDesc,
         role: roleSummary,
         position: rawPositions.join(', ') || '',
         details: detailsSummary,
@@ -2570,10 +3014,24 @@
         // UPDATE existing person while PRESERVING connected data (avatar, contact channels, etc.)
         const existing = targetList[existingIdx];
 
-        // Merge departments
-        const existingDepts = getMemberDepartments(existing);
-        const incomingDepts = getMemberDepartments(incoming);
-        const combinedDepts = Array.from(new Set([...incomingDepts, ...existingDepts])).filter(Boolean);
+        // Departments: if incoming has explicit department, use it! If not, keep existing!
+        let finalDepts = [];
+        let finalDeptStr = '';
+        if (incoming.hasExplicitDept && incoming.departments && incoming.departments.length > 0) {
+          finalDepts = incoming.departments;
+          finalDeptStr = incoming.department;
+        } else {
+          finalDepts = getMemberDepartments(existing);
+          finalDeptStr = existing.department || finalDepts.join(', ');
+        }
+
+        // Roles & Duties: if incoming has explicit role, use it! If not, keep existing!
+        const finalRole = incoming.hasExplicitRole ? incoming.role : (existing.role || 'ทีมงาน');
+        const finalPosition = incoming.hasExplicitRole ? incoming.position : (existing.position || '');
+        const finalDetails = incoming.hasExplicitDesc ? incoming.details : (existing.details || '');
+        const finalRolesList = (incoming.hasExplicitRole && Array.isArray(incoming.rolesList) && incoming.rolesList.length > 0)
+          ? incoming.rolesList
+          : (existing.rolesList || []);
 
         targetList[existingIdx] = {
           ...existing,
@@ -2581,13 +3039,13 @@
           name: incoming.name || existing.name,
           nickname: incoming.nickname || existing.nickname || '',
           // Departments
-          department: combinedDepts.join(', ') || 'ฝ่ายดำเนินงานทั่วไป',
-          departments: combinedDepts.length > 0 ? combinedDepts : ['ฝ่ายดำเนินงานทั่วไป'],
+          department: finalDeptStr,
+          departments: finalDepts,
           // Roles & Duties
-          role: incoming.role || existing.role || 'ทีมงาน',
-          position: incoming.position || existing.position || '',
-          details: incoming.details || existing.details || '',
-          rolesList: (Array.isArray(incoming.rolesList) && incoming.rolesList.length > 0) ? incoming.rolesList : (existing.rolesList || []),
+          role: finalRole,
+          position: finalPosition,
+          details: finalDetails,
+          rolesList: finalRolesList,
           // Contacts: update if provided, preserve if empty!
           phone: incoming.phone || existing.phone || '',
           kkuMail: incoming.kkuMail || existing.kkuMail || '',
@@ -2654,7 +3112,8 @@
                 confirmText: 'อัปเดตและนำเข้าข้อมูล',
                 cancelText: 'ยกเลิก',
                 isDanger: false,
-                icon: 'file-spreadsheet'
+                icon: 'file-spreadsheet',
+                actionIcon: 'file-spreadsheet'
               })
             : true;
 
@@ -2725,7 +3184,8 @@
                 confirmText: 'อัปเดตและเพิ่มรายชื่อ',
                 cancelText: 'ยกเลิก',
                 isDanger: false,
-                icon: 'file-spreadsheet'
+                icon: 'file-spreadsheet',
+                actionIcon: 'file-spreadsheet'
               })
             : true;
 
@@ -4030,6 +4490,15 @@
     window.clearAllProjectDetailMembers = clearAllProjectDetailMembers;
     window.getMemberDepartments = getMemberDepartments;
     window.upsertMembersList = upsertMembersList;
+    window.openEditProjectMemberModal = openEditProjectMemberModal;
+    window.openAddProjectMemberModal = openAddProjectMemberModal;
+    window.closeProjectMemberEditModal = closeProjectMemberEditModal;
+    window.saveProjectMemberFromModal = saveProjectMemberFromModal;
+    window.handleMemberEditModalFileUpload = handleMemberEditModalFileUpload;
+    window.triggerCropForMemberEditModal = triggerCropForMemberEditModal;
+    window.resetMemberEditModalPhotoToCute = resetMemberEditModalPhotoToCute;
+    window.matchPhotoForMemberEditModal = matchPhotoForMemberEditModal;
+    window.openEditProjectMemberModalFromPreview = openEditProjectMemberModalFromPreview;
   }
 
   return {
@@ -4045,6 +4514,15 @@
     clearAllProjectDetailMembers,
     getMemberDepartments,
     upsertMembersList,
+    openEditProjectMemberModal,
+    openAddProjectMemberModal,
+    closeProjectMemberEditModal,
+    saveProjectMemberFromModal,
+    handleMemberEditModalFileUpload,
+    triggerCropForMemberEditModal,
+    resetMemberEditModalPhotoToCute,
+    matchPhotoForMemberEditModal,
+    openEditProjectMemberModalFromPreview,
     updateRepeaterField,
     toggleRepeaterItem,
     toggleExpandAllMembersRepeater,
