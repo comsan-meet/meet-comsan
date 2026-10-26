@@ -3197,12 +3197,11 @@
     prjFormAdvisors = isEdit && p && Array.isArray(p.advisors) ? JSON.parse(JSON.stringify(p.advisors)) : [];
     prjFormSmoOfficers = isEdit && p && Array.isArray(p.smoOfficers) ? JSON.parse(JSON.stringify(p.smoOfficers)) : [];
 
-    // By default, for leaders, advisors, smo (small arrays), keep them expanded
-    prjFormLeaders.forEach((_, idx) => expandedLeadersIndices.add(idx));
-    prjFormAdvisors.forEach((_, idx) => expandedAdvisorsIndices.add(idx));
-    prjFormSmoOfficers.forEach((_, idx) => expandedSmoIndices.add(idx));
-    // For members: KEEP ALL COLLAPSED by default so 50+ members appear as a tidy list!
+    // By default, keep ALL repeaters (Leaders, Members, Advisors, SMO) collapsed as compact summary rows!
+    expandedLeadersIndices.clear();
     expandedMembersIndices.clear();
+    expandedAdvisorsIndices.clear();
+    expandedSmoIndices.clear();
 
     // Google Drive Photo Folder & Catalog
     currentPhotoFolderUrl = (isEdit && p && p.photoFolderUrl) ? p.photoFolderUrl : '';
