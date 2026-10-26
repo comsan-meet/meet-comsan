@@ -1198,12 +1198,14 @@
   // Helper to extract an array of clean department names from a member object (supports multiple departments)
   function getMemberDepartments(m) {
     if (!m) return ['ฝ่ายดำเนินงานทั่วไป'];
-    if (Array.isArray(m.departments) && m.departments.length > 0) {
-      const list = m.departments.map(d => String(d).trim()).filter(Boolean);
+    // 1. If explicit department string is present, split strictly by comma (never by slash)
+    if (m.department && typeof m.department === 'string' && m.department.trim()) {
+      const list = m.department.split(/[,，،、\n;]/).map(d => d.trim()).filter(Boolean);
       if (list.length > 0) return Array.from(new Set(list));
     }
-    if (m.department && typeof m.department === 'string') {
-      const list = m.department.split(/[,،、\n;]/).map(d => d.trim()).filter(Boolean);
+    // 2. Otherwise check departments array (and ensure legacy comma strings are parsed)
+    if (Array.isArray(m.departments) && m.departments.length > 0) {
+      const list = m.departments.flatMap(d => String(d).split(/[,，،、\n;]/)).map(d => d.trim()).filter(Boolean);
       if (list.length > 0) return Array.from(new Set(list));
     }
     return ['ฝ่ายดำเนินงานทั่วไป'];
@@ -2043,17 +2045,19 @@
         detailsEl.innerHTML = `
           <div class="space-y-1.5">
             <p class="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1">หน้าที่และความรับผิดชอบในโครงการ (${person.rolesList.length} หน้าที่):</p>
-            ${person.rolesList.map(r => `
-              <div class="p-2 rounded-xl bg-card border border-border/70 space-y-1">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="w-5 h-5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold flex items-center justify-center shrink-0">${r.index}</span>
-                  ${r.position ? `<span class="font-bold text-foreground text-xs">${escapeHtml(r.position)}</span>` : ''}
-                  ${r.duty ? `<span class="text-xs text-primary font-medium">· ${escapeHtml(r.duty)}</span>` : ''}
-                  ${r.department ? `<span class="text-[10px] px-1.5 py-0.2 rounded-md font-semibold border ${getDepartmentBadgeClass(r.department)} ml-auto">${escapeHtml(r.department)}</span>` : ''}
+            ${person.rolesList.map(r => {
+              const roleTitle = r.duty || r.position || 'ทีมงาน';
+              return `
+                <div class="p-2 rounded-xl bg-card border border-border/70 space-y-1">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="w-5 h-5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold flex items-center justify-center shrink-0">${r.index}</span>
+                    <span class="font-bold text-foreground text-xs">${escapeHtml(roleTitle)}</span>
+                    ${r.department ? `<span class="text-[10px] px-1.5 py-0.2 rounded-md font-semibold border ${getDepartmentBadgeClass(r.department)} ml-auto">${escapeHtml(r.department)}</span>` : ''}
+                  </div>
+                  ${r.description ? `<p class="text-[11px] text-muted-foreground pl-6 leading-relaxed">${escapeHtml(r.description)}</p>` : ''}
                 </div>
-                ${r.description ? `<p class="text-[11px] text-muted-foreground pl-6 leading-relaxed">${escapeHtml(r.description)}</p>` : ''}
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         `;
         detailsWrapper.classList.remove('hidden');
@@ -2306,17 +2310,19 @@
           <td class="py-3 px-3">
             ${Array.isArray(m.rolesList) && m.rolesList.length > 1 ? `
               <div class="flex flex-col gap-1">
-                ${m.rolesList.map(r => `
-                  <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-foreground border border-border">
-                    ${r.position ? `<span class="text-primary font-bold">${escapeHtml(r.position)}</span>` : ''}
-                    ${r.duty ? `<span>${escapeHtml(r.duty)}</span>` : ''}
-                    ${r.department && depts.length > 1 ? `<span class="text-[10px] text-muted-foreground font-normal">(${escapeHtml(r.department)})</span>` : ''}
-                  </div>
-                `).join('')}
+                ${m.rolesList.map(r => {
+                  const roleTitle = r.duty || r.position || 'ทีมงาน';
+                  return `
+                    <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-foreground border border-border">
+                      <span class="text-foreground font-semibold">${escapeHtml(roleTitle)}</span>
+                      ${r.department && depts.length > 1 ? `<span class="text-[10px] text-muted-foreground font-normal">(${escapeHtml(r.department)})</span>` : ''}
+                    </div>
+                  `;
+                }).join('')}
               </div>
             ` : `
               <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-foreground border border-border">
-                <span class="truncate max-w-[140px]" title="${escapeHtml(m.role || 'ทีมงาน')}">${escapeHtml(m.role || 'ทีมงาน')}</span>
+                <span class="truncate max-w-[140px]" title="${escapeHtml(m.role || m.position || 'ทีมงาน')}">${escapeHtml(m.role || m.position || 'ทีมงาน')}</span>
               </span>
             `}
           </td>
@@ -2616,7 +2622,7 @@
         hasExplicitRole,
         hasExplicitDesc,
         role: roleSummary,
-        position: rawPositions.join(', ') || '',
+        position: '',
         details: detailsSummary,
         rolesList,
         phone,
@@ -2907,22 +2913,21 @@
     }
 
     const templateData = [
-      ['ฝ่าย', 'ตำแหน่ง', 'หน้าที่', 'รายละเอียดหน้าที่', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ติดต่อ', 'ลิงก์รูปหน้า'],
-      ['ฝ่ายกิจกรรมและสันทนาการ, ฝ่ายสถานที่และสวัสดิการ', 'หัวหน้าฝ่ายกิจกรรม, สตาฟฟ์ฝ่ายสถานที่', 'ออกแบบเกมสันทนาการ, จัดเตรียมอุปกรณ์', 'ดูแลเกมค่ายและกลุ่มสัมพันธ์, จัดเตรียมห้อง CP9127 และระบบเสียง', 'นางสาวพิมพ์ชนก รัตนสุวรรณ', 'พลอย', '089-876-5432', 'pimchanok.r@kkumail.com', 'https://instagram.com/ploy_cs', ''],
-      ['ฝ่ายกิจกรรมและสันทนาการ', 'สตาฟฟ์นันทนาการ', 'สตาฟฟ์นันทนาการและเพลง', 'ดูแลกิจกรรมร้องเพลง เต้นประกอบจังหวะ และนำเกมกลุ่มย่อย', 'นายธนกฤต มั่นคง', 'เจมส์', '085-111-2233', 'thanakrit.m@kkumail.com', 'https://facebook.com/james.comsan', ''],
-      ['ฝ่ายสถานที่และสวัสดิการ', 'หัวหน้าฝ่ายสถานที่', 'หัวหน้าฝ่ายสถานที่และสวัสดิการ', 'จัดเตรียมอุปกรณ์ค่าย อาหาร น้ำดื่ม และการประสานงานพื้นที่', 'นายกิตติศักดิ์ พรหมดี', 'ฟีฟ่า', '082-345-6789', 'kittisak.p@kkumail.com', 'https://line.me/ti/p/~fifa_cs', ''],
-      ['ฝ่ายสถานที่และสวัสดิการ, ฝ่ายยานพาหนะ', 'สตาฟฟ์สถานที่, ผู้ดูแลยานพาหนะ', 'จัดเต็นท์พักแรม, ประสานงานรถตู้', 'ดูแลการเดินทางและระบบไฟฟ้าส่องสว่าง, ประสานงานรถรับส่งนักศึกษา', 'นายชินวัตร วิเศษศักดิ์', 'อาร์ม', '084-999-8877', 'chinawat.w@kkumail.com', 'https://line.me/ti/p/~arm_cs', ''],
-      ['ฝ่ายพยาบาลและสุขอนามัย', 'เจ้าหน้าที่พยาบาล', 'เจ้าหน้าที่พยาบาลประจำค่าย', 'จัดเตรียมกระเป๋ายา เวชภัณฑ์ และดูแลสุขภาพของชาวค่าย', 'นางสาวสุชาวดี มีสุข', 'ฟ้า', '086-444-5566', 'suchawadee.m@kkumail.com', 'https://instagram.com/fah_care', ''],
-      ['ฝ่ายสื่อและประชาสัมพันธ์', 'หัวหน้าฝ่ายสื่อ', 'บันทึกภาพและผลิตสื่อ', 'บันทึกภาพนิ่ง วิดีโอกิจกรรม และผลิตสื่อสรุปผลโครงการ', 'นายวรเมธ ศรีสวัสดิ์', 'นิว', '087-333-2211', 'worameth.s@kkumail.com', 'https://instagram.com/new_photo', ''],
-      ['ฝ่ายทะเบียนและประเมินผล', 'เจ้าหน้าที่ทะเบียน', 'รับลงทะเบียนและประเมินผล', 'รับลงทะเบียน แจกป้ายชื่อ รวบรวมแบบประเมินและสรุปรายงานสถิติ', 'นางสาวกานดา นวลจันทร์', 'มายด์', '083-222-1100', 'kanda.n@kkumail.com', 'https://line.me/ti/p/~mind_kanda', '']
+      ['ฝ่าย', 'หน้าที่ / บทบาท', 'รายละเอียดหน้าที่', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ติดต่อ', 'ลิงก์รูปหน้า'],
+      ['ฝ่ายกิจกรรมและสันทนาการ, ฝ่ายสถานที่และสวัสดิการ', 'ออกแบบเกมสันทนาการ, จัดเตรียมอุปกรณ์', 'ดูแลเกมค่ายและกลุ่มสัมพันธ์, จัดเตรียมห้อง CP9127 และระบบเสียง', 'นางสาวพิมพ์ชนก รัตนสุวรรณ', 'พลอย', '089-876-5432', 'pimchanok.r@kkumail.com', 'https://instagram.com/ploy_cs', ''],
+      ['ฝ่ายกิจกรรมและสันทนาการ', 'สตาฟฟ์นันทนาการและเพลง', 'ดูแลกิจกรรมร้องเพลง เต้นประกอบจังหวะ และนำเกมกลุ่มย่อย', 'นายธนกฤต มั่นคง', 'เจมส์', '085-111-2233', 'thanakrit.m@kkumail.com', 'https://facebook.com/james.comsan', ''],
+      ['ฝ่ายสถานที่และสวัสดิการ', 'หัวหน้าฝ่ายสถานที่และสวัสดิการ', 'จัดเตรียมอุปกรณ์ค่าย อาหาร น้ำดื่ม และการประสานงานพื้นที่', 'นายกิตติศักดิ์ พรหมดี', 'ฟีฟ่า', '082-345-6789', 'kittisak.p@kkumail.com', 'https://line.me/ti/p/~fifa_cs', ''],
+      ['ฝ่ายสถานที่และสวัสดิการ, ฝ่ายยานพาหนะ', 'จัดเต็นท์พักแรม, ประสานงานรถตู้', 'ดูแลการเดินทางและระบบไฟฟ้าส่องสว่าง, ประสานงานรถรับส่งนักศึกษา', 'นายชินวัตร วิเศษศักดิ์', 'อาร์ม', '084-999-8877', 'chinawat.w@kkumail.com', 'https://line.me/ti/p/~arm_cs', ''],
+      ['ฝ่ายพยาบาลและสุขอนามัย', 'เจ้าหน้าที่พยาบาลประจำค่าย', 'จัดเตรียมกระเป๋ายา เวชภัณฑ์ และดูแลสุขภาพของชาวค่าย', 'นางสาวสุชาวดี มีสุข', 'ฟ้า', '086-444-5566', 'suchawadee.m@kkumail.com', 'https://instagram.com/fah_care', ''],
+      ['ฝ่ายสื่อและประชาสัมพันธ์', 'บันทึกภาพและผลิตสื่อ', 'บันทึกภาพนิ่ง วิดีโอกิจกรรม และผลิตสื่อสรุปผลโครงการ', 'นายวรเมธ ศรีสวัสดิ์', 'นิว', '087-333-2211', 'worameth.s@kkumail.com', 'https://instagram.com/new_photo', ''],
+      ['ฝ่ายทะเบียนและประเมินผล', 'รับลงทะเบียนและประเมินผล', 'รับลงทะเบียน แจกป้ายชื่อ รวบรวมแบบประเมินและสรุปรายงานสถิติ', 'นางสาวกานดา นวลจันทร์', 'มายด์', '083-222-1100', 'kanda.n@kkumail.com', 'https://line.me/ti/p/~mind_kanda', '']
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(templateData);
 
     ws['!cols'] = [
       { wch: 32 }, // ฝ่าย
-      { wch: 28 }, // ตำแหน่ง
-      { wch: 30 }, // หน้าที่
+      { wch: 32 }, // หน้าที่ / บทบาท
       { wch: 50 }, // รายละเอียดหน้าที่
       { wch: 28 }, // ชื่อ-นามสกุล
       { wch: 12 }, // ชื่อเล่น
@@ -2962,25 +2967,22 @@
     }
 
     const rows = [
-      ['ลำดับ', 'ฝ่ายงาน', 'ตำแหน่ง', 'หน้าที่ / บทบาท', 'รายละเอียดหน้าที่', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ช่องทางติดต่อ']
+      ['ลำดับ', 'ฝ่ายงาน', 'หน้าที่ / บทบาท', 'รายละเอียดหน้าที่', 'ชื่อ-นามสกุล', 'ชื่อเล่น', 'เบอร์ติดต่อ', 'KKU-MAIL', 'ลิงก์ช่องทางติดต่อ']
     ];
 
     members.forEach((m, idx) => {
       const depts = getMemberDepartments(m);
-      let positions = m.position || '';
       let duties = m.role || 'ทีมงาน';
       let descs = m.details || '';
 
       if (Array.isArray(m.rolesList) && m.rolesList.length > 0) {
-        positions = m.rolesList.map(r => r.position).filter(Boolean).join(', ') || positions;
-        duties = m.rolesList.map(r => r.duty).filter(Boolean).join(', ') || duties;
+        duties = m.rolesList.map(r => r.duty || r.position).filter(Boolean).join(', ') || duties;
         descs = m.rolesList.map(r => r.description).filter(Boolean).join('; ') || descs;
       }
 
       rows.push([
         idx + 1,
         depts.join(', '),
-        positions,
         duties,
         descs,
         m.name || '',
@@ -3152,7 +3154,82 @@
   }
 
   // ========================================================
-  // 4. ADMIN PROJECT EDITOR MODAL (ACCORDION & COMPACT ROWS)
+  // -------------------------------------------------------------
+  // UNSAVED CHANGES CONFIRMATION POPUP SYSTEM
+  // -------------------------------------------------------------
+  let initialAdminPrjFormSnapshot = null;
+  let initialMemberEditSnapshot = null;
+
+  function promptUnsavedChanges() {
+    return new Promise(resolve => {
+      const modal = document.getElementById('prjUnsavedChangesModal');
+      if (!modal) {
+        const ok = confirm('คุณยังไม่ได้บันทึกการเปลี่ยนแปลง ต้องการออกโดยไม่บันทึกหรือไม่?');
+        return resolve(ok ? 'DISCARD' : 'STAY');
+      }
+
+      const saveBtn = document.getElementById('prjUnsavedSaveBtn');
+      const discardBtn = document.getElementById('prjUnsavedDiscardBtn');
+      const stayBtn = document.getElementById('prjUnsavedStayBtn');
+
+      const cleanup = (choice) => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        resolve(choice);
+      };
+
+      if (saveBtn) saveBtn.onclick = () => cleanup('SAVE');
+      if (discardBtn) discardBtn.onclick = () => cleanup('DISCARD');
+      if (stayBtn) stayBtn.onclick = () => cleanup('STAY');
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (typeof window.refreshIcons === 'function') window.refreshIcons();
+      else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    });
+  }
+
+  function getAdminProjectFormSnapshot() {
+    return JSON.stringify({
+      title: document.getElementById('prjFormTitle')?.value || '',
+      code: document.getElementById('prjFormCode')?.value || '',
+      academicYear: document.getElementById('prjFormAcademicYear')?.value || '',
+      status: document.getElementById('prjFormStatus')?.value || '',
+      startDate: document.getElementById('prjFormStartDate')?.value || '',
+      endDate: document.getElementById('prjFormEndDate')?.value || '',
+      location: document.getElementById('prjFormLocation')?.value || '',
+      budget: document.getElementById('prjFormBudget')?.value || '',
+      summary: document.getElementById('prjFormSummary')?.value || '',
+      description: document.getElementById('prjFormDescription')?.value || '',
+      googleDriveUrl: document.getElementById('prjFormGoogleDriveUrl')?.value || '',
+      docTitle: document.getElementById('prjFormDocTitle')?.value || '',
+      docUrl: document.getElementById('prjFormDocUrl')?.value || '',
+      budgetDocTitle: document.getElementById('prjFormBudgetDocTitle')?.value || '',
+      budgetDocAmount: document.getElementById('prjFormBudgetDocAmount')?.value || '',
+      budgetDocUrl: document.getElementById('prjFormBudgetDocUrl')?.value || '',
+      photoFolderUrl: currentPhotoFolderUrl || '',
+      leaders: prjFormLeaders || [],
+      members: prjFormMembers || [],
+      advisors: prjFormAdvisors || [],
+      smo: prjFormSmoOfficers || []
+    });
+  }
+
+  function getMemberEditFormSnapshot() {
+    return JSON.stringify({
+      name: document.getElementById('prjMemberEditName')?.value || '',
+      nickname: document.getElementById('prjMemberEditNickname')?.value || '',
+      dept: document.getElementById('prjMemberEditDept')?.value || '',
+      duty: document.getElementById('prjMemberEditDuty')?.value || '',
+      details: document.getElementById('prjMemberEditDetails')?.value || '',
+      phone: document.getElementById('prjMemberEditPhone')?.value || '',
+      email: document.getElementById('prjMemberEditEmail')?.value || '',
+      contactLink: document.getElementById('prjMemberEditContactLink')?.value || '',
+      avatar: editingMemberAvatar || ''
+    });
+  }
+
+    // 4. ADMIN PROJECT EDITOR MODAL (ACCORDION & COMPACT ROWS)
   // ========================================================
   function openAdminProjectEditModal(projectId = null) {
     if (window.currentRole !== 'ADMIN') {
@@ -3237,14 +3314,31 @@
     modal.classList.add('flex');
     if (typeof window.refreshIcons === 'function') window.refreshIcons();
     else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+
+    // Snapshot initial form state for unsaved change protection
+    initialAdminPrjFormSnapshot = getAdminProjectFormSnapshot();
   }
 
-  function closeAdminProjectEditModal() {
+  async function closeAdminProjectEditModal(force = false) {
+    if (!force && initialAdminPrjFormSnapshot) {
+      const current = getAdminProjectFormSnapshot();
+      if (current !== initialAdminPrjFormSnapshot) {
+        const choice = await promptUnsavedChanges();
+        if (choice === 'STAY') return;
+        if (choice === 'SAVE') {
+          saveProjectFromAdminForm();
+          return;
+        }
+        // choice === 'DISCARD' -> proceed to close
+      }
+    }
+
     const modal = document.getElementById('adminProjectEditModal');
     if (modal) {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
     }
+    initialAdminPrjFormSnapshot = null;
   }
 
   // Toggle single item in repeater
@@ -3531,7 +3625,7 @@
 
             <div>
               <label class="block text-[11px] font-medium text-muted-foreground mb-1">
-                หน้าที่ / ตำแหน่งในโครงการ <span class="text-[10px] opacity-75">(คั่นด้วย , หากมีหลายหน้าที่)</span>
+                หน้าที่ / บทบาท <span class="text-[10px] opacity-75">(คั่นด้วย , หากมีหลายหน้าที่)</span>
               </label>
               <input type="text" value="${escapeHtml(item.role || '')}"
                 oninput="updateRepeaterField('${type}', ${idx}, 'role', this.value)"
@@ -3876,7 +3970,7 @@
     if (list && list[index]) {
       list[index][field] = value;
       if (field === 'department') {
-        const depts = String(value).split(/[,،、/]/).map(d => d.trim()).filter(Boolean);
+        const depts = String(value).split(/[,，،、\n;]/).map(d => d.trim()).filter(Boolean);
         list[index].departments = depts.length > 0 ? depts : ['ฝ่ายดำเนินงานทั่วไป'];
       }
     }
@@ -4028,7 +4122,7 @@
       } catch (e) {}
     }
 
-    closeAdminProjectEditModal();
+    closeAdminProjectEditModal(true);
     isSavingProject = false;
 
     // If detail modal is currently showing the updated project, refresh it immediately
@@ -4180,6 +4274,8 @@
     modal.classList.add('flex');
     if (typeof window.refreshIcons === 'function') window.refreshIcons();
     else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+
+    initialMemberEditSnapshot = getMemberEditFormSnapshot();
   }
 
   function openAddProjectMemberModal() {
@@ -4244,9 +4340,24 @@
     modal.classList.add('flex');
     if (typeof window.refreshIcons === 'function') window.refreshIcons();
     else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+
+    initialMemberEditSnapshot = getMemberEditFormSnapshot();
   }
 
-  function closeProjectMemberEditModal() {
+  async function closeProjectMemberEditModal(force = false) {
+    if (!force && initialMemberEditSnapshot) {
+      const current = getMemberEditFormSnapshot();
+      if (current !== initialMemberEditSnapshot) {
+        const choice = await promptUnsavedChanges();
+        if (choice === 'STAY') return;
+        if (choice === 'SAVE') {
+          saveProjectMemberFromModal();
+          return;
+        }
+        // choice === 'DISCARD' -> proceed to close
+      }
+    }
+
     const modal = document.getElementById('projectMemberEditModal');
     if (modal) {
       modal.classList.add('hidden');
@@ -4254,6 +4365,7 @@
     }
     editingMemberId = null;
     editingMemberAvatar = '';
+    initialMemberEditSnapshot = null;
   }
 
   function updateMemberEditModalPhotoUi(name, nickname, avatar) {
@@ -4380,33 +4492,29 @@
     const nickname = document.getElementById('prjMemberEditNickname').value.trim();
     const rawDeptStr = document.getElementById('prjMemberEditDept').value.trim();
     const rawDutyStr = document.getElementById('prjMemberEditDuty').value.trim();
-    const rawPosStr = document.getElementById('prjMemberEditPosition').value.trim();
     const details = document.getElementById('prjMemberEditDetails').value.trim();
     const phone = document.getElementById('prjMemberEditPhone').value.trim();
     const kkuMail = document.getElementById('prjMemberEditEmail').value.trim();
     const contactLink = document.getElementById('prjMemberEditContactLink').value.trim();
 
-    const splitByComma = val => String(val || '').split(/[,،、\n;]/).map(s => s.trim()).filter(Boolean);
+    const splitByComma = val => String(val || '').split(/[,，،、\n;]/).map(s => s.trim()).filter(Boolean);
     const depts = splitByComma(rawDeptStr);
     const uniqueDepts = depts.length > 0 ? Array.from(new Set(depts)) : ['ฝ่ายดำเนินงานทั่วไป'];
     const deptSummary = uniqueDepts.join(', ');
 
     const rawDuties = splitByComma(rawDutyStr);
-    const rawPositions = splitByComma(rawPosStr);
     const rawDescs = splitByComma(details);
 
-    const maxLen = Math.max(rawDuties.length, rawPositions.length, rawDescs.length, uniqueDepts.length, 1);
+    const maxLen = Math.max(rawDuties.length, rawDescs.length, uniqueDepts.length, 1);
     const rolesList = [];
     for (let i = 0; i < maxLen; i++) {
       const d = uniqueDepts[i] || (uniqueDepts.length === 1 ? uniqueDepts[0] : (uniqueDepts[uniqueDepts.length - 1] || 'ฝ่ายดำเนินงานทั่วไป'));
-      const duty = rawDuties[i] || (rawDuties.length === 1 ? rawDuties[0] : (rawPositions[i] || 'ทีมงาน'));
-      const pos = rawPositions[i] || (rawPositions.length === 1 ? rawPositions[0] : '');
+      const duty = rawDuties[i] || (rawDuties.length === 1 ? rawDuties[0] : 'ทีมงาน');
       const desc = rawDescs[i] || (rawDescs.length === 1 ? rawDescs[0] : '');
 
-      if (d || duty || pos || desc || maxLen === 1) {
+      if (d || duty || desc || maxLen === 1) {
         rolesList.push({
           index: i + 1,
-          position: pos,
           duty: duty || 'ทีมงาน',
           description: desc,
           department: d
@@ -4414,7 +4522,7 @@
       }
     }
 
-    const roleSummary = rawDuties.join(', ') || rawPositions.join(', ') || (rolesList.length > 0 ? rolesList.map(r => r.duty || r.position).join(', ') : 'ทีมงาน');
+    const roleSummary = rawDuties.join(', ') || (rolesList.length > 0 ? rolesList.map(r => r.duty).join(', ') : 'ทีมงาน');
 
     if (!Array.isArray(p.members)) p.members = [];
 
@@ -4430,7 +4538,7 @@
           department: deptSummary,
           departments: uniqueDepts,
           role: roleSummary,
-          position: rawPositions.join(', ') || '',
+          position: '',
           details,
           rolesList,
           phone,
@@ -4468,7 +4576,7 @@
     }
 
     renderProjectMembersTableView(p);
-    closeProjectMemberEditModal();
+    closeProjectMemberEditModal(true);
     if (typeof showToast === 'function') {
       showToast(editingMemberId ? `บันทึกข้อมูล "${name}" เรียบร้อยแล้ว` : `เพิ่ม "${name}" เข้าสู่โครงการเรียบร้อยแล้ว`, 'success');
     }
