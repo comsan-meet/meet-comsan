@@ -1075,6 +1075,7 @@
           members: Array.isArray(data.members) ? data.members : [],
           advisors: Array.isArray(data.advisors) ? data.advisors : [],
           smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
+          departmentColorConfig: data.departmentColorConfig || null,
           createdAt: data.createdAt || nowISO,
           updatedAt: nowISO
         };
@@ -1134,6 +1135,7 @@
             members: Array.isArray(data.members) ? data.members : state.projects[idx].members,
             advisors: Array.isArray(data.advisors) ? data.advisors : state.projects[idx].advisors,
             smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : state.projects[idx].smoOfficers,
+            departmentColorConfig: data.departmentColorConfig !== undefined ? data.departmentColorConfig : state.projects[idx].departmentColorConfig,
             updatedAt: nowISO
           };
           result = { success: true, project: state.projects[idx] };
@@ -1160,6 +1162,7 @@
             members: Array.isArray(data.members) ? data.members : [],
             advisors: Array.isArray(data.advisors) ? data.advisors : [],
             smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
+            departmentColorConfig: data.departmentColorConfig || null,
             createdAt: nowISO,
             updatedAt: nowISO
           };

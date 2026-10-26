@@ -6668,7 +6668,7 @@ label svg, label i {
   <!-- MODAL: DEPARTMENT COLOR SETTINGS (ADMIN ONLY)             -->
   <!-- ========================================================= -->
   <div id="prjDeptColorSettingsModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-[130] p-3 sm:p-4 select-none animate-fadeIn" onclick="if(event.target === this) closeDepartmentColorConfigModal();">
-    <div class="bg-card border border-border rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl text-card-foreground space-y-4 max-h-[90vh] flex flex-col">
+    <div class="bg-card border border-border rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl text-card-foreground space-y-4 max-h-[90vh] flex flex-col">
       <!-- Header -->
       <div class="flex items-center justify-between border-b border-border/70 pb-3 shrink-0">
         <div class="flex items-center gap-2.5">
@@ -6733,11 +6733,18 @@ label svg, label i {
         <div id="deptColorUnifiedSection" class="p-3.5 rounded-2xl bg-muted/30 border border-border/70 space-y-2.5 hidden">
           <label class="block font-semibold text-foreground">เลือกสีหลักสำหรับทุกฝ่าย:</label>
           <div id="deptColorUnifiedPaletteGrid" class="grid grid-cols-4 sm:grid-cols-6 gap-2"></div>
+          <div class="pt-2 border-t border-border/50">
+            <p class="text-[11px] text-muted-foreground mb-1.5 font-medium">ตัวอย่างการแสดงผลทุกฝ่ายด้วยสีนี้:</p>
+            <div id="deptColorUnifiedPreviewGrid" class="flex flex-wrap gap-1.5"></div>
+          </div>
         </div>
 
         <!-- Custom Colors List Section (Shown when CUSTOM) -->
-        <div id="deptColorCustomSection" class="space-y-2 hidden">
-          <label class="block font-semibold text-foreground">เลือกสีสำหรับแต่ละฝ่ายงาน:</label>
+        <div id="deptColorCustomSection" class="space-y-2.5 hidden">
+          <div class="flex items-center justify-between">
+            <label class="block font-semibold text-foreground">เลือกสีสำหรับแต่ละฝ่ายงาน:</label>
+            <span class="text-[10px] text-muted-foreground">คลิกเลือกสีให้แต่ละฝ่าย</span>
+          </div>
           <div id="deptColorCustomDeptsList" class="space-y-2"></div>
         </div>
 
@@ -6828,7 +6835,7 @@ label svg, label i {
   <script src="js/components/stream.js?v=20261026_01"></script>
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
   <script src="js/components/calendar.js?v=20261026_01"></script>
-  <script src="js/components/projects.js?v=20261027_03"></script>
+  <script src="js/components/projects.js?v=20261027_04"></script>
   <script src="js/views/navigation.js?v=20261026_02"></script>
   <script src="js/views/userView.js?v=20261026_02"></script>
   <script src="js/views/adminView.js?v=20261026_01"></script>

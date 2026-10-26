@@ -458,7 +458,8 @@ window.mergeProjectsSafely = function (localProjects, incomingProjects) {
           photoFolderUrl: p.photoFolderUrl || current.photoFolderUrl || '',
           photoCatalog: (Array.isArray(p.photoCatalog) && p.photoCatalog.length > 0) ? p.photoCatalog : (current.photoCatalog || []),
           projectDocument: p.projectDocument || current.projectDocument,
-          budgetDocument: p.budgetDocument || current.budgetDocument
+          budgetDocument: p.budgetDocument || current.budgetDocument,
+          departmentColorConfig: p.departmentColorConfig || current.departmentColorConfig || null
         });
       } else {
         map.set(pid, {
@@ -467,7 +468,8 @@ window.mergeProjectsSafely = function (localProjects, incomingProjects) {
           photoFolderUrl: current.photoFolderUrl || p.photoFolderUrl || '',
           photoCatalog: (Array.isArray(current.photoCatalog) && current.photoCatalog.length > 0) ? current.photoCatalog : (p.photoCatalog || []),
           projectDocument: current.projectDocument || p.projectDocument,
-          budgetDocument: current.budgetDocument || p.budgetDocument
+          budgetDocument: current.budgetDocument || p.budgetDocument,
+          departmentColorConfig: current.departmentColorConfig || p.departmentColorConfig || null
         });
       }
     }

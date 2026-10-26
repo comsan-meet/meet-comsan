@@ -1102,8 +1102,9 @@
 
   function getProjectsList() {
     let list = [];
-    if (typeof window !== 'undefined' && window.appState && Array.isArray(window.appState.projects)) {
-      list = window.appState.projects;
+    const stateObj = (typeof window !== 'undefined' && (window.appState || window.AppState)) || null;
+    if (stateObj && Array.isArray(stateObj.projects)) {
+      list = stateObj.projects;
     }
     const sampleProjectIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
     // Deduplicate by ID and exclude defunct sample projects
@@ -1356,7 +1357,7 @@
         radio.className = `w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
           isSelected ? 'border-primary bg-primary text-white' : 'border-border'
         }`;
-        radio.innerHTML = isSelected ? `<span class="w-1.5 h-1.5 rounded-full bg-white"></span>` : '';
+        radio.innerHTML = isSelected ? '<span class="w-1.5 h-1.5 rounded-full bg-white"></span>' : '';
       }
     });
 
@@ -1377,7 +1378,7 @@
     });
     const depts = Array.from(deptsSet);
 
-    // 3. Render Unified Palette Grid
+    // 3. Render Unified Palette Grid & Live Preview
     const unifiedGrid = document.getElementById('deptColorUnifiedPaletteGrid');
     if (unifiedGrid) {
       unifiedGrid.innerHTML = Object.keys(DEPARTMENT_COLOR_PALETTES).map(key => {
@@ -1385,46 +1386,67 @@
         const isSel = unifiedColor === key;
         return `
           <button type="button" onclick="selectUnifiedColor('${key}')"
-            class="p-2 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer ${
+            class="p-2.5 rounded-2xl border flex flex-col items-center gap-1.5 transition cursor-pointer ${
               isSel ? 'border-primary ring-2 ring-primary/40 bg-card shadow-xs' : 'border-border hover:bg-muted/40'
             }">
-            <span class="w-5 h-5 rounded-full ${pal.bgClass} flex items-center justify-center shadow-xs">
-              ${isSel ? `<i data-lucide="check" class="h-3 w-3 text-white"></i>` : ''}
+            <span class="w-6 h-6 rounded-full ${pal.bgClass} flex items-center justify-center shadow-xs">
+              ${isSel ? '<i data-lucide="check" class="h-3.5 w-3.5 text-white stroke-[3]"></i>' : ''}
             </span>
-            <span class="text-[10px] font-medium text-foreground truncate max-w-full">${pal.name}</span>
+            <span class="text-[11px] font-medium text-foreground truncate max-w-full">${pal.name}</span>
           </button>
         `;
       }).join('');
     }
 
-    // 4. Render Custom Depts List
+    const unifiedPreviewGrid = document.getElementById('deptColorUnifiedPreviewGrid');
+    if (unifiedPreviewGrid) {
+      const uPal = DEPARTMENT_COLOR_PALETTES[unifiedColor] || DEPARTMENT_COLOR_PALETTES.indigo;
+      if (depts.length === 0) {
+        unifiedPreviewGrid.innerHTML = '<span class="text-xs text-muted-foreground italic">ไม่มีรายชื่อฝ่าย</span>';
+      } else {
+        unifiedPreviewGrid.innerHTML = depts.map(dept => `
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border shadow-2xs ${uPal.class}">
+            <span class="w-2.5 h-2.5 rounded-full ${uPal.bgClass}"></span>
+            <span>${escapeHtml(dept)}</span>
+          </span>
+        `).join('');
+      }
+    }
+
+    // 4. Render Custom Depts List (Responsive 2-Tier Card Layout)
     const customList = document.getElementById('deptColorCustomDeptsList');
     if (customList) {
       if (depts.length === 0) {
-        customList.innerHTML = `<p class="text-xs text-muted-foreground italic p-3 text-center">ยังไม่มีรายชื่อฝ่ายในโครงการนี้</p>`;
+        customList.innerHTML = '<p class="text-xs text-muted-foreground italic p-4 text-center border border-dashed rounded-2xl">ยังไม่มีรายชื่อฝ่ายในโครงการนี้</p>';
       } else {
         customList.innerHTML = depts.map(dept => {
           const currentKey = tempDeptColorConfig.customColors?.[dept] || getAutoColorForDept(dept);
           const activePal = DEPARTMENT_COLOR_PALETTES[currentKey] || DEPARTMENT_COLOR_PALETTES.indigo;
           return `
-            <div class="p-2.5 rounded-xl border border-border/70 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div class="min-w-0">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${activePal.class}">
-                  <span class="w-2 h-2 rounded-full ${activePal.bgClass}"></span>
-                  <span class="truncate max-w-[200px]">${escapeHtml(dept)}</span>
-                </span>
+            <div class="p-3 rounded-2xl border border-border/70 bg-card/60 hover:bg-card transition space-y-2.5 shadow-2xs">
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0 flex items-center gap-1.5 flex-1">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border transition shadow-2xs ${activePal.class}">
+                    <span class="w-2.5 h-2.5 rounded-full ${activePal.bgClass}"></span>
+                    <span class="break-words line-clamp-1">${escapeHtml(dept)}</span>
+                  </span>
+                </div>
+                <div class="text-[11px] text-muted-foreground shrink-0 font-medium flex items-center gap-1 bg-muted/40 px-2.5 py-0.5 rounded-lg border border-border/40">
+                  <span>สี:</span>
+                  <strong class="text-foreground">${activePal.name}</strong>
+                </div>
               </div>
-              <div class="flex items-center gap-1 flex-wrap">
+              <div class="grid grid-cols-6 sm:grid-cols-12 gap-1.5 pt-0.5">
                 ${Object.keys(DEPARTMENT_COLOR_PALETTES).map(k => {
                   const pal = DEPARTMENT_COLOR_PALETTES[k];
                   const isCur = currentKey === k;
                   return `
                     <button type="button" onclick="selectDeptCustomColor('${escapeJs(dept)}', '${k}')"
-                      class="w-6 h-6 rounded-lg ${pal.bgClass} transition hover:scale-110 flex items-center justify-center cursor-pointer ${
-                        isCur ? 'ring-2 ring-offset-1 ring-primary shadow-xs scale-105' : 'opacity-70 hover:opacity-100'
+                      class="h-7 rounded-xl ${pal.bgClass} transition hover:scale-110 flex items-center justify-center cursor-pointer relative shadow-2xs ${
+                        isCur ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 z-10' : 'opacity-65 hover:opacity-100 hover:shadow-xs'
                       }"
                       title="${pal.name}">
-                      ${isCur ? `<i data-lucide="check" class="h-3 w-3 text-white"></i>` : ''}
+                      ${isCur ? '<i data-lucide="check" class="h-3.5 w-3.5 text-white stroke-[3]"></i>' : ''}
                     </button>
                   `;
                 }).join('')}
@@ -1442,8 +1464,8 @@
         const autoKey = getAutoColorForDept(dept);
         const pal = DEPARTMENT_COLOR_PALETTES[autoKey] || DEPARTMENT_COLOR_PALETTES.indigo;
         return `
-          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${pal.class}">
-            <span class="w-2 h-2 rounded-full ${pal.bgClass}"></span>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border shadow-2xs ${pal.class}">
+            <span class="w-2.5 h-2.5 rounded-full ${pal.bgClass}"></span>
             <span>${escapeHtml(dept)}</span>
           </span>
         `;
@@ -1460,6 +1482,8 @@
     const p = allProjects.find(item => item.id === editingColorProjectId);
     if (!p) return;
 
+    const nowISO = new Date().toISOString();
+    p.updatedAt = nowISO;
     p.departmentColorConfig = {
       mode: tempDeptColorConfig.mode || 'AUTO',
       unifiedColor: tempDeptColorConfig.unifiedColor || 'indigo',
@@ -1470,17 +1494,31 @@
     if (window.socket && typeof window.socket.emit === 'function') {
       window.socket.emit('admin:updateProject', p);
     }
-    if (typeof saveLocalState === 'function') saveLocalState();
+    if (typeof window.saveLocalState === 'function') {
+      window.saveLocalState();
+    } else if (typeof saveLocalState === 'function') {
+      saveLocalState();
+    }
+
     if (typeof window.persistProjectsToCloud === 'function') {
       window.persistProjectsToCloud(true);
     }
 
-    // Refresh UI
-    renderProjectDetailView(p);
-    renderProjectsGrid();
+    // Refresh UI properly
+    if (typeof renderAdminProjectsSection === 'function') {
+      renderAdminProjectsSection();
+    }
+    if (typeof renderUserProjectsSection === 'function') {
+      renderUserProjectsSection();
+    }
+    if (activeDetailProjectId && activeDetailProjectId === p.id) {
+      openProjectDetailModal(p.id);
+    }
     closeDepartmentColorConfigModal();
 
-    if (typeof showToast === 'function') {
+    if (typeof window.showToast === 'function') {
+      window.showToast('บันทึกการตั้งค่าสีฝ่ายงานเรียบร้อยแล้ว', 'success');
+    } else if (typeof showToast === 'function') {
       showToast('บันทึกการตั้งค่าสีฝ่ายงานเรียบร้อยแล้ว', 'success');
     }
   }
