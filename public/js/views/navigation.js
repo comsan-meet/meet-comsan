@@ -488,6 +488,7 @@ function openUserSection(section) {
   if (window.currentRole === 'ADMIN') {
     window.currentRole = 'USER';
     if (typeof window.setSessionRole === 'function') window.setSessionRole('USER');
+    if (typeof updateRoleSwitcherPill === 'function') updateRoleSwitcherPill('USER');
     const adminView = document.getElementById('adminView');
     const userView = document.getElementById('userView');
     if (adminView) adminView.classList.add('hidden');
@@ -570,6 +571,70 @@ function closeMobileSidebar() {
 // =========================================================================
 // ADMIN ACCESS VIA SETTINGS & QUICK ROLE SWITCHER
 // =========================================================================
+function updateRoleSwitcherPill(role, immediate) {
+  const currentRole = role || window.currentRole || 'USER';
+  const isAdmin = currentRole === 'ADMIN';
+
+  // Desktop
+  const glider = document.getElementById('roleSwitcherGlider');
+  const btnUser = document.getElementById('btnRoleUser');
+  const btnAdmin = document.getElementById('btnRoleAdmin');
+
+  if (glider) {
+    if (immediate) {
+      glider.style.transition = 'none';
+      glider.style.transform = isAdmin ? 'translate3d(100%, 0, 0)' : 'translate3d(0, 0, 0)';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (glider) glider.style.transition = '';
+        });
+      });
+    } else {
+      glider.style.transform = isAdmin ? 'translate3d(100%, 0, 0)' : 'translate3d(0, 0, 0)';
+    }
+  }
+
+  if (btnUser) {
+    btnUser.classList.toggle('text-white', !isAdmin);
+    btnUser.classList.toggle('font-bold', !isAdmin);
+    btnUser.classList.toggle('text-muted-foreground', isAdmin);
+  }
+  if (btnAdmin) {
+    btnAdmin.classList.toggle('text-white', isAdmin);
+    btnAdmin.classList.toggle('font-bold', isAdmin);
+    btnAdmin.classList.toggle('text-muted-foreground', !isAdmin);
+  }
+
+  // Mobile
+  const gliderMobile = document.getElementById('roleSwitcherGliderMobile');
+  const btnUserMobile = document.getElementById('btnRoleUserMobile');
+  const btnAdminMobile = document.getElementById('btnRoleAdminMobile');
+
+  if (gliderMobile) {
+    if (immediate) {
+      gliderMobile.style.transition = 'none';
+      gliderMobile.style.transform = isAdmin ? 'translate3d(100%, 0, 0)' : 'translate3d(0, 0, 0)';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (gliderMobile) gliderMobile.style.transition = '';
+        });
+      });
+    } else {
+      gliderMobile.style.transform = isAdmin ? 'translate3d(100%, 0, 0)' : 'translate3d(0, 0, 0)';
+    }
+  }
+
+  if (btnUserMobile) {
+    btnUserMobile.classList.toggle('text-white', !isAdmin);
+    btnUserMobile.classList.toggle('text-muted-foreground', isAdmin);
+  }
+  if (btnAdminMobile) {
+    btnAdminMobile.classList.toggle('text-white', isAdmin);
+    btnAdminMobile.classList.toggle('text-muted-foreground', !isAdmin);
+  }
+}
+window.updateRoleSwitcherPill = updateRoleSwitcherPill;
+
 function updateHeaderRoleSwitcherVisibility() {
   const switcher = document.getElementById('userHeaderRoleSwitcher');
   if (!switcher) return;
@@ -578,16 +643,7 @@ function updateHeaderRoleSwitcherVisibility() {
   if (isAdminAuth) {
     switcher.classList.remove('hidden');
     switcher.classList.add('flex');
-
-    const btnUser = document.getElementById('btnRoleUser');
-    const btnAdmin = document.getElementById('btnRoleAdmin');
-    if (window.currentRole === 'ADMIN') {
-      if (btnAdmin) btnAdmin.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer';
-      if (btnUser) btnUser.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer';
-    } else {
-      if (btnUser) btnUser.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer';
-      if (btnAdmin) btnAdmin.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer';
-    }
+    updateRoleSwitcherPill(window.currentRole, true);
   } else {
     switcher.classList.add('hidden');
     switcher.classList.remove('flex');
@@ -841,10 +897,18 @@ function switchRoleView(role) {
     showUserLoginPopup();
     return;
   }
+
+  // If already on the requested role, nothing to do
+  if (role === window.currentRole) return;
+
   window.currentRole = role;
   if (typeof window.setSessionRole === 'function') {
     window.setSessionRole(role);
   }
+
+  // 1. Immediately trigger the GPU glider animation (0ms latency!)
+  updateRoleSwitcherPill(role);
+
   if (role === 'USER') {
     window.isDatabaseUnlocked = false;
     if (typeof window.closeVersionPasscodeModal === 'function') window.closeVersionPasscodeModal();
@@ -853,22 +917,14 @@ function switchRoleView(role) {
 
   const adminView = document.getElementById('adminView');
   const userView = document.getElementById('userView');
-  const btnUser = document.getElementById('btnRoleUser');
-  const btnAdmin = document.getElementById('btnRoleAdmin');
-  const btnUserMobile = document.getElementById('btnRoleUserMobile');
-  const btnAdminMobile = document.getElementById('btnRoleAdminMobile');
 
+  // 2. Instant view toggle
   if (role === 'ADMIN') {
     if (adminView) adminView.classList.remove('hidden');
     if (userView) userView.classList.add('hidden');
 
     const uChat = document.getElementById('uTab_CHAT');
     if (uChat) uChat.classList.add('hidden');
-
-    if (btnAdmin) btnAdmin.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer';
-    if (btnUser) btnUser.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer';
-    if (btnAdminMobile) btnAdminMobile.className = 'px-2 py-1 rounded-full text-xs font-semibold gradient-primary text-white shadow-xs cursor-pointer';
-    if (btnUserMobile) btnUserMobile.className = 'px-2 py-1 rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer';
 
     const nextAdminTab = window._pendingAdminTabAfterLogin || window.activeAdminTab || 'DASHBOARD';
     window._pendingAdminTabAfterLogin = null;
@@ -880,19 +936,25 @@ function switchRoleView(role) {
     const aChat = document.getElementById('aTab_CHAT');
     if (aChat) aChat.classList.add('hidden');
 
-    if (btnUser) btnUser.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer';
-    if (btnAdmin) btnAdmin.className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer';
-    if (btnUserMobile) btnUserMobile.className = 'px-2 py-1 rounded text-xs font-semibold gradient-primary text-white shadow-xs';
-    if (btnAdminMobile) btnAdminMobile.className = 'px-2 py-1 rounded text-xs font-semibold text-muted-foreground hover:text-foreground';
-
     switchUserTab(window.activeUserTab || 'HOME');
-    if (window.currentUserId && typeof window.renderUserQrCode === 'function') {
-      window.renderUserQrCode(window.currentUserId);
-    }
   }
+
+  // Fast UI sync
   updateSidebarVisibility();
   updateHeaderRoleSwitcherVisibility();
-  if (typeof window.renderAll === 'function') window.renderAll();
+  if (typeof window.updateAdminSidebarBadges === 'function' && window.appState) {
+    window.updateAdminSidebarBadges(window.appState);
+  }
+
+  // 3. Defer heavy background components to requestAnimationFrame so animation runs silky-smooth at 60/120 FPS
+  requestAnimationFrame(() => {
+    if (role === 'USER' && window.currentUserId && typeof window.renderUserQrCode === 'function') {
+      window.renderUserQrCode(window.currentUserId);
+    }
+    if (typeof window.renderAll === 'function') {
+      window.renderAll();
+    }
+  });
 }
 
 let isChatSplashActive = false;

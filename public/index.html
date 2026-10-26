@@ -4345,11 +4345,12 @@ label svg, label i {
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <div class="flex items-center bg-muted/70 p-0.5 rounded-full border border-border/60">
-          <button type="button" onclick="switchRoleView('USER')" id="btnRoleUserMobile" class="px-2.5 py-1 rounded-full text-xs font-semibold gradient-primary text-white shadow-xs cursor-pointer">
+        <div id="userMobileRoleSwitcher" class="relative flex items-center bg-muted/70 p-0.5 rounded-full border border-border/60 select-none isolate">
+          <div id="roleSwitcherGliderMobile" class="absolute top-0.5 bottom-0.5 rounded-full gradient-primary shadow-xs transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none -z-10 will-change-transform" style="left: 2px; width: calc(50% - 2px); transform: translate3d(0, 0, 0);"></div>
+          <button type="button" onclick="switchRoleView('USER')" id="btnRoleUserMobile" class="relative z-10 flex-1 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold transition-colors duration-200 text-white cursor-pointer" title="มุมมองสมาชิก">
             <i data-lucide="user" class="pointer-events-none h-3.5 w-3.5"></i>
           </button>
-          <button type="button" onclick="handleRoleAdminClick()" id="btnRoleAdminMobile" class="px-2.5 py-1 rounded-full text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer">
+          <button type="button" onclick="handleRoleAdminClick()" id="btnRoleAdminMobile" class="relative z-10 flex-1 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold transition-colors duration-200 text-muted-foreground hover:text-foreground cursor-pointer" title="มุมมองผู้ดูแลระบบ">
             <i data-lucide="shield-check" class="pointer-events-none h-3.5 w-3.5"></i>
           </button>
         </div>
@@ -4552,12 +4553,13 @@ label svg, label i {
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <!-- Role Switcher Pill (User <-> Admin) - Shown ONLY when Admin is authenticated, next to theme button -->
-            <div id="userHeaderRoleSwitcher" class="hidden items-center bg-muted/60 p-1 rounded-2xl border border-border/60">
-              <button type="button" onclick="switchRoleView('USER')" id="btnRoleUser" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition gradient-primary text-white shadow-xs cursor-pointer" title="สลับไปมุมมองสมาชิก">
-                <i data-lucide="user" class="pointer-events-none inline h-3.5 w-3.5 sm:mr-1"></i> <span class="hidden sm:inline pointer-events-none">สมาชิก</span>
+            <div id="userHeaderRoleSwitcher" class="hidden relative items-center bg-muted/70 p-1 rounded-2xl border border-border/60 select-none isolate">
+              <div id="roleSwitcherGlider" class="absolute top-1 bottom-1 rounded-xl gradient-primary shadow-xs transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none -z-10 will-change-transform" style="left: 4px; width: calc(50% - 4px); transform: translate3d(0, 0, 0);"></div>
+              <button type="button" onclick="switchRoleView('USER')" id="btnRoleUser" class="relative z-10 flex-1 inline-flex items-center justify-center px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 text-white font-bold cursor-pointer select-none" title="สลับไปมุมมองสมาชิก">
+                <i data-lucide="user" class="pointer-events-none inline h-3.5 w-3.5 sm:mr-1.5 shrink-0"></i> <span class="hidden sm:inline pointer-events-none font-medium">สมาชิก</span>
               </button>
-              <button type="button" onclick="handleRoleAdminClick()" id="btnRoleAdmin" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition text-muted-foreground hover:text-foreground cursor-pointer" title="สลับไปมุมมองผู้ดูแลระบบ">
-                <i data-lucide="shield-check" class="pointer-events-none inline h-3.5 w-3.5 sm:mr-1"></i> <span class="hidden sm:inline pointer-events-none">ADMIN</span>
+              <button type="button" onclick="handleRoleAdminClick()" id="btnRoleAdmin" class="relative z-10 flex-1 inline-flex items-center justify-center px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 text-muted-foreground hover:text-foreground cursor-pointer select-none" title="สลับไปมุมมองผู้ดูแลระบบ">
+                <i data-lucide="shield-check" class="pointer-events-none inline h-3.5 w-3.5 sm:mr-1.5 shrink-0"></i> <span class="hidden sm:inline pointer-events-none font-medium">ADMIN</span>
               </button>
             </div>
             <!-- Action Buttons in Comsan Choice style (Rounded-[16px] squircle matching Choice Image 2) -->
@@ -6877,7 +6879,7 @@ label svg, label i {
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
   <script src="js/components/calendar.js?v=20261026_01"></script>
   <script src="js/components/projects.js?v=20261027_07"></script>
-  <script src="js/views/navigation.js?v=20261027_01"></script>
+  <script src="js/views/navigation.js?v=20261027_02"></script>
   <script src="js/views/userView.js?v=20261026_02"></script>
   <script src="js/views/adminView.js?v=20261026_01"></script>
   <script src="js/app.js?v=20261027_03"></script>
