@@ -1212,8 +1212,9 @@
     return ['ฝ่ายดำเนินงานทั่วไป'];
   }
 
-  // 12 Curated Tailwind palettes for department badges
+  // Curated Tailwind palettes for department badges + user theme option
   const DEPARTMENT_COLOR_PALETTES = {
+    theme: { key: 'theme', name: 'ตามธีมผู้ใช้', class: 'bg-primary/10 text-primary border-primary/20', bgClass: 'bg-primary' },
     indigo: { key: 'indigo', name: 'น้ำเงินคราม', class: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20', bgClass: 'bg-indigo-500' },
     sky: { key: 'sky', name: 'ฟ้าสดใส', class: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20', bgClass: 'bg-sky-500' },
     emerald: { key: 'emerald', name: 'เขียวมรกต', class: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', bgClass: 'bg-emerald-500' },
@@ -1229,7 +1230,7 @@
   };
 
   function getAutoColorForDept(deptName) {
-    const keys = Object.keys(DEPARTMENT_COLOR_PALETTES);
+    const keys = Object.keys(DEPARTMENT_COLOR_PALETTES).filter(k => k !== 'theme');
     if (!deptName) return keys[0];
     let hash = 0;
     for (let i = 0; i < deptName.length; i++) {
@@ -1248,13 +1249,23 @@
     const config = p?.departmentColorConfig || null;
     const mode = config?.mode || 'AUTO';
 
+    if (mode === 'THEME') {
+      return 'bg-primary/10 text-primary border-primary/20';
+    }
+
     if (mode === 'UNIFIED') {
       const uColor = config?.unifiedColor || 'indigo';
-      return DEPARTMENT_COLOR_PALETTES[uColor]?.class || DEPARTMENT_COLOR_PALETTES.indigo.class;
+      if (uColor === 'theme') {
+        return 'bg-primary/10 text-primary border-primary/20';
+      }
+      return DEPARTMENT_COLOR_PALETTES[uColor]?.class || 'bg-primary/10 text-primary border-primary/20';
     }
 
     if (mode === 'CUSTOM') {
       const customKey = config?.customColors?.[deptName];
+      if (customKey === 'theme') {
+        return 'bg-primary/10 text-primary border-primary/20';
+      }
       if (customKey && DEPARTMENT_COLOR_PALETTES[customKey]) {
         return DEPARTMENT_COLOR_PALETTES[customKey].class;
       }
@@ -1347,13 +1358,13 @@
     const unifiedColor = tempDeptColorConfig.unifiedColor || 'indigo';
 
     // 1. Update Mode Cards
-    const modes = ['AUTO', 'UNIFIED', 'CUSTOM'];
+    const modes = ['AUTO', 'THEME', 'UNIFIED', 'CUSTOM'];
     modes.forEach(m => {
       const btn = document.getElementById(`btnColorMode${m.charAt(0) + m.slice(1).toLowerCase()}`);
       const radio = document.getElementById(`radioColorMode${m.charAt(0) + m.slice(1).toLowerCase()}`);
       const isSelected = mode === m;
       if (btn) {
-        btn.className = `p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
+        btn.className = `p-2.5 sm:p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
           isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs' : 'border-border bg-card hover:bg-muted/40'
         }`;
       }
@@ -1367,10 +1378,12 @@
 
     // 2. Toggle sections
     const autoSec = document.getElementById('deptColorAutoSection');
+    const themeSec = document.getElementById('deptColorThemeSection');
     const unifiedSec = document.getElementById('deptColorUnifiedSection');
     const customSec = document.getElementById('deptColorCustomSection');
 
     if (autoSec) autoSec.classList.toggle('hidden', mode !== 'AUTO');
+    if (themeSec) themeSec.classList.toggle('hidden', mode !== 'THEME');
     if (unifiedSec) unifiedSec.classList.toggle('hidden', mode !== 'UNIFIED');
     if (customSec) customSec.classList.toggle('hidden', mode !== 'CUSTOM');
 
@@ -1382,7 +1395,22 @@
     });
     const depts = Array.from(deptsSet);
 
-    // 3. Render Unified Palette Grid & Live Preview
+    // 3. Render Theme Mode Preview
+    const themePreviewGrid = document.getElementById('deptColorThemePreviewGrid');
+    if (themePreviewGrid) {
+      if (depts.length === 0) {
+        themePreviewGrid.innerHTML = '<span class="text-xs text-muted-foreground italic">ไม่มีรายชื่อฝ่าย</span>';
+      } else {
+        themePreviewGrid.innerHTML = depts.map(dept => `
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border shadow-2xs bg-primary/10 text-primary border-primary/20">
+            <span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+            <span>${escapeHtml(dept)}</span>
+          </span>
+        `).join('');
+      }
+    }
+
+    // 4. Render Unified Palette Grid & Live Preview
     const unifiedGrid = document.getElementById('deptColorUnifiedPaletteGrid');
     if (unifiedGrid) {
       unifiedGrid.innerHTML = Object.keys(DEPARTMENT_COLOR_PALETTES).map(key => {
@@ -1390,7 +1418,7 @@
         const isSel = unifiedColor === key;
         return `
           <button type="button" onclick="selectUnifiedColor('${key}')"
-            class="p-2.5 rounded-2xl border flex flex-col items-center gap-1.5 transition cursor-pointer ${
+            class="p-2 rounded-xl sm:rounded-2xl border flex flex-col items-center gap-1.5 transition cursor-pointer ${
               isSel ? 'border-primary ring-2 ring-primary/40 bg-card shadow-xs' : 'border-border hover:bg-muted/40'
             }">
             <span class="w-6 h-6 rounded-full ${pal.bgClass} flex items-center justify-center shadow-xs">
@@ -1417,7 +1445,7 @@
       }
     }
 
-    // 4. Render Custom Depts List (Responsive 2-Tier Card Layout)
+    // 5. Render Custom Depts List
     const customList = document.getElementById('deptColorCustomDeptsList');
     if (customList) {
       if (depts.length === 0) {
@@ -1426,6 +1454,7 @@
         customList.innerHTML = depts.map(dept => {
           const currentKey = tempDeptColorConfig.customColors?.[dept] || getAutoColorForDept(dept);
           const activePal = DEPARTMENT_COLOR_PALETTES[currentKey] || DEPARTMENT_COLOR_PALETTES.indigo;
+          const isCurrentTheme = currentKey === 'theme';
           return `
             <div class="p-3 rounded-2xl border border-border/70 bg-card/60 hover:bg-card transition space-y-2.5 shadow-2xs">
               <div class="flex items-center justify-between gap-2">
@@ -1440,8 +1469,18 @@
                   <strong class="text-foreground">${activePal.name}</strong>
                 </div>
               </div>
-              <div class="grid grid-cols-6 sm:grid-cols-12 gap-1.5 pt-0.5">
-                ${Object.keys(DEPARTMENT_COLOR_PALETTES).map(k => {
+              <div class="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
+                <button type="button" onclick="selectDeptCustomColor('${escapeJs(dept)}', 'theme')"
+                  class="px-2.5 py-1 rounded-xl text-xs font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
+                    isCurrentTheme ? 'border-primary bg-primary text-primary-foreground ring-2 ring-primary/40 shadow-xs' : 'border-border bg-muted/40 hover:bg-muted text-foreground'
+                  }">
+                  <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+                  <span>ใช้สีตามธีมผู้ใช้</span>
+                </button>
+                <span class="text-[10px] text-muted-foreground font-medium">หรือเลือกสีเจาะจง:</span>
+              </div>
+              <div class="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                ${Object.keys(DEPARTMENT_COLOR_PALETTES).filter(k => k !== 'theme').map(k => {
                   const pal = DEPARTMENT_COLOR_PALETTES[k];
                   const isCur = currentKey === k;
                   return `
@@ -1461,7 +1500,7 @@
       }
     }
 
-    // 5. Render Auto Preview Grid
+    // 6. Render Auto Preview Grid
     const autoGrid = document.getElementById('deptColorAutoPreviewGrid');
     if (autoGrid) {
       autoGrid.innerHTML = depts.map(dept => {

@@ -6690,9 +6690,9 @@ label svg, label i {
         <!-- Mode Selection -->
         <div>
           <label class="block font-bold text-foreground mb-1.5">เลือกรูปแบบการกำหนดสี</label>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button type="button" onclick="setDeptColorEditMode('AUTO')" id="btnColorModeAuto"
-              class="p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
+              class="p-2.5 sm:p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
               <div class="flex items-center justify-between">
                 <i data-lucide="sparkles" class="h-4 w-4 text-indigo-500"></i>
                 <span class="w-3.5 h-3.5 rounded-full border border-border flex items-center justify-center" id="radioColorModeAuto"></span>
@@ -6703,8 +6703,20 @@ label svg, label i {
               </div>
             </button>
 
+            <button type="button" onclick="setDeptColorEditMode('THEME')" id="btnColorModeTheme"
+              class="p-2.5 sm:p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
+              <div class="flex items-center justify-between">
+                <i data-lucide="palette" class="h-4 w-4 text-primary"></i>
+                <span class="w-3.5 h-3.5 rounded-full border border-border flex items-center justify-center" id="radioColorModeTheme"></span>
+              </div>
+              <div>
+                <p class="font-bold text-foreground text-xs">ตามธีมผู้ใช้</p>
+                <p class="text-[10px] text-muted-foreground">เปลี่ยนตามธีม user</p>
+              </div>
+            </button>
+
             <button type="button" onclick="setDeptColorEditMode('UNIFIED')" id="btnColorModeUnified"
-              class="p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
+              class="p-2.5 sm:p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
               <div class="flex items-center justify-between">
                 <i data-lucide="paint-bucket" class="h-4 w-4 text-emerald-500"></i>
                 <span class="w-3.5 h-3.5 rounded-full border border-border flex items-center justify-center" id="radioColorModeUnified"></span>
@@ -6716,7 +6728,7 @@ label svg, label i {
             </button>
 
             <button type="button" onclick="setDeptColorEditMode('CUSTOM')" id="btnColorModeCustom"
-              class="p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
+              class="p-2.5 sm:p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5">
               <div class="flex items-center justify-between">
                 <i data-lucide="sliders" class="h-4 w-4 text-amber-500"></i>
                 <span class="w-3.5 h-3.5 rounded-full border border-border flex items-center justify-center" id="radioColorModeCustom"></span>
@@ -6726,6 +6738,21 @@ label svg, label i {
                 <p class="text-[10px] text-muted-foreground">เลือกสีให้แต่ละฝ่ายอิสระ</p>
               </div>
             </button>
+          </div>
+        </div>
+
+        <!-- Theme Mode Section (Shown when THEME) -->
+        <div id="deptColorThemeSection" class="p-3.5 rounded-2xl bg-muted/30 border border-border/70 space-y-2.5 hidden">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+            <p class="font-bold text-foreground text-xs">สีจะเปลี่ยนตามธีมสีที่ผู้ใช้งานแต่ละคนเลือกใช้งาน ณ ขณะนั้น</p>
+          </div>
+          <p class="text-[11px] text-muted-foreground leading-relaxed">
+            ทุกฝ่ายงานในโครงการนี้จะใช้สีหลัก (Primary) ประจำธีมที่ผู้ใช้กำลังเปิดใช้งานอยู่โดยอัตโนมัติ (เช่น ธีมมาตรฐาน, Ocean, Emerald, Violet, Rose, Amber)
+          </p>
+          <div class="pt-2 border-t border-border/50">
+            <p class="text-[11px] font-semibold text-muted-foreground mb-1.5">ตัวอย่างการแสดงผลด้วยธีมปัจจุบันของคุณ:</p>
+            <div id="deptColorThemePreviewGrid" class="flex flex-wrap gap-1.5"></div>
           </div>
         </div>
 
@@ -6835,7 +6862,7 @@ label svg, label i {
   <script src="js/components/stream.js?v=20261026_01"></script>
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
   <script src="js/components/calendar.js?v=20261026_01"></script>
-  <script src="js/components/projects.js?v=20261027_05"></script>
+  <script src="js/components/projects.js?v=20261027_06"></script>
   <script src="js/views/navigation.js?v=20261026_02"></script>
   <script src="js/views/userView.js?v=20261026_02"></script>
   <script src="js/views/adminView.js?v=20261026_01"></script>
