@@ -12,378 +12,7 @@
   if (typeof root !== 'undefined') {
     Object.assign(root, mod);
   }
-
-  // ========================================================
-  // IN-WEB MEMBER EDIT & ADD ENGINE (DIRECT WEB EDITING)
-  // ========================================================
-  let editingMemberId = null;
-  let editingMemberAvatar = '';
-
-  function openEditProjectMemberModal(memberIdOrName) {
-    if (window.currentRole !== 'ADMIN') {
-      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถแก้ไขข้อมูลได้', 'warning');
-      return;
-    }
-    const allProjects = getProjectsList();
-    const p = allProjects.find(item => item.id === activeDetailProjectId);
-    if (!p || !Array.isArray(p.members)) return;
-
-    const member = p.members.find(m => m.id === memberIdOrName || m.name === memberIdOrName);
-    if (!member) {
-      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลผู้เกี่ยวข้องรายนี้', 'warning');
-      return;
-    }
-
-    editingMemberId = member.id || member.name;
-    editingMemberAvatar = member.avatar || '';
-
-    const modal = document.getElementById('projectMemberEditModal');
-    if (!modal) return;
-
-    const titleEl = document.getElementById('prjMemberEditModalTitle');
-    const subtitleEl = document.getElementById('prjMemberEditModalSubtitle');
-    if (titleEl) titleEl.textContent = 'แก้ไขข้อมูลผู้เกี่ยวข้องในโครงการ';
-    if (subtitleEl) subtitleEl.textContent = `โครงการ: ${p.title}`;
-
-    const idInput = document.getElementById('prjMemberEditMemberId');
-    if (idInput) idInput.value = member.id || '';
-
-    const nameInput = document.getElementById('prjMemberEditName');
-    if (nameInput) nameInput.value = member.name || '';
-
-    const nickInput = document.getElementById('prjMemberEditNickname');
-    if (nickInput) nickInput.value = member.nickname || '';
-
-    const depts = getMemberDepartments(member);
-    const deptInput = document.getElementById('prjMemberEditDept');
-    if (deptInput) deptInput.value = member.department || depts.join(', ');
-
-    const dutyInput = document.getElementById('prjMemberEditDuty');
-    if (dutyInput) dutyInput.value = member.role || '';
-
-    const posInput = document.getElementById('prjMemberEditPosition');
-    if (posInput) posInput.value = member.position || '';
-
-    const detailsInput = document.getElementById('prjMemberEditDetails');
-    if (detailsInput) detailsInput.value = member.details || '';
-
-    const phoneInput = document.getElementById('prjMemberEditPhone');
-    if (phoneInput) phoneInput.value = member.phone || '';
-
-    const emailInput = document.getElementById('prjMemberEditEmail');
-    if (emailInput) emailInput.value = member.kkuMail || '';
-
-    const linkInput = document.getElementById('prjMemberEditContactLink');
-    if (linkInput) linkInput.value = member.contactLink || '';
-
-    updateMemberEditModalPhotoUi(member.name, member.nickname, member.avatar);
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    if (typeof window.refreshIcons === 'function') window.refreshIcons();
-    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-  }
-
-  function openAddProjectMemberModal() {
-    if (window.currentRole !== 'ADMIN') {
-      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถเพิ่มสมาชิกได้', 'warning');
-      return;
-    }
-    const allProjects = getProjectsList();
-    const p = allProjects.find(item => item.id === activeDetailProjectId);
-    if (!p) return;
-
-    editingMemberId = null;
-    editingMemberAvatar = '';
-
-    const modal = document.getElementById('projectMemberEditModal');
-    if (!modal) return;
-
-    const titleEl = document.getElementById('prjMemberEditModalTitle');
-    const subtitleEl = document.getElementById('prjMemberEditModalSubtitle');
-    if (titleEl) titleEl.textContent = 'เพิ่มผู้เกี่ยวข้องในโครงการ';
-    if (subtitleEl) subtitleEl.textContent = `โครงการ: ${p.title}`;
-
-    const idInput = document.getElementById('prjMemberEditMemberId');
-    if (idInput) idInput.value = '';
-
-    const nameInput = document.getElementById('prjMemberEditName');
-    if (nameInput) {
-      nameInput.value = '';
-      setTimeout(() => nameInput.focus(), 100);
-    }
-
-    const nickInput = document.getElementById('prjMemberEditNickname');
-    if (nickInput) nickInput.value = '';
-
-    const defaultDept = (detailMemberDeptFilter && detailMemberDeptFilter !== 'ALL')
-      ? detailMemberDeptFilter
-      : 'ฝ่ายกิจกรรมและสันทนาการ';
-    const deptInput = document.getElementById('prjMemberEditDept');
-    if (deptInput) deptInput.value = defaultDept;
-
-    const dutyInput = document.getElementById('prjMemberEditDuty');
-    if (dutyInput) dutyInput.value = 'ทีมงาน';
-
-    const posInput = document.getElementById('prjMemberEditPosition');
-    if (posInput) posInput.value = '';
-
-    const detailsInput = document.getElementById('prjMemberEditDetails');
-    if (detailsInput) detailsInput.value = '';
-
-    const phoneInput = document.getElementById('prjMemberEditPhone');
-    if (phoneInput) phoneInput.value = '';
-
-    const emailInput = document.getElementById('prjMemberEditEmail');
-    if (emailInput) emailInput.value = '';
-
-    const linkInput = document.getElementById('prjMemberEditContactLink');
-    if (linkInput) linkInput.value = '';
-
-    updateMemberEditModalPhotoUi('new_member', '', '');
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    if (typeof window.refreshIcons === 'function') window.refreshIcons();
-    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-  }
-
-  function closeProjectMemberEditModal() {
-    const modal = document.getElementById('projectMemberEditModal');
-    if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-    editingMemberId = null;
-    editingMemberAvatar = '';
-  }
-
-  function updateMemberEditModalPhotoUi(name, nickname, avatar) {
-    const previewImg = document.getElementById('prjMemberEditPhotoPreview');
-    const statusEl = document.getElementById('prjMemberEditPhotoStatus');
-    const seed = nickname || name || 'person';
-    const fallbackUrl = getCuteAvatarUrl(seed);
-    const photoUrl = avatar || fallbackUrl;
-
-    if (previewImg) {
-      previewImg.src = photoUrl;
-      previewImg.onerror = () => { previewImg.src = fallbackUrl; };
-    }
-
-    if (statusEl) {
-      if (avatar) {
-        statusEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
-        statusEl.textContent = '✓ มีรูปโปรไฟล์กำหนดเอง';
-      } else {
-        statusEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
-        statusEl.textContent = 'รูปเริ่มต้น (DiceBear)';
-      }
-    }
-  }
-
-  function handleMemberEditModalFileUpload(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      openImageCropperModal({
-        imageSrc: e.target.result,
-        title: 'ครอบตัดรูปโปรไฟล์',
-        onSave: (croppedBase64) => {
-          editingMemberAvatar = croppedBase64;
-          const nameInput = document.getElementById('prjMemberEditName');
-          const nickInput = document.getElementById('prjMemberEditNickname');
-          const name = nameInput ? nameInput.value.trim() : '';
-          const nick = nickInput ? nickInput.value.trim() : '';
-          updateMemberEditModalPhotoUi(name, nick, croppedBase64);
-          if (typeof showToast === 'function') showToast('อัปโหลดและครอบตัดรูปเรียบร้อยแล้ว', 'success');
-        }
-      });
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function triggerCropForMemberEditModal() {
-    const previewImg = document.getElementById('prjMemberEditPhotoPreview');
-    const currentSrc = editingMemberAvatar || (previewImg ? previewImg.src : '');
-    if (!currentSrc) {
-      if (typeof showToast === 'function') showToast('ยังไม่มีรูปสำหรับครอบตัด กรุณาอัปโหลดรูปก่อน', 'warning');
-      return;
-    }
-    openImageCropperModal({
-      imageSrc: currentSrc,
-      title: 'ครอบตัดและปรับแต่งรูปภาพ',
-      onSave: (croppedBase64) => {
-        editingMemberAvatar = croppedBase64;
-        const nameInput = document.getElementById('prjMemberEditName');
-        const nickInput = document.getElementById('prjMemberEditNickname');
-        const name = nameInput ? nameInput.value.trim() : '';
-        const nick = nickInput ? nickInput.value.trim() : '';
-        updateMemberEditModalPhotoUi(name, nick, croppedBase64);
-        if (typeof showToast === 'function') showToast('ครอบตัดรูปเรียบร้อยแล้ว', 'success');
-      }
-    });
-  }
-
-  function resetMemberEditModalPhotoToCute() {
-    editingMemberAvatar = '';
-    const nameInput = document.getElementById('prjMemberEditName');
-    const nickInput = document.getElementById('prjMemberEditNickname');
-    const name = nameInput ? nameInput.value.trim() : '';
-    const nick = nickInput ? nickInput.value.trim() : '';
-    updateMemberEditModalPhotoUi(name, nick, '');
-    if (typeof showToast === 'function') showToast('คืนค่ารูปเป็นรูปเริ่มต้นแล้ว', 'info');
-  }
-
-  function matchPhotoForMemberEditModal() {
-    const input = document.getElementById('prjMemberEditDriveFileName');
-    const query = input ? input.value.trim() : '';
-    if (!query) {
-      if (typeof showToast === 'function') showToast('กรุณาพิมพ์ชื่อรูปหรือรหัสรูปในไดรฟ์', 'warning');
-      return;
-    }
-    const found = findPhotoInCatalog(query);
-    if (found) {
-      const url = `https://lh3.googleusercontent.com/d/${found.id}`;
-      editingMemberAvatar = url;
-      const name = document.getElementById('prjMemberEditName').value.trim();
-      const nick = document.getElementById('prjMemberEditNickname').value.trim();
-      updateMemberEditModalPhotoUi(name, nick, url);
-      if (typeof showToast === 'function') showToast(`ดึงรูป "${found.name}" จากไดรฟ์สำเร็จ!`, 'success');
-    } else {
-      const extractedId = extractDriveFileId(query);
-      if (extractedId) {
-        const url = `https://lh3.googleusercontent.com/d/${extractedId}`;
-        editingMemberAvatar = url;
-        const name = document.getElementById('prjMemberEditName').value.trim();
-        const nick = document.getElementById('prjMemberEditNickname').value.trim();
-        updateMemberEditModalPhotoUi(name, nick, url);
-        if (typeof showToast === 'function') showToast('ดึงรูปจากรหัส Google Drive สำเร็จ', 'success');
-      } else {
-        if (typeof showToast === 'function') showToast(`ไม่พบรูป "${query}" ในไดรฟ์ กรุณาตรวจสอบชื่อไฟล์`, 'warning');
-      }
-    }
-  }
-
-  function saveProjectMemberFromModal() {
-    const allProjects = getProjectsList();
-    const p = allProjects.find(item => item.id === activeDetailProjectId);
-    if (!p) {
-      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลโครงการ', 'error');
-      return;
-    }
-
-    const name = document.getElementById('prjMemberEditName').value.trim();
-    if (!name) {
-      if (typeof showToast === 'function') showToast('กรุณากรอกชื่อ-นามสกุล', 'warning');
-      document.getElementById('prjMemberEditName').focus();
-      return;
-    }
-
-    const nickname = document.getElementById('prjMemberEditNickname').value.trim();
-    const rawDeptStr = document.getElementById('prjMemberEditDept').value.trim();
-    const rawDutyStr = document.getElementById('prjMemberEditDuty').value.trim();
-    const rawPosStr = document.getElementById('prjMemberEditPosition').value.trim();
-    const details = document.getElementById('prjMemberEditDetails').value.trim();
-    const phone = document.getElementById('prjMemberEditPhone').value.trim();
-    const kkuMail = document.getElementById('prjMemberEditEmail').value.trim();
-    const contactLink = document.getElementById('prjMemberEditContactLink').value.trim();
-
-    const splitByComma = val => String(val || '').split(/[,،、\n;]/).map(s => s.trim()).filter(Boolean);
-    const depts = splitByComma(rawDeptStr);
-    const uniqueDepts = depts.length > 0 ? Array.from(new Set(depts)) : ['ฝ่ายดำเนินงานทั่วไป'];
-    const deptSummary = uniqueDepts.join(', ');
-
-    const rawDuties = splitByComma(rawDutyStr);
-    const rawPositions = splitByComma(rawPosStr);
-    const rawDescs = splitByComma(details);
-
-    const maxLen = Math.max(rawDuties.length, rawPositions.length, rawDescs.length, uniqueDepts.length, 1);
-    const rolesList = [];
-    for (let i = 0; i < maxLen; i++) {
-      const d = uniqueDepts[i] || (uniqueDepts.length === 1 ? uniqueDepts[0] : (uniqueDepts[uniqueDepts.length - 1] || 'ฝ่ายดำเนินงานทั่วไป'));
-      const duty = rawDuties[i] || (rawDuties.length === 1 ? rawDuties[0] : (rawPositions[i] || 'ทีมงาน'));
-      const pos = rawPositions[i] || (rawPositions.length === 1 ? rawPositions[0] : '');
-      const desc = rawDescs[i] || (rawDescs.length === 1 ? rawDescs[0] : '');
-
-      if (d || duty || pos || desc || maxLen === 1) {
-        rolesList.push({
-          index: i + 1,
-          position: pos,
-          duty: duty || 'ทีมงาน',
-          description: desc,
-          department: d
-        });
-      }
-    }
-
-    const roleSummary = rawDuties.join(', ') || rawPositions.join(', ') || (rolesList.length > 0 ? rolesList.map(r => r.duty || r.position).join(', ') : 'ทีมงาน');
-
-    if (!Array.isArray(p.members)) p.members = [];
-
-    if (editingMemberId) {
-      // Edit existing member
-      const idx = p.members.findIndex(m => m.id === editingMemberId || m.name === editingMemberId);
-      if (idx !== -1) {
-        const existing = p.members[idx];
-        p.members[idx] = {
-          ...existing,
-          name,
-          nickname,
-          department: deptSummary,
-          departments: uniqueDepts,
-          role: roleSummary,
-          position: rawPositions.join(', ') || '',
-          details,
-          rolesList,
-          phone,
-          kkuMail,
-          contactLink,
-          avatar: editingMemberAvatar || existing.avatar || ''
-        };
-      }
-    } else {
-      // Add new member
-      p.members.push({
-        id: `MBR-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        name,
-        nickname,
-        department: deptSummary,
-        departments: uniqueDepts,
-        role: roleSummary,
-        position: rawPositions.join(', ') || '',
-        details,
-        rolesList,
-        phone,
-        kkuMail,
-        contactLink,
-        avatar: editingMemberAvatar || ''
-      });
-    }
-
-    // Emit socket & persist
-    if (window.socket && typeof window.socket.emit === 'function') {
-      window.socket.emit('admin:updateProject', p);
-    }
-    if (typeof saveLocalState === 'function') saveLocalState();
-    if (typeof window.persistProjectsToCloud === 'function') {
-      window.persistProjectsToCloud(true);
-    }
-
-    renderProjectMembersTableView(p);
-    closeProjectMemberEditModal();
-    if (typeof showToast === 'function') {
-      showToast(editingMemberId ? `บันทึกข้อมูล "${name}" เรียบร้อยแล้ว` : `เพิ่ม "${name}" เข้าสู่โครงการเรียบร้อยแล้ว`, 'success');
-    }
-  }
-
-  function openEditProjectMemberModalFromPreview() {
-    if (!activePreviewPerson) return;
-    const target = activePreviewPerson;
-    closePersonPhotoPreviewModal();
-    openEditProjectMemberModal(target.id || target.name);
-  }
-
-    if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     Object.assign(window, mod);
   }
 })(typeof self !== 'undefined' ? self : this, function () {
@@ -4464,6 +4093,376 @@
       renderUserProjectsSection();
       renderAdminProjectsSection();
     }
+  }
+
+  // ========================================================
+  // IN-WEB MEMBER EDIT & ADD ENGINE (DIRECT WEB EDITING)
+  // ========================================================
+  let editingMemberId = null;
+  let editingMemberAvatar = '';
+
+  function openEditProjectMemberModal(memberIdOrName) {
+    if (window.currentRole !== 'ADMIN') {
+      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถแก้ไขข้อมูลได้', 'warning');
+      return;
+    }
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p || !Array.isArray(p.members)) return;
+
+    const member = p.members.find(m => m.id === memberIdOrName || m.name === memberIdOrName);
+    if (!member) {
+      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลผู้เกี่ยวข้องรายนี้', 'warning');
+      return;
+    }
+
+    editingMemberId = member.id || member.name;
+    editingMemberAvatar = member.avatar || '';
+
+    const modal = document.getElementById('projectMemberEditModal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('prjMemberEditModalTitle');
+    const subtitleEl = document.getElementById('prjMemberEditModalSubtitle');
+    if (titleEl) titleEl.textContent = 'แก้ไขข้อมูลผู้เกี่ยวข้องในโครงการ';
+    if (subtitleEl) subtitleEl.textContent = `โครงการ: ${p.title}`;
+
+    const idInput = document.getElementById('prjMemberEditMemberId');
+    if (idInput) idInput.value = member.id || '';
+
+    const nameInput = document.getElementById('prjMemberEditName');
+    if (nameInput) nameInput.value = member.name || '';
+
+    const nickInput = document.getElementById('prjMemberEditNickname');
+    if (nickInput) nickInput.value = member.nickname || '';
+
+    const depts = getMemberDepartments(member);
+    const deptInput = document.getElementById('prjMemberEditDept');
+    if (deptInput) deptInput.value = member.department || depts.join(', ');
+
+    const dutyInput = document.getElementById('prjMemberEditDuty');
+    if (dutyInput) dutyInput.value = member.role || '';
+
+    const posInput = document.getElementById('prjMemberEditPosition');
+    if (posInput) posInput.value = member.position || '';
+
+    const detailsInput = document.getElementById('prjMemberEditDetails');
+    if (detailsInput) detailsInput.value = member.details || '';
+
+    const phoneInput = document.getElementById('prjMemberEditPhone');
+    if (phoneInput) phoneInput.value = member.phone || '';
+
+    const emailInput = document.getElementById('prjMemberEditEmail');
+    if (emailInput) emailInput.value = member.kkuMail || '';
+
+    const linkInput = document.getElementById('prjMemberEditContactLink');
+    if (linkInput) linkInput.value = member.contactLink || '';
+
+    updateMemberEditModalPhotoUi(member.name, member.nickname, member.avatar);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function openAddProjectMemberModal() {
+    if (window.currentRole !== 'ADMIN') {
+      if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถเพิ่มสมาชิกได้', 'warning');
+      return;
+    }
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p) return;
+
+    editingMemberId = null;
+    editingMemberAvatar = '';
+
+    const modal = document.getElementById('projectMemberEditModal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('prjMemberEditModalTitle');
+    const subtitleEl = document.getElementById('prjMemberEditModalSubtitle');
+    if (titleEl) titleEl.textContent = 'เพิ่มผู้เกี่ยวข้องในโครงการ';
+    if (subtitleEl) subtitleEl.textContent = `โครงการ: ${p.title}`;
+
+    const idInput = document.getElementById('prjMemberEditMemberId');
+    if (idInput) idInput.value = '';
+
+    const nameInput = document.getElementById('prjMemberEditName');
+    if (nameInput) {
+      nameInput.value = '';
+      setTimeout(() => nameInput.focus(), 100);
+    }
+
+    const nickInput = document.getElementById('prjMemberEditNickname');
+    if (nickInput) nickInput.value = '';
+
+    const defaultDept = (detailMemberDeptFilter && detailMemberDeptFilter !== 'ALL')
+      ? detailMemberDeptFilter
+      : 'ฝ่ายกิจกรรมและสันทนาการ';
+    const deptInput = document.getElementById('prjMemberEditDept');
+    if (deptInput) deptInput.value = defaultDept;
+
+    const dutyInput = document.getElementById('prjMemberEditDuty');
+    if (dutyInput) dutyInput.value = 'ทีมงาน';
+
+    const posInput = document.getElementById('prjMemberEditPosition');
+    if (posInput) posInput.value = '';
+
+    const detailsInput = document.getElementById('prjMemberEditDetails');
+    if (detailsInput) detailsInput.value = '';
+
+    const phoneInput = document.getElementById('prjMemberEditPhone');
+    if (phoneInput) phoneInput.value = '';
+
+    const emailInput = document.getElementById('prjMemberEditEmail');
+    if (emailInput) emailInput.value = '';
+
+    const linkInput = document.getElementById('prjMemberEditContactLink');
+    if (linkInput) linkInput.value = '';
+
+    updateMemberEditModalPhotoUi('new_member', '', '');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function closeProjectMemberEditModal() {
+    const modal = document.getElementById('projectMemberEditModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    editingMemberId = null;
+    editingMemberAvatar = '';
+  }
+
+  function updateMemberEditModalPhotoUi(name, nickname, avatar) {
+    const previewImg = document.getElementById('prjMemberEditPhotoPreview');
+    const statusEl = document.getElementById('prjMemberEditPhotoStatus');
+    const seed = nickname || name || 'person';
+    const fallbackUrl = getCuteAvatarUrl(seed);
+    const photoUrl = avatar || fallbackUrl;
+
+    if (previewImg) {
+      previewImg.src = photoUrl;
+      previewImg.onerror = () => { previewImg.src = fallbackUrl; };
+    }
+
+    if (statusEl) {
+      if (avatar) {
+        statusEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+        statusEl.textContent = '✓ มีรูปโปรไฟล์กำหนดเอง';
+      } else {
+        statusEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
+        statusEl.textContent = 'รูปเริ่มต้น (DiceBear)';
+      }
+    }
+  }
+
+  function handleMemberEditModalFileUpload(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      openImageCropperModal({
+        imageSrc: e.target.result,
+        title: 'ครอบตัดรูปโปรไฟล์',
+        onSave: (croppedBase64) => {
+          editingMemberAvatar = croppedBase64;
+          const nameInput = document.getElementById('prjMemberEditName');
+          const nickInput = document.getElementById('prjMemberEditNickname');
+          const name = nameInput ? nameInput.value.trim() : '';
+          const nick = nickInput ? nickInput.value.trim() : '';
+          updateMemberEditModalPhotoUi(name, nick, croppedBase64);
+          if (typeof showToast === 'function') showToast('อัปโหลดและครอบตัดรูปเรียบร้อยแล้ว', 'success');
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function triggerCropForMemberEditModal() {
+    const previewImg = document.getElementById('prjMemberEditPhotoPreview');
+    const currentSrc = editingMemberAvatar || (previewImg ? previewImg.src : '');
+    if (!currentSrc) {
+      if (typeof showToast === 'function') showToast('ยังไม่มีรูปสำหรับครอบตัด กรุณาอัปโหลดรูปก่อน', 'warning');
+      return;
+    }
+    openImageCropperModal({
+      imageSrc: currentSrc,
+      title: 'ครอบตัดและปรับแต่งรูปภาพ',
+      onSave: (croppedBase64) => {
+        editingMemberAvatar = croppedBase64;
+        const nameInput = document.getElementById('prjMemberEditName');
+        const nickInput = document.getElementById('prjMemberEditNickname');
+        const name = nameInput ? nameInput.value.trim() : '';
+        const nick = nickInput ? nickInput.value.trim() : '';
+        updateMemberEditModalPhotoUi(name, nick, croppedBase64);
+        if (typeof showToast === 'function') showToast('ครอบตัดรูปเรียบร้อยแล้ว', 'success');
+      }
+    });
+  }
+
+  function resetMemberEditModalPhotoToCute() {
+    editingMemberAvatar = '';
+    const nameInput = document.getElementById('prjMemberEditName');
+    const nickInput = document.getElementById('prjMemberEditNickname');
+    const name = nameInput ? nameInput.value.trim() : '';
+    const nick = nickInput ? nickInput.value.trim() : '';
+    updateMemberEditModalPhotoUi(name, nick, '');
+    if (typeof showToast === 'function') showToast('คืนค่ารูปเป็นรูปเริ่มต้นแล้ว', 'info');
+  }
+
+  function matchPhotoForMemberEditModal() {
+    const input = document.getElementById('prjMemberEditDriveFileName');
+    const query = input ? input.value.trim() : '';
+    if (!query) {
+      if (typeof showToast === 'function') showToast('กรุณาพิมพ์ชื่อรูปหรือรหัสรูปในไดรฟ์', 'warning');
+      return;
+    }
+    const found = findPhotoInCatalog(query);
+    if (found) {
+      const url = `https://lh3.googleusercontent.com/d/${found.id}`;
+      editingMemberAvatar = url;
+      const name = document.getElementById('prjMemberEditName').value.trim();
+      const nick = document.getElementById('prjMemberEditNickname').value.trim();
+      updateMemberEditModalPhotoUi(name, nick, url);
+      if (typeof showToast === 'function') showToast(`ดึงรูป "${found.name}" จากไดรฟ์สำเร็จ!`, 'success');
+    } else {
+      const extractedId = extractDriveFileId(query);
+      if (extractedId) {
+        const url = `https://lh3.googleusercontent.com/d/${extractedId}`;
+        editingMemberAvatar = url;
+        const name = document.getElementById('prjMemberEditName').value.trim();
+        const nick = document.getElementById('prjMemberEditNickname').value.trim();
+        updateMemberEditModalPhotoUi(name, nick, url);
+        if (typeof showToast === 'function') showToast('ดึงรูปจากรหัส Google Drive สำเร็จ', 'success');
+      } else {
+        if (typeof showToast === 'function') showToast(`ไม่พบรูป "${query}" ในไดรฟ์ กรุณาตรวจสอบชื่อไฟล์`, 'warning');
+      }
+    }
+  }
+
+  function saveProjectMemberFromModal() {
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item.id === activeDetailProjectId);
+    if (!p) {
+      if (typeof showToast === 'function') showToast('ไม่พบข้อมูลโครงการ', 'error');
+      return;
+    }
+
+    const name = document.getElementById('prjMemberEditName').value.trim();
+    if (!name) {
+      if (typeof showToast === 'function') showToast('กรุณากรอกชื่อ-นามสกุล', 'warning');
+      document.getElementById('prjMemberEditName').focus();
+      return;
+    }
+
+    const nickname = document.getElementById('prjMemberEditNickname').value.trim();
+    const rawDeptStr = document.getElementById('prjMemberEditDept').value.trim();
+    const rawDutyStr = document.getElementById('prjMemberEditDuty').value.trim();
+    const rawPosStr = document.getElementById('prjMemberEditPosition').value.trim();
+    const details = document.getElementById('prjMemberEditDetails').value.trim();
+    const phone = document.getElementById('prjMemberEditPhone').value.trim();
+    const kkuMail = document.getElementById('prjMemberEditEmail').value.trim();
+    const contactLink = document.getElementById('prjMemberEditContactLink').value.trim();
+
+    const splitByComma = val => String(val || '').split(/[,،、\n;]/).map(s => s.trim()).filter(Boolean);
+    const depts = splitByComma(rawDeptStr);
+    const uniqueDepts = depts.length > 0 ? Array.from(new Set(depts)) : ['ฝ่ายดำเนินงานทั่วไป'];
+    const deptSummary = uniqueDepts.join(', ');
+
+    const rawDuties = splitByComma(rawDutyStr);
+    const rawPositions = splitByComma(rawPosStr);
+    const rawDescs = splitByComma(details);
+
+    const maxLen = Math.max(rawDuties.length, rawPositions.length, rawDescs.length, uniqueDepts.length, 1);
+    const rolesList = [];
+    for (let i = 0; i < maxLen; i++) {
+      const d = uniqueDepts[i] || (uniqueDepts.length === 1 ? uniqueDepts[0] : (uniqueDepts[uniqueDepts.length - 1] || 'ฝ่ายดำเนินงานทั่วไป'));
+      const duty = rawDuties[i] || (rawDuties.length === 1 ? rawDuties[0] : (rawPositions[i] || 'ทีมงาน'));
+      const pos = rawPositions[i] || (rawPositions.length === 1 ? rawPositions[0] : '');
+      const desc = rawDescs[i] || (rawDescs.length === 1 ? rawDescs[0] : '');
+
+      if (d || duty || pos || desc || maxLen === 1) {
+        rolesList.push({
+          index: i + 1,
+          position: pos,
+          duty: duty || 'ทีมงาน',
+          description: desc,
+          department: d
+        });
+      }
+    }
+
+    const roleSummary = rawDuties.join(', ') || rawPositions.join(', ') || (rolesList.length > 0 ? rolesList.map(r => r.duty || r.position).join(', ') : 'ทีมงาน');
+
+    if (!Array.isArray(p.members)) p.members = [];
+
+    if (editingMemberId) {
+      // Edit existing member
+      const idx = p.members.findIndex(m => m.id === editingMemberId || m.name === editingMemberId);
+      if (idx !== -1) {
+        const existing = p.members[idx];
+        p.members[idx] = {
+          ...existing,
+          name,
+          nickname,
+          department: deptSummary,
+          departments: uniqueDepts,
+          role: roleSummary,
+          position: rawPositions.join(', ') || '',
+          details,
+          rolesList,
+          phone,
+          kkuMail,
+          contactLink,
+          avatar: editingMemberAvatar || existing.avatar || ''
+        };
+      }
+    } else {
+      // Add new member
+      p.members.push({
+        id: `MBR-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        name,
+        nickname,
+        department: deptSummary,
+        departments: uniqueDepts,
+        role: roleSummary,
+        position: rawPositions.join(', ') || '',
+        details,
+        rolesList,
+        phone,
+        kkuMail,
+        contactLink,
+        avatar: editingMemberAvatar || ''
+      });
+    }
+
+    // Emit socket & persist
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('admin:updateProject', p);
+    }
+    if (typeof saveLocalState === 'function') saveLocalState();
+    if (typeof window.persistProjectsToCloud === 'function') {
+      window.persistProjectsToCloud(true);
+    }
+
+    renderProjectMembersTableView(p);
+    closeProjectMemberEditModal();
+    if (typeof showToast === 'function') {
+      showToast(editingMemberId ? `บันทึกข้อมูล "${name}" เรียบร้อยแล้ว` : `เพิ่ม "${name}" เข้าสู่โครงการเรียบร้อยแล้ว`, 'success');
+    }
+  }
+
+  function openEditProjectMemberModalFromPreview() {
+    if (!activePreviewPerson) return;
+    const target = activePreviewPerson;
+    closePersonPhotoPreviewModal();
+    openEditProjectMemberModal(target.id || target.name);
   }
 
   if (typeof window !== 'undefined') {
