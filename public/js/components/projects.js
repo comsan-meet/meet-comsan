@@ -1294,7 +1294,11 @@
     };
 
     const subtitle = document.getElementById('prjDeptColorModalSubtitle');
-    if (subtitle) subtitle.textContent = `โครงการ: ${p.title || prjId}`;
+    if (subtitle) {
+      const titleStr = p.title || prjId;
+      subtitle.textContent = `โครงการ: ${titleStr}`;
+      subtitle.title = titleStr;
+    }
 
     renderDeptColorModalUi(p);
 

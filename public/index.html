@@ -6668,25 +6668,25 @@ label svg, label i {
   <!-- MODAL: DEPARTMENT COLOR SETTINGS (ADMIN ONLY)             -->
   <!-- ========================================================= -->
   <div id="prjDeptColorSettingsModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-[130] p-3 sm:p-4 select-none animate-fadeIn" onclick="if(event.target === this) closeDepartmentColorConfigModal();">
-    <div class="bg-card border border-border rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl text-card-foreground space-y-4 max-h-[90vh] flex flex-col">
+    <div class="bg-card border border-border rounded-3xl max-w-xl w-full p-4 sm:p-6 shadow-2xl text-card-foreground space-y-4 max-h-[90vh] flex flex-col">
       <!-- Header -->
-      <div class="flex items-center justify-between border-b border-border/70 pb-3 shrink-0">
-        <div class="flex items-center gap-2.5">
+      <div class="flex items-center justify-between gap-3 border-b border-border/70 pb-3 shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
           <div class="w-9 h-9 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
             <i data-lucide="palette" class="h-5 w-5"></i>
           </div>
-          <div>
-            <h3 class="text-sm sm:text-base font-bold text-foreground">ปรับแต่งสีของฝ่ายงาน</h3>
-            <p id="prjDeptColorModalSubtitle" class="text-[11px] text-muted-foreground truncate max-w-[280px]">กำหนดรูปแบบสีของแต่ละฝ่ายในโครงการ</p>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-sm sm:text-base font-bold text-foreground truncate">ปรับแต่งสีของฝ่ายงาน</h3>
+            <p id="prjDeptColorModalSubtitle" class="text-[11px] text-muted-foreground truncate" title="">กำหนดรูปแบบสีของแต่ละฝ่ายในโครงการ</p>
           </div>
         </div>
-        <button type="button" onclick="closeDepartmentColorConfigModal()" class="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer shrink-0">
+        <button type="button" onclick="closeDepartmentColorConfigModal()" class="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer shrink-0" title="ปิด">
           <i data-lucide="x" class="h-4 w-4"></i>
         </button>
       </div>
 
       <!-- Body (Scrollable) -->
-      <div class="space-y-4 overflow-y-auto flex-1 pr-1 text-xs">
+      <div class="space-y-4 overflow-y-auto flex-1 px-1.5 py-1 text-xs">
         <!-- Mode Selection -->
         <div>
           <label class="block font-bold text-foreground mb-1.5">เลือกรูปแบบการกำหนดสี</label>
@@ -6835,7 +6835,7 @@ label svg, label i {
   <script src="js/components/stream.js?v=20261026_01"></script>
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
   <script src="js/components/calendar.js?v=20261026_01"></script>
-  <script src="js/components/projects.js?v=20261027_04"></script>
+  <script src="js/components/projects.js?v=20261027_05"></script>
   <script src="js/views/navigation.js?v=20261026_02"></script>
   <script src="js/views/userView.js?v=20261026_02"></script>
   <script src="js/views/adminView.js?v=20261026_01"></script>
