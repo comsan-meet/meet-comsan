@@ -1481,39 +1481,56 @@
             </p>
           ` : ''}
 
-          <!-- Primary Leader Chip -->
-          ${primaryLeader ? (() => {
-            const leaderSeed = primaryLeader.nickname || primaryLeader.name || 'leader';
-            const leaderFallback = getCuteAvatarUrl(leaderSeed);
-            const leaderAvatar = primaryLeader.avatar ? escapeHtml(primaryLeader.avatar) : leaderFallback;
-            return `
-              <div class="pt-1 flex items-center gap-2.5">
-                <img src="${leaderAvatar}" alt="${escapeHtml(primaryLeader.name || 'ผู้รับผิดชอบ')}"
-                  onclick="window.openPersonPhotoPreviewModal && window.openPersonPhotoPreviewModal({
-                    name: '${escapeJs(primaryLeader.name || '')}',
-                    nickname: '${escapeJs(primaryLeader.nickname || '')}',
-                    role: '${escapeJs(primaryLeader.role || '')}',
-                    department: '${escapeJs(primaryLeader.department || '')}',
-                    avatar: '${escapeJs(leaderAvatar)}',
-                    phone: '${escapeJs(primaryLeader.phone || '')}',
-                    kkuMail: '${escapeJs(primaryLeader.kkuMail || '')}',
-                    contactLink: '${escapeJs(primaryLeader.contactLink || '')}',
-                    details: '${escapeJs(primaryLeader.details || '')}'
-                  })"
-                  class="w-7 h-7 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs cursor-pointer hover:ring-2 hover:ring-primary hover:scale-110 transition-all duration-200"
-                  title="คลิกเพื่อดูรูปโปรไฟล์"
-                  onerror="this.onerror=null; this.src='${leaderFallback}';" />
-                <div class="min-w-0 flex-1">
-                  <p class="text-xs font-bold text-foreground truncate">
-                    ${escapeHtml(primaryLeader.name)} ${primaryLeader.nickname ? `(${escapeHtml(primaryLeader.nickname)})` : ''}
-                  </p>
-                  <p class="text-[10px] text-muted-foreground truncate">
-                    ${escapeHtml(primaryLeader.role || 'ผู้รับผิดชอบโครงการ')}
-                  </p>
-                </div>
+          <!-- Project Leaders (ผู้ดูแลโครงการทุกคน) -->
+          ${leaders.length > 0 ? `
+            <div class="pt-2 border-t border-border/50 space-y-1.5">
+              <div class="flex items-center justify-between text-[11px] font-bold text-foreground">
+                <span class="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+                  <i data-lucide="crown" class="h-3.5 w-3.5 text-amber-500 shrink-0"></i>
+                  <span>ผู้ดูแลโครงการ (${leaders.length} คน)</span>
+                </span>
               </div>
-            `;
-          })() : ''}
+              <div class="space-y-1.5">
+                ${leaders.map((leader, lIdx) => {
+                  const leaderSeed = leader.nickname || leader.name || `leader_${lIdx}`;
+                  const leaderFallback = getCuteAvatarUrl(leaderSeed);
+                  const leaderAvatar = leader.avatar ? escapeHtml(leader.avatar) : leaderFallback;
+                  return `
+                    <div class="flex items-center gap-2.5 p-1.5 rounded-xl bg-muted/20 hover:bg-muted/40 transition">
+                      <img src="${leaderAvatar}" alt="${escapeHtml(leader.name || 'ผู้ดูแลโครงการ')}"
+                        onclick="window.openPersonPhotoPreviewModal && window.openPersonPhotoPreviewModal({
+                          name: '${escapeJs(leader.name || '')}',
+                          nickname: '${escapeJs(leader.nickname || '')}',
+                          role: '${escapeJs(leader.role || '')}',
+                          department: '${escapeJs(leader.department || '')}',
+                          avatar: '${escapeJs(leaderAvatar)}',
+                          phone: '${escapeJs(leader.phone || '')}',
+                          kkuMail: '${escapeJs(leader.kkuMail || '')}',
+                          contactLink: '${escapeJs(leader.contactLink || '')}',
+                          details: '${escapeJs(leader.details || '')}'
+                        })"
+                        class="w-7 h-7 rounded-full object-cover ring-1 ring-border shrink-0 shadow-2xs cursor-pointer hover:ring-2 hover:ring-primary hover:scale-110 transition-all duration-200"
+                        title="คลิกเพื่อดูรูปโปรไฟล์"
+                        onerror="this.onerror=null; this.src='${leaderFallback}';" />
+                      <div class="min-w-0 flex-1">
+                        <p class="text-xs font-bold text-foreground truncate" title="${escapeHtml(leader.name)} ${leader.nickname ? `(${escapeHtml(leader.nickname)})` : ''}">
+                          ${escapeHtml(leader.name)} ${leader.nickname ? `<span class="font-normal text-muted-foreground">(${escapeHtml(leader.nickname)})</span>` : ''}
+                        </p>
+                        <p class="text-[10px] text-muted-foreground truncate" title="${escapeHtml(leader.role || 'ผู้รับผิดชอบโครงการ')}">
+                          ${escapeHtml(leader.role || 'ผู้รับผิดชอบโครงการ')}
+                        </p>
+                      </div>
+                      ${leader.phone ? `
+                        <a href="tel:${escapeHtml(leader.phone)}" class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 hover:bg-emerald-500/20 transition" title="โทร: ${escapeHtml(leader.phone)}">
+                          <i data-lucide="phone" class="h-3 w-3"></i>
+                        </a>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
 
           <!-- Feature Indicator Tags -->
           <div class="flex items-center gap-1.5 flex-wrap pt-1">
