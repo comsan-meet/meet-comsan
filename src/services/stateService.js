@@ -54,6 +54,15 @@ class StateService {
         parsed.versionNotes = parsed.versionNotes || defaultState.versionNotes;
         parsed.lastMeetingSummary = parsed.lastMeetingSummary || null;
         parsed.meetingHistory = Array.isArray(parsed.meetingHistory) ? parsed.meetingHistory : [];
+        parsed.liveDashboardConfig = {
+          concurrencyMode: 'BOTH',
+          showRaiseHandPopup: true,
+          showPermissionPopup: true,
+          showRandomizerPopup: true,
+          theme: 'DARK',
+          clockFormat: '24H',
+          ...(parsed.liveDashboardConfig || {})
+        };
         parsed.calendarEvents = Array.isArray(parsed.calendarEvents)
           ? parsed.calendarEvents
           : (defaultState.calendarEvents || []);

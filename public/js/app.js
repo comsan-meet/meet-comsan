@@ -1084,6 +1084,9 @@ function setupSocketListeners() {
     window.setAppState(newState);
     window.saveLocalState();
     renderAll();
+    if (window.isLiveDashboardOpen && typeof window.renderLiveDashboard === 'function') {
+      window.renderLiveDashboard();
+    }
   });
 
   socket.on('alert:raiseHand', (alertData) => {
@@ -1188,8 +1191,28 @@ function setupSocketListeners() {
   });
 
   socket.on('random:spin', (spinPayload) => {
+    window.liveDashRandomActive = true;
+    window.liveDashRandomWinner = spinPayload ? spinPayload.winnerLabel : null;
     if (typeof window.playRandomizerPopupAnimation === 'function') {
       window.playRandomizerPopupAnimation(spinPayload);
+    }
+    if (window.isLiveDashboardOpen && typeof window.renderLiveDashboard === 'function') {
+      window.renderLiveDashboard();
+    }
+  });
+
+  socket.on('random:closePopup', () => {
+    if (typeof window.closeLiveRandomPopup === 'function') {
+      window.closeLiveRandomPopup();
+    }
+  });
+
+  socket.on('liveDashboard:configUpdated', (newConfig) => {
+    if (window.appState) {
+      window.appState.liveDashboardConfig = newConfig;
+    }
+    if (window.isLiveDashboardOpen && typeof window.renderLiveDashboard === 'function') {
+      window.renderLiveDashboard();
     }
   });
 
@@ -1288,6 +1311,10 @@ function setupSocketListeners() {
         updateUserActiveEventsBanner(window.appState);
       }
     }
+
+    if (window.isLiveDashboardOpen && typeof window.updateLiveDashboardStreamFrame === 'function') {
+      window.updateLiveDashboardStreamFrame(streamData.frameDataUrl);
+    }
   });
 
   socket.on('stream:stopped', () => {
@@ -1312,6 +1339,9 @@ function setupSocketListeners() {
     }
     if (typeof window.renderStreamSection === 'function') {
       window.renderStreamSection();
+    }
+    if (window.isLiveDashboardOpen && typeof window.renderLiveDashboard === 'function') {
+      window.renderLiveDashboard();
     }
   });
 
@@ -1489,6 +1519,18 @@ window.addEventListener('DOMContentLoaded', () => {
   } catch (e) {
     console.error('Error parsing checkin URL params:', e);
   }
+
+  // Check URL for Live Dashboard direct launch ?live=1 or ?view=live
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('live') === '1' || urlParams.get('view') === 'live') {
+      setTimeout(() => {
+        if (typeof window.openLiveDashboard === 'function') {
+          window.openLiveDashboard();
+        }
+      }, 350);
+    }
+  } catch (e) {}
 });
 
 window.addEventListener('resize', () => {
