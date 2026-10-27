@@ -54,12 +54,22 @@ module.exports = function registerLiveDashboardHandlers(io, socket) {
     const isMatch = Boolean(cleanEntered && cleanEntered === cleanCorrect);
     console.log(`[LiveDashboard] PIN check: entered='${cleanEntered}', expected='${cleanCorrect}', isMatch=${isMatch}`);
     if (isMatch) {
+      socket.isPairedRemote = true;
       if (typeof callback === 'function') callback({ success: true, pairingCode: cleanCorrect });
       socket.emit('remote:pinVerified', { success: true, pairingCode: cleanCorrect });
-      io.emit('liveDashboard:remoteConnected', { time: Date.now() });
+      io.emit('liveDashboard:remoteConnected', { time: Date.now(), socketId: socket.id });
+      io.emit('liveDashboard:remoteStatusUpdate', { connected: true, activeRemotes: 1 });
     } else {
       if (typeof callback === 'function') callback({ success: false, message: 'รหัสจับคู่ไม่ถูกต้อง' });
       socket.emit('remote:pinVerified', { success: false, message: 'รหัสจับคู่ไม่ถูกต้อง' });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    if (socket.isPairedRemote) {
+      console.log(`[LiveDashboard] Paired remote disconnected: ${socket.id}`);
+      io.emit('liveDashboard:remoteDisconnected', { time: Date.now(), socketId: socket.id });
+      io.emit('liveDashboard:remoteStatusUpdate', { connected: false, activeRemotes: 0 });
     }
   });
 

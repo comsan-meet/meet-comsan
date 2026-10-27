@@ -8,6 +8,8 @@ window.liveDashboardClockTimer = null;
 window.liveDashWallpaperTimer = null;
 window.liveDashActiveApp = null; // null (Home Dock) | 'VOTE' | 'CHECKIN' | 'RANDOM' | 'FILES' | 'STREAM' | 'SETTINGS'
 window.isLiveControlCenterOpen = false;
+window.isTvRemoteConnected = false;
+window.liveDashHudTimer = null;
 
 window.liveRemoteMode = (typeof localStorage !== 'undefined' && localStorage.getItem('comsan_remote_mode')) || 'TOUCHPAD'; // 'TOUCHPAD' | 'DPAD'
 window.liveRemoteEnteredPin = '';
@@ -239,6 +241,92 @@ function regenerateLiveDashboardPin() {
   }
 }
 
+
+function updateTvRemoteStatusUI(isConnected) {
+  window.isTvRemoteConnected = Boolean(isConnected);
+
+  // 1. Header Badge on TV
+  const dot = document.getElementById('liveDashRemoteStatusDot');
+  const text = document.getElementById('liveDashRemoteStatusText');
+  const badge = document.getElementById('liveDashRemoteStatusBadge');
+
+  if (dot) {
+    dot.className = isConnected ? 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse' : 'w-2.5 h-2.5 rounded-full bg-amber-400';
+  }
+
+  if (text) {
+    text.textContent = isConnected ? 'รีโมต: เชื่อมต่อแล้ว' : 'รอเชื่อมต่อรีโมต';
+    text.className = isConnected ? 'text-emerald-300 font-bold text-[11px] sm:text-xs' : 'text-white/70 text-[11px] sm:text-xs';
+  }
+
+  if (badge) {
+    badge.className = isConnected
+      ? 'flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 backdrop-blur-xl text-xs font-bold transition-all duration-300 shadow-sm'
+      : 'flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-xl text-xs font-medium text-white/70 transition-all duration-300';
+  }
+
+  // 2. Control Center Drawer Badge
+  const drawerBadge = document.getElementById('liveDashDrawerRemoteStatusBadge');
+  if (drawerBadge) {
+    drawerBadge.textContent = isConnected ? 'เชื่อมต่อแล้ว (Active)' : 'รอการเชื่อมต่อ';
+    drawerBadge.className = isConnected
+      ? 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+      : 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30';
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+function showTvHudNotification(title, iconType = 'check') {
+  const hud = document.getElementById('liveDashTvHudBanner');
+  const textEl = document.getElementById('liveDashTvHudText');
+  const iconContainer = document.getElementById('liveDashTvHudIcon');
+  if (!hud || !textEl) return;
+
+  textEl.textContent = title;
+  if (iconContainer) {
+    if (iconType === 'alert-circle') {
+      iconContainer.className = 'w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0';
+      iconContainer.innerHTML = '<i data-lucide="alert-circle" class="w-4 h-4"></i>';
+    } else {
+      iconContainer.className = 'w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0';
+      iconContainer.innerHTML = '<i data-lucide="smartphone" class="w-4 h-4"></i>';
+    }
+  }
+
+  hud.classList.remove('hidden', '-translate-y-12', 'opacity-0');
+  hud.classList.add('flex', 'translate-y-0', 'opacity-100');
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+
+  if (window.liveDashHudTimer) clearTimeout(window.liveDashHudTimer);
+  window.liveDashHudTimer = setTimeout(() => {
+    hud.classList.remove('translate-y-0', 'opacity-100');
+    hud.classList.add('-translate-y-12', 'opacity-0');
+    setTimeout(() => {
+      hud.classList.remove('flex');
+      hud.classList.add('hidden');
+    }, 500);
+  }, 3500);
+}
+
+function sendRemoteOpenApp(appId) {
+  if (window.socket && typeof window.socket.emit === 'function') {
+    window.socket.emit('remote:openApp', appId);
+  }
+  if (navigator.vibrate) {
+    try { navigator.vibrate(25); } catch (e) {}
+  }
+  if (typeof showToast === 'function') {
+    const names = { VOTE: 'การลงมติ', CHECKIN: 'เช็คชื่อ QR', RANDOM: 'สุ่มหรรษา', FILES: 'คลังเอกสาร', STREAM: 'ถ่ายทอดสด' };
+    showToast(`สั่งเปิดแอป: ${names[appId] || appId}`, 'info');
+  }
+}
+
 // =========================================================================
 // 3. APPLE TVOS 26 HOME SCREEN & APPS
 // =========================================================================
@@ -265,6 +353,7 @@ function renderLiveDashboard() {
 
   updateLiveDashboardClock();
   updateLiveWallpaperDisplay();
+  updateTvRemoteStatusUI(window.isTvRemoteConnected);
 
   // If an App is open, render that app; otherwise render Home Screen (Dock)
   if (window.liveDashActiveApp) {
@@ -1122,13 +1211,38 @@ function renderPairedAppleTvRemote(container) {
           <i data-lucide="unlink" class="w-4 h-4"></i>
         </button>
 
-        <div class="px-3.5 py-1.5 rounded-full bg-zinc-800/90 border border-zinc-700/80 text-white font-bold text-xs flex items-center gap-1.5 shadow-inner">
+        <div class="px-3 py-1.5 rounded-full bg-zinc-800/90 border border-zinc-700/80 text-white font-bold text-xs flex items-center gap-1.5 shadow-inner">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <i data-lucide="tv" class="w-3.5 h-3.5 text-indigo-400"></i>
-          <span>Live Dashboard (${pin})</span>
+          <span>TV Connected (${pin})</span>
         </div>
 
         <button type="button" onclick="closeLiveRemote()" class="w-10 h-10 rounded-full bg-zinc-800 hover:bg-rose-600 text-zinc-300 hover:text-white active:scale-95 flex items-center justify-center transition shadow-md cursor-pointer" title="ปิดรีโมต">
           <i data-lucide="power" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Quick App Launcher Shelf on Remote -->
+      <div class="flex items-center justify-between p-1.5 bg-black/60 rounded-2xl border border-zinc-800/80 my-1 shrink-0">
+        <button type="button" onclick="sendRemoteOpenApp('VOTE')" class="flex-1 flex flex-col items-center py-1 rounded-xl hover:bg-zinc-800/80 active:scale-95 transition text-purple-400 cursor-pointer" title="การลงมติ">
+          <i data-lucide="vote" class="w-4 h-4"></i>
+          <span class="text-[9px] font-bold text-zinc-300 mt-0.5">โหวต</span>
+        </button>
+        <button type="button" onclick="sendRemoteOpenApp('CHECKIN')" class="flex-1 flex flex-col items-center py-1 rounded-xl hover:bg-zinc-800/80 active:scale-95 transition text-emerald-400 cursor-pointer" title="เช็คชื่อ QR">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
+          <span class="text-[9px] font-bold text-zinc-300 mt-0.5">เช็คชื่อ</span>
+        </button>
+        <button type="button" onclick="sendRemoteOpenApp('RANDOM')" class="flex-1 flex flex-col items-center py-1 rounded-xl hover:bg-zinc-800/80 active:scale-95 transition text-amber-400 cursor-pointer" title="สุ่มหรรษา">
+          <i data-lucide="dices" class="w-4 h-4"></i>
+          <span class="text-[9px] font-bold text-zinc-300 mt-0.5">สุ่ม</span>
+        </button>
+        <button type="button" onclick="sendRemoteOpenApp('FILES')" class="flex-1 flex flex-col items-center py-1 rounded-xl hover:bg-zinc-800/80 active:scale-95 transition text-sky-400 cursor-pointer" title="คลังเอกสาร">
+          <i data-lucide="folder" class="w-4 h-4"></i>
+          <span class="text-[9px] font-bold text-zinc-300 mt-0.5">ไฟล์</span>
+        </button>
+        <button type="button" onclick="sendRemoteOpenApp('STREAM')" class="flex-1 flex flex-col items-center py-1 rounded-xl hover:bg-zinc-800/80 active:scale-95 transition text-lime-400 cursor-pointer" title="ถ่ายทอดสด">
+          <i data-lucide="video" class="w-4 h-4"></i>
+          <span class="text-[9px] font-bold text-zinc-300 mt-0.5">สตรีม</span>
         </button>
       </div>
 
@@ -1262,24 +1376,27 @@ function bindTouchpadEvents() {
   }
 
   pad.addEventListener('touchstart', (e) => {
+    if (e.cancelable) e.preventDefault();
     isTouching = true;
     const t = e.touches[0];
     if (t) handleMove(t.clientX, t.clientY);
-  }, { passive: true });
+  }, { passive: false });
 
   pad.addEventListener('touchmove', (e) => {
+    if (e.cancelable) e.preventDefault();
     if (!isTouching) return;
     const t = e.touches[0];
     if (t) handleMove(t.clientX, t.clientY);
-  }, { passive: true });
+  }, { passive: false });
 
-  pad.addEventListener('touchend', () => {
+  pad.addEventListener('touchend', (e) => {
+    if (e.cancelable) e.preventDefault();
     isTouching = false;
     if (dot) dot.classList.add('hidden');
     if (window.socket && typeof window.socket.emit === 'function') {
       window.socket.emit('remote:click');
     }
-  });
+  }, { passive: false });
 
   pad.addEventListener('mousedown', (e) => {
     isTouching = true;
@@ -1327,10 +1444,24 @@ function initLiveRemoteReceivers() {
 
   // 1. PIN Verified & Connected
   window.socket.on('liveDashboard:remoteConnected', () => {
+    updateTvRemoteStatusUI(true);
     if (!window.isLiveDashboardOpen) return;
+    showTvHudNotification('Apple TV Remote เชื่อมต่อแล้ว');
     if (typeof showToast === 'function') {
       showToast('📱 รีโมตเชื่อมต่อสำเร็จแล้ว!', 'success');
     }
+  });
+
+  window.socket.on('liveDashboard:remoteDisconnected', () => {
+    updateTvRemoteStatusUI(false);
+    if (window.isLiveDashboardOpen) {
+      showTvHudNotification('Apple TV Remote ตัดการเชื่อมต่อ', 'alert-circle');
+    }
+  });
+
+  window.socket.on('liveDashboard:remoteStatusUpdate', (payload) => {
+    const isConn = Boolean(payload && payload.connected);
+    updateTvRemoteStatusUI(isConn);
   });
 
   // PIN Updated broadcast
@@ -1408,32 +1539,67 @@ function initLiveRemoteReceivers() {
       // Trigger click on element under cursor
       const rect = cursor.getBoundingClientRect();
       const el = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      if (el && typeof el.click === 'function') {
-        el.click();
+      if (el) {
+        const target = el.closest('button, a, [onclick], .tvos-app-card, input') || el;
+        if (typeof target.click === 'function') {
+          target.click();
+        }
       }
     }
   });
 
-  // 4. D-Pad Navigation between tvOS Apps
+  // 4. D-Pad Navigation between tvOS Apps & Views
   window.socket.on('liveDashboard:dpad', (direction) => {
     if (!window.isLiveDashboardOpen) return;
 
     const apps = window.liveDashDockApps || [];
     let cur = window.liveDashFocusedAppIndex || 0;
+    const isAppOpen = Boolean(window.liveDashActiveApp);
+    const stage = document.getElementById('liveDashMainStage');
 
     if (direction === 'RIGHT') {
+      if (isAppOpen) {
+        const appNames = ['VOTE', 'CHECKIN', 'RANDOM', 'FILES', 'STREAM'];
+        const curIdx = appNames.indexOf(window.liveDashActiveApp);
+        const nextApp = appNames[(curIdx + 1) % appNames.length];
+        openLiveApp(nextApp);
+        return;
+      }
       cur = (cur + 1) % apps.length;
     } else if (direction === 'LEFT') {
+      if (isAppOpen) {
+        const appNames = ['VOTE', 'CHECKIN', 'RANDOM', 'FILES', 'STREAM'];
+        const curIdx = appNames.indexOf(window.liveDashActiveApp);
+        const prevApp = appNames[(curIdx - 1 + appNames.length) % appNames.length];
+        openLiveApp(prevApp);
+        return;
+      }
       cur = (cur - 1 + apps.length) % apps.length;
     } else if (direction === 'UP') {
+      if (isAppOpen && stage) {
+        const vp = stage.querySelector('.overflow-y-auto') || stage;
+        vp.scrollBy({ top: -200, behavior: 'smooth' });
+        return;
+      }
       toggleLiveControlCenter();
       return;
     } else if (direction === 'DOWN') {
+      if (isAppOpen && stage) {
+        const vp = stage.querySelector('.overflow-y-auto') || stage;
+        vp.scrollBy({ top: 200, behavior: 'smooth' });
+        return;
+      }
       if (window.isLiveControlCenterOpen) {
         toggleLiveControlCenter();
         return;
       }
     } else if (direction === 'SELECT') {
+      if (isAppOpen) {
+        if (window.liveDashActiveApp === 'RANDOM') {
+          triggerAdminSpinFromTv();
+        }
+        return;
+      }
       const activeApp = apps[cur];
       if (activeApp === 'settings') {
         toggleLiveControlCenter();
@@ -1617,6 +1783,9 @@ window.updateLiveDashboardStreamFrame = updateLiveDashboardStreamFrame;
 window.closeLiveRandomPopup = closeLiveRandomPopup;
 window.dismissLiveRaiseHand = dismissLiveRaiseHand;
 window.triggerAdminSpinFromTv = triggerAdminSpinFromTv;
+window.sendRemoteOpenApp = sendRemoteOpenApp;
+window.updateTvRemoteStatusUI = updateTvRemoteStatusUI;
+window.showTvHudNotification = showTvHudNotification;
 
 window.openLiveRemote = openLiveRemote;
 window.closeLiveRemote = closeLiveRemote;

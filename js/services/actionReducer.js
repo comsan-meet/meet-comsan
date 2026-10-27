@@ -1227,6 +1227,7 @@
         if (isMatch) {
           notify('remote:pinVerified', { success: true, pairingCode: cleanCorrect });
           notify('liveDashboard:remoteConnected', { time: Date.now() });
+          notify('liveDashboard:remoteStatusUpdate', { connected: true, activeRemotes: 1 });
           result = { success: true, pairingCode: cleanCorrect };
         } else {
           notify('remote:pinVerified', { success: false, message: 'รหัสจับคู่ไม่ถูกต้อง' });
