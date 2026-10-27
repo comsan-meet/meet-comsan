@@ -165,7 +165,10 @@ const defaultState = {
     showPermissionPopup: true,
     showRandomizerPopup: true,
     theme: 'DARK',
-    clockFormat: '24H'
+    clockFormat: '24H',
+    wallpaperMode: 'BUBBLES',
+    customWallpaperUrl: '',
+    pairingCode: '8429'
   },
   lastMeetingSummary: null,
   meetingHistory: [],
@@ -299,6 +302,9 @@ function normalizeState(raw) {
       showRandomizerPopup: true,
       theme: 'DARK',
       clockFormat: '24H',
+      wallpaperMode: 'BUBBLES',
+      customWallpaperUrl: '',
+      pairingCode: '8429',
       ...(raw.liveDashboardConfig || {})
     },
     lastMeetingSummary: raw.lastMeetingSummary || null,

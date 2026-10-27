@@ -61,6 +61,9 @@ class StateService {
           showRandomizerPopup: true,
           theme: 'DARK',
           clockFormat: '24H',
+          wallpaperMode: 'BUBBLES',
+          customWallpaperUrl: '',
+          pairingCode: String(Math.floor(1000 + Math.random() * 9000)),
           ...(parsed.liveDashboardConfig || {})
         };
         parsed.calendarEvents = Array.isArray(parsed.calendarEvents)

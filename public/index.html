@@ -1084,6 +1084,31 @@ label svg, label i {
 <style>
   .no-scrollbar::-webkit-scrollbar { display: none !important; }
   .no-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+  /* Apple tvOS 26 Visuals & Animations */
+  @keyframes floatOrbSlow {
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    50% { transform: translate(30px, -40px) scale(1.1); }
+  }
+  @keyframes floatOrbMedium {
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    50% { transform: translate(-40px, 30px) scale(1.08); }
+  }
+  @keyframes floatOrbFast {
+    0%, 100% { transform: translate(0px, 0px) scale(1); }
+    50% { transform: translate(25px, 35px) scale(0.95); }
+  }
+  .animate-float-slow { animation: floatOrbSlow 18s ease-in-out infinite; }
+  .animate-float-medium { animation: floatOrbMedium 14s ease-in-out infinite; }
+  .animate-float-fast { animation: floatOrbFast 10s ease-in-out infinite; }
+  .tvos-glass {
+    background: rgba(18, 18, 24, 0.75);
+    backdrop-filter: blur(40px) saturate(190%);
+    -webkit-backdrop-filter: blur(40px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+  }
+  .scale-115 {
+    transform: scale(1.15) !important;
+  }
   /* Chat: full-screen Instagram-style DM interface (Mobile 2-stage, Desktop 2-column split) */
   #uTab_CHAT, #aTab_CHAT {
     position: fixed !important;
@@ -1192,10 +1217,38 @@ label svg, label i {
   <!-- ========================================================= -->
   <div id="liveDashboardContainer" class="fixed inset-0 z-[9999] hidden flex-col bg-slate-950 text-white select-none overflow-hidden font-sans no-scrollbar">
     
-    <!-- Top Broadcast Bar (Centered Clock, Clean Power Button, No Logo) -->
-    <header id="liveDashHeader" class="h-20 sm:h-24 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-6 sm:px-10 flex items-center justify-between z-30 shrink-0">
-      <!-- Left spacer for dead-center balance -->
-      <div class="w-12 sm:w-16 shrink-0"></div>
+    <!-- Apple tvOS 26 Background Layers -->
+    <!-- 1. Bubbles Animated Background (Default) -->
+    <div id="liveDashBubblesBg" class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div class="absolute -top-32 -left-32 w-96 h-96 bg-purple-600/35 rounded-full blur-[110px] animate-float-slow"></div>
+      <div class="absolute top-1/3 -right-20 w-[450px] h-[450px] bg-blue-600/30 rounded-full blur-[130px] animate-float-medium"></div>
+      <div class="absolute -bottom-32 left-1/3 w-[500px] h-[500px] bg-indigo-700/35 rounded-full blur-[140px] animate-float-fast"></div>
+      <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-teal-500/20 rounded-full blur-[90px] animate-float-slow"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60"></div>
+    </div>
+
+    <!-- 2. Nature Slideshow Background (Hidden by default) -->
+    <div id="liveDashNatureBg" class="absolute inset-0 bg-cover bg-center transition-all duration-1000 hidden z-0">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/65 pointer-events-none"></div>
+    </div>
+
+    <!-- 3. Custom Wallpaper Background (Hidden by default) -->
+    <div id="liveDashCustomBg" class="absolute inset-0 bg-cover bg-center transition-all duration-1000 hidden z-0">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/65 pointer-events-none"></div>
+    </div>
+
+    <!-- Top Broadcast Bar (Centered Clock, Apple tvOS Control Center Pill, Clean Power Button) -->
+    <header id="liveDashHeader" class="h-20 sm:h-24 bg-black/40 backdrop-blur-2xl border-b border-white/10 px-6 sm:px-10 flex items-center justify-between z-30 shrink-0 relative">
+      <!-- Left: Stage Badge -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center font-bold text-white shadow-md">
+          <i data-lucide="tv" class="w-5 h-5 text-indigo-400"></i>
+        </div>
+        <div class="hidden sm:block">
+          <span class="text-xs font-black tracking-widest uppercase text-white/90 block">LIVE STAGE</span>
+          <span class="text-[10px] text-white/50 block">Apple tvOS Experience</span>
+        </div>
+      </div>
 
       <!-- Center: Realtime Clock & Date (Prominently Centered) -->
       <div class="flex-1 flex flex-col items-center justify-center text-center mx-auto">
@@ -1203,21 +1256,111 @@ label svg, label i {
           <span id="liveDashClockTime" class="text-3xl sm:text-5xl font-black tracking-tight text-white font-mono drop-shadow-sm">00:00</span>
           <span id="liveDashClockSeconds" class="text-lg sm:text-2xl font-bold text-indigo-400 font-mono">:00</span>
         </div>
-        <span id="liveDashClockDate" class="text-xs sm:text-sm text-slate-400 font-medium mt-0.5">วันจันทร์ที่ 1 มกราคม 2569</span>
+        <span id="liveDashClockDate" class="text-xs sm:text-sm text-slate-300 font-medium mt-0.5">วันจันทร์ที่ 1 มกราคม 2569</span>
       </div>
 
-      <!-- Right: Power / Exit Button only -->
-      <div class="w-12 sm:w-16 flex items-center justify-end shrink-0">
+      <!-- Right: Apple tvOS Control Center Pill + Power Exit Button -->
+      <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <!-- Control Center Pill -->
+        <button type="button" onclick="toggleLiveControlCenter()" title="Apple tvOS Control Center"
+          class="h-10 sm:h-12 px-3.5 sm:px-4 rounded-full bg-white/15 hover:bg-white/25 border border-white/25 backdrop-blur-2xl text-white flex items-center gap-2 sm:gap-2.5 transition active:scale-95 shadow-lg cursor-pointer">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="liveDashPillClock" class="font-black text-sm sm:text-base font-mono">00:00</span>
+          <span id="liveDashPillPin" class="text-xs bg-white/20 px-2 py-0.5 rounded-full font-mono font-bold text-indigo-200 hidden md:inline-block">📺 PIN: 8429</span>
+          <i data-lucide="sliders" class="w-4 h-4 text-white/80"></i>
+        </button>
+
+        <!-- Power / Exit Button (Shutdown Live Dashboard) -->
         <button type="button" onclick="closeLiveDashboard()" title="ออกจาก Live Dashboard"
-          class="w-10 h-10 rounded-2xl bg-slate-900/60 hover:bg-rose-600 text-slate-400 hover:text-white border border-slate-800 flex items-center justify-center transition cursor-pointer active:scale-95 shadow-md">
-          <i data-lucide="x" class="w-5 h-5"></i>
+          class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 flex items-center justify-center transition cursor-pointer active:scale-95 shadow-lg">
+          <i data-lucide="power" class="w-5 h-5"></i>
         </button>
       </div>
     </header>
 
+    <!-- Apple tvOS 26 Control Center Drawer (Top-Right Slide Down) -->
+    <div id="liveDashControlCenterDrawer" class="fixed top-24 right-6 sm:right-10 z-50 hidden flex-col w-[360px] sm:w-[400px] max-w-[95vw] rounded-[36px] tvos-glass p-6 text-white shadow-[0_25px_60px_rgba(0,0,0,0.8)] border border-white/20 backdrop-blur-3xl animate-fade-in space-y-5">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-white/15">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-indigo-500/30 border border-indigo-400/40 text-indigo-300 flex items-center justify-center font-bold">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black">Control Center</h3>
+            <p class="text-[11px] text-white/60">tvOS 26 System Control</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Big Power Button -->
+          <button type="button" onclick="closeLiveDashboard()" title="ปิดระบบ Live Dashboard" class="w-9 h-9 rounded-full bg-rose-600/80 hover:bg-rose-600 text-white flex items-center justify-center transition active:scale-95 cursor-pointer shadow-md">
+            <i data-lucide="power" class="w-4 h-4"></i>
+          </button>
+          <button type="button" onclick="toggleLiveControlCenter()" title="ปิดหน้าต่างนี้" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition active:scale-95 cursor-pointer">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Remote Pairing Code Card -->
+      <div class="p-4 rounded-3xl bg-white/10 border border-white/15 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-white/80 flex items-center gap-1.5">
+            <i data-lucide="cast" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>รหัสจับคู่รีโมต (PIN)</span>
+          </span>
+          <button type="button" onclick="regenerateLiveDashboardPin()" class="text-[11px] text-indigo-300 hover:text-white underline font-semibold flex items-center gap-1 cursor-pointer">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+            <span>สุ่มรหัสใหม่</span>
+          </button>
+        </div>
+        <div class="flex items-center justify-between bg-black/40 px-4 py-3 rounded-2xl border border-white/10">
+          <span class="text-xs text-white/60">ป้อนรหัสนี้ในมือถือ:</span>
+          <span id="liveDashDrawerPin" class="text-3xl font-black font-mono tracking-widest text-indigo-300 drop-shadow-md">8429</span>
+        </div>
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" onclick="copyLiveRemoteDirectUrl()" class="flex-1 py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>คัดลอกลิงก์รีโมต</span>
+          </button>
+          <button type="button" onclick="openLiveRemote()" class="py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer" title="เปิดรีโมตบนจอนี้">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+            <span>ทดสอบรีโมต</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Wallpaper Selector (3 Modes) -->
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-white/80 block">ภาพพื้นหลัง (Wallpaper)</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="setLiveWallpaperMode('BUBBLES')" class="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 flex flex-col items-center gap-1 text-center transition active:scale-95 cursor-pointer">
+            <span class="text-lg">🫧</span>
+            <span class="text-[11px] font-bold text-white">ฟองอากาศ</span>
+          </button>
+          <button type="button" onclick="setLiveWallpaperMode('NATURE')" class="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 flex flex-col items-center gap-1 text-center transition active:scale-95 cursor-pointer">
+            <span class="text-lg">🍃</span>
+            <span class="text-[11px] font-bold text-white">สไลด์ธรรมชาติ</span>
+          </button>
+          <button type="button" onclick="promptSetCustomWallpaper()" class="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 flex flex-col items-center gap-1 text-center transition active:scale-95 cursor-pointer">
+            <span class="text-lg">🖼️</span>
+            <span class="text-[11px] font-bold text-white">กำหนดเอง</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- More Settings Button -->
+      <div class="pt-2 border-t border-white/15 flex items-center justify-between">
+        <button type="button" onclick="toggleLiveControlCenter(); openLiveDashboardSettingsModal();" class="w-full py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-bold text-xs flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span>การตั้งค่าอื่นๆ (จอแยก/ป๊อปอัป)</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Main Viewport Stage (No white scrollbar, overflow hidden) -->
-    <main id="liveDashMainStage" class="flex-1 flex flex-col min-h-0 relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950/40 no-scrollbar">
-      <!-- Dynamically filled by renderLiveDashboardStage() -->
+    <main id="liveDashMainStage" class="flex-1 flex flex-col min-h-0 relative overflow-hidden bg-transparent no-scrollbar z-10">
+      <!-- Dynamically filled by renderLiveDashboard() -->
     </main>
 
     <!-- Laser Cursor Tracker (For Apple TV Style Remote Touchpad) -->
@@ -7114,7 +7257,7 @@ label svg, label i {
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
   <script src="js/components/calendar.js?v=20261026_01"></script>
   <script src="js/components/projects.js?v=20261027_07"></script>
-  <script src="js/components/liveDashboard.js?v=20261027_02"></script>
+  <script src="js/components/liveDashboard.js?v=20261027_03"></script>
   <script src="js/views/navigation.js?v=20261027_04"></script>
   <script src="js/views/userView.js?v=20261026_02"></script>
   <script src="js/views/adminView.js?v=20261027_02"></script>

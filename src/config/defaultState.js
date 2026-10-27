@@ -243,7 +243,10 @@ const defaultState = {
     showPermissionPopup: true,
     showRandomizerPopup: true,
     theme: 'DARK',
-    clockFormat: '24H'
+    clockFormat: '24H',
+    wallpaperMode: 'BUBBLES', // 'BUBBLES' | 'NATURE' | 'CUSTOM'
+    customWallpaperUrl: '',
+    pairingCode: '8429'
   }
 };
 
