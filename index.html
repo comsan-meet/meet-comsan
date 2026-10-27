@@ -1082,6 +1082,8 @@ label svg, label i {
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/fixes.css" />
 <style>
+  .no-scrollbar::-webkit-scrollbar { display: none !important; }
+  .no-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
   /* Chat: full-screen Instagram-style DM interface (Mobile 2-stage, Desktop 2-column split) */
   #uTab_CHAT, #aTab_CHAT {
     position: fixed !important;
@@ -1188,66 +1190,47 @@ label svg, label i {
   <!-- ========================================================= -->
   <!-- LIVE DASHBOARD CONTAINER (FULLSCREEN DISPLAY / TV / STAGE)-->
   <!-- ========================================================= -->
-  <div id="liveDashboardContainer" class="fixed inset-0 z-[9999] hidden flex-col bg-slate-950 text-white select-none overflow-hidden font-sans">
+  <div id="liveDashboardContainer" class="fixed inset-0 z-[9999] hidden flex-col bg-slate-950 text-white select-none overflow-hidden font-sans no-scrollbar">
     
-    <!-- Top Broadcast Bar -->
-    <header class="h-16 sm:h-20 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-6 sm:px-10 flex items-center justify-between z-30 shrink-0">
-      <!-- Left: Logo & Live Status -->
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white font-black text-sm shadow-md">
-          CS
+    <!-- Top Broadcast Bar (Centered Clock, Clean Power Button, No Logo) -->
+    <header id="liveDashHeader" class="h-20 sm:h-24 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-6 sm:px-10 flex items-center justify-between z-30 shrink-0">
+      <!-- Left spacer for dead-center balance -->
+      <div class="w-12 sm:w-16 shrink-0"></div>
+
+      <!-- Center: Realtime Clock & Date (Prominently Centered) -->
+      <div class="flex-1 flex flex-col items-center justify-center text-center mx-auto">
+        <div class="flex items-baseline justify-center">
+          <span id="liveDashClockTime" class="text-3xl sm:text-5xl font-black tracking-tight text-white font-mono drop-shadow-sm">00:00</span>
+          <span id="liveDashClockSeconds" class="text-lg sm:text-2xl font-bold text-indigo-400 font-mono">:00</span>
         </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="text-xs sm:text-sm font-black tracking-wider uppercase text-white">COMSAN MEETING</span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span> LIVE
-            </span>
-          </div>
-          <span class="text-[10px] sm:text-xs text-slate-400 font-medium hidden sm:inline-block">หน้าจอแสดงผลสดสำหรับห้องประชุมและจอภาพส่วนกลาง</span>
-        </div>
+        <span id="liveDashClockDate" class="text-xs sm:text-sm text-slate-400 font-medium mt-0.5">วันจันทร์ที่ 1 มกราคม 2569</span>
       </div>
 
-      <!-- Center: Realtime Clock & Date -->
-      <div class="flex flex-col items-center">
-        <div class="flex items-baseline">
-          <span id="liveDashClockTime" class="text-2xl sm:text-4xl font-black tracking-tight text-white font-mono drop-shadow-sm">00:00</span>
-          <span id="liveDashClockSeconds" class="text-sm sm:text-lg font-bold text-indigo-400 font-mono">:00</span>
-        </div>
-        <span id="liveDashClockDate" class="text-[10px] sm:text-xs text-slate-400 font-medium">วันจันทร์ที่ 1 มกราคม 2569</span>
-      </div>
-
-      <!-- Right: Controls (Exit Fullscreen & Settings) -->
-      <div class="flex items-center gap-2">
-        <button type="button" onclick="openLiveDashboardSettingsModal()" title="ตั้งค่า Live Dashboard"
-          class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 flex items-center justify-center transition cursor-pointer">
-          <i data-lucide="sliders" class="w-4 h-4"></i>
-        </button>
-        <button type="button" onclick="toggleLiveDashboardFullscreen()" title="สลับเต็มจอ"
-          class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 flex items-center justify-center transition cursor-pointer">
-          <i data-lucide="maximize-2" class="w-4 h-4"></i>
-        </button>
+      <!-- Right: Power / Exit Button only -->
+      <div class="w-12 sm:w-16 flex items-center justify-end shrink-0">
         <button type="button" onclick="closeLiveDashboard()" title="ออกจาก Live Dashboard"
-          class="px-3 sm:px-4 h-9 sm:h-10 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer">
-          <i data-lucide="x" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">ออก</span>
+          class="w-10 h-10 rounded-2xl bg-slate-900/60 hover:bg-rose-600 text-slate-400 hover:text-white border border-slate-800 flex items-center justify-center transition cursor-pointer active:scale-95 shadow-md">
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
     </header>
 
-    <!-- Main Viewport Stage -->
-    <main id="liveDashMainStage" class="flex-1 flex flex-col min-h-0 relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950/40">
+    <!-- Main Viewport Stage (No white scrollbar, overflow hidden) -->
+    <main id="liveDashMainStage" class="flex-1 flex flex-col min-h-0 relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950/40 no-scrollbar">
       <!-- Dynamically filled by renderLiveDashboardStage() -->
     </main>
 
+    <!-- Laser Cursor Tracker (For Apple TV Style Remote Touchpad) -->
+    <div id="liveDashRemoteCursor" class="fixed w-7 h-7 rounded-full bg-rose-500/80 shadow-[0_0_24px_rgba(244,63,94,0.9)] pointer-events-none -translate-x-1/2 -translate-y-1/2 z-50 hidden transition-all duration-75 border-2 border-white/60"></div>
+
     <!-- Overlays -->
     <!-- 1. Raise Hand Overlay (Pop-up banner on top center) -->
-    <div id="liveDashRaiseHandOverlay" class="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-40 hidden max-w-xl w-[90%] transition-all duration-300">
+    <div id="liveDashRaiseHandOverlay" class="fixed top-24 sm:top-28 left-1/2 -translate-x-1/2 z-40 hidden max-w-xl w-[90%] transition-all duration-300">
       <!-- Content populated dynamically -->
     </div>
 
     <!-- 2. Permission Requests Overlay (Pop-up card on top right) -->
-    <div id="liveDashPermissionOverlay" class="fixed top-20 sm:top-24 right-4 sm:right-8 z-40 hidden max-w-md w-[90%] transition-all duration-300">
+    <div id="liveDashPermissionOverlay" class="fixed top-24 sm:top-28 right-4 sm:right-8 z-40 hidden max-w-md w-[90%] transition-all duration-300">
       <!-- Content populated dynamically -->
     </div>
 
@@ -1256,6 +1239,13 @@ label svg, label i {
       <!-- Content populated dynamically -->
     </div>
 
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- APPLE TV STYLE LIVE REMOTE CONTAINER                      -->
+  <!-- ========================================================= -->
+  <div id="liveRemoteContainer" class="fixed inset-0 z-[9999] hidden flex-col bg-black/95 text-white select-none overflow-hidden font-sans items-center justify-center p-3 sm:p-6 backdrop-blur-2xl">
+    <div id="liveRemoteBody" class="w-full flex justify-center"></div>
   </div>
 
   <!-- ========================================================= -->
@@ -1360,6 +1350,22 @@ label svg, label i {
             </button>
           </div>
           <p class="text-[11px] text-muted-foreground">เพียงนำลิงก์นี้ไปเปิดในเบราว์เซอร์ของ Smart TV หรือคอมพิวเตอร์ที่ต่อจอใหญ่ เครื่องนั้นจะทำหน้าที่เป็น Live Dashboard โดยอัตโนมัติ</p>
+        </div>
+
+        <!-- 5. Direct URL for Live Remote Control on Mobile -->
+        <div class="space-y-2 pt-2 border-t border-border/60">
+          <label class="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <i data-lucide="cast" class="w-3.5 h-3.5 text-indigo-500"></i>
+            <span>ลิงก์รีโมตควบคุมสำหรับสมาร์ตโฟน (Apple TV Style Remote)</span>
+          </label>
+          <div class="flex items-center gap-2">
+            <input type="text" id="liveDashRemoteUrlInput" readonly class="flex-1 px-3 py-2 rounded-xl bg-muted border border-border text-xs text-muted-foreground font-mono truncate" />
+            <button type="button" onclick="copyLiveRemoteDirectUrl()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>คัดลอกลิงก์</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-muted-foreground">เปิดลิงก์นี้บนมือถือเพื่อเปลี่ยนมือถือให้เป็นรีโมต Apple TV สั่งการและเลื่อนเคอร์เซอร์บนจอใหญ่แบบไร้สาย</p>
         </div>
 
         <!-- Modal Actions -->
@@ -5670,12 +5676,7 @@ label svg, label i {
                   <i data-lucide="tv" class="w-6 h-6"></i>
                 </div>
                 <div>
-                  <div class="flex items-center gap-2">
-                    <h3 class="text-base sm:text-lg font-black tracking-tight text-white">Live Dashboard (จอแสดงผลสด)</h3>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1">
-                      <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span> จอใหญ่ / TV
-                    </span>
-                  </div>
+                  <h3 class="text-base sm:text-lg font-black tracking-tight text-white">Live Dashboard</h3>
                   <p class="text-xs text-slate-300 mt-0.5">ขยายเต็มจอเพื่อฉายขึ้นโปรเจกเตอร์หรือสมาร์ททีวี แสดงเวลา สถิติ ผลโหวต การสุ่ม และการถ่ายทอดสดอัตโนมัติ</p>
                 </div>
               </div>
@@ -5691,6 +5692,11 @@ label svg, label i {
                   class="px-3.5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-white font-semibold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer active:scale-95">
                   <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i>
                   <span>ตั้งค่า Live Dashboard</span>
+                </button>
+                <!-- REMOTE BUTTON: ICON ONLY! NO TEXT! -->
+                <button type="button" onclick="openLiveRemote()" id="btnOpenLiveRemote"
+                  class="w-10 h-10 rounded-xl bg-slate-800/90 hover:bg-indigo-600 text-slate-300 hover:text-white border border-slate-700 flex items-center justify-center transition cursor-pointer active:scale-95 shadow-xs" title="รีโมตควบคุม Live Dashboard (Apple TV Style)">
+                  <i data-lucide="cast" class="w-4 h-4"></i>
                 </button>
               </div>
             </div>
@@ -7108,7 +7114,7 @@ label svg, label i {
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
   <script src="js/components/calendar.js?v=20261026_01"></script>
   <script src="js/components/projects.js?v=20261027_07"></script>
-  <script src="js/components/liveDashboard.js?v=20261027_01"></script>
+  <script src="js/components/liveDashboard.js?v=20261027_02"></script>
   <script src="js/views/navigation.js?v=20261027_04"></script>
   <script src="js/views/userView.js?v=20261026_02"></script>
   <script src="js/views/adminView.js?v=20261027_02"></script>

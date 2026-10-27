@@ -22,4 +22,25 @@ module.exports = function registerLiveDashboardHandlers(io, socket) {
     stateService.persistAndBroadcast();
     io.emit('liveDashboard:configUpdated', state.liveDashboardConfig);
   });
+
+  // Apple TV Style Live Remote Control Events
+  socket.on('remote:cursorMove', (coords) => {
+    io.emit('liveDashboard:cursorMove', coords);
+  });
+
+  socket.on('remote:cursorHide', () => {
+    io.emit('liveDashboard:cursorHide');
+  });
+
+  socket.on('remote:click', (coords) => {
+    io.emit('liveDashboard:click', coords);
+  });
+
+  socket.on('remote:dpad', (direction) => {
+    io.emit('liveDashboard:dpad', direction);
+  });
+
+  socket.on('remote:action', (actionPayload) => {
+    io.emit('liveDashboard:action', actionPayload);
+  });
 };

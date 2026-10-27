@@ -303,7 +303,9 @@ function closeStreamFullscreen() {
     fsModal.classList.add('hidden');
     fsModal.classList.remove('flex');
   }
-  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  if (fsModal && document.fullscreenElement === fsModal && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  }
 }
 
 function renderStreamSection() {

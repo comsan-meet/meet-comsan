@@ -1312,8 +1312,13 @@ function setupSocketListeners() {
       }
     }
 
-    if (window.isLiveDashboardOpen && typeof window.updateLiveDashboardStreamFrame === 'function') {
-      window.updateLiveDashboardStreamFrame(streamData.frameDataUrl);
+    if (window.isLiveDashboardOpen) {
+      if (!document.getElementById('liveDashStreamViewerImg') && typeof window.renderLiveDashboard === 'function') {
+        window.renderLiveDashboard();
+      }
+      if (typeof window.updateLiveDashboardStreamFrame === 'function') {
+        window.updateLiveDashboardStreamFrame(streamData.frameDataUrl);
+      }
     }
   });
 
@@ -1527,6 +1532,12 @@ window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         if (typeof window.openLiveDashboard === 'function') {
           window.openLiveDashboard();
+        }
+      }, 350);
+    } else if (urlParams.get('remote') === '1' || urlParams.get('liveRemote') === '1') {
+      setTimeout(() => {
+        if (typeof window.openLiveRemote === 'function') {
+          window.openLiveRemote();
         }
       }, 350);
     }
