@@ -1218,6 +1218,31 @@
         break;
       }
 
+      case 'liveDashboard:getRemoteStatus': {
+        const isConn = Boolean(state.liveDashboardConfig?._activeRemoteConnected);
+        result = {
+          connected: isConn,
+          activeRemotes: isConn ? 1 : 0,
+          pairingCode: state.liveDashboardConfig?.pairingCode || '1234'
+        };
+        shouldPersist = false;
+        break;
+      }
+
+      case 'remote:unpair': {
+        if (!state.liveDashboardConfig) state.liveDashboardConfig = {};
+        state.liveDashboardConfig._activeRemoteConnected = false;
+        notify('liveDashboard:remoteDisconnected', { time: Date.now() });
+        notify('liveDashboard:remoteStatusUpdate', {
+          connected: false,
+          activeRemotes: 0,
+          pairingCode: state.liveDashboardConfig?.pairingCode || '1234'
+        });
+        result = { success: true };
+        shouldPersist = false;
+        break;
+      }
+
       case 'remote:verifyPin': {
         const pin = (typeof payload === 'object' && payload !== null) ? payload.pin : payload;
         const correctPin = state.liveDashboardConfig?.pairingCode || '1234';
@@ -1225,9 +1250,11 @@
         const cleanCorrect = String(correctPin).trim();
         const isMatch = Boolean(cleanEntered && cleanEntered === cleanCorrect);
         if (isMatch) {
+          if (!state.liveDashboardConfig) state.liveDashboardConfig = {};
+          state.liveDashboardConfig._activeRemoteConnected = true;
           notify('remote:pinVerified', { success: true, pairingCode: cleanCorrect });
           notify('liveDashboard:remoteConnected', { time: Date.now() });
-          notify('liveDashboard:remoteStatusUpdate', { connected: true, activeRemotes: 1 });
+          notify('liveDashboard:remoteStatusUpdate', { connected: true, activeRemotes: 1, pairingCode: cleanCorrect });
           result = { success: true, pairingCode: cleanCorrect };
         } else {
           notify('remote:pinVerified', { success: false, message: 'รหัสจับคู่ไม่ถูกต้อง' });

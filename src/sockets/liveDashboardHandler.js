@@ -1,7 +1,20 @@
 const stateService = require('../services/stateService');
 
+// Active paired remote sockets tracking across the server
+const activePairedRemotes = new Set();
+
 module.exports = function registerLiveDashboardHandlers(io, socket) {
   const state = stateService.getState();
+
+  // Helper to broadcast current remote connection status
+  const broadcastRemoteStatus = () => {
+    const isConn = activePairedRemotes.size > 0;
+    io.emit('liveDashboard:remoteStatusUpdate', {
+      connected: isConn,
+      activeRemotes: activePairedRemotes.size,
+      pairingCode: state.liveDashboardConfig?.pairingCode
+    });
+  };
 
   // Ensure pairing code exists
   if (!state.liveDashboardConfig) {
@@ -19,6 +32,24 @@ module.exports = function registerLiveDashboardHandlers(io, socket) {
   } else if (!state.liveDashboardConfig.pairingCode) {
     state.liveDashboardConfig.pairingCode = String(Math.floor(1000 + Math.random() * 9000));
   }
+
+  // Send current remote status immediately upon socket connection
+  socket.emit('liveDashboard:remoteStatusUpdate', {
+    connected: activePairedRemotes.size > 0,
+    activeRemotes: activePairedRemotes.size,
+    pairingCode: state.liveDashboardConfig?.pairingCode
+  });
+
+  // Query remote connection status (used by Live Dashboard on TV when opened/reloaded)
+  socket.on('liveDashboard:getRemoteStatus', (callback) => {
+    const status = {
+      connected: activePairedRemotes.size > 0,
+      activeRemotes: activePairedRemotes.size,
+      pairingCode: state.liveDashboardConfig?.pairingCode
+    };
+    if (typeof callback === 'function') callback(status);
+    socket.emit('liveDashboard:remoteStatusUpdate', status);
+  });
 
   // Admin remote configuration for Live Dashboard
   socket.on('admin:updateLiveDashboardConfig', (newConfig) => {
@@ -39,10 +70,16 @@ module.exports = function registerLiveDashboardHandlers(io, socket) {
     const pin = (data && data.pairingCode) ? String(data.pairingCode) : String(Math.floor(1000 + Math.random() * 9000));
     state.liveDashboardConfig.pairingCode = pin;
     stateService.persistAndBroadcast();
+    
+    // Invalidate currently active remotes since PIN changed
+    activePairedRemotes.clear();
+    socket.isPairedRemote = false;
+
     io.emit('liveDashboard:pinUpdated', pin);
     io.emit('liveDashboard:configUpdated', state.liveDashboardConfig);
     console.log(`[LiveDashboard] Pairing PIN updated/regenerated: ${pin}`);
     if (typeof callback === 'function') callback({ success: true, pairingCode: pin });
+    broadcastRemoteStatus();
   });
 
   // Verify Remote PIN from mobile
@@ -52,24 +89,48 @@ module.exports = function registerLiveDashboardHandlers(io, socket) {
     const cleanEntered = String(pin || '').trim();
     const cleanCorrect = String(correctPin).trim();
     const isMatch = Boolean(cleanEntered && cleanEntered === cleanCorrect);
-    console.log(`[LiveDashboard] PIN check: entered='${cleanEntered}', expected='${cleanCorrect}', isMatch=${isMatch}`);
+    console.log(`[LiveDashboard] PIN check: entered='${cleanEntered}', expected='${cleanCorrect}', isMatch=${isMatch}, socket=${socket.id}`);
+    
     if (isMatch) {
       socket.isPairedRemote = true;
+      activePairedRemotes.add(socket.id);
+      console.log(`[LiveDashboard] Paired remote added: ${socket.id}, total active: ${activePairedRemotes.size}`);
       if (typeof callback === 'function') callback({ success: true, pairingCode: cleanCorrect });
       socket.emit('remote:pinVerified', { success: true, pairingCode: cleanCorrect });
       io.emit('liveDashboard:remoteConnected', { time: Date.now(), socketId: socket.id });
-      io.emit('liveDashboard:remoteStatusUpdate', { connected: true, activeRemotes: 1 });
+      broadcastRemoteStatus();
     } else {
+      socket.isPairedRemote = false;
+      activePairedRemotes.delete(socket.id);
       if (typeof callback === 'function') callback({ success: false, message: 'รหัสจับคู่ไม่ถูกต้อง' });
       socket.emit('remote:pinVerified', { success: false, message: 'รหัสจับคู่ไม่ถูกต้อง' });
+      broadcastRemoteStatus();
     }
   });
 
+  // Remote unpairing from mobile
+  socket.on('remote:unpair', () => {
+    if (socket.isPairedRemote || activePairedRemotes.has(socket.id)) {
+      activePairedRemotes.delete(socket.id);
+      socket.isPairedRemote = false;
+      console.log(`[LiveDashboard] Paired remote explicitly unpaired: ${socket.id}, remaining: ${activePairedRemotes.size}`);
+      if (activePairedRemotes.size === 0) {
+        io.emit('liveDashboard:remoteDisconnected', { time: Date.now(), socketId: socket.id });
+      }
+      broadcastRemoteStatus();
+    }
+  });
+
+  // Handle socket disconnection
   socket.on('disconnect', () => {
-    if (socket.isPairedRemote) {
-      console.log(`[LiveDashboard] Paired remote disconnected: ${socket.id}`);
-      io.emit('liveDashboard:remoteDisconnected', { time: Date.now(), socketId: socket.id });
-      io.emit('liveDashboard:remoteStatusUpdate', { connected: false, activeRemotes: 0 });
+    if (socket.isPairedRemote || activePairedRemotes.has(socket.id)) {
+      activePairedRemotes.delete(socket.id);
+      socket.isPairedRemote = false;
+      console.log(`[LiveDashboard] Paired remote disconnected: ${socket.id}, remaining active: ${activePairedRemotes.size}`);
+      if (activePairedRemotes.size === 0) {
+        io.emit('liveDashboard:remoteDisconnected', { time: Date.now(), socketId: socket.id });
+      }
+      broadcastRemoteStatus();
     }
   });
 

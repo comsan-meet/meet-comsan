@@ -9,6 +9,7 @@ window.liveDashWallpaperTimer = null;
 window.liveDashActiveApp = null; // null (Home Dock) | 'VOTE' | 'CHECKIN' | 'RANDOM' | 'FILES' | 'STREAM' | 'SETTINGS'
 window.isLiveControlCenterOpen = false;
 window.isTvRemoteConnected = false;
+window.isRemoteConnectedToTv = false;
 window.liveDashHudTimer = null;
 
 window.liveRemoteMode = (typeof localStorage !== 'undefined' && localStorage.getItem('comsan_remote_mode')) || 'TOUCHPAD'; // 'TOUCHPAD' | 'DPAD'
@@ -51,6 +52,16 @@ function openLiveDashboard() {
   startLiveDashboardClock();
   startWallpaperCycle();
   renderLiveDashboard();
+
+  // Query server immediately for active remote status
+  if (window.socket && typeof window.socket.emit === 'function') {
+    window.socket.emit('liveDashboard:getRemoteStatus', (status) => {
+      if (status) {
+        window.isTvRemoteConnected = Boolean(status.connected);
+        updateTvRemoteStatusUI(window.isTvRemoteConnected);
+      }
+    });
+  }
 
   if (window.lucide && typeof window.lucide.createIcons === 'function') {
     window.lucide.createIcons();
@@ -241,6 +252,49 @@ function regenerateLiveDashboardPin() {
   }
 }
 
+
+
+function updateRemoteHeaderStatusUI(isConnected, pin) {
+  window.isRemoteConnectedToTv = Boolean(isConnected);
+  const activePin = pin || localStorage.getItem('comsan_paired_remote_pin') || window.appState?.liveDashboardConfig?.pairingCode || '';
+  const dot = document.getElementById('liveRemoteHeaderStatusDot');
+  const text = document.getElementById('liveRemoteHeaderStatusText');
+  const pill = document.getElementById('liveRemoteHeaderStatusPill');
+
+  if (dot) {
+    dot.className = isConnected ? 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse' : 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+  }
+  if (text) {
+    text.textContent = isConnected ? `TV Connected (${activePin})` : `รอการเชื่อมต่อ TV (${activePin})`;
+    text.className = isConnected ? 'text-emerald-300 font-bold' : 'text-amber-300 font-bold';
+  }
+  if (pill) {
+    pill.className = isConnected
+      ? 'px-3 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-1.5 shadow-inner'
+      : 'px-3 py-1.5 rounded-full bg-amber-950/40 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-1.5 shadow-inner';
+  }
+}
+
+function autoSyncRemoteWithServer() {
+  const savedPin = typeof localStorage !== 'undefined' ? localStorage.getItem('comsan_paired_remote_pin') : null;
+  if (!savedPin) return;
+
+  if (window.socket && typeof window.socket.emit === 'function') {
+    window.socket.emit('remote:verifyPin', { pin: savedPin }, (res) => {
+      if (res && res.success) {
+        window.isRemoteConnectedToTv = true;
+        updateRemoteHeaderStatusUI(true, savedPin);
+      } else {
+        window.isRemoteConnectedToTv = false;
+        try { localStorage.removeItem('comsan_paired_remote_pin'); } catch (e) {}
+        checkAndRenderRemoteUI();
+        if (typeof showToast === 'function') {
+          showToast('รหัส PIN เปลี่ยนแปลง กรุณาป้อนรหัส 4 หลักใหม่', 'warning');
+        }
+      }
+    });
+  }
+}
 
 function updateTvRemoteStatusUI(isConnected) {
   window.isTvRemoteConnected = Boolean(isConnected);
@@ -1031,6 +1085,7 @@ function openLiveRemote() {
   } catch (e) {}
 
   checkAndRenderRemoteUI();
+  autoSyncRemoteWithServer();
 }
 
 function closeLiveRemote() {
@@ -1062,6 +1117,7 @@ function checkAndRenderRemoteUI() {
 
   if (isRemotePaired()) {
     renderPairedAppleTvRemote(body);
+    autoSyncRemoteWithServer();
   } else {
     renderRemotePinEntry(body);
   }
@@ -1191,8 +1247,13 @@ function unpairRemote() {
   try {
     localStorage.removeItem('comsan_paired_remote_pin');
   } catch (e) {}
+  window.isRemoteConnectedToTv = false;
+  if (window.socket && typeof window.socket.emit === 'function') {
+    window.socket.emit('remote:unpair');
+  }
   window.liveRemoteEnteredPin = '';
   checkAndRenderRemoteUI();
+  if (typeof showToast === 'function') showToast('ยกเลิกการจับคู่รีโมตเรียบร้อยแล้ว', 'info');
 }
 
 /**
@@ -1211,10 +1272,10 @@ function renderPairedAppleTvRemote(container) {
           <i data-lucide="unlink" class="w-4 h-4"></i>
         </button>
 
-        <div class="px-3 py-1.5 rounded-full bg-zinc-800/90 border border-zinc-700/80 text-white font-bold text-xs flex items-center gap-1.5 shadow-inner">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <i data-lucide="tv" class="w-3.5 h-3.5 text-indigo-400"></i>
-          <span>TV Connected (${pin})</span>
+        <div id="liveRemoteHeaderStatusPill" class="px-3 py-1.5 rounded-full ${window.isRemoteConnectedToTv ? 'bg-emerald-950/40 border border-emerald-500/40 text-emerald-300' : 'bg-amber-950/40 border border-amber-500/40 text-amber-300'} font-bold text-xs flex items-center gap-1.5 shadow-inner">
+          <span id="liveRemoteHeaderStatusDot" class="w-2 h-2 rounded-full ${window.isRemoteConnectedToTv ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400 animate-pulse'}"></span>
+          <i data-lucide="tv" class="w-3.5 h-3.5 ${window.isRemoteConnectedToTv ? 'text-emerald-400' : 'text-amber-400'}"></i>
+          <span id="liveRemoteHeaderStatusText">${window.isRemoteConnectedToTv ? `TV Connected (${pin})` : `รอการเชื่อมต่อ TV (${pin})`}</span>
         </div>
 
         <button type="button" onclick="closeLiveRemote()" class="w-10 h-10 rounded-full bg-zinc-800 hover:bg-rose-600 text-zinc-300 hover:text-white active:scale-95 flex items-center justify-center transition shadow-md cursor-pointer" title="ปิดรีโมต">
@@ -1442,26 +1503,59 @@ function initLiveRemoteReceivers() {
   if (window._liveRemoteReceiversBound) return;
   window._liveRemoteReceiversBound = true;
 
-  // 1. PIN Verified & Connected
-  window.socket.on('liveDashboard:remoteConnected', () => {
-    updateTvRemoteStatusUI(true);
-    if (!window.isLiveDashboardOpen) return;
-    showTvHudNotification('Apple TV Remote เชื่อมต่อแล้ว');
-    if (typeof showToast === 'function') {
-      showToast('📱 รีโมตเชื่อมต่อสำเร็จแล้ว!', 'success');
+  // 1. Remote Status Updates
+  window.socket.on('liveDashboard:remoteStatusUpdate', (payload) => {
+    const isConn = Boolean(payload && payload.connected);
+    window.isTvRemoteConnected = isConn;
+    updateTvRemoteStatusUI(isConn);
+    if (window.isLiveRemoteOpen) {
+      window.isRemoteConnectedToTv = isConn;
+      updateRemoteHeaderStatusUI(isConn, payload?.pairingCode);
     }
   });
 
+  // PIN Verified & Connected
+  window.socket.on('liveDashboard:remoteConnected', () => {
+    window.isTvRemoteConnected = true;
+    updateTvRemoteStatusUI(true);
+    if (window.isLiveDashboardOpen) {
+      showTvHudNotification('Apple TV Remote เชื่อมต่อแล้ว');
+      if (typeof showToast === 'function') {
+        showToast('📱 รีโมตเชื่อมต่อสำเร็จแล้ว!', 'success');
+      }
+    }
+    if (window.isLiveRemoteOpen) {
+      window.isRemoteConnectedToTv = true;
+      updateRemoteHeaderStatusUI(true);
+    }
+  });
+
+  // Remote Disconnected
   window.socket.on('liveDashboard:remoteDisconnected', () => {
+    window.isTvRemoteConnected = false;
     updateTvRemoteStatusUI(false);
     if (window.isLiveDashboardOpen) {
       showTvHudNotification('Apple TV Remote ตัดการเชื่อมต่อ', 'alert-circle');
     }
+    if (window.isLiveRemoteOpen) {
+      window.isRemoteConnectedToTv = false;
+      updateRemoteHeaderStatusUI(false);
+    }
   });
 
-  window.socket.on('liveDashboard:remoteStatusUpdate', (payload) => {
-    const isConn = Boolean(payload && payload.connected);
-    updateTvRemoteStatusUI(isConn);
+  // Socket Reconnection Handshake
+  window.socket.on('connect', () => {
+    if (window.isLiveDashboardOpen && window.socket) {
+      window.socket.emit('liveDashboard:getRemoteStatus', (status) => {
+        if (status) {
+          window.isTvRemoteConnected = Boolean(status.connected);
+          updateTvRemoteStatusUI(window.isTvRemoteConnected);
+        }
+      });
+    }
+    if (window.isLiveRemoteOpen) {
+      autoSyncRemoteWithServer();
+    }
   });
 
   // PIN Updated broadcast
@@ -1490,9 +1584,16 @@ function initLiveRemoteReceivers() {
 
   // Remote PIN Verified response
   window.socket.on('remote:pinVerified', (res) => {
-    if (res && res.success && !isRemotePaired()) {
-      handlePinVerifyResult(true, res.pairingCode);
+    if (res && res.success) {
+      window.isRemoteConnectedToTv = true;
+      if (!isRemotePaired()) {
+        handlePinVerifyResult(true, res.pairingCode);
+      } else {
+        updateRemoteHeaderStatusUI(true, res.pairingCode);
+      }
     } else if (res && !res.success) {
+      window.isRemoteConnectedToTv = false;
+      try { localStorage.removeItem('comsan_paired_remote_pin'); } catch (e) {}
       handlePinVerifyResult(false);
     }
   });
@@ -1786,6 +1887,8 @@ window.triggerAdminSpinFromTv = triggerAdminSpinFromTv;
 window.sendRemoteOpenApp = sendRemoteOpenApp;
 window.updateTvRemoteStatusUI = updateTvRemoteStatusUI;
 window.showTvHudNotification = showTvHudNotification;
+window.autoSyncRemoteWithServer = autoSyncRemoteWithServer;
+window.updateRemoteHeaderStatusUI = updateRemoteHeaderStatusUI;
 
 window.openLiveRemote = openLiveRemote;
 window.closeLiveRemote = closeLiveRemote;

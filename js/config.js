@@ -244,6 +244,13 @@ class UnifiedSocketHub {
       }
     }
 
+    // Reserved socket.io events not handled by onAny
+    ['connect', 'disconnect', 'connect_error', 'reconnect'].forEach(resEvent => {
+      if (this.engine && typeof this.engine.on === 'function') {
+        this.engine.on(resEvent, (...args) => this.trigger(resEvent, ...args));
+      }
+    });
+
     console.info(`[SocketHub] Engine switched to: ${newEngine.constructor ? newEngine.constructor.name : 'CustomEngine'}`);
   }
 
@@ -257,8 +264,15 @@ class UnifiedSocketHub {
       arr.push(callback);
     }
 
-    // Also register on current engine if it doesn't support onAny
-    if (this.engine && typeof this.engine.on === 'function' && typeof this.engine.onAny !== 'function') {
+    // If registering for 'connect' and engine is already connected, trigger callback immediately
+    if (event === 'connect' && this.connected) {
+      setTimeout(() => {
+        try { callback(); } catch (e) {}
+      }, 0);
+    }
+
+    // Also register on current engine
+    if (this.engine && typeof this.engine.on === 'function') {
       if (!this._registeredEvents) this._registeredEvents = new Set();
       if (!this._registeredEvents.has(event)) {
         this._registeredEvents.add(event);
@@ -277,12 +291,12 @@ class UnifiedSocketHub {
     }
   }
 
-  trigger(event, payload) {
+  trigger(event, ...args) {
     const handlers = this.listeners.get(event);
     if (Array.isArray(handlers)) {
       handlers.forEach(fn => {
         try {
-          fn(payload);
+          fn(...args);
         } catch (e) {
           console.error(`[SocketHub] Error in handler for '${event}':`, e);
         }
