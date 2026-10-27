@@ -449,12 +449,6 @@ function finishRandomSpin(winnerLabel) {
 }
 
 function closeRandomPopup() {
-  if (window.socket && typeof window.socket.emit === 'function') {
-    window.socket.emit('admin:closeRandomPopup');
-  }
-  if (typeof window.closeLiveRandomPopup === 'function') {
-    window.closeLiveRandomPopup();
-  }
   if (window._spinTimers && Array.isArray(window._spinTimers)) {
     window._spinTimers.forEach(t => clearTimeout(t));
   }

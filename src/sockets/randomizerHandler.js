@@ -14,18 +14,9 @@ module.exports = function registerRandomizerHandlers(io, socket) {
     };
     if (!state.randomizer) state.randomizer = { lastWinner: null, history: [] };
     state.randomizer.lastWinner = record;
-    state.randomizer.activePopup = true;
     state.randomizer.history.unshift(record);
     state.randomizer.history = state.randomizer.history.slice(0, 15);
     stateService.persistAndBroadcast();
     io.emit('random:spin', spinPayload);
-  });
-
-  socket.on('admin:closeRandomPopup', () => {
-    if (state.randomizer) {
-      state.randomizer.activePopup = false;
-    }
-    stateService.persistAndBroadcast();
-    io.emit('random:closePopup');
   });
 };

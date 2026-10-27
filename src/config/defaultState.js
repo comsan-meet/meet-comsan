@@ -236,17 +236,6 @@ const defaultState = {
         desc: 'เปลี่ยนอีเมลติดต่อเป็น comsan.meeting@gmail.com หรือติดต่อพี่แมทธิว'
       }
     ]
-  },
-  liveDashboardConfig: {
-    concurrencyMode: 'BOTH', // 'BOTH' | 'STREAM' | 'VOTE'
-    showRaiseHandPopup: true,
-    showPermissionPopup: true,
-    showRandomizerPopup: true,
-    theme: 'DARK',
-    clockFormat: '24H',
-    wallpaperMode: 'BUBBLES', // 'BUBBLES' | 'NATURE' | 'CUSTOM'
-    customWallpaperUrl: '',
-    pairingCode: '8429'
   }
 };
 

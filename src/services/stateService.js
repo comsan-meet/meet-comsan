@@ -54,18 +54,6 @@ class StateService {
         parsed.versionNotes = parsed.versionNotes || defaultState.versionNotes;
         parsed.lastMeetingSummary = parsed.lastMeetingSummary || null;
         parsed.meetingHistory = Array.isArray(parsed.meetingHistory) ? parsed.meetingHistory : [];
-        parsed.liveDashboardConfig = {
-          concurrencyMode: 'BOTH',
-          showRaiseHandPopup: true,
-          showPermissionPopup: true,
-          showRandomizerPopup: true,
-          theme: 'DARK',
-          clockFormat: '24H',
-          wallpaperMode: 'BUBBLES',
-          customWallpaperUrl: '',
-          pairingCode: String(Math.floor(1000 + Math.random() * 9000)),
-          ...(parsed.liveDashboardConfig || {})
-        };
         parsed.calendarEvents = Array.isArray(parsed.calendarEvents)
           ? parsed.calendarEvents
           : (defaultState.calendarEvents || []);

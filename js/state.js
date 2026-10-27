@@ -159,17 +159,6 @@ const defaultState = {
   chatLogs: [],
   randomizer: { lastWinner: null, history: [] },
   activeStream: null,
-  liveDashboardConfig: {
-    concurrencyMode: 'BOTH',
-    showRaiseHandPopup: true,
-    showPermissionPopup: true,
-    showRandomizerPopup: true,
-    theme: 'DARK',
-    clockFormat: '24H',
-    wallpaperMode: 'BUBBLES',
-    customWallpaperUrl: '',
-    pairingCode: '8429'
-  },
   lastMeetingSummary: null,
   meetingHistory: [],
   calendarEvents: [],
@@ -295,18 +284,6 @@ function normalizeState(raw) {
       };
     })(),
     activeStream: raw.activeStream || null,
-    liveDashboardConfig: {
-      concurrencyMode: 'BOTH',
-      showRaiseHandPopup: true,
-      showPermissionPopup: true,
-      showRandomizerPopup: true,
-      theme: 'DARK',
-      clockFormat: '24H',
-      wallpaperMode: 'BUBBLES',
-      customWallpaperUrl: '',
-      pairingCode: '8429',
-      ...(raw.liveDashboardConfig || {})
-    },
     lastMeetingSummary: raw.lastMeetingSummary || null,
     meetingHistory: Array.isArray(raw.meetingHistory) ? raw.meetingHistory : [],
     calendarEvents: Array.isArray(raw.calendarEvents) ? raw.calendarEvents : (defaultState.calendarEvents || []),
