@@ -1538,9 +1538,10 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       }, 350);
     } else if (urlParams.get('remote') === '1' || urlParams.get('liveRemote') === '1') {
+      const pairPin = urlParams.get('pair') || urlParams.get('pin') || '';
       setTimeout(() => {
         if (typeof window.openLiveRemote === 'function') {
-          window.openLiveRemote();
+          window.openLiveRemote(pairPin);
         }
       }, 350);
     }

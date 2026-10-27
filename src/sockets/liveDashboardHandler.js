@@ -1,7 +1,17 @@
 const stateService = require('../services/stateService');
+const { getLocalIpAddresses } = require('../utils/network');
+const config = require('../config/app.config');
 
 // Active paired remote sockets tracking across the server
 const activePairedRemotes = new Set();
+
+function getLanInfo(pairingCode) {
+  const lanIps = getLocalIpAddresses();
+  const primaryIp = lanIps[0] || 'localhost';
+  const lanBaseUrl = `http://${primaryIp}:${config.PORT}`;
+  const pairingUrl = `${lanBaseUrl}/?remote=1&pair=${pairingCode || ''}`;
+  return { lanIp: primaryIp, port: config.PORT, lanBaseUrl, pairingUrl };
+}
 
 module.exports = function registerLiveDashboardHandlers(io, socket) {
   const state = stateService.getState();
@@ -9,10 +19,12 @@ module.exports = function registerLiveDashboardHandlers(io, socket) {
   // Helper to broadcast current remote connection status
   const broadcastRemoteStatus = () => {
     const isConn = activePairedRemotes.size > 0;
+    const lanInfo = getLanInfo(state.liveDashboardConfig?.pairingCode);
     io.emit('liveDashboard:remoteStatusUpdate', {
       connected: isConn,
       activeRemotes: activePairedRemotes.size,
-      pairingCode: state.liveDashboardConfig?.pairingCode
+      pairingCode: state.liveDashboardConfig?.pairingCode,
+      ...lanInfo
     });
   };
 
@@ -34,18 +46,33 @@ module.exports = function registerLiveDashboardHandlers(io, socket) {
   }
 
   // Send current remote status immediately upon socket connection
+  const initialLanInfo = getLanInfo(state.liveDashboardConfig?.pairingCode);
   socket.emit('liveDashboard:remoteStatusUpdate', {
     connected: activePairedRemotes.size > 0,
     activeRemotes: activePairedRemotes.size,
-    pairingCode: state.liveDashboardConfig?.pairingCode
+    pairingCode: state.liveDashboardConfig?.pairingCode,
+    ...initialLanInfo
+  });
+
+  // Register active TV PIN (guarantees server knows the exact PIN displayed on TV screen)
+  socket.on('liveDashboard:registerTv', (data) => {
+    const pin = (data && data.pairingCode) ? String(data.pairingCode).trim() : (typeof data === 'string' ? data.trim() : null);
+    if (pin && pin.length >= 4) {
+      state.liveDashboardConfig.pairingCode = pin;
+      stateService.scheduleSave();
+      console.log(`[LiveDashboard] Registered TV PIN on server: ${pin}`);
+      broadcastRemoteStatus();
+    }
   });
 
   // Query remote connection status (used by Live Dashboard on TV when opened/reloaded)
   socket.on('liveDashboard:getRemoteStatus', (callback) => {
+    const lanInfo = getLanInfo(state.liveDashboardConfig?.pairingCode);
     const status = {
       connected: activePairedRemotes.size > 0,
       activeRemotes: activePairedRemotes.size,
-      pairingCode: state.liveDashboardConfig?.pairingCode
+      pairingCode: state.liveDashboardConfig?.pairingCode,
+      ...lanInfo
     };
     if (typeof callback === 'function') callback(status);
     socket.emit('liveDashboard:remoteStatusUpdate', status);

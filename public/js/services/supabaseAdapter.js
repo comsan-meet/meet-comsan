@@ -413,7 +413,22 @@
         'file:delete',
         'stream:frameUpdate',
         'stream:stopped',
-        'stream:forceStop'
+        'stream:forceStop',
+        'liveDashboard:remoteConnected',
+        'liveDashboard:remoteDisconnected',
+        'liveDashboard:remoteStatusUpdate',
+        'liveDashboard:pinUpdated',
+        'liveDashboard:configUpdated',
+        'liveDashboard:dpad',
+        'liveDashboard:cursorMove',
+        'liveDashboard:cursorHide',
+        'liveDashboard:click',
+        'liveDashboard:action',
+        'liveDashboard:openApp',
+        'liveDashboard:closeApp',
+        'liveDashboard:registerTv',
+        'remote:verifyPin',
+        'remote:pinVerified'
       ];
 
       broadcastEvents.forEach(evt => {

@@ -9,6 +9,7 @@ window.liveDashWallpaperTimer = null;
 window.liveDashActiveApp = null; // null (Home Dock) | 'VOTE' | 'CHECKIN' | 'RANDOM' | 'FILES' | 'STREAM' | 'SETTINGS'
 window.isLiveControlCenterOpen = false;
 window.isTvRemoteConnected = false;
+window.liveDashLanBaseUrl = "";
 window.isRemoteConnectedToTv = false;
 window.liveDashHudTimer = null;
 
@@ -53,12 +54,22 @@ function openLiveDashboard() {
   startWallpaperCycle();
   renderLiveDashboard();
 
-  // Query server immediately for active remote status
+  // Fetch LAN Server info and query remote status
+  fetchServerInfoIfNeeded().then(() => {
+    renderTvRemoteQrCode('liveDashDrawerQrBox', 130);
+  });
+
   if (window.socket && typeof window.socket.emit === 'function') {
+    const curPin = window.appState?.liveDashboardConfig?.pairingCode;
+    if (curPin) {
+      window.socket.emit('liveDashboard:registerTv', { pairingCode: curPin });
+    }
     window.socket.emit('liveDashboard:getRemoteStatus', (status) => {
       if (status) {
+        if (status.lanBaseUrl) window.liveDashLanBaseUrl = status.lanBaseUrl;
         window.isTvRemoteConnected = Boolean(status.connected);
         updateTvRemoteStatusUI(window.isTvRemoteConnected);
+        renderTvRemoteQrCode('liveDashDrawerQrBox', 130);
       }
     });
   }
@@ -279,18 +290,28 @@ function autoSyncRemoteWithServer() {
   const savedPin = typeof localStorage !== 'undefined' ? localStorage.getItem('comsan_paired_remote_pin') : null;
   if (!savedPin) return;
 
+  const currentPin = window.appState?.liveDashboardConfig?.pairingCode;
+  if (currentPin && String(currentPin).trim() === String(savedPin).trim()) {
+    window.isRemoteConnectedToTv = true;
+    updateRemoteHeaderStatusUI(true, savedPin);
+  }
+
+  fetch('/api/remote-pair', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: savedPin })
+  }).then(r => r.json()).then(res => {
+    if (res && res.success) {
+      window.isRemoteConnectedToTv = true;
+      updateRemoteHeaderStatusUI(true, savedPin);
+    }
+  }).catch(() => {});
+
   if (window.socket && typeof window.socket.emit === 'function') {
     window.socket.emit('remote:verifyPin', { pin: savedPin }, (res) => {
       if (res && res.success) {
         window.isRemoteConnectedToTv = true;
         updateRemoteHeaderStatusUI(true, savedPin);
-      } else {
-        window.isRemoteConnectedToTv = false;
-        try { localStorage.removeItem('comsan_paired_remote_pin'); } catch (e) {}
-        checkAndRenderRemoteUI();
-        if (typeof showToast === 'function') {
-          showToast('รหัส PIN เปลี่ยนแปลง กรุณาป้อนรหัส 4 หลักใหม่', 'warning');
-        }
       }
     });
   }
@@ -378,6 +399,107 @@ function sendRemoteOpenApp(appId) {
   if (typeof showToast === 'function') {
     const names = { VOTE: 'การลงมติ', CHECKIN: 'เช็คชื่อ QR', RANDOM: 'สุ่มหรรษา', FILES: 'คลังเอกสาร', STREAM: 'ถ่ายทอดสด' };
     showToast(`สั่งเปิดแอป: ${names[appId] || appId}`, 'info');
+  }
+}
+
+
+// =========================================================================
+// 2.5 QR CODE PAIRING & SERVER INFO
+// =========================================================================
+
+async function fetchServerInfoIfNeeded() {
+  if (window.liveDashLanBaseUrl) return window.liveDashLanBaseUrl;
+  try {
+    const res = await fetch('/api/server-info');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.lanUrl) {
+        window.liveDashLanBaseUrl = data.lanUrl;
+        return data.lanUrl;
+      }
+    }
+  } catch (e) {}
+  return window.location.origin;
+}
+
+function getLiveRemotePairingUrl() {
+  const pin = window.appState?.liveDashboardConfig?.pairingCode || '1234';
+  const base = window.liveDashLanBaseUrl || (window.location.hostname === 'localhost' ? '' : window.location.origin);
+  const targetBase = base || window.location.origin;
+  return `${targetBase}/?remote=1&pair=${pin}`;
+}
+
+function renderTvRemoteQrCode(targetElementId, size = 180) {
+  const container = document.getElementById(targetElementId);
+  if (!container) return;
+  container.innerHTML = '';
+
+  const qrUrl = getLiveRemotePairingUrl();
+
+  if (typeof QRCode !== 'undefined') {
+    try {
+      new QRCode(container, {
+        text: qrUrl,
+        width: size,
+        height: size,
+        colorDark: '#0f172a',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      return;
+    } catch (e) {
+      console.warn('QRCode JS error, falling back to image service:', e);
+    }
+  }
+
+  // Fallback to image service
+  const img = document.createElement('img');
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(qrUrl)}`;
+  img.className = 'rounded-xl mx-auto shadow-md';
+  img.alt = 'Remote Pairing QR Code';
+  container.appendChild(img);
+}
+
+async function openLiveDashboardQrModal() {
+  const modal = document.getElementById('liveDashQrPairingModal');
+  if (!modal) return;
+
+  await fetchServerInfoIfNeeded();
+
+  const pin = window.appState?.liveDashboardConfig?.pairingCode || '1234';
+  if (window.socket && typeof window.socket.emit === 'function') {
+    window.socket.emit('liveDashboard:registerTv', { pairingCode: pin });
+  }
+  const qrUrl = getLiveRemotePairingUrl();
+
+  const pinEl = document.getElementById('liveDashModalQrPin');
+  if (pinEl) pinEl.textContent = pin;
+
+  const urlEl = document.getElementById('liveDashModalQrUrlText');
+  if (urlEl) urlEl.textContent = qrUrl;
+
+  const statusEl = document.getElementById('liveDashModalQrStatus');
+  if (statusEl) {
+    statusEl.className = 'inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold shadow-inner';
+    statusEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span><span>กำลังรอการสแกนจากมือถือ...</span>';
+  }
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // Render QR in modal
+  renderTvRemoteQrCode('liveDashModalQrBox', 200);
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+function closeLiveDashboardQrModal() {
+  const modal = document.getElementById('liveDashQrPairingModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
   }
 }
 
@@ -1030,8 +1152,7 @@ function copyLiveDashboardDirectUrl() {
 }
 
 function copyLiveRemoteDirectUrl() {
-  const urlBox = document.getElementById('liveDashRemoteUrlInput');
-  const url = urlBox ? urlBox.value : `${window.location.origin}${window.location.pathname}?remote=1`;
+  const url = getLiveRemotePairingUrl();
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url).then(() => {
@@ -1068,7 +1189,7 @@ function fallbackCopyText(text) {
 // 6. APPLE TV REMOTE & PAIRING PIN VERIFICATION
 // =========================================================================
 
-function openLiveRemote() {
+function openLiveRemote(paramPin) {
   initLiveRemoteReceivers();
   const container = document.getElementById('liveRemoteContainer');
   if (!container) return;
@@ -1083,6 +1204,30 @@ function openLiveRemote() {
     else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
     else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
   } catch (e) {}
+
+  // Check if PIN was passed directly from QR scan URL
+  const queryPin = (typeof URLSearchParams !== 'undefined')
+    ? (new URLSearchParams(window.location.search).get('pair') || new URLSearchParams(window.location.search).get('pin'))
+    : null;
+  const directPin = paramPin || queryPin;
+
+  if (directPin) {
+    const cleanPin = String(directPin).trim();
+    localStorage.setItem('comsan_paired_remote_pin', cleanPin);
+    window.liveRemoteEnteredPin = cleanPin;
+
+    // Fast HTTP bridge pair
+    fetch('/api/remote-pair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: cleanPin })
+    }).then(r => r.json()).then(res => {
+      if (res && res.success) {
+        window.isRemoteConnectedToTv = true;
+        updateRemoteHeaderStatusUI(true, cleanPin);
+      }
+    }).catch(() => {});
+  }
 
   checkAndRenderRemoteUI();
   autoSyncRemoteWithServer();
@@ -1106,8 +1251,9 @@ function closeLiveRemote() {
 
 function isRemotePaired() {
   const savedPin = typeof localStorage !== 'undefined' ? localStorage.getItem('comsan_paired_remote_pin') : null;
+  if (!savedPin) return false;
   const currentPin = window.appState?.liveDashboardConfig?.pairingCode;
-  return Boolean(savedPin && (!currentPin || savedPin === currentPin));
+  return Boolean(!currentPin || String(savedPin).trim() === String(currentPin).trim());
 }
 
 function checkAndRenderRemoteUI() {
@@ -1505,6 +1651,9 @@ function initLiveRemoteReceivers() {
 
   // 1. Remote Status Updates
   window.socket.on('liveDashboard:remoteStatusUpdate', (payload) => {
+    if (payload && payload.lanBaseUrl) {
+      window.liveDashLanBaseUrl = payload.lanBaseUrl;
+    }
     const isConn = Boolean(payload && payload.connected);
     window.isTvRemoteConnected = isConn;
     updateTvRemoteStatusUI(isConn);
@@ -1523,6 +1672,14 @@ function initLiveRemoteReceivers() {
       if (typeof showToast === 'function') {
         showToast('📱 รีโมตเชื่อมต่อสำเร็จแล้ว!', 'success');
       }
+
+      // If QR Modal is open on TV, celebrate and smoothly close it!
+      const statusEl = document.getElementById('liveDashModalQrStatus');
+      if (statusEl) {
+        statusEl.className = 'inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold shadow-inner';
+        statusEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span><span>✅ เชื่อมต่อ Apple TV Remote สำเร็จแล้ว!</span>';
+      }
+      setTimeout(closeLiveDashboardQrModal, 1200);
     }
     if (window.isLiveRemoteOpen) {
       window.isRemoteConnectedToTv = true;
@@ -1599,22 +1756,36 @@ function initLiveRemoteReceivers() {
   });
 
   // Remote Open/Close App
-  window.socket.on('liveDashboard:openApp', (appId) => {
+  let lastOpenAppTime = 0;
+  let lastOpenAppId = null;
+  const handleOpenApp = (appId) => {
+    const now = Date.now();
+    if (appId === lastOpenAppId && now - lastOpenAppTime < 350) return;
+    lastOpenAppTime = now;
+    lastOpenAppId = appId;
+
     if (window.isLiveDashboardOpen) {
       window.liveDashActiveApp = appId;
       renderLiveDashboard();
     }
-  });
+  };
+  window.socket.on('liveDashboard:openApp', handleOpenApp);
 
-  window.socket.on('liveDashboard:closeApp', () => {
+  let lastCloseAppTime = 0;
+  const handleCloseApp = () => {
+    const now = Date.now();
+    if (now - lastCloseAppTime < 350) return;
+    lastCloseAppTime = now;
+
     if (window.isLiveDashboardOpen) {
       window.liveDashActiveApp = null;
       renderLiveDashboard();
     }
-  });
+  };
+  window.socket.on('liveDashboard:closeApp', handleCloseApp);
 
   // 2. Cursor Movement
-  window.socket.on('liveDashboard:cursorMove', (coords) => {
+  const handleCursorMove = (coords) => {
     if (!window.isLiveDashboardOpen || !coords) return;
     const cursor = document.getElementById('liveDashRemoteCursor');
     if (!cursor) return;
@@ -1627,10 +1798,16 @@ function initLiveRemoteReceivers() {
     window.liveDashCursorHideTimer = setTimeout(() => {
       cursor.classList.add('hidden');
     }, 3000);
-  });
+  };
+  window.socket.on('liveDashboard:cursorMove', handleCursorMove);
 
   // 3. Cursor Click
-  window.socket.on('liveDashboard:click', () => {
+  let lastClickTime = 0;
+  const handleClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime < 350) return;
+    lastClickTime = now;
+
     if (!window.isLiveDashboardOpen) return;
     const cursor = document.getElementById('liveDashRemoteCursor');
     if (cursor) {
@@ -1647,11 +1824,20 @@ function initLiveRemoteReceivers() {
         }
       }
     }
-  });
+  };
+  window.socket.on('liveDashboard:click', handleClick);
 
-  // 4. D-Pad Navigation between tvOS Apps & Views
-  window.socket.on('liveDashboard:dpad', (direction) => {
+  // 4. D-Pad Navigation between tvOS Apps & Views (Filtered against cross-network echo)
+  let lastDpadTime = 0;
+  let lastDpadDir = null;
+  const handleDpad = (direction) => {
     if (!window.isLiveDashboardOpen) return;
+    const now = Date.now();
+    if (direction === lastDpadDir && now - lastDpadTime < 350) {
+      return; // Ignore duplicate delivery across dual network hubs
+    }
+    lastDpadTime = now;
+    lastDpadDir = direction;
 
     const apps = window.liveDashDockApps || [];
     let cur = window.liveDashFocusedAppIndex || 0;
@@ -1712,12 +1898,21 @@ function initLiveRemoteReceivers() {
 
     window.liveDashFocusedAppIndex = cur;
     updateDockFocusUI();
-  });
+  };
+  window.socket.on('liveDashboard:dpad', handleDpad);
 
-  // 5. Remote Action
-  window.socket.on('liveDashboard:action', (payload) => {
+  // 5. Remote Action (Filtered against cross-network echo)
+  let lastActionTime = 0;
+  let lastActionAct = null;
+  const handleAction = (payload) => {
     if (!window.isLiveDashboardOpen || !payload) return;
-    const act = payload.action;
+    const act = (typeof payload === 'object' && payload !== null) ? payload.action : payload;
+    const now = Date.now();
+    if (act === lastActionAct && now - lastActionTime < 350) {
+      return; // Ignore duplicate cross-network echo
+    }
+    lastActionTime = now;
+    lastActionAct = act;
 
     if (act === 'BACK') {
       if (window.isLiveControlCenterOpen) {
@@ -1735,7 +1930,8 @@ function initLiveRemoteReceivers() {
         triggerAdminSpinFromTv();
       }
     }
-  });
+  };
+  window.socket.on('liveDashboard:action', handleAction);
 }
 
 function updateDockFocusUI() {
@@ -1890,6 +2086,10 @@ window.showTvHudNotification = showTvHudNotification;
 window.autoSyncRemoteWithServer = autoSyncRemoteWithServer;
 window.updateRemoteHeaderStatusUI = updateRemoteHeaderStatusUI;
 
+window.openLiveDashboardQrModal = openLiveDashboardQrModal;
+window.closeLiveDashboardQrModal = closeLiveDashboardQrModal;
+window.renderTvRemoteQrCode = renderTvRemoteQrCode;
+window.getLiveRemotePairingUrl = getLiveRemotePairingUrl;
 window.openLiveRemote = openLiveRemote;
 window.closeLiveRemote = closeLiveRemote;
 window.setLiveRemoteMode = setLiveRemoteMode;

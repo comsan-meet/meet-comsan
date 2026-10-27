@@ -1264,11 +1264,15 @@ label svg, label i {
           <span class="text-[10px] text-white/50 block">Apple tvOS Experience</span>
         </div>
         <!-- Dynamic Remote Status Indicator on TV -->
-        <div id="liveDashRemoteStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-xl text-xs font-bold transition-all duration-300 shadow-sm">
+        <button type="button" onclick="openLiveDashboardQrModal()" id="liveDashRemoteStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 backdrop-blur-xl text-xs font-bold transition-all duration-300 shadow-sm cursor-pointer active:scale-95" title="กดเพื่อเปิด QR Code สแกนเชื่อมต่อด้วยมือถือ">
           <span id="liveDashRemoteStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
           <i data-lucide="smartphone" class="w-3.5 h-3.5 text-white/80"></i>
           <span id="liveDashRemoteStatusText" class="text-white/80 text-[11px] sm:text-xs">รอเชื่อมต่อรีโมต</span>
-        </div>
+          <span class="text-[10px] text-indigo-300 bg-indigo-500/25 px-1.5 py-0.5 rounded-md border border-indigo-400/40 flex items-center gap-1 font-bold">
+            <i data-lucide="qr-code" class="w-3 h-3"></i>
+            <span>QR</span>
+          </span>
+        </button>
       </div>
 
       <!-- Center: Realtime Clock & Date (Prominently Centered) -->
@@ -1307,6 +1311,50 @@ label svg, label i {
       <div class="flex items-center gap-2 text-xs sm:text-sm font-bold">
         <span id="liveDashTvHudText">Apple TV Remote เชื่อมต่อแล้ว</span>
       </div>
+    
+    <!-- Apple TV QR Code Pairing Modal (Pop-up on TV Screen) -->
+    <div id="liveDashQrPairingModal" class="fixed inset-0 z-[10003] hidden items-center justify-center bg-black/80 backdrop-blur-2xl p-4 animate-fade-in">
+      <div class="w-full max-w-sm sm:max-w-md tvos-glass rounded-[40px] border border-white/20 p-7 sm:p-9 text-center shadow-[0_30px_90px_rgba(0,0,0,0.85)] relative space-y-6">
+        <!-- Close Button -->
+        <button type="button" onclick="closeLiveDashboardQrModal()" class="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition active:scale-95 cursor-pointer" title="ปิดหน้าต่าง">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Apple TV Icon -->
+        <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white mx-auto shadow-2xl ring-4 ring-white/10">
+          <i data-lucide="tv" class="w-8 h-8"></i>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-black text-white tracking-tight">เชื่อมต่อ Apple TV Remote</h2>
+          <p class="text-xs sm:text-sm text-white/70 mt-1 max-w-xs mx-auto">
+            เปิดแอปกล้องบนมือถือ แล้วสแกน QR Code นี้ เพื่อเชื่อมต่อรีโมตทันทีโดยไม่ต้องพิมพ์
+          </p>
+        </div>
+
+        <!-- Big QR Code Container -->
+        <div class="flex flex-col items-center justify-center">
+          <div id="liveDashModalQrBox" class="p-3.5 bg-white rounded-3xl shadow-2xl flex items-center justify-center ring-4 ring-indigo-500/30"></div>
+        </div>
+
+        <!-- PIN and Status Details -->
+        <div class="space-y-2.5 bg-black/50 p-4 rounded-3xl border border-white/10 text-left">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-white/60">รหัส PIN จับคู่:</span>
+            <span id="liveDashModalQrPin" class="text-2xl font-black font-mono tracking-widest text-indigo-300 drop-shadow-md">8429</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-white/50 border-t border-white/10 pt-2">
+            <span>Wi-Fi Network URL:</span>
+            <span id="liveDashModalQrUrlText" class="font-mono text-white/80 truncate max-w-[200px]">...</span>
+          </div>
+        </div>
+
+        <!-- Pairing Status Pill -->
+        <div id="liveDashModalQrStatus" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold shadow-inner">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>กำลังรอการสแกนจากมือถือ...</span>
+        </div>
+      </div>
     </div>
 
     <!-- Apple tvOS 26 Control Center Drawer (Top-Right Slide Down) -->
@@ -1334,11 +1382,11 @@ label svg, label i {
       </div>
 
       <!-- Remote Pairing Code Card -->
-      <div class="p-4 rounded-3xl bg-white/10 border border-white/15 space-y-2.5">
+      <div class="p-4 rounded-3xl bg-white/10 border border-white/15 space-y-3">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-white/80 flex items-center gap-1.5">
             <i data-lucide="smartphone" class="w-3.5 h-3.5 text-indigo-400"></i>
-            <span>สถานะรีโมต (Apple TV Remote)</span>
+            <span>Apple TV Remote</span>
           </span>
           <span id="liveDashDrawerRemoteStatusBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
             รอการเชื่อมต่อ
@@ -1348,18 +1396,28 @@ label svg, label i {
             <span>สุ่มรหัสใหม่</span>
           </button>
         </div>
-        <div class="flex items-center justify-between bg-black/40 px-4 py-3 rounded-2xl border border-white/10">
-          <span class="text-xs text-white/60">ป้อนรหัสนี้ในมือถือ:</span>
-          <span id="liveDashDrawerPin" class="text-3xl font-black font-mono tracking-widest text-indigo-300 drop-shadow-md">8429</span>
+
+        <!-- Inline QR Code Box in Drawer -->
+        <div class="flex flex-col items-center justify-center p-3 bg-black/40 rounded-2xl border border-white/10 space-y-2">
+          <div id="liveDashDrawerQrBox" class="p-2.5 bg-white rounded-2xl shadow-xl flex items-center justify-center cursor-pointer hover:scale-105 transition" onclick="openLiveDashboardQrModal()" title="คลิกเพื่อขยาย QR Code"></div>
+          <span class="text-[11px] text-white/70 font-medium text-center">📷 สแกนด้วยกล้องมือถือ เพื่อเชื่อมต่อทันที</span>
         </div>
+
+        <div class="flex items-center justify-between bg-black/40 px-4 py-2.5 rounded-2xl border border-white/10">
+          <span class="text-xs text-white/60">หรือป้อนรหัส 4 หลัก:</span>
+          <span id="liveDashDrawerPin" class="text-2xl font-black font-mono tracking-widest text-indigo-300 drop-shadow-md">8429</span>
+        </div>
+
         <div class="flex items-center gap-2 pt-1">
-          <button type="button" onclick="copyLiveRemoteDirectUrl()" class="flex-1 py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer">
+          <button type="button" onclick="openLiveDashboardQrModal()" class="flex-1 py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-md">
+            <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+            <span>ขยาย QR Code</span>
+          </button>
+          <button type="button" onclick="copyLiveRemoteDirectUrl()" class="py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer" title="คัดลอกลิงก์รีโมต">
             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-            <span>คัดลอกลิงก์รีโมต</span>
           </button>
           <button type="button" onclick="openLiveRemote()" class="py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer" title="เปิดรีโมตบนจอนี้">
             <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-            <span>ทดสอบรีโมต</span>
           </button>
         </div>
       </div>
@@ -4940,6 +4998,9 @@ label svg, label i {
               </button>
             </div>
             <!-- Action Buttons in Comsan Choice style (Rounded-[16px] squircle matching Choice Image 2) -->
+            <button type="button" onclick="openLiveRemote()" class="h-10 w-10 sm:h-11 sm:w-11 inline-flex items-center justify-center rounded-[16px] border border-border/70 bg-card hover:bg-muted text-foreground transition shadow-2xs cursor-pointer" title="รีโมต Live Dashboard (Apple TV)" id="userHeaderRemoteBtn">
+              <i data-lucide="cast" class="h-5 w-5 text-indigo-500"></i>
+            </button>
             <button type="button" onclick="toggleTheme()" class="h-10 w-10 sm:h-11 sm:w-11 inline-flex items-center justify-center rounded-[16px] border border-border/70 bg-card hover:bg-muted text-foreground transition shadow-2xs cursor-pointer" title="เปลี่ยนธีม (สว่าง/มืด)" id="userHeaderThemeBtn">
               <i data-lucide="sun" id="userHeaderThemeIcon" class="theme-toggle-icon h-5 w-5 text-amber-500"></i>
             </button>
@@ -7277,8 +7338,8 @@ label svg, label i {
   <!-- ======================================================== -->
   <script src="js/services/actionReducer.js?v=20261027_01"></script>
   <script src="js/supabaseConfig.js?v=20261026_01"></script>
-  <script src="js/services/supabaseAdapter.js?v=20261026_01"></script>
-  <script src="js/config.js?v=20261027_04"></script>
+  <script src="js/services/supabaseAdapter.js?v=20261027_02"></script>
+  <script src="js/config.js?v=20261027_05"></script>
   <script src="js/defaultProjects.js?v=20261026_01"></script>
   <script src="js/state.js?v=20261027_03"></script>
   <script src="js/utils/format.js?v=20261026_01"></script>
@@ -7293,10 +7354,10 @@ label svg, label i {
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
   <script src="js/components/calendar.js?v=20261026_01"></script>
   <script src="js/components/projects.js?v=20261027_07"></script>
-  <script src="js/components/liveDashboard.js?v=20261027_06"></script>
+  <script src="js/components/liveDashboard.js?v=20261027_08"></script>
   <script src="js/views/navigation.js?v=20261027_04"></script>
   <script src="js/views/userView.js?v=20261026_02"></script>
   <script src="js/views/adminView.js?v=20261027_02"></script>
-  <script src="js/app.js?v=20261027_04"></script>
+  <script src="js/app.js?v=20261027_05"></script>
 </body>
 </html>

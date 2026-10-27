@@ -211,29 +211,33 @@ class UnifiedSocketHub {
   constructor(initialEngine) {
     this.listeners = new Map();
     this.engine = null;
+    this.localEngine = initialEngine || null;
+    this.cloudEngine = null;
     this.isUnifiedHub = true;
     if (initialEngine) this.setEngine(initialEngine);
   }
 
   get connected() {
-    return this.engine ? Boolean(this.engine.connected) : true;
+    return (this.engine && Boolean(this.engine.connected)) || (this.localEngine && Boolean(this.localEngine.connected));
   }
 
   setEngine(newEngine) {
     if (!newEngine) return;
     if (this.engine === newEngine) return;
 
-    // Stop polling on old engine if needed
-    if (this.engine && typeof this.engine.stopPolling === 'function') {
+    if (newEngine.constructor && newEngine.constructor.name === 'SupabaseSocketAdapter') {
+      this.cloudEngine = newEngine;
+    }
+
+    // Stop polling on old engine if needed (only if it's HttpSocketBridge)
+    if (this.engine && this.engine !== this.localEngine && typeof this.engine.stopPolling === 'function') {
       this.engine.stopPolling();
-    } else if (this.engine && typeof this.engine.pollInterval === 'number') {
-      clearInterval(this.engine.pollInterval);
     }
 
     this.engine = newEngine;
     this.engine.hub = this;
 
-    // Forward incoming events from engine to hub listeners
+    // Forward incoming events from new engine to hub listeners
     if (typeof this.engine.onAny === 'function') {
       this.engine.onAny((event, ...args) => {
         this.trigger(event, ...args);
@@ -251,7 +255,21 @@ class UnifiedSocketHub {
       }
     });
 
-    console.info(`[SocketHub] Engine switched to: ${newEngine.constructor ? newEngine.constructor.name : 'CustomEngine'}`);
+    // CRITICAL DUAL-HUB: Keep local Socket.io engine alive and receiving events!
+    if (this.localEngine && this.localEngine !== this.engine) {
+      if (typeof this.localEngine.onAny === 'function') {
+        this.localEngine.onAny((event, ...args) => {
+          this.trigger(event, ...args);
+        });
+      }
+      ['connect', 'disconnect', 'connect_error', 'reconnect'].forEach(resEvent => {
+        if (typeof this.localEngine.on === 'function') {
+          this.localEngine.on(resEvent, (...args) => this.trigger(resEvent, ...args));
+        }
+      });
+    }
+
+    console.info(`[SocketHub] Dual-Hub active. Primary: ${newEngine.constructor ? newEngine.constructor.name : 'CustomEngine'}, Local: ${this.localEngine ? (this.localEngine.constructor ? this.localEngine.constructor.name : 'Socket.io') : 'None'}`);
   }
 
   on(event, callback) {
@@ -264,20 +282,25 @@ class UnifiedSocketHub {
       arr.push(callback);
     }
 
-    // If registering for 'connect' and engine is already connected, trigger callback immediately
+    // If registering for 'connect' and either engine is already connected, trigger callback immediately
     if (event === 'connect' && this.connected) {
       setTimeout(() => {
         try { callback(); } catch (e) {}
       }, 0);
     }
 
-    // Also register on current engine
+    // Register on active engine
     if (this.engine && typeof this.engine.on === 'function') {
       if (!this._registeredEvents) this._registeredEvents = new Set();
       if (!this._registeredEvents.has(event)) {
         this._registeredEvents.add(event);
         this.engine.on(event, (...args) => this.trigger(event, ...args));
       }
+    }
+
+    // Also register on localEngine if different
+    if (this.localEngine && this.localEngine !== this.engine && typeof this.localEngine.on === 'function') {
+      this.localEngine.on(event, (...args) => this.trigger(event, ...args));
     }
   }
 
@@ -305,11 +328,27 @@ class UnifiedSocketHub {
   }
 
   emit(event, ...args) {
-    if (this.engine && typeof this.engine.emit === 'function') {
-      return this.engine.emit(event, ...args);
-    } else {
-      console.warn(`[SocketHub] emit called with no active engine for event: ${event}`);
+    let res = undefined;
+
+    // 1. Emit to local Socket.io engine (for instant LAN Live Dashboard / Remote control)
+    if (this.localEngine && typeof this.localEngine.emit === 'function') {
+      try {
+        res = this.localEngine.emit(event, ...args);
+      } catch (e) {
+        console.warn(`[SocketHub] localEngine emit error for ${event}:`, e);
+      }
     }
+
+    // 2. Also emit to active engine (e.g. Supabase) if different
+    if (this.engine && this.engine !== this.localEngine && typeof this.engine.emit === 'function') {
+      try {
+        res = this.engine.emit(event, ...args);
+      } catch (e) {
+        console.warn(`[SocketHub] engine emit error for ${event}:`, e);
+      }
+    }
+
+    return res;
   }
 
   scheduleSaveToSupabase(state, immediate = false) {
