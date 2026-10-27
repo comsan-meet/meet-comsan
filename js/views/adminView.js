@@ -4,9 +4,14 @@
 
 function requestAdminAccess() {
   if (window.isAdminAuthenticated) {
+    window._pendingAdminTabAfterLogin = 'DASHBOARD';
     if (typeof window.switchRoleView === 'function') {
-      window.switchRoleView('ADMIN');
+      window.switchRoleView('ADMIN', true);
     }
+    if (typeof window.switchAdminTab === 'function') {
+      window.switchAdminTab('DASHBOARD');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
   const input = document.getElementById('adminPassInput');
@@ -40,9 +45,6 @@ function handleAdminLogin(e) {
     if (typeof window.setSessionAdmin === 'function') window.setSessionAdmin(true);
     else { window.isAdminAuthenticated = true; localStorage.setItem('comsan_admin_auth', 'true'); }
 
-    if (typeof window.setSessionRole === 'function') window.setSessionRole('ADMIN');
-    else { window.currentRole = 'ADMIN'; localStorage.setItem('comsan_role', 'ADMIN'); }
-
     if (!window.currentUserId) {
       if (typeof window.setSessionUser === 'function') window.setSessionUser('COMSAN-01', false);
       else { window.currentUserId = 'COMSAN-01'; }
@@ -57,15 +59,19 @@ function handleAdminLogin(e) {
       appLayout.classList.remove('hidden');
       appLayout.classList.add('flex');
     }
+
+    // Explicitly transition to ADMIN and redirect immediately to DASHBOARD
+    window._pendingAdminTabAfterLogin = 'DASHBOARD';
     if (typeof window.switchRoleView === 'function') {
-      window.switchRoleView('ADMIN');
+      window.switchRoleView('ADMIN', true);
+    }
+    if (typeof window.switchAdminTab === 'function') {
+      window.switchAdminTab('DASHBOARD');
     }
     if (typeof window.updateSidebarVisibility === 'function') {
       window.updateSidebarVisibility();
     }
-    if (typeof window.renderAll === 'function') {
-      window.renderAll();
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     showToast('เข้าสู่ระบบผู้ดำเนินการ (ADMIN) สำเร็จ', 'success');
   } else {
     const err = document.getElementById('adminLoginError');

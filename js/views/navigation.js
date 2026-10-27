@@ -742,10 +742,19 @@ function submitAdminLoginFromSettings() {
 
     updateSettingsAdminCardState();
     updateHeaderRoleSwitcherVisibility();
-    if (typeof updateSidebarVisibility === 'function') updateSidebarVisibility();
+    if (typeof closeSettingsModal === 'function') closeSettingsModal();
+
+    window._pendingAdminTabAfterLogin = 'DASHBOARD';
+    if (typeof switchRoleView === 'function') {
+      switchRoleView('ADMIN', true);
+    }
+    if (typeof switchAdminTab === 'function') {
+      switchAdminTab('DASHBOARD');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (typeof window.showToast === 'function') {
-      window.showToast('เข้าสู่ระบบ Admin สำเร็จแล้ว คุณสามารถสลับหน้าได้ที่แถบด้านบน', 'success');
+      window.showToast('เข้าสู่ระบบผู้ดูแลระบบ (ADMIN) สำเร็จแล้ว', 'success');
     }
   } else {
     if (errText) {
@@ -876,7 +885,7 @@ function handleUserLoginFromPopup(e) {
   if (typeof window.showToast === 'function') window.showToast(`สวัสดีคุณ${found.nickname || found.firstName || ''} เข้าสู่ระบบสำเร็จ!`, 'success');
 }
 
-function switchRoleView(role) {
+function switchRoleView(role, force) {
   if (role === 'ADMIN' && !window.isAdminAuthenticated) {
     if (typeof window.openSettingsModal === 'function') {
       window.openSettingsModal();
@@ -895,8 +904,13 @@ function switchRoleView(role) {
     return;
   }
 
-  // If already on the requested role, nothing to do
-  if (role === window.currentRole) return;
+  const adminViewEl = document.getElementById('adminView');
+  const userViewEl = document.getElementById('userView');
+  const isViewAlreadyVisible = (role === 'ADMIN' && adminViewEl && !adminViewEl.classList.contains('hidden')) ||
+                               (role === 'USER' && userViewEl && !userViewEl.classList.contains('hidden'));
+
+  // If already on the requested role, view is already visible, and not forced, nothing to do
+  if (!force && role === window.currentRole && isViewAlreadyVisible) return;
 
   window.currentRole = role;
   if (typeof window.setSessionRole === 'function') {
