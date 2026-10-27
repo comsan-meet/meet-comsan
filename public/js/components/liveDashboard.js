@@ -30,6 +30,7 @@ window.currentNatureWallpaperIndex = 0;
 // =========================================================================
 
 function openLiveDashboard() {
+  initLiveRemoteReceivers();
   const container = document.getElementById('liveDashboardContainer');
   if (!container) return;
 
@@ -206,8 +207,35 @@ function promptSetCustomWallpaper() {
 }
 
 function regenerateLiveDashboardPin() {
+  const newPin = String(Math.floor(1000 + Math.random() * 9000));
+  if (!window.appState) window.appState = {};
+  if (!window.appState.liveDashboardConfig) window.appState.liveDashboardConfig = {};
+  window.appState.liveDashboardConfig.pairingCode = newPin;
+
+  // Immediately update UI on screen so user sees instant visual change
+  const pinPill = document.getElementById('liveDashPillPin');
+  if (pinPill) pinPill.textContent = `📺 PIN: ${newPin}`;
+  const drawerPin = document.getElementById('liveDashDrawerPin');
+  if (drawerPin) drawerPin.textContent = newPin;
+
+  if (typeof window.saveLocalState === 'function') {
+    window.saveLocalState();
+  }
+
+  if (typeof showToast === 'function') {
+    showToast(`สุ่มรหัสจับคู่ใหม่: ${newPin}`, 'info');
+  }
+
+  // Send to server
   if (window.socket && typeof window.socket.emit === 'function') {
-    window.socket.emit('admin:regenerateRemotePin');
+    window.socket.emit('admin:regenerateRemotePin', { pairingCode: newPin }, (res) => {
+      if (res && res.pairingCode) {
+        window.appState.liveDashboardConfig.pairingCode = res.pairingCode;
+        if (pinPill) pinPill.textContent = `📺 PIN: ${res.pairingCode}`;
+        if (drawerPin) drawerPin.textContent = res.pairingCode;
+      }
+    });
+    window.socket.emit('admin:updateLiveDashboardConfig', window.appState.liveDashboardConfig);
   }
 }
 
@@ -898,6 +926,7 @@ function fallbackCopyText(text) {
 // =========================================================================
 
 function openLiveRemote() {
+  initLiveRemoteReceivers();
   const container = document.getElementById('liveRemoteContainer');
   if (!container) return;
 
@@ -938,6 +967,7 @@ function isRemotePaired() {
 }
 
 function checkAndRenderRemoteUI() {
+  initLiveRemoteReceivers();
   const body = document.getElementById('liveRemoteBody');
   if (!body) return;
 
@@ -1032,23 +1062,25 @@ function deleteRemotePinDigit() {
 }
 
 function submitRemotePin() {
-  const pin = window.liveRemoteEnteredPin;
-  const correctPin = window.appState?.liveDashboardConfig?.pairingCode;
+  const pin = String(window.liveRemoteEnteredPin || '').trim();
+  const correctPin = String(window.appState?.liveDashboardConfig?.pairingCode || '').trim();
 
   if (window.socket && typeof window.socket.emit === 'function') {
     window.socket.emit('remote:verifyPin', { pin }, (res) => {
-      handlePinVerifyResult(res && res.success);
+      handlePinVerifyResult(Boolean(res && res.success), pin);
     });
   } else {
     // Fallback local check
-    handlePinVerifyResult(String(pin) === String(correctPin));
+    const isLocalMatch = Boolean(correctPin && (pin === correctPin));
+    handlePinVerifyResult(isLocalMatch, pin);
   }
 }
 
-function handlePinVerifyResult(isSuccess) {
+function handlePinVerifyResult(isSuccess, pin) {
   if (isSuccess) {
+    const verifiedPin = pin || window.liveRemoteEnteredPin || window.appState?.liveDashboardConfig?.pairingCode || '1234';
     try {
-      localStorage.setItem('comsan_paired_remote_pin', window.liveRemoteEnteredPin);
+      localStorage.setItem('comsan_paired_remote_pin', verifiedPin);
     } catch (e) {}
     if (typeof showToast === 'function') showToast('เชื่อมต่อ Live Dashboard สำเร็จแล้ว!', 'success');
     window.liveRemoteEnteredPin = '';
@@ -1060,7 +1092,9 @@ function handlePinVerifyResult(isSuccess) {
       err.classList.remove('hidden');
     }
     window.liveRemoteEnteredPin = '';
-    setTimeout(checkAndRenderRemoteUI, 1200);
+    setTimeout(() => {
+      checkAndRenderRemoteUI();
+    }, 1200);
   }
 }
 
@@ -1288,6 +1322,8 @@ function sendRemoteAction(action) {
 
 function initLiveRemoteReceivers() {
   if (!window.socket) return;
+  if (window._liveRemoteReceiversBound) return;
+  window._liveRemoteReceiversBound = true;
 
   // 1. PIN Verified & Connected
   window.socket.on('liveDashboard:remoteConnected', () => {
@@ -1323,7 +1359,11 @@ function initLiveRemoteReceivers() {
 
   // Remote PIN Verified response
   window.socket.on('remote:pinVerified', (res) => {
-    if (res) handlePinVerifyResult(res.success);
+    if (res && res.success && !isRemotePaired()) {
+      handlePinVerifyResult(true, res.pairingCode);
+    } else if (res && !res.success) {
+      handlePinVerifyResult(false);
+    }
   });
 
   // Remote Open/Close App

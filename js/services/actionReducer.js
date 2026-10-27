@@ -1208,6 +1208,86 @@
         break;
       }
 
+      case 'admin:regenerateRemotePin': {
+        if (!state.liveDashboardConfig) state.liveDashboardConfig = {};
+        const pin = (payload && payload.pairingCode) ? String(payload.pairingCode) : String(Math.floor(1000 + Math.random() * 9000));
+        state.liveDashboardConfig.pairingCode = pin;
+        notify('liveDashboard:pinUpdated', pin);
+        notify('liveDashboard:configUpdated', state.liveDashboardConfig);
+        result = { success: true, pairingCode: pin };
+        break;
+      }
+
+      case 'remote:verifyPin': {
+        const pin = (typeof payload === 'object' && payload !== null) ? payload.pin : payload;
+        const correctPin = state.liveDashboardConfig?.pairingCode || '1234';
+        const cleanEntered = String(pin || '').trim();
+        const cleanCorrect = String(correctPin).trim();
+        const isMatch = Boolean(cleanEntered && cleanEntered === cleanCorrect);
+        if (isMatch) {
+          notify('remote:pinVerified', { success: true, pairingCode: cleanCorrect });
+          notify('liveDashboard:remoteConnected', { time: Date.now() });
+          result = { success: true, pairingCode: cleanCorrect };
+        } else {
+          notify('remote:pinVerified', { success: false, message: 'รหัสจับคู่ไม่ถูกต้อง' });
+          result = { success: false, message: 'รหัสจับคู่ไม่ถูกต้อง' };
+        }
+        shouldPersist = false;
+        break;
+      }
+
+      case 'admin:updateLiveDashboardConfig': {
+        state.liveDashboardConfig = {
+          ...(state.liveDashboardConfig || {}),
+          ...(payload || {})
+        };
+        notify('liveDashboard:configUpdated', state.liveDashboardConfig);
+        result = { success: true, config: state.liveDashboardConfig };
+        break;
+      }
+
+      case 'remote:openApp': {
+        notify('liveDashboard:openApp', payload);
+        result = { success: true, app: payload };
+        shouldPersist = false;
+        break;
+      }
+
+      case 'remote:closeApp': {
+        notify('liveDashboard:closeApp');
+        result = { success: true };
+        shouldPersist = false;
+        break;
+      }
+
+      case 'remote:dpad': {
+        notify('liveDashboard:dpad', payload);
+        result = { success: true, direction: payload };
+        shouldPersist = false;
+        break;
+      }
+
+      case 'remote:action': {
+        notify('liveDashboard:action', payload);
+        result = { success: true, action: payload };
+        shouldPersist = false;
+        break;
+      }
+
+      case 'remote:cursorMove': {
+        notify('liveDashboard:cursorMove', payload);
+        result = { success: true, coords: payload };
+        shouldPersist = false;
+        break;
+      }
+
+      case 'remote:click': {
+        notify('liveDashboard:click', payload);
+        result = { success: true };
+        shouldPersist = false;
+        break;
+      }
+
       default:
         console.warn('Unknown action:', action);
         shouldPersist = false;

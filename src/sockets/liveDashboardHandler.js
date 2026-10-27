@@ -31,20 +31,31 @@ module.exports = function registerLiveDashboardHandlers(io, socket) {
   });
 
   // Regenerate Pairing PIN
-  socket.on('admin:regenerateRemotePin', () => {
-    state.liveDashboardConfig.pairingCode = String(Math.floor(1000 + Math.random() * 9000));
+  socket.on('admin:regenerateRemotePin', (data, callback) => {
+    if (typeof data === 'function') {
+      callback = data;
+      data = null;
+    }
+    const pin = (data && data.pairingCode) ? String(data.pairingCode) : String(Math.floor(1000 + Math.random() * 9000));
+    state.liveDashboardConfig.pairingCode = pin;
     stateService.persistAndBroadcast();
-    io.emit('liveDashboard:pinUpdated', state.liveDashboardConfig.pairingCode);
+    io.emit('liveDashboard:pinUpdated', pin);
     io.emit('liveDashboard:configUpdated', state.liveDashboardConfig);
+    console.log(`[LiveDashboard] Pairing PIN updated/regenerated: ${pin}`);
+    if (typeof callback === 'function') callback({ success: true, pairingCode: pin });
   });
 
   // Verify Remote PIN from mobile
-  socket.on('remote:verifyPin', ({ pin }, callback) => {
+  socket.on('remote:verifyPin', (payload, callback) => {
+    const pin = (typeof payload === 'object' && payload !== null) ? payload.pin : payload;
     const correctPin = state.liveDashboardConfig?.pairingCode || '1234';
-    const isMatch = String(pin).trim() === String(correctPin).trim();
+    const cleanEntered = String(pin || '').trim();
+    const cleanCorrect = String(correctPin).trim();
+    const isMatch = Boolean(cleanEntered && cleanEntered === cleanCorrect);
+    console.log(`[LiveDashboard] PIN check: entered='${cleanEntered}', expected='${cleanCorrect}', isMatch=${isMatch}`);
     if (isMatch) {
-      if (typeof callback === 'function') callback({ success: true, pairingCode: correctPin });
-      socket.emit('remote:pinVerified', { success: true, pairingCode: correctPin });
+      if (typeof callback === 'function') callback({ success: true, pairingCode: cleanCorrect });
+      socket.emit('remote:pinVerified', { success: true, pairingCode: cleanCorrect });
       io.emit('liveDashboard:remoteConnected', { time: Date.now() });
     } else {
       if (typeof callback === 'function') callback({ success: false, message: 'รหัสจับคู่ไม่ถูกต้อง' });

@@ -321,15 +321,12 @@ class UnifiedSocketHub {
 // Socket Connection Initialization
 let activeEngine = null;
 
-// If running in local Node.js environment with active Socket.io
+// If running in Node.js environment with active Socket.io (supports localhost, LAN IP, and mobile devices)
 if (typeof io !== 'undefined') {
-  const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  if (isLocalHost) {
-    try {
-      activeEngine = io({ autoConnect: true, reconnectionAttempts: 2, timeout: 2000 });
-    } catch (e) {
-      console.info('Local Socket.io error, falling back to HTTP sync bridge');
-    }
+  try {
+    activeEngine = io({ autoConnect: true, reconnectionAttempts: 5, timeout: 4000 });
+  } catch (e) {
+    console.info('Socket.io initialization error, falling back to HTTP sync bridge', e);
   }
 }
 

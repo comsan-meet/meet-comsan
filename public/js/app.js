@@ -1087,6 +1087,9 @@ function setupSocketListeners() {
     if (window.isLiveDashboardOpen && typeof window.renderLiveDashboard === 'function') {
       window.renderLiveDashboard();
     }
+    if (window.isLiveRemoteOpen && typeof window.checkAndRenderRemoteUI === 'function') {
+      window.checkAndRenderRemoteUI();
+    }
   });
 
   socket.on('alert:raiseHand', (alertData) => {
