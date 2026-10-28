@@ -57,17 +57,22 @@ class StateService {
         parsed.calendarEvents = Array.isArray(parsed.calendarEvents)
           ? parsed.calendarEvents
           : (defaultState.calendarEvents || []);
+        parsed.calendarCategories = Array.isArray(parsed.calendarCategories) && parsed.calendarCategories.length > 0
+          ? parsed.calendarCategories
+          : (defaultState.calendarCategories || []);
 
         const rawProjects = Array.isArray(parsed.projects)
           ? parsed.projects
           : (defaultState.projects || []);
 
-        // Deduplicate projects to guarantee no duplicate cards ever exist on server
+        // Deduplicate projects and ensure calendarEvents & showInMainCalendar exist
         const uniqueProjects = [];
         const seenPrjIds = new Set();
         rawProjects.forEach(p => {
           if (p && p.id && !seenPrjIds.has(p.id)) {
             seenPrjIds.add(p.id);
+            if (!Array.isArray(p.calendarEvents)) p.calendarEvents = [];
+            if (p.showInMainCalendar === undefined) p.showInMainCalendar = true;
             uniqueProjects.push(p);
           }
         });

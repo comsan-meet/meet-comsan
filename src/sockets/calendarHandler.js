@@ -89,6 +89,21 @@ function registerCalendarHandlers(io, socket) {
     }
   });
 
+  // 3.5 Admin updates calendar categories
+  socket.on('admin:updateCalendarCategories', ({ categories }) => {
+    try {
+      if (!Array.isArray(categories)) return;
+      const state = stateService.getState();
+      state.calendarCategories = categories;
+      stateService.persistAndBroadcast();
+      io.emit('calendar:categoriesUpdated', categories);
+      socket.emit('admin:calendarCategoriesUpdated', { success: true, categories });
+    } catch (err) {
+      console.error('Error updating calendar categories:', err);
+      socket.emit('admin:calendarError', { message: 'เกิดข้อผิดพลาดในการอัปเดตหมวดหมู่' });
+    }
+  });
+
   // 4. Admin bulk imports events from ICS
   socket.on('admin:importCalendarEvents', ({ events }) => {
     try {

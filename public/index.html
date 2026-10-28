@@ -2319,6 +2319,7 @@ label svg, label i {
       </div>
 
       <input type="hidden" id="calEventId" value="">
+      <input type="hidden" id="calProjectId" value="">
 
       <div class="space-y-3.5 text-xs">
         <!-- Title -->
@@ -2331,21 +2332,38 @@ label svg, label i {
         <!-- Category & All Day -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div>
-            <label class="block font-bold text-foreground mb-1">หมวดหมู่</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block font-bold text-foreground">หมวดหมู่</label>
+              <button type="button" onclick="openCalendarCategoryModal()" class="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer" title="จัดการเพิ่มหรือลดประเภทกิจกรรม">
+                <i data-lucide="tags" class="w-3 h-3"></i> จัดการประเภท
+              </button>
+            </div>
             <select id="calCategory" class="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border text-xs text-foreground outline-none">
               <option value="EVENT">กิจกรรมชมรม</option>
               <option value="MEETING">การประชุม</option>
               <option value="DEADLINE">กำหนดส่งงาน</option>
               <option value="WORKSHOP">เวิร์กช็อป / อบรม</option>
-              <option value="OTHER">อื่นๆ</option>
             </select>
           </div>
           <div class="flex items-center sm:pt-6">
-            <label class="flex items-center gap-2 cursor-pointer">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
               <input type="checkbox" id="calIsAllDay" class="rounded text-primary focus:ring-primary">
               <span class="font-medium text-foreground">กิจกรรมตลอดทั้งวัน (All Day)</span>
             </label>
           </div>
+        </div>
+
+        <!-- Event Color Selector (ปฏิทินรวม และ ปฏิทินโครงการ) -->
+        <div class="p-3 rounded-2xl bg-muted/30 border border-border/70 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-foreground flex items-center gap-1.5">
+              <i data-lucide="palette" class="w-3.5 h-3.5 text-primary"></i>
+              <span>สีประจำกิจกรรม</span>
+            </label>
+            <span id="calColorLabel" class="text-[11px] font-semibold text-primary">คราม (Indigo)</span>
+          </div>
+          <div id="calColorPickerGroup" class="flex items-center gap-1.5 flex-wrap"></div>
+          <input type="hidden" id="calColor" value="indigo">
         </div>
 
         <!-- Date & Time Start -->
@@ -2553,6 +2571,98 @@ label svg, label i {
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- MODAL: MANAGE CALENDAR CATEGORIES                        -->
+  <!-- ======================================================== -->
+  <div id="calendarCategoryModal" class="fixed inset-0 bg-background/85 backdrop-blur-md hidden flex items-center justify-center z-[95] p-3 sm:p-4 select-none">
+    <div class="bg-card text-card-foreground border border-border rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto m-auto">
+      <div class="flex items-center justify-between border-b border-border pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm">
+            <i data-lucide="tags" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-foreground">จัดการประเภทกิจกรรม</h3>
+            <p class="text-xs text-muted-foreground">เพิ่มหรือลบหมวดหมู่ของกิจกรรมปฏิทิน</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeCalendarCategoryModal()" class="w-8 h-8 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Add New Category Form -->
+      <div class="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-3">
+        <h4 class="text-xs font-bold text-foreground flex items-center gap-1.5">
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-primary"></i> เพิ่มประเภทใหม่
+        </h4>
+        <div class="space-y-2.5">
+          <div>
+            <label class="block text-[11px] font-bold text-muted-foreground mb-1">ชื่อประเภทกิจกรรม <span class="text-rose-500">*</span></label>
+            <input type="text" id="newCatLabel" placeholder="เช่น ซ้อมการแสดง, ตรวจงาน, สันทนาการ..."
+              class="w-full px-3 py-2 rounded-xl bg-card border border-border text-xs text-foreground outline-none focus:ring-1 focus:ring-primary">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-muted-foreground mb-1">สีประจำประเภท</label>
+              <select id="newCatColor" class="w-full px-2.5 py-2 rounded-xl bg-card border border-border text-xs text-foreground outline-none">
+                <option value="indigo">คราม (Indigo)</option>
+                <option value="blue">น้ำเงิน (Blue)</option>
+                <option value="emerald">เขียว (Emerald)</option>
+                <option value="amber">เหลือง/ส้ม (Amber)</option>
+                <option value="rose">แดงกุหลาบ (Rose)</option>
+                <option value="purple">ม่วง (Purple)</option>
+                <option value="cyan">ฟ้า (Cyan)</option>
+                <option value="pink">ชมพู (Pink)</option>
+                <option value="orange">ส้ม (Orange)</option>
+                <option value="teal">เขียวไข่กา (Teal)</option>
+                <option value="slate">เทา (Slate)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-muted-foreground mb-1">ไอคอน</label>
+              <select id="newCatIcon" class="w-full px-2.5 py-2 rounded-xl bg-card border border-border text-xs text-foreground outline-none">
+                <option value="star">★ ดาว (Star)</option>
+                <option value="users">👥 ประชุม/กลุ่ม (Users)</option>
+                <option value="clock">⏰ กำหนดส่ง (Clock)</option>
+                <option value="laptop">💻 อบรม/งาน (Laptop)</option>
+                <option value="flag">🚩 เป้าหมาย (Flag)</option>
+                <option value="music">🎵 การแสดง (Music)</option>
+                <option value="heart">❤️ สันทนาการ (Heart)</option>
+                <option value="bookmark">🔖 เอกสาร (Bookmark)</option>
+                <option value="calendar">📅 ปฏิทิน (Calendar)</option>
+                <option value="trophy">🏆 การแข่งขัน (Trophy)</option>
+                <option value="map-pin">📍 สถานที่ (Map-pin)</option>
+              </select>
+            </div>
+          </div>
+          <button type="button" onclick="addNewCalendarCategory()"
+            class="w-full py-2 px-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>เพิ่มประเภทนี้</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Existing Categories List -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-bold text-foreground">ประเภททั้งหมดที่มีในระบบ</label>
+          <span id="catCountBadge" class="text-[11px] text-muted-foreground font-semibold">4 ประเภท</span>
+        </div>
+        <div id="calendarCategoriesListContainer" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end pt-3 border-t border-border">
+        <button type="button" onclick="closeCalendarCategoryModal()"
+          class="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold transition cursor-pointer">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
   
   <!-- ======================================================== -->
   <!-- PROJECT DETAIL MODAL (รายละเอียดโครงการเต็ม)              -->
@@ -2576,6 +2686,23 @@ label svg, label i {
         </div>
       </div>
 
+      <!-- Project Detail Tabs Navigation -->
+      <div class="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl border border-border/60">
+        <button type="button" id="prjDetailTabBtnOverview" onclick="switchProjectDetailTab('OVERVIEW')"
+          class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-card text-foreground shadow-2xs cursor-pointer">
+          <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+          <span>ข้อมูลโครงการและสมาชิก</span>
+        </button>
+        <button type="button" id="prjDetailTabBtnCalendar" onclick="switchProjectDetailTab('CALENDAR')"
+          class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground transition flex items-center justify-center gap-2 cursor-pointer">
+          <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+          <span>ปฏิทินและกำหนดการ</span>
+          <span id="prjDetailCalCountBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-primary">0</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: OVERVIEW & MEMBERS CONTENT -->
+      <div id="prjDetailOverviewTabContent" class="space-y-6">
       <!-- Quick Meta Stats (ระยะเวลา, สถานที่, งบประมาณ) -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div class="bg-muted/30 border border-border/60 rounded-2xl p-3.5 space-y-1">
@@ -2816,6 +2943,76 @@ label svg, label i {
           รายชื่อสโมสรนักศึกษาที่ดูแล
         </h4>
         <div id="prjDetailSmoOfficersList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+      </div><!-- End of #prjDetailOverviewTabContent -->
+
+      <!-- TAB 2: PROJECT CALENDAR CONTENT -->
+      <div id="prjDetailCalendarTabContent" class="hidden space-y-4">
+        <!-- Project Calendar Action & Setting Bar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-muted/30 border border-border/70 rounded-2xl p-3.5">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="p-1 rounded-lg bg-primary/10 text-primary">
+                <i data-lucide="calendar-days" class="w-4 h-4"></i>
+              </span>
+              <h4 class="text-xs sm:text-sm font-bold text-foreground">ปฏิทินและกำหนดการของโครงการ</h4>
+              <span id="prjCalEventsTotalBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">0 กิจกรรม</span>
+            </div>
+            <!-- Toggle Show in Main Calendar -->
+            <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground pt-1 select-none">
+              <input type="checkbox" id="prjShowInMainCalToggle" onchange="toggleCurrentProjectShowInMainCalendar(this.checked)"
+                class="rounded text-primary focus:ring-primary w-4 h-4 cursor-pointer">
+              <span>แสดงกิจกรรมโครงการนี้ในปฏิทินรวมของชมรม</span>
+            </label>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-1.5 flex-wrap shrink-0">
+            <button type="button" onclick="openAddCalendarEventModal(null, null, activeDetailProjectId)"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>เพิ่มกิจกรรม</span>
+            </button>
+            <button type="button" onclick="triggerImportProjectCalendarIcs()"
+              class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
+              title="นำเข้าไฟล์ปฏิทิน .ics สำหรับโครงการนี้">
+              <i data-lucide="upload" class="w-3.5 h-3.5 text-muted-foreground"></i>
+              <span class="hidden sm:inline">นำเข้า .ics</span>
+            </button>
+            <button type="button" onclick="exportCurrentProjectCalendarIcs()"
+              class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
+              title="ส่งออกปฏิทินโครงการเป็นไฟล์ .ics">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-muted-foreground"></i>
+              <span class="hidden sm:inline">ส่งออก .ics</span>
+            </button>
+            <button type="button" onclick="openCalendarCategoryModal()"
+              class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
+              title="จัดการประเภทกิจกรรม">
+              <i data-lucide="tags" class="w-3.5 h-3.5 text-muted-foreground"></i>
+              <span class="hidden sm:inline">จัดการประเภท</span>
+            </button>
+            <!-- View Mode Switcher (Month / List) -->
+            <div class="bg-muted p-1 rounded-xl flex items-center gap-1 border border-border/60">
+              <button type="button" id="prjCalBtnViewMonth" onclick="setProjectCalendarView('MONTH')"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 inline-block sm:mr-1"></i><span class="hidden sm:inline">ปฏิทิน</span>
+              </button>
+              <button type="button" id="prjCalBtnViewList" onclick="setProjectCalendarView('LIST')"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer">
+                <i data-lucide="list" class="w-3.5 h-3.5 inline-block sm:mr-1"></i><span class="hidden sm:inline">รายการ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden File Input for Project ICS Import -->
+        <input type="file" id="prjDetailCalIcsFileInput" accept=".ics,text/calendar" class="hidden" onchange="handleProjectCalendarIcsFileSelected(event)">
+
+        <!-- Category Filter Pills Bar for Project Calendar -->
+        <div id="prjCalCategoryFiltersContainer" class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide"></div>
+
+        <!-- Project Calendar View Content (Month Grid or List View) -->
+        <div id="prjDetailCalendarBody" class="space-y-4"></div>
       </div>
 
       <!-- Modal Footer -->
@@ -6861,12 +7058,12 @@ label svg, label i {
 <!-- ======================================================== -->
   <!-- MODULAR JAVASCRIPT ARCHITECTURE                          -->
   <!-- ======================================================== -->
-  <script src="js/services/actionReducer.js?v=20261027_01"></script>
+  <script src="js/services/actionReducer.js?v=20261028_01"></script>
   <script src="js/supabaseConfig.js?v=20261026_01"></script>
   <script src="js/services/supabaseAdapter.js?v=20261026_01"></script>
   <script src="js/config.js?v=20261026_01"></script>
   <script src="js/defaultProjects.js?v=20261026_01"></script>
-  <script src="js/state.js?v=20261027_03"></script>
+  <script src="js/state.js?v=20261028_01"></script>
   <script src="js/utils/format.js?v=20261026_01"></script>
   <script src="js/utils/ui.js?v=20261026_02"></script>
   <script src="js/utils/export.js?v=20261026_01"></script>
@@ -6877,8 +7074,8 @@ label svg, label i {
   <script src="js/components/randomizer.js?v=20261027_01"></script>
   <script src="js/components/stream.js?v=20261027_01"></script>
   <script src="js/components/analyticsChart.js?v=20261026_01"></script>
-  <script src="js/components/calendar.js?v=20261026_01"></script>
-  <script src="js/components/projects.js?v=20261027_07"></script>
+  <script src="js/components/calendar.js?v=20261028_01"></script>
+  <script src="js/components/projects.js?v=20261028_01"></script>
   <script src="js/views/navigation.js?v=20261027_04"></script>
   <script src="js/views/userView.js?v=20261026_02"></script>
   <script src="js/views/adminView.js?v=20261027_02"></script>

@@ -30,18 +30,121 @@ const THAI_MONTHS_SHORT = [
 ];
 const THAI_DAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
-const CALENDAR_CATEGORIES = {
-  EVENT: { label: 'กิจกรรมชมรม', bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', icon: 'star' },
-  MEETING: { label: 'การประชุม', bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', icon: 'users' },
-  DEADLINE: { label: 'กำหนดส่งงาน', bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/20', icon: 'clock' },
-  WORKSHOP: { label: 'เวิร์กช็อป / อบรม', bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/20', icon: 'laptop' },
+// Calendar Color Palette Registry
+const CALENDAR_COLOR_PALETTES = {
+  indigo: { label: 'คราม (Indigo)', bg: 'bg-indigo-500/10 dark:bg-indigo-500/20', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-500/30', dot: 'bg-indigo-500', solid: 'bg-indigo-600', hex: '#6366f1' },
+  blue: { label: 'น้ำเงิน (Blue)', bg: 'bg-blue-500/10 dark:bg-blue-500/20', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30', dot: 'bg-blue-500', solid: 'bg-blue-600', hex: '#3b82f6' },
+  emerald: { label: 'เขียวมรกต (Emerald)', bg: 'bg-emerald-500/10 dark:bg-emerald-500/20', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30', dot: 'bg-emerald-500', solid: 'bg-emerald-600', hex: '#10b981' },
+  amber: { label: 'เหลืองอำพัน (Amber)', bg: 'bg-amber-500/10 dark:bg-amber-500/20', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/30', dot: 'bg-amber-500', solid: 'bg-amber-600', hex: '#f59e0b' },
+  rose: { label: 'แดงกุหลาบ (Rose)', bg: 'bg-rose-500/10 dark:bg-rose-500/20', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/30', dot: 'bg-rose-500', solid: 'bg-rose-600', hex: '#f43f5e' },
+  purple: { label: 'ม่วง (Purple)', bg: 'bg-purple-500/10 dark:bg-purple-500/20', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30', dot: 'bg-purple-500', solid: 'bg-purple-600', hex: '#a855f7' },
+  cyan: { label: 'ฟ้าคราม (Cyan)', bg: 'bg-cyan-500/10 dark:bg-cyan-500/20', text: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-500/30', dot: 'bg-cyan-500', solid: 'bg-cyan-600', hex: '#06b6d4' },
+  pink: { label: 'ชมพู (Pink)', bg: 'bg-pink-500/10 dark:bg-pink-500/20', text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-500/30', dot: 'bg-pink-500', solid: 'bg-pink-600', hex: '#ec4899' },
+  orange: { label: 'ส้มสด (Orange)', bg: 'bg-orange-500/10 dark:bg-orange-500/20', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/30', dot: 'bg-orange-500', solid: 'bg-orange-600', hex: '#f97316' },
+  teal: { label: 'เขียวไข่กา (Teal)', bg: 'bg-teal-500/10 dark:bg-teal-500/20', text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-500/30', dot: 'bg-teal-500', solid: 'bg-teal-600', hex: '#14b8a6' },
+  slate: { label: 'เทาเข้ม (Slate)', bg: 'bg-slate-500/10 dark:bg-slate-500/20', text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-500/30', dot: 'bg-slate-500', solid: 'bg-slate-600', hex: '#64748b' }
 };
 
+// Dynamic Category Helpers
+function getCalendarCategories() {
+  const state = window.appState || {};
+  if (Array.isArray(state.calendarCategories) && state.calendarCategories.length > 0) {
+    return state.calendarCategories;
+  }
+  return [
+    { key: 'EVENT', label: 'กิจกรรมชมรม', color: 'indigo', icon: 'star' },
+    { key: 'MEETING', label: 'การประชุม', color: 'blue', icon: 'users' },
+    { key: 'DEADLINE', label: 'กำหนดส่งงาน', color: 'rose', icon: 'clock' },
+    { key: 'WORKSHOP', label: 'เวิร์กช็อป / อบรม', color: 'amber', icon: 'laptop' }
+  ];
+}
+
+function getCategoryMeta(key) {
+  const categories = getCalendarCategories();
+  const found = categories.find(c => c && c.key === key) || categories[0] || {
+    key: 'EVENT', label: 'กิจกรรมชมรม', color: 'indigo', icon: 'star'
+  };
+  const colorKey = found.color || 'indigo';
+  const colorMeta = CALENDAR_COLOR_PALETTES[colorKey] || CALENDAR_COLOR_PALETTES.indigo;
+  return {
+    ...found,
+    bg: colorMeta.bg,
+    text: colorMeta.text,
+    border: colorMeta.border,
+    dot: colorMeta.dot,
+    solid: colorMeta.solid,
+    hex: colorMeta.hex,
+    icon: found.icon || 'star'
+  };
+}
+
+// Backwards-compatible proxy for existing CALENDAR_CATEGORIES[key] references
+const CALENDAR_CATEGORIES = new Proxy({}, {
+  get(target, prop) {
+    return getCategoryMeta(prop);
+  }
+});
+
+// Event Visual Styles (Custom Event Color + Category Meta)
+function getEventVisualStyles(evt) {
+  if (!evt) return getCategoryMeta('EVENT');
+  const catMeta = getCategoryMeta(evt.category);
+  const colorKey = evt.color || catMeta.color || 'indigo';
+  const palette = CALENDAR_COLOR_PALETTES[colorKey] || CALENDAR_COLOR_PALETTES.indigo;
+  return {
+    colorKey,
+    bg: palette.bg,
+    text: palette.text,
+    border: palette.border,
+    dot: palette.dot,
+    solid: palette.solid,
+    hex: palette.hex,
+    catMeta
+  };
+}
+
+// Gather all calendar events for the Main Club Calendar (Club Events + Project Events)
+function getAllCalendarEventsForMain() {
+  const state = window.appState || {};
+  const clubEvents = (Array.isArray(state.calendarEvents) ? state.calendarEvents : []).map(e => ({
+    ...e,
+    isProjectEvent: false
+  }));
+
+  const projectEvents = [];
+  const projects = Array.isArray(state.projects) ? state.projects : [];
+  projects.forEach(p => {
+    if (p && p.showInMainCalendar !== false && Array.isArray(p.calendarEvents)) {
+      p.calendarEvents.forEach(e => {
+        projectEvents.push({
+          ...e,
+          isProjectEvent: true,
+          projectId: p.id,
+          projectTitle: p.title || 'โครงการ',
+          projectCode: p.code || '',
+          projectColor: p.color || null
+        });
+      });
+    }
+  });
+
+  return [...clubEvents, ...projectEvents];
+}
+
 /**
- * Helper to verify if the active session is currently an authenticated Admin
+ * Helper to verify if the active session is currently an authenticated Admin or Project Leader
  */
-function isCalendarAdmin() {
-  return Boolean(window.currentRole === 'ADMIN' && window.isAdminAuthenticated);
+function isCalendarAdmin(projectId = null) {
+  if (window.currentRole === 'ADMIN' && window.isAdminAuthenticated) return true;
+  if (projectId) {
+    const myId = window.currentUserId;
+    const allProjects = (typeof window.getProjectsList === 'function' ? window.getProjectsList() : (window.appState && window.appState.projects)) || [];
+    const prj = allProjects.find(p => p && p.id === projectId);
+    if (prj && Array.isArray(prj.leaders) && myId) {
+      if (prj.leaders.some(l => l.userId === myId || l.id === myId || l.name === window.currentUserObj?.name)) return true;
+    }
+  }
+  return false;
 }
 
 // =========================================================================
@@ -315,7 +418,7 @@ function escapeIcsText(str) {
 
 // Download single event as .ics
 function downloadCalendarEventIcs(eventId) {
-  const events = (window.appState && window.appState.calendarEvents) || [];
+  const events = getAllCalendarEventsForMain();
   const evt = events.find(e => e.id === eventId);
   if (!evt) return showToast('ไม่พบข้อมูลกิจกรรม', 'error');
 
@@ -513,7 +616,7 @@ function renderAdminCalendarSection() {
   const container = document.getElementById('aTab_CALENDAR');
   if (!container) return;
 
-  const events = (window.appState && window.appState.calendarEvents) || [];
+  const events = getAllCalendarEventsForMain();
   let filtered = [...events];
 
   // Category Filter
@@ -980,11 +1083,194 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
 // 5. MODALS & INTERACTIONS
 // =========================================================================
 
+// ==========================================
+// CATEGORY MANAGEMENT MODAL & CONTROLS
+// ==========================================
+function openCalendarCategoryModal() {
+  const modal = document.getElementById('calendarCategoryModal');
+  if (!modal) return;
+  renderCalendarCategoriesList();
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeCalendarCategoryModal() {
+  const modal = document.getElementById('calendarCategoryModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function renderCalendarCategoriesList() {
+  const container = document.getElementById('calendarCategoriesListContainer');
+  const badge = document.getElementById('catCountBadge');
+  if (!container) return;
+
+  const categories = getCalendarCategories();
+  if (badge) badge.textContent = `${categories.length} ประเภท`;
+
+  container.innerHTML = categories.map(cat => {
+    const colorMeta = CALENDAR_COLOR_PALETTES[cat.color] || CALENDAR_COLOR_PALETTES.indigo;
+    const isProtected = ['EVENT', 'MEETING', 'DEADLINE'].includes(cat.key);
+    return `
+      <div class="flex items-center justify-between p-2.5 rounded-xl bg-card border border-border/80 hover:bg-muted/40 transition">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="w-7 h-7 rounded-lg ${colorMeta.bg} ${colorMeta.text} flex items-center justify-center shrink-0 border ${colorMeta.border}">
+            <i data-lucide="${cat.icon || 'star'}" class="w-3.5 h-3.5"></i>
+          </span>
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-foreground truncate">${cat.label}</p>
+            <p class="text-[10px] text-muted-foreground font-mono">ID: ${cat.key} • สี: ${colorMeta.label.split(' ')[0]}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          ${categories.length > 1 ? `
+            <button type="button" onclick="deleteCalendarCategory('${cat.key}', '${cat.label}')"
+              class="w-7 h-7 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 flex items-center justify-center transition cursor-pointer"
+              title="ลบประเภทนี้">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+}
+
+async function addNewCalendarCategory() {
+  const labelInput = document.getElementById('newCatLabel');
+  const colorSelect = document.getElementById('newCatColor');
+  const iconSelect = document.getElementById('newCatIcon');
+
+  const label = (labelInput?.value || '').trim();
+  if (!label) {
+    if (typeof showToast === 'function') showToast('กรุณากรอกชื่อประเภทกิจกรรม', 'warning');
+    return;
+  }
+
+  const color = colorSelect?.value || 'indigo';
+  const icon = iconSelect?.value || 'star';
+  const key = 'CAT_' + Date.now().toString(36).toUpperCase();
+
+  const categories = [...getCalendarCategories()];
+  categories.push({ key, label, color, icon });
+
+  if (window.appState) {
+    window.appState.calendarCategories = categories;
+  }
+
+  if (window.socket && typeof window.socket.emit === 'function') {
+    window.socket.emit('admin:updateCalendarCategories', { categories });
+  }
+
+  if (typeof window.saveLocalState === 'function') window.saveLocalState();
+
+  if (labelInput) labelInput.value = '';
+  renderCalendarCategoriesList();
+  populateCategorySelectOptions();
+
+  // Refresh calendar views
+  if (typeof renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') renderAdminCalendarSection();
+  if (typeof renderUserCalendarSection === 'function') renderUserCalendarSection();
+  if (typeof window.renderProjectCalendarView === 'function' && window.activeDetailProjectId) {
+    window.renderProjectCalendarView(window.activeDetailProjectId);
+  }
+
+  if (typeof showToast === 'function') showToast(`เพิ่มประเภท "${label}" เรียบร้อยแล้ว`, 'success');
+}
+
+async function deleteCalendarCategory(key, label) {
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'ยืนยันการลบประเภทกิจกรรม',
+        message: `คุณต้องการลบประเภท "${label}" ออกจากระบบหรือไม่? กิจกรรมที่ใช้ประเภทนี้จะยังคงอยู่`,
+        confirmText: 'ลบประเภท',
+        isDanger: true,
+        icon: 'trash-2'
+      })
+    : confirm(`คุณต้องการลบประเภท "${label}" หรือไม่?`);
+
+  if (!confirmed) return;
+
+  let categories = [...getCalendarCategories()].filter(c => c.key !== key);
+  if (categories.length === 0) {
+    categories = [{ key: 'EVENT', label: 'กิจกรรมทั่วไป', color: 'indigo', icon: 'star' }];
+  }
+
+  if (window.appState) {
+    window.appState.calendarCategories = categories;
+  }
+
+  if (window.socket && typeof window.socket.emit === 'function') {
+    window.socket.emit('admin:updateCalendarCategories', { categories });
+  }
+
+  if (typeof window.saveLocalState === 'function') window.saveLocalState();
+
+  renderCalendarCategoriesList();
+  populateCategorySelectOptions();
+
+  // Refresh calendar views
+  if (typeof renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') renderAdminCalendarSection();
+  if (typeof renderUserCalendarSection === 'function') renderUserCalendarSection();
+  if (typeof window.renderProjectCalendarView === 'function' && window.activeDetailProjectId) {
+    window.renderProjectCalendarView(window.activeDetailProjectId);
+  }
+
+  if (typeof showToast === 'function') showToast(`ลบประเภท "${label}" เรียบร้อยแล้ว`, 'info');
+}
+
+// Populate Category Dropdown Options in Modal
+function populateCategorySelectOptions(selectedKey = 'EVENT') {
+  const select = document.getElementById('calCategory');
+  if (!select) return;
+
+  const categories = getCalendarCategories();
+  select.innerHTML = categories.map(c => `
+    <option value="${c.key}" ${c.key === selectedKey ? 'selected' : ''}>${c.label}</option>
+  `).join('');
+}
+
+// Render Event Color Swatches in Event Modal
+function renderEventColorPicker(selectedColor = 'indigo') {
+  const group = document.getElementById('calColorPickerGroup');
+  const hiddenInput = document.getElementById('calColor');
+  const labelEl = document.getElementById('calColorLabel');
+  if (!group || !hiddenInput) return;
+
+  const chosen = selectedColor || 'indigo';
+  hiddenInput.value = chosen;
+  if (labelEl) {
+    labelEl.textContent = CALENDAR_COLOR_PALETTES[chosen]?.label || chosen;
+  }
+
+  group.innerHTML = Object.entries(CALENDAR_COLOR_PALETTES).map(([k, p]) => {
+    const isSelected = k === chosen;
+    return `
+      <button type="button" onclick="selectEventColor('${k}')"
+        class="w-6 h-6 rounded-full ${p.solid} transition-all duration-200 cursor-pointer flex items-center justify-center ${isSelected ? 'ring-2 ring-primary ring-offset-2 scale-110 shadow-sm' : 'hover:scale-105 opacity-80 hover:opacity-100'}"
+        title="${p.label}">
+        ${isSelected ? '<i data-lucide="check" class="w-3 h-3 text-white pointer-events-none"></i>' : ''}
+      </button>
+    `;
+  }).join('');
+
+  if (typeof window.refreshIcons === 'function') window.refreshIcons();
+}
+
+function selectEventColor(colorKey) {
+  renderEventColorPicker(colorKey);
+}
+
 // Add / Edit Modal
-function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null) {
-  if (!isCalendarAdmin()) {
+function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null, projectId = null) {
+  const targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
+  if (!isCalendarAdmin(targetProjectId)) {
     if (typeof showToast === 'function') {
-      showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถเพิ่มหรือแก้ไขกิจกรรมได้', 'warning');
+      showToast('เฉพาะผู้ดูแลระบบหรือผู้รับผิดชอบโครงการเท่านั้นที่สามารถจัดการกิจกรรมได้', 'warning');
     }
     return;
   }
@@ -993,9 +1279,22 @@ function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null) {
   if (!modal) return;
 
   const state = window.appState || {};
-  const events = state.calendarEvents || [];
   const users = state.users || [];
-  const event = eventIdToEdit ? events.find(e => e.id === eventIdToEdit) : null;
+
+  // Project context resolution
+  let allEvents = [];
+  let currentProject = null;
+  if (targetProjectId) {
+    const allProjects = (typeof window.getProjectsList === 'function' ? window.getProjectsList() : state.projects) || [];
+    currentProject = allProjects.find(p => p && p.id === targetProjectId);
+    if (currentProject) {
+      allEvents = Array.isArray(currentProject.calendarEvents) ? currentProject.calendarEvents : [];
+    }
+  } else {
+    allEvents = Array.isArray(state.calendarEvents) ? state.calendarEvents : [];
+  }
+
+  const event = eventIdToEdit ? allEvents.find(e => e.id === eventIdToEdit) : null;
 
   const modalIcon = document.getElementById('calModalIcon');
   if (modalIcon) {
@@ -1005,10 +1304,22 @@ function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null) {
       modalIcon.setAttribute('data-lucide', event ? 'pen' : 'calendar-plus');
     }
   }
-  document.getElementById('calModalTitle').textContent = event ? 'แก้ไขตารางงานชมรม' : 'เพิ่มตารางงานใหม่';
+
+  // Set Project ID context
+  const prjInput = document.getElementById('calProjectId');
+  if (prjInput) prjInput.value = targetProjectId || '';
+
+  const titlePrefix = currentProject ? `[${currentProject.title}] ` : '';
+  document.getElementById('calModalTitle').textContent = event
+    ? (currentProject ? `แก้ไขกิจกรรมโครงการ: ${currentProject.title}` : 'แก้ไขตารางงานชมรม')
+    : (currentProject ? `เพิ่มกิจกรรมโครงการ: ${currentProject.title}` : 'เพิ่มตารางงานใหม่');
+
   document.getElementById('calEventId').value = event ? event.id : '';
   document.getElementById('calTitle').value = event ? event.title : '';
-  document.getElementById('calCategory').value = event ? event.category : 'EVENT';
+
+  // Populate dynamic categories and color swatches
+  populateCategorySelectOptions(event ? event.category : 'EVENT');
+  renderEventColorPicker(event ? (event.color || 'indigo') : 'indigo');
   document.getElementById('calStartDate').value = event ? event.startDate : (defaultDate || new Date().toISOString().slice(0, 10));
   document.getElementById('calStartTime').value = event ? event.startTime : '09:00';
   document.getElementById('calEndDate').value = event ? (event.endDate || event.startDate) : (defaultDate || new Date().toISOString().slice(0, 10));
@@ -1129,10 +1440,14 @@ function saveCalendarEventFromModal() {
     }
   });
 
+  const projectId = (document.getElementById('calProjectId')?.value || '').trim();
+  const chosenColor = document.getElementById('calColor')?.value || 'indigo';
+
   const eventData = {
     id: id || undefined,
     title,
     category,
+    color: chosenColor,
     startDate,
     startTime,
     endDate,
@@ -1141,41 +1456,92 @@ function saveCalendarEventFromModal() {
     location,
     description,
     assignees,
-    createdSource: 'MANUAL'
+    createdSource: 'MANUAL',
+    projectId: projectId || undefined
   };
 
-  if (id) {
-    window.socket.emit('admin:updateCalendarEvent', eventData);
-    // Optimistic local update for instant UI feedback
-    if (window.appState && Array.isArray(window.appState.calendarEvents)) {
-      const idx = window.appState.calendarEvents.findIndex(e => e.id === id);
-      if (idx !== -1) {
-        window.appState.calendarEvents[idx] = {
-          ...window.appState.calendarEvents[idx],
-          ...eventData,
-          updatedAt: new Date().toISOString()
-        };
-        if (window.currentRole === 'ADMIN') {
-          if (typeof renderAdminCalendarSection === 'function') renderAdminCalendarSection();
+  // Case A: Saving to Project Calendar
+  if (projectId) {
+    const allProjects = (typeof window.getProjectsList === 'function' ? window.getProjectsList() : window.appState?.projects) || [];
+    const prj = allProjects.find(p => p && p.id === projectId);
+    if (prj) {
+      if (!Array.isArray(prj.calendarEvents)) prj.calendarEvents = [];
+      if (id) {
+        const evIdx = prj.calendarEvents.findIndex(e => e.id === id);
+        if (evIdx !== -1) {
+          prj.calendarEvents[evIdx] = { ...prj.calendarEvents[evIdx], ...eventData, updatedAt: new Date().toISOString() };
         } else {
-          if (typeof renderUserCalendarSection === 'function') renderUserCalendarSection();
+          prj.calendarEvents.unshift(eventData);
         }
-        if (typeof renderTodayEventsBanner === 'function') renderTodayEventsBanner();
+      } else {
+        eventData.id = 'evt_prj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        prj.calendarEvents.unshift(eventData);
       }
+      prj.updatedAt = new Date().toISOString();
+
+      // Emit project calendar update
+      if (window.socket && typeof window.socket.emit === 'function') {
+        window.socket.emit('admin:updateProjectCalendar', {
+          projectId,
+          calendarEvents: prj.calendarEvents,
+          showInMainCalendar: prj.showInMainCalendar !== false
+        });
+      }
+      if (typeof window.saveLocalState === 'function') window.saveLocalState();
+
+      // Re-render project calendar and badges
+      if (typeof window.renderProjectCalendarView === 'function') {
+        window.renderProjectCalendarView(projectId);
+      }
+      const countBadge = document.getElementById('prjDetailCalCountBadge');
+      if (countBadge) countBadge.textContent = prj.calendarEvents.length;
+      const totalBadge = document.getElementById('prjCalEventsTotalBadge');
+      if (totalBadge) totalBadge.textContent = `${prj.calendarEvents.length} กิจกรรม`;
+
+      // Refresh main calendar if showInMainCalendar is true
+      if (prj.showInMainCalendar !== false) {
+        if (typeof renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') renderAdminCalendarSection();
+        if (typeof renderUserCalendarSection === 'function') renderUserCalendarSection();
+      }
+      showToast('บันทึกกิจกรรมในโครงการเรียบร้อยแล้ว', 'success');
+    } else {
+      showToast('ไม่พบโครงการที่ระบุ', 'error');
     }
-    showToast('บันทึกการแก้ไขตารางงานแล้ว', 'success');
   } else {
-    window.socket.emit('admin:addCalendarEvent', eventData);
-    showToast('เพิ่มตารางงานใหม่เรียบร้อยแล้ว', 'success');
+    // Case B: Saving to Club Main Calendar
+    if (id) {
+      window.socket.emit('admin:updateCalendarEvent', eventData);
+      if (window.appState && Array.isArray(window.appState.calendarEvents)) {
+        const idx = window.appState.calendarEvents.findIndex(e => e.id === id);
+        if (idx !== -1) {
+          window.appState.calendarEvents[idx] = {
+            ...window.appState.calendarEvents[idx],
+            ...eventData,
+            updatedAt: new Date().toISOString()
+          };
+          if (window.currentRole === 'ADMIN') {
+            if (typeof renderAdminCalendarSection === 'function') renderAdminCalendarSection();
+          } else {
+            if (typeof renderUserCalendarSection === 'function') renderUserCalendarSection();
+          }
+          if (typeof renderTodayEventsBanner === 'function') renderTodayEventsBanner();
+        }
+      }
+      showToast('บันทึกการแก้ไขตารางงานแล้ว', 'success');
+    } else {
+      window.socket.emit('admin:addCalendarEvent', eventData);
+      showToast('เพิ่มตารางงานใหม่เรียบร้อยแล้ว', 'success');
+    }
   }
 
   closeCalendarEventModal();
 }
 
-async function confirmDeleteCalendarEvent(eventId, title) {
-  if (!isCalendarAdmin()) {
+async function confirmDeleteCalendarEvent(eventId, title, projectId = null) {
+  const targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
+  if (!isCalendarAdmin(targetProjectId)) {
     if (typeof showToast === 'function') {
-      showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถลบกิจกรรมได้', 'warning');
+      showToast('เฉพาะผู้ดูแลระบบหรือผู้รับผิดชอบโครงการเท่านั้นที่สามารถลบกิจกรรมได้', 'warning');
     }
     return;
   }
@@ -1187,8 +1553,40 @@ async function confirmDeleteCalendarEvent(eventId, title) {
         isDanger: true,
         icon: 'trash-2'
       })
-    : false;
+    : confirm(`คุณต้องการลบกิจกรรม "${title}" หรือไม่?`);
   if (!confirmed) return;
+
+  if (targetProjectId) {
+    const allProjects = (typeof window.getProjectsList === 'function' ? window.getProjectsList() : window.appState?.projects) || [];
+    const prj = allProjects.find(p => p && p.id === targetProjectId);
+    if (prj && Array.isArray(prj.calendarEvents)) {
+      prj.calendarEvents = prj.calendarEvents.filter(e => e.id !== eventId);
+      prj.updatedAt = new Date().toISOString();
+      if (window.socket && typeof window.socket.emit === 'function') {
+        window.socket.emit('admin:updateProjectCalendar', {
+          projectId: targetProjectId,
+          calendarEvents: prj.calendarEvents,
+          showInMainCalendar: prj.showInMainCalendar !== false
+        });
+      }
+      if (typeof window.saveLocalState === 'function') window.saveLocalState();
+      if (typeof window.renderProjectCalendarView === 'function') {
+        window.renderProjectCalendarView(targetProjectId);
+      }
+      const countBadge = document.getElementById('prjDetailCalCountBadge');
+      if (countBadge) countBadge.textContent = prj.calendarEvents.length;
+      const totalBadge = document.getElementById('prjCalEventsTotalBadge');
+      if (totalBadge) totalBadge.textContent = `${prj.calendarEvents.length} กิจกรรม`;
+
+      if (prj.showInMainCalendar !== false) {
+        if (typeof renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') renderAdminCalendarSection();
+        if (typeof renderUserCalendarSection === 'function') renderUserCalendarSection();
+      }
+      showToast(`ลบกิจกรรม "${title}" ออกจากโครงการแล้ว`, 'info');
+      return;
+    }
+  }
+
   window.socket.emit('admin:deleteCalendarEvent', { eventId });
   showToast(`ลบกิจกรรม "${title}" เรียบร้อยแล้ว`, 'info');
 }
@@ -1345,21 +1743,43 @@ function confirmIcsImport() {
 
 // Event Detail Modal
 function openCalendarEventDetailModal(eventId) {
-  const events = (window.appState && window.appState.calendarEvents) || [];
-  const evt = events.find(e => e.id === eventId);
+  const events = getAllCalendarEventsForMain();
+  let evt = events.find(e => e.id === eventId);
+  if (!evt && window.activeDetailProjectId) {
+    const allProjects = (typeof window.getProjectsList === 'function' ? window.getProjectsList() : window.appState?.projects) || [];
+    const prj = allProjects.find(p => p && p.id === window.activeDetailProjectId);
+    if (prj && Array.isArray(prj.calendarEvents)) {
+      evt = prj.calendarEvents.find(e => e.id === eventId);
+      if (evt) {
+        evt = { ...evt, isProjectEvent: true, projectId: prj.id, projectTitle: prj.title };
+      }
+    }
+  }
   if (!evt) return;
 
   const modal = document.getElementById('calendarEventDetailModal');
   if (!modal) return;
 
-  const catInfo = CALENDAR_CATEGORIES[evt.category] || CALENDAR_CATEGORIES.EVENT;
+  const styles = getEventVisualStyles(evt);
+  const catInfo = styles.catMeta;
 
   document.getElementById('detailCalTitle').textContent = evt.title;
-  document.getElementById('detailCalCategory').innerHTML = `
-    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${catInfo.bg} ${catInfo.text} border ${catInfo.border}">
+  let categoryBadgeHtml = `
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${styles.bg} ${styles.text} border ${styles.border}">
       <i data-lucide="${catInfo.icon || 'star'}" class="w-3.5 h-3.5 mr-1 inline-block"></i> ${catInfo.label}
     </span>
   `;
+  if (evt.isProjectEvent) {
+    categoryBadgeHtml += `
+      <button type="button" onclick="closeCalendarEventDetailModal(); openProjectDetailModal('${evt.projectId}');"
+        class="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground border border-border cursor-pointer transition"
+        title="เปิดดูโครงการนี้">
+        <i data-lucide="folder-kanban" class="w-3.5 h-3.5 text-primary"></i>
+        <span>${evt.projectTitle}</span>
+      </button>
+    `;
+  }
+  document.getElementById('detailCalCategory').innerHTML = categoryBadgeHtml;
 
   // Prominent Date Badge in detail modal
   const dateBadgeEl = document.getElementById('detailCalDateBadge');
@@ -1428,7 +1848,7 @@ function openCalendarEventDetailModal(eventId) {
       headerBtnEdit.classList.add('flex');
       headerBtnEdit.onclick = () => {
         closeCalendarEventDetailModal();
-        openAddCalendarEventModal(evt.id);
+        openAddCalendarEventModal(evt.id, null, evt.projectId || null);
       };
     } else {
       headerBtnEdit.classList.add('hidden');
@@ -1448,13 +1868,13 @@ function openCalendarEventDetailModal(eventId) {
       if (btnEdit) {
         btnEdit.onclick = () => {
           closeCalendarEventDetailModal();
-          openAddCalendarEventModal(evt.id);
+          openAddCalendarEventModal(evt.id, null, evt.projectId || null);
         };
       }
       if (btnDelete) {
         btnDelete.onclick = () => {
           closeCalendarEventDetailModal();
-          confirmDeleteCalendarEvent(evt.id, evt.title);
+          confirmDeleteCalendarEvent(evt.id, evt.title, evt.projectId || null);
         };
       }
     } else {
@@ -1767,4 +2187,24 @@ window.cycleTodayEvent = cycleTodayEvent;
 window.pauseTodayEventCycle = pauseTodayEventCycle;
 window.resumeTodayEventCycle = resumeTodayEventCycle;
 window.navigateToCalendarEvent = navigateToCalendarEvent;
+
+// Export project calendar & category functions to window
+window.CALENDAR_COLOR_PALETTES = CALENDAR_COLOR_PALETTES;
+window.getCalendarCategories = getCalendarCategories;
+window.getCategoryMeta = getCategoryMeta;
+window.getEventVisualStyles = getEventVisualStyles;
+window.getAllCalendarEventsForMain = getAllCalendarEventsForMain;
+window.openCalendarCategoryModal = openCalendarCategoryModal;
+window.closeCalendarCategoryModal = closeCalendarCategoryModal;
+window.addNewCalendarCategory = addNewCalendarCategory;
+window.deleteCalendarCategory = deleteCalendarCategory;
+window.selectEventColor = selectEventColor;
+window.openAddCalendarEventModal = openAddCalendarEventModal;
+window.closeCalendarEventModal = closeCalendarEventModal;
+window.saveCalendarEventFromModal = saveCalendarEventFromModal;
+window.confirmDeleteCalendarEvent = confirmDeleteCalendarEvent;
+window.openCalendarEventDetailModal = openCalendarEventDetailModal;
+window.closeCalendarEventDetailModal = closeCalendarEventDetailModal;
+window.parseIcsText = parseIcsText;
+window.generateIcsString = generateIcsString;
 

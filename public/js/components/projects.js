@@ -2285,11 +2285,531 @@
       };
     }
 
+    // Setup Calendar Tab state & badges
+    const calEvents = Array.isArray(p.calendarEvents) ? p.calendarEvents : [];
+    const countBadge = document.getElementById('prjDetailCalCountBadge');
+    if (countBadge) countBadge.textContent = calEvents.length;
+    const toggleMain = document.getElementById('prjShowInMainCalToggle');
+    if (toggleMain) toggleMain.checked = p.showInMainCalendar !== false;
+
+    // Reset to Overview tab by default
+    switchProjectDetailTab('OVERVIEW');
+
     // Show modal
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     if (typeof window.refreshIcons === 'function') window.refreshIcons();
     else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  // ========================================================
+  // PROJECT CALENDAR CONTROLLER & SUB-VIEWS
+  // ========================================================
+  window.projectCalendarState = window.projectCalendarState || {};
+
+  function switchProjectDetailTab(tab = 'OVERVIEW') {
+    const overviewContent = document.getElementById('prjDetailOverviewTabContent');
+    const calContent = document.getElementById('prjDetailCalendarTabContent');
+    const btnOverview = document.getElementById('prjDetailTabBtnOverview');
+    const btnCal = document.getElementById('prjDetailTabBtnCalendar');
+
+    if (tab === 'CALENDAR') {
+      if (overviewContent) overviewContent.classList.add('hidden');
+      if (calContent) calContent.classList.remove('hidden');
+      if (btnOverview) {
+        btnOverview.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground transition flex items-center justify-center gap-2 cursor-pointer';
+      }
+      if (btnCal) {
+        btnCal.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-card text-foreground shadow-2xs cursor-pointer';
+      }
+      if (activeDetailProjectId) {
+        renderProjectCalendarView(activeDetailProjectId);
+      }
+    } else {
+      if (overviewContent) overviewContent.classList.remove('hidden');
+      if (calContent) calContent.classList.add('hidden');
+      if (btnOverview) {
+        btnOverview.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-card text-foreground shadow-2xs cursor-pointer';
+      }
+      if (btnCal) {
+        btnCal.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground transition flex items-center justify-center gap-2 cursor-pointer';
+      }
+    }
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function renderProjectCalendarView(projectId) {
+    if (!projectId) return;
+    const allProjects = getProjectsList();
+    const p = allProjects.find(item => item && item.id === projectId);
+    if (!p) return;
+
+    window.projectCalendarState[projectId] = window.projectCalendarState[projectId] || {
+      view: 'MONTH',
+      currentDate: new Date(),
+      categoryFilter: 'ALL'
+    };
+    const pState = window.projectCalendarState[projectId];
+    const calEvents = Array.isArray(p.calendarEvents) ? p.calendarEvents : [];
+
+    // Update Badges & Toggle
+    const countBadge = document.getElementById('prjDetailCalCountBadge');
+    if (countBadge) countBadge.textContent = calEvents.length;
+    const totalBadge = document.getElementById('prjCalEventsTotalBadge');
+    if (totalBadge) totalBadge.textContent = `${calEvents.length} กิจกรรม`;
+
+    const toggleMain = document.getElementById('prjShowInMainCalToggle');
+    if (toggleMain) toggleMain.checked = p.showInMainCalendar !== false;
+
+    // View switch buttons styling
+    const btnMonth = document.getElementById('prjCalBtnViewMonth');
+    const btnList = document.getElementById('prjCalBtnViewList');
+    if (btnMonth && btnList) {
+      if (pState.view === 'MONTH') {
+        btnMonth.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer';
+        btnList.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer';
+      } else {
+        btnMonth.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer';
+        btnList.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer';
+      }
+    }
+
+    // Render Category Filter Pills
+    const filterContainer = document.getElementById('prjCalCategoryFiltersContainer');
+    if (filterContainer) {
+      const categories = (typeof window.getCalendarCategories === 'function') ? window.getCalendarCategories() : [];
+      let catPillsHtml = `
+        <button type="button" onclick="setProjectCalendarCategoryFilter('ALL')"
+          class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium transition-colors h-8 rounded-full px-3.5 shrink-0 ${pState.categoryFilter === 'ALL' ? 'bg-primary text-primary-foreground' : 'border border-input bg-background hover:bg-accent hover:text-white'} cursor-pointer">
+          ทั้งหมด (${calEvents.length})
+        </button>
+      `;
+      categories.forEach(cat => {
+        const catCount = calEvents.filter(e => e.category === cat.key).length;
+        catPillsHtml += `
+          <button type="button" onclick="setProjectCalendarCategoryFilter('${cat.key}')"
+            class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-xs font-medium transition-colors h-8 rounded-full px-3.5 shrink-0 ${pState.categoryFilter === cat.key ? 'bg-primary text-primary-foreground' : 'border border-input bg-background hover:bg-accent hover:text-white'} cursor-pointer">
+            ${cat.label} (${catCount})
+          </button>
+        `;
+      });
+      filterContainer.innerHTML = catPillsHtml;
+    }
+
+    // Filter events
+    let filteredEvents = [...calEvents];
+    if (pState.categoryFilter !== 'ALL') {
+      filteredEvents = filteredEvents.filter(e => e.category === pState.categoryFilter);
+    }
+    filteredEvents.sort((a, b) => {
+      const dtA = `${a.startDate || ''}T${a.startTime || '00:00'}`;
+      const dtB = `${b.startDate || ''}T${b.startTime || '00:00'}`;
+      return dtA.localeCompare(dtB);
+    });
+
+    const bodyEl = document.getElementById('prjDetailCalendarBody');
+    if (!bodyEl) return;
+
+    if (pState.view === 'MONTH') {
+      bodyEl.innerHTML = renderProjectMonthGridView(filteredEvents, pState, p);
+    } else {
+      bodyEl.innerHTML = renderProjectAgendaListView(filteredEvents, pState, p);
+    }
+
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function setProjectCalendarView(view) {
+    if (!activeDetailProjectId) return;
+    window.projectCalendarState[activeDetailProjectId] = window.projectCalendarState[activeDetailProjectId] || {};
+    window.projectCalendarState[activeDetailProjectId].view = view;
+    renderProjectCalendarView(activeDetailProjectId);
+  }
+
+  function navigateProjectCalendarMonth(delta) {
+    if (!activeDetailProjectId) return;
+    window.projectCalendarState[activeDetailProjectId] = window.projectCalendarState[activeDetailProjectId] || { currentDate: new Date() };
+    const cur = window.projectCalendarState[activeDetailProjectId].currentDate || new Date();
+    if (delta === 0) {
+      window.projectCalendarState[activeDetailProjectId].currentDate = new Date();
+    } else {
+      window.projectCalendarState[activeDetailProjectId].currentDate = new Date(cur.getFullYear(), cur.getMonth() + delta, 1);
+    }
+    renderProjectCalendarView(activeDetailProjectId);
+  }
+
+  function setProjectCalendarCategoryFilter(category) {
+    if (!activeDetailProjectId) return;
+    window.projectCalendarState[activeDetailProjectId] = window.projectCalendarState[activeDetailProjectId] || {};
+    window.projectCalendarState[activeDetailProjectId].categoryFilter = category;
+    renderProjectCalendarView(activeDetailProjectId);
+  }
+
+  function renderProjectMonthGridView(events, pState, project) {
+    const current = pState.currentDate || new Date();
+    const year = current.getFullYear();
+    const month = current.getMonth();
+
+    const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    const thaiDays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const todayIso = new Date().toISOString().slice(0, 10);
+
+    let html = `
+      <div class="space-y-4">
+        <!-- Month Navigation Header -->
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <h4 class="font-extrabold text-base sm:text-lg text-foreground">
+              ${thaiMonths[month]} ${year + 543}
+            </h4>
+            <button type="button" onclick="navigateProjectCalendarMonth(0)"
+              class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition cursor-pointer">
+              วันนี้
+            </button>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="navigateProjectCalendarMonth(-1)"
+              class="w-8 h-8 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition cursor-pointer" title="เดือนก่อนหน้า">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button type="button" onclick="navigateProjectCalendarMonth(1)"
+              class="w-8 h-8 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition cursor-pointer" title="เดือนถัดไป">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Month Grid -->
+        <div class="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
+          <!-- Day names -->
+          <div class="grid grid-cols-7 bg-muted/60 border-b border-border text-center py-2 text-xs font-bold text-muted-foreground">
+            ${thaiDays.map((d, idx) => `<div class="${idx === 0 ? 'text-rose-500' : ''}">${d}</div>`).join('')}
+          </div>
+
+          <!-- Day cells -->
+          <div class="grid grid-cols-7 divide-x divide-y divide-border/60">
+    `;
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div class="min-h-[85px] sm:min-h-[105px] p-1.5 bg-muted/10 opacity-40"></div>`;
+    }
+
+    // Days cells
+    for (let day = 1; day <= totalDays; day++) {
+      const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = events.filter(e => {
+        const sd = String(e.startDate || '').slice(0, 10);
+        const ed = String(e.endDate || e.startDate || '').slice(0, 10);
+        return sd && sd <= dayDateStr && dayDateStr <= (ed >= sd ? ed : sd);
+      });
+      const isToday = dayDateStr === todayIso;
+
+      html += `
+        <div class="min-h-[85px] sm:min-h-[105px] p-1.5 sm:p-2 bg-card hover:bg-muted/30 transition flex flex-col justify-between group">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center ${isToday ? 'bg-primary text-white shadow-xs' : 'text-foreground'}">
+              ${day}
+            </span>
+            <button type="button" onclick="openAddCalendarEventModal(null, '${dayDateStr}', '${project.id}')"
+              class="opacity-0 group-hover:opacity-100 transition w-5 h-5 rounded hover:bg-primary/10 text-primary flex items-center justify-center text-[10px] cursor-pointer" title="เพิ่มกิจกรรมในวันนี้">
+              <i data-lucide="plus" class="w-3 h-3"></i>
+            </button>
+          </div>
+
+          <!-- Event badges in day cell -->
+          <div class="space-y-1 overflow-y-auto max-h-[60px] scrollbar-none">
+            ${dayEvents.map(e => {
+              const styles = typeof window.getEventVisualStyles === 'function'
+                ? window.getEventVisualStyles(e)
+                : { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', dot: 'bg-primary' };
+              return `
+                <div onclick="openCalendarEventDetailModal('${e.id}')"
+                  class="px-1.5 py-0.5 rounded text-[10px] font-semibold truncate cursor-pointer transition ${styles.bg} ${styles.text} border ${styles.border} hover:scale-[1.02] flex items-center justify-between group/chip"
+                  title="${e.title} (${e.startTime || ''})">
+                  <span class="truncate flex-1 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full ${styles.dot} shrink-0"></span>
+                    ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5">${e.startTime}</span>` : ''}
+                    ${e.title}
+                  </span>
+                  <button type="button" onclick="event.stopPropagation(); openAddCalendarEventModal('${e.id}', null, '${project.id}')"
+                    class="opacity-0 group-hover/chip:opacity-100 hover:scale-125 ml-1 text-inherit hover:text-indigo-600 transition shrink-0 p-0.5 cursor-pointer"
+                    title="แก้ไขกิจกรรมนี้">
+                    <i data-lucide="pen" class="w-2.5 h-2.5"></i>
+                  </button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Trailing empty cells
+    const totalSlots = firstDay + totalDays;
+    const trailing = (7 - (totalSlots % 7)) % 7;
+    for (let i = 0; i < trailing; i++) {
+      html += `<div class="min-h-[85px] sm:min-h-[105px] p-1.5 bg-muted/10 opacity-40"></div>`;
+    }
+
+    html += `
+          </div>
+        </div>
+      </div>
+    `;
+    return html;
+  }
+
+  function renderProjectAgendaListView(events, pState, project) {
+    if (events.length === 0) {
+      return `
+        <div class="text-center py-12 px-4 bg-muted/20 border border-dashed border-border rounded-2xl space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto text-xl">
+            <i data-lucide="calendar-x-2" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-foreground">ยังไม่มีกำหนดการหรือกิจกรรมในโครงการนี้</h4>
+            <p class="text-xs text-muted-foreground mt-0.5">คุณสามารถเพิ่มกิจกรรมใหม่ หรือนำเข้าไฟล์ปฏิทิน .ics เข้าสู่โครงการได้ทันที</p>
+          </div>
+          <div class="flex items-center justify-center gap-2 pt-2">
+            <button type="button" onclick="openAddCalendarEventModal(null, null, '${project.id}')"
+              class="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มกิจกรรมแรก
+            </button>
+            <button type="button" onclick="triggerImportProjectCalendarIcs()"
+              class="px-3.5 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="upload" class="w-3.5 h-3.5 text-muted-foreground"></i> นำเข้าไฟล์ .ics
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+    let html = `<div class="space-y-3">`;
+    events.forEach(evt => {
+      const styles = typeof window.getEventVisualStyles === 'function'
+        ? window.getEventVisualStyles(evt)
+        : { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', dot: 'bg-primary' };
+      const catInfo = styles.catMeta;
+
+      const sDate = String(evt.startDate || '').split('-');
+      const dayNum = sDate[2] ? parseInt(sDate[2], 10) : '01';
+      const monthNum = sDate[1] ? parseInt(sDate[1], 10) - 1 : 0;
+      const monthStr = thaiMonths[monthNum] || 'ม.ค.';
+
+      html += `
+        <div class="bg-card border border-border/80 hover:border-primary/40 rounded-2xl p-3.5 sm:p-4 shadow-xs transition hover:shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
+          <div class="flex items-start gap-3 min-w-0">
+            <!-- Date Badge -->
+            <div class="w-12 h-12 rounded-xl ${styles.bg} ${styles.text} border ${styles.border} flex flex-col items-center justify-center shrink-0">
+              <span class="text-sm font-black leading-none">${dayNum}</span>
+              <span class="text-[10px] font-bold uppercase mt-0.5">${monthStr}</span>
+            </div>
+
+            <!-- Event Details -->
+            <div class="space-y-1 min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${styles.bg} ${styles.text} border ${styles.border}">
+                  <i data-lucide="${catInfo.icon || 'star'}" class="w-3 h-3 inline-block mr-0.5"></i> ${catInfo.label}
+                </span>
+                <span class="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                  <i data-lucide="clock" class="w-3 h-3"></i>
+                  ${evt.isAllDay ? 'ตลอดทั้งวัน' : `${evt.startTime || '09:00'} - ${evt.endTime || '12:00'} น.`}
+                </span>
+                ${evt.location ? `
+                  <span class="text-xs text-muted-foreground font-medium flex items-center gap-1 truncate max-w-[200px]">
+                    <i data-lucide="map-pin" class="w-3 h-3 text-rose-500"></i>
+                    ${evt.location}
+                  </span>
+                ` : ''}
+              </div>
+              <h4 onclick="openCalendarEventDetailModal('${evt.id}')"
+                class="text-sm sm:text-base font-bold text-foreground hover:text-primary transition cursor-pointer truncate" title="${evt.title}">
+                ${evt.title}
+              </h4>
+              ${evt.description ? `<p class="text-xs text-muted-foreground line-clamp-1">${evt.description}</p>` : ''}
+              ${Array.isArray(evt.assignees) && evt.assignees.length > 0 ? `
+                <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span class="text-[11px] text-muted-foreground font-medium">ผู้รับผิดชอบ:</span>
+                  ${evt.assignees.map(a => `
+                    <span class="px-2 py-0.5 rounded-lg bg-muted text-muted-foreground text-[10px] font-semibold">
+                      ${a.name}
+                    </span>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+            <button type="button" onclick="openCalendarEventDetailModal('${evt.id}')"
+              class="px-2.5 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold transition cursor-pointer" title="ดูรายละเอียด">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+            </button>
+            <button type="button" onclick="openAddCalendarEventModal('${evt.id}', null, '${project.id}')"
+              class="px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition cursor-pointer" title="แก้ไข">
+              <i data-lucide="square-pen" class="w-3.5 h-3.5"></i>
+            </button>
+            <button type="button" onclick="confirmDeleteCalendarEvent('${evt.id}', '${evt.title}', '${project.id}')"
+              class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold transition cursor-pointer" title="ลบ">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+    return html;
+  }
+
+  function toggleCurrentProjectShowInMainCalendar(projectIdOrChecked, maybeChecked) {
+    const targetId = (typeof projectIdOrChecked === 'string') ? projectIdOrChecked : activeDetailProjectId;
+    const isChecked = (typeof projectIdOrChecked === 'string') ? Boolean(maybeChecked) : Boolean(projectIdOrChecked);
+    if (!targetId) return;
+    const allProjects = getProjectsList();
+    const prj = allProjects.find(p => p && p.id === targetId);
+    if (!prj) return;
+
+    prj.showInMainCalendar = Boolean(isChecked);
+    prj.updatedAt = new Date().toISOString();
+
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('admin:updateProjectCalendar', {
+        projectId: targetId,
+        calendarEvents: prj.calendarEvents || [],
+        showInMainCalendar: prj.showInMainCalendar
+      });
+    }
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+
+    // Refresh main calendar
+    if (typeof window.renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') {
+      window.renderAdminCalendarSection();
+    }
+    if (typeof window.renderUserCalendarSection === 'function') {
+      window.renderUserCalendarSection();
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(isChecked ? 'กิจกรรมของโครงการจะแสดงในปฏิทินรวมแล้ว' : 'ซ่อนกิจกรรมโครงการจากปฏิทินรวมแล้ว', 'success');
+    }
+  }
+
+  function triggerImportProjectCalendarIcs() {
+    const input = document.getElementById('prjDetailCalIcsFileInput');
+    if (input) input.click();
+  }
+
+  function handleProjectCalendarIcsFileSelected(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file || !activeDetailProjectId) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        const text = evt.target.result;
+        if (typeof window.parseIcsText !== 'function') {
+          return showToast('ระบบไม่พร้อมสำหรับการอ่านไฟล์ .ics', 'error');
+        }
+        const parsedEvents = window.parseIcsText(text);
+        if (!parsedEvents || parsedEvents.length === 0) {
+          return showToast('ไม่พบข้อมูลกิจกรรมในไฟล์ .ics ที่อัปโหลด', 'warning');
+        }
+
+        const allProjects = getProjectsList();
+        const prj = allProjects.find(p => p && p.id === activeDetailProjectId);
+        if (!prj) return;
+
+        if (!Array.isArray(prj.calendarEvents)) prj.calendarEvents = [];
+        let addedCount = 0;
+        parsedEvents.forEach(pe => {
+          const newEv = {
+            id: 'evt_prj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            title: pe.title || 'กิจกรรมใหม่',
+            description: pe.description || '',
+            category: pe.category || 'EVENT',
+            color: pe.color || 'indigo',
+            startDate: pe.startDate,
+            startTime: pe.startTime || '09:00',
+            endDate: pe.endDate || pe.startDate,
+            endTime: pe.endTime || '12:00',
+            isAllDay: Boolean(pe.isAllDay),
+            location: pe.location || '',
+            assignees: Array.isArray(pe.assignees) ? pe.assignees : [],
+            createdSource: 'ICS_IMPORT',
+            projectId: prj.id
+          };
+          prj.calendarEvents.push(newEv);
+          addedCount++;
+        });
+        prj.updatedAt = new Date().toISOString();
+
+        if (window.socket && typeof window.socket.emit === 'function') {
+          window.socket.emit('admin:updateProjectCalendar', {
+            projectId: activeDetailProjectId,
+            calendarEvents: prj.calendarEvents,
+            showInMainCalendar: prj.showInMainCalendar !== false
+          });
+        }
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+
+        renderProjectCalendarView(activeDetailProjectId);
+
+        if (prj.showInMainCalendar !== false) {
+          if (typeof window.renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') window.renderAdminCalendarSection();
+          if (typeof window.renderUserCalendarSection === 'function') window.renderUserCalendarSection();
+        }
+
+        if (typeof showToast === 'function') {
+          showToast(`นำเข้า ${addedCount} กิจกรรมเข้าสู่โครงการเรียบร้อยแล้ว`, 'success');
+        }
+      } catch (err) {
+        console.error('Error importing project ICS:', err);
+        if (typeof showToast === 'function') showToast('ไม่สามารถอ่านไฟล์ .ics ได้', 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  function exportCurrentProjectCalendarIcs() {
+    if (!activeDetailProjectId) return;
+    const allProjects = getProjectsList();
+    const prj = allProjects.find(p => p && p.id === activeDetailProjectId);
+    if (!prj) return;
+
+    const events = Array.isArray(prj.calendarEvents) ? prj.calendarEvents : [];
+    if (events.length === 0) {
+      if (typeof showToast === 'function') showToast('ไม่มีกิจกรรมในโครงการนี้สำหรับส่งออก', 'warning');
+      return;
+    }
+
+    if (typeof window.generateIcsString !== 'function') {
+      if (typeof showToast === 'function') showToast('ระบบสร้างไฟล์ .ics ไม่พร้อมใช้งาน', 'error');
+      return;
+    }
+
+    const icsContent = window.generateIcsString(events);
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeTitle = (prj.title || 'project').replace(/[/\\?%*:|"<>]/g, '_');
+    link.download = `${safeTitle}_calendar.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    if (typeof showToast === 'function') showToast('ส่งออกไฟล์ปฏิทิน .ics ของโครงการเรียบร้อยแล้ว', 'success');
   }
 
   let activePreviewPerson = null;
@@ -4913,6 +5433,15 @@
     window.matchPhotoForMemberEditModal = matchPhotoForMemberEditModal;
     window.openEditProjectMemberModalFromPreview = openEditProjectMemberModalFromPreview;
     window.deleteProjectMemberFromPreview = deleteProjectMemberFromPreview;
+    window.switchProjectDetailTab = switchProjectDetailTab;
+    window.renderProjectCalendarView = renderProjectCalendarView;
+    window.setProjectCalendarView = setProjectCalendarView;
+    window.navigateProjectCalendarMonth = navigateProjectCalendarMonth;
+    window.setProjectCalendarCategoryFilter = setProjectCalendarCategoryFilter;
+    window.toggleCurrentProjectShowInMainCalendar = toggleCurrentProjectShowInMainCalendar;
+    window.triggerImportProjectCalendarIcs = triggerImportProjectCalendarIcs;
+    window.handleProjectCalendarIcsFileSelected = handleProjectCalendarIcsFileSelected;
+    window.exportCurrentProjectCalendarIcs = exportCurrentProjectCalendarIcs;
   }
 
   return {
@@ -4938,6 +5467,15 @@
     matchPhotoForMemberEditModal,
     openEditProjectMemberModalFromPreview,
     deleteProjectMemberFromPreview,
+    switchProjectDetailTab,
+    renderProjectCalendarView,
+    setProjectCalendarView,
+    navigateProjectCalendarMonth,
+    setProjectCalendarCategoryFilter,
+    toggleCurrentProjectShowInMainCalendar,
+    triggerImportProjectCalendarIcs,
+    handleProjectCalendarIcsFileSelected,
+    exportCurrentProjectCalendarIcs,
     updateRepeaterField,
     toggleRepeaterItem,
     toggleExpandAllMembersRepeater,

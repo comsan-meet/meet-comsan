@@ -1028,6 +1028,15 @@
         break;
       }
 
+      case 'admin:updateCalendarCategories': {
+        const { categories } = payload || {};
+        if (Array.isArray(categories)) {
+          state.calendarCategories = categories;
+          result = { success: true, categories };
+        }
+        break;
+      }
+
       case 'admin:importCalendarEvents': {
         const { events } = payload || {};
         if (Array.isArray(events)) {
@@ -1153,6 +1162,8 @@
             advisors: Array.isArray(data.advisors) ? data.advisors : state.projects[idx].advisors,
             smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : state.projects[idx].smoOfficers,
             departmentColorConfig: data.departmentColorConfig !== undefined ? data.departmentColorConfig : state.projects[idx].departmentColorConfig,
+            calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : (state.projects[idx].calendarEvents || []),
+            showInMainCalendar: data.showInMainCalendar !== undefined ? Boolean(data.showInMainCalendar) : (state.projects[idx].showInMainCalendar !== undefined ? state.projects[idx].showInMainCalendar : true),
             updatedAt: nowISO
           };
           result = { success: true, project: state.projects[idx] };
@@ -1205,6 +1216,18 @@
         const beforeLen = state.projects.length;
         state.projects = state.projects.filter(p => p && p.id !== targetId);
         result = { success: state.projects.length !== beforeLen, projectId: targetId };
+        break;
+      }
+
+      case 'admin:updateProjectCalendar': {
+        const { projectId, calendarEvents, showInMainCalendar } = payload || {};
+        const prj = (state.projects || []).find(p => p && p.id === projectId);
+        if (prj) {
+          if (Array.isArray(calendarEvents)) prj.calendarEvents = calendarEvents;
+          if (showInMainCalendar !== undefined) prj.showInMainCalendar = Boolean(showInMainCalendar);
+          prj.updatedAt = new Date().toISOString();
+          result = { success: true, project: prj };
+        }
         break;
       }
 

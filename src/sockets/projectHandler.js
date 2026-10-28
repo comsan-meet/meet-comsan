@@ -51,6 +51,8 @@ function registerProjectHandlers(io, socket) {
         members: Array.isArray(data.members) ? data.members : [],
         advisors: Array.isArray(data.advisors) ? data.advisors : [],
         smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
+        calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : [],
+        showInMainCalendar: data.showInMainCalendar !== undefined ? Boolean(data.showInMainCalendar) : true,
         createdAt: data.createdAt || nowISO,
         updatedAt: nowISO
       };
@@ -147,6 +149,8 @@ function registerProjectHandlers(io, socket) {
         members: Array.isArray(data.members) ? data.members : state.projects[index].members,
         advisors: Array.isArray(data.advisors) ? data.advisors : state.projects[index].advisors,
         smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : state.projects[index].smoOfficers,
+        calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : (state.projects[index].calendarEvents || []),
+        showInMainCalendar: data.showInMainCalendar !== undefined ? Boolean(data.showInMainCalendar) : (state.projects[index].showInMainCalendar !== undefined ? state.projects[index].showInMainCalendar : true),
         updatedAt: nowISO
       };
 
@@ -179,6 +183,35 @@ function registerProjectHandlers(io, socket) {
     } catch (err) {
       console.error('Error deleting project:', err);
       socket.emit('admin:projectError', { message: 'เกิดข้อผิดพลาดในการลบโครงการ' });
+    }
+  });
+
+  // 4. Update Project Calendar & Main Calendar visibility
+  socket.on('admin:updateProjectCalendar', (data) => {
+    try {
+      const state = stateService.getState();
+      if (!Array.isArray(state.projects)) return;
+
+      const targetId = (data && data.projectId) ? String(data.projectId).trim() : '';
+      if (!targetId) return;
+
+      const prj = state.projects.find(p => p && p.id === targetId);
+      if (!prj) return;
+
+      if (Array.isArray(data.calendarEvents)) {
+        prj.calendarEvents = data.calendarEvents;
+      }
+      if (data.showInMainCalendar !== undefined) {
+        prj.showInMainCalendar = Boolean(data.showInMainCalendar);
+      }
+      prj.updatedAt = new Date().toISOString();
+
+      state.projects = deduplicateProjects(state.projects);
+      stateService.persistAndBroadcast();
+      socket.emit('admin:projectCalendarUpdated', { success: true, projectId: targetId, project: prj });
+    } catch (err) {
+      console.error('Error updating project calendar:', err);
+      socket.emit('admin:projectError', { message: 'เกิดข้อผิดพลาดในการอัปเดตปฏิทินโครงการ' });
     }
   });
 }

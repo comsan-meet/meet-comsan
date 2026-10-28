@@ -180,6 +180,12 @@ const defaultState = {
     }
   ],
   projects: defaultProjects,
+  calendarCategories: [
+    { key: 'EVENT', label: 'กิจกรรมชมรม', color: 'indigo', icon: 'star' },
+    { key: 'MEETING', label: 'การประชุม', color: 'blue', icon: 'users' },
+    { key: 'DEADLINE', label: 'กำหนดส่งงาน', color: 'rose', icon: 'clock' },
+    { key: 'WORKSHOP', label: 'เวิร์กช็อป / อบรม', color: 'amber', icon: 'laptop' }
+  ],
   systemVersion: '2.0.1',
   versionNotes: {
     version: '2.0.1',

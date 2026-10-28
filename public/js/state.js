@@ -163,6 +163,12 @@ const defaultState = {
   meetingHistory: [],
   calendarEvents: [],
   projects: [],
+  calendarCategories: [
+    { key: 'EVENT', label: 'กิจกรรมชมรม', color: 'indigo', icon: 'star' },
+    { key: 'MEETING', label: 'การประชุม', color: 'blue', icon: 'users' },
+    { key: 'DEADLINE', label: 'กำหนดส่งงาน', color: 'rose', icon: 'clock' },
+    { key: 'WORKSHOP', label: 'เวิร์กช็อป / อบรม', color: 'amber', icon: 'laptop' }
+  ],
   systemVersion: '2.0.1',
   versionNotes: null
 };
@@ -238,7 +244,9 @@ function normalizeState(raw) {
           photoFolderUrl: p.photoFolderUrl || current.photoFolderUrl || '',
           photoCatalog: (Array.isArray(p.photoCatalog) && p.photoCatalog.length > 0) ? p.photoCatalog : (current.photoCatalog || []),
           projectDocument: p.projectDocument || current.projectDocument,
-          budgetDocument: p.budgetDocument || current.budgetDocument
+          budgetDocument: p.budgetDocument || current.budgetDocument,
+          calendarEvents: (Array.isArray(p.calendarEvents) && p.calendarEvents.length > 0) ? p.calendarEvents : (current.calendarEvents || []),
+          showInMainCalendar: p.showInMainCalendar !== undefined ? p.showInMainCalendar : (current.showInMainCalendar !== undefined ? current.showInMainCalendar : true)
         });
       } else {
         projectMap.set(pid, {
@@ -287,6 +295,9 @@ function normalizeState(raw) {
     lastMeetingSummary: raw.lastMeetingSummary || null,
     meetingHistory: Array.isArray(raw.meetingHistory) ? raw.meetingHistory : [],
     calendarEvents: Array.isArray(raw.calendarEvents) ? raw.calendarEvents : (defaultState.calendarEvents || []),
+    calendarCategories: (Array.isArray(raw.calendarCategories) && raw.calendarCategories.length > 0)
+      ? raw.calendarCategories
+      : (defaultState.calendarCategories || []),
     projects: uniqueProjects,
     systemVersion: raw.systemVersion || defaultState.systemVersion || '2.0.1',
     versionNotes: raw.versionNotes || defaultState.versionNotes || null
