@@ -89,14 +89,15 @@ const CALENDAR_CATEGORIES = new Proxy({}, {
 function getEventVisualStyles(evt) {
   if (!evt) return getCategoryMeta('EVENT');
   const catMeta = getCategoryMeta(evt.category);
-  const colorKey = evt.color || evt.projectColor || catMeta.color || 'indigo';
+  const prjColor = evt.projectColor || (evt.isProjectEvent ? (evt.color || 'indigo') : null);
+  const colorKey = prjColor || evt.color || catMeta.color || 'indigo';
   const palette = CALENDAR_COLOR_PALETTES[colorKey] || CALENDAR_COLOR_PALETTES.indigo;
   return {
     colorKey,
     bg: palette.bg,
     text: palette.text,
     border: palette.border,
-    dot: palette.dot,
+    dot: catMeta.dot, // Dot on left is ALWAYS Category Color
     solid: palette.solid,
     hex: palette.hex,
     catMeta
@@ -820,15 +821,15 @@ function renderMonthGridView(events, currentUser, isAdmin = false) {
         <div class="space-y-1 overflow-y-auto max-h-[60px] scrollbar-none">
           ${dayEvents.map(e => {
             const styles = getEventVisualStyles(e);
+            const catMeta = styles.catMeta || getCategoryMeta(e.category);
             return `
               <div onclick="openCalendarEventDetailModal('${e.id}')"
                 class="px-1.5 py-0.5 rounded text-[10px] font-semibold truncate cursor-pointer transition ${styles.bg} ${styles.text} border ${styles.border} hover:scale-[1.02] flex items-center justify-between group/chip"
-                title="${e.projectTitle ? '[' + e.projectTitle + '] ' : ''}${e.title} (${e.startTime || ''}) - คลิกเพื่อดูรายละเอียด">
-                <span class="truncate flex-1 flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full ${styles.dot} shrink-0"></span>
-                  ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5">${e.startTime}</span>` : ''}
-                  ${e.isProjectEvent ? `<span class="opacity-90 font-bold shrink-0">[${e.projectCode || 'โครงการ'}]</span>` : ''}
-                  <span class="truncate">${e.title}</span>
+                title="${e.title}${e.projectTitle ? ' (' + e.projectTitle + ')' : ''} (${e.startTime || ''}) - คลิกเพื่อดูรายละเอียด">
+                <span class="truncate flex-1 flex items-center gap-1 min-w-0">
+                  <span class="w-1.5 h-1.5 rounded-full ${styles.dot} shrink-0" title="ประเภท: ${catMeta.label}"></span>
+                  ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5 shrink-0">${e.startTime}</span>` : ''}
+                  <span class="truncate font-semibold">${e.title}</span>
                 </span>
                 ${canManage ? `
                   <button type="button" onclick="event.stopPropagation(); openAddCalendarEventModal('${e.id}', null, '${e.projectId || ''}')"
@@ -1036,8 +1037,10 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
                 <span class="truncate">${evt.projectTitle}</span>
               </span>
             ` : ''}
-            <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">
-              ${catInfo.label}
+            <div class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-semibold text-xs ${catInfo.bg} ${catInfo.text} ${catInfo.border}">
+              <span class="w-1.5 h-1.5 rounded-full ${catInfo.dot} shrink-0"></span>
+              <i data-lucide="${catInfo.icon || 'star'}" class="w-3 h-3 shrink-0"></i>
+              <span>${catInfo.label}</span>
             </div>
             ${isMeAssigned ? `
               <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">
@@ -1085,10 +1088,10 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
 
             ${canManage ? `
               <div class="flex items-center gap-1.5 ml-auto">
-                <button type="button" onclick="openAddCalendarEventModal('${evt.id}')"
-                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary transition !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="แก้ไข" aria-label="แก้ไข"><i data-lucide="pencil" class="h-4 w-4 pointer-events-none"></i></button>
-                <button type="button" onclick="confirmDeleteCalendarEvent('${evt.id}', '${evt.title}')"
-                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0" title="ลบ" aria-label="ลบ"><i data-lucide="trash-2" class="h-4 w-4 pointer-events-none"></i></button>
+                <button type="button" onclick="openAddCalendarEventModal('${evt.id}', null, '${evt.projectId || ''}')"
+                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary transition !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0 cursor-pointer" title="แก้ไข" aria-label="แก้ไข"><i data-lucide="pencil" class="h-4 w-4 pointer-events-none"></i></button>
+                <button type="button" onclick="confirmDeleteCalendarEvent('${evt.id}', '${(evt.title || '').replace(/'/g, "\\'")}', '${evt.projectId || ''}')"
+                  class="px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition !w-8 !h-8 !min-w-0 !p-0 !gap-0 inline-flex items-center justify-center shrink-0 cursor-pointer" title="ลบ" aria-label="ลบ"><i data-lucide="trash-2" class="h-4 w-4 pointer-events-none"></i></button>
               </div>
             ` : `
               <button type="button" onclick="openCalendarEventDetailModal('${evt.id}')"
@@ -1324,28 +1327,57 @@ function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null, pro
     }
     return;
   }
-  const targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
-
   const modal = document.getElementById('calendarEventModal');
   if (!modal) return;
 
   const state = window.appState || {};
   const users = state.users || [];
+  const allProjects = (typeof window.getProjectsList === 'function' ? window.getProjectsList() : state.projects) || [];
 
-  // Project context resolution
-  let allEvents = [];
+  let targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
   let currentProject = null;
-  if (targetProjectId) {
-    const allProjects = (typeof window.getProjectsList === 'function' ? window.getProjectsList() : state.projects) || [];
-    currentProject = allProjects.find(p => p && p.id === targetProjectId);
-    if (currentProject) {
-      allEvents = Array.isArray(currentProject.calendarEvents) ? currentProject.calendarEvents : [];
+  let event = null;
+
+  // 1. Robust event & project discovery
+  if (eventIdToEdit) {
+    // If targetProjectId was provided, check that project first
+    if (targetProjectId) {
+      currentProject = allProjects.find(p => p && p.id === targetProjectId) || null;
+      if (currentProject && Array.isArray(currentProject.calendarEvents)) {
+        event = currentProject.calendarEvents.find(e => e && e.id === eventIdToEdit) || null;
+      }
+    }
+
+    // If not found in targetProjectId, search across ALL projects
+    if (!event) {
+      for (const p of allProjects) {
+        if (p && Array.isArray(p.calendarEvents)) {
+          const found = p.calendarEvents.find(e => e && e.id === eventIdToEdit);
+          if (found) {
+            event = found;
+            currentProject = p;
+            targetProjectId = p.id;
+            break;
+          }
+        }
+      }
+    }
+
+    // If still not found, search in club calendar events
+    if (!event && Array.isArray(state.calendarEvents)) {
+      const found = state.calendarEvents.find(e => e && e.id === eventIdToEdit);
+      if (found) {
+        event = found;
+        currentProject = null;
+        targetProjectId = null;
+      }
     }
   } else {
-    allEvents = Array.isArray(state.calendarEvents) ? state.calendarEvents : [];
+    // If adding a new event
+    if (targetProjectId) {
+      currentProject = allProjects.find(p => p && p.id === targetProjectId) || null;
+    }
   }
-
-  const event = eventIdToEdit ? allEvents.find(e => e.id === eventIdToEdit) : null;
 
   const modalIcon = document.getElementById('calModalIcon');
   if (modalIcon) {
@@ -1397,7 +1429,7 @@ function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null, pro
       delBtn.classList.add('flex');
       delBtn.onclick = () => {
         closeCalendarEventModal();
-        confirmDeleteCalendarEvent(event.id, event.title);
+        confirmDeleteCalendarEvent(event.id, event.title, targetProjectId);
       };
     } else {
       delBtn.classList.add('hidden');
@@ -1671,7 +1703,12 @@ async function confirmDeleteCalendarEvent(eventId, title, projectId = null) {
     }
     return;
   }
-  const targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
+  let targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
+  const allProjects = (typeof window.getProjectsList === 'function' ? window.getProjectsList() : window.appState?.projects) || [];
+  if (!targetProjectId && eventId) {
+    const foundPrj = allProjects.find(p => p && Array.isArray(p.calendarEvents) && p.calendarEvents.some(e => e && e.id === eventId));
+    if (foundPrj) targetProjectId = foundPrj.id;
+  }
   const confirmed = typeof window.showConfirmDialog === 'function'
     ? await window.showConfirmDialog({
         title: 'ยืนยันการลบกิจกรรมปฏิทิน',
@@ -1896,8 +1933,10 @@ function openCalendarEventDetailModal(eventId) {
 
   document.getElementById('detailCalTitle').textContent = evt.title;
   let categoryBadgeHtml = `
-    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${styles.bg} ${styles.text} border ${styles.border} shrink-0">
-      <i data-lucide="${catInfo.icon || 'star'}" class="w-3.5 h-3.5 mr-1 inline-block"></i> ${catInfo.label}
+    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${catInfo.bg} ${catInfo.text} border ${catInfo.border} shrink-0">
+      <span class="w-1.5 h-1.5 rounded-full ${catInfo.dot} shrink-0"></span>
+      <i data-lucide="${catInfo.icon || 'star'}" class="w-3.5 h-3.5 inline-block"></i>
+      <span>${catInfo.label}</span>
     </span>
   `;
   if (evt.isProjectEvent) {

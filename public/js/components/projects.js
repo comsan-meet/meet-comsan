@@ -2530,20 +2530,21 @@
               const styles = typeof window.getEventVisualStyles === 'function'
                 ? window.getEventVisualStyles(e)
                 : { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', dot: 'bg-primary' };
+              const catInfo = styles.catMeta || {};
               return `
                 <div onclick="openCalendarEventDetailModal('${e.id}')"
                   class="px-1.5 py-0.5 rounded text-[10px] font-semibold truncate cursor-pointer transition ${styles.bg} ${styles.text} border ${styles.border} hover:scale-[1.02] flex items-center justify-between group/chip"
                   title="${e.title} (${e.startTime || ''})">
-                  <span class="truncate flex-1 flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full ${styles.dot} shrink-0"></span>
-                    ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5">${e.startTime}</span>` : ''}
-                    ${e.title}
+                  <span class="truncate flex-1 flex items-center gap-1 min-w-0">
+                    <span class="w-1.5 h-1.5 rounded-full ${styles.dot} shrink-0" title="ประเภท: ${catInfo.label || ''}"></span>
+                    ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5 shrink-0">${e.startTime}</span>` : ''}
+                    <span class="truncate font-semibold">${e.title}</span>
                   </span>
                   ${isAdmin ? `
                     <button type="button" onclick="event.stopPropagation(); openAddCalendarEventModal('${e.id}', null, '${project.id}')"
-                      class="opacity-0 group-hover/chip:opacity-100 hover:scale-125 ml-1 text-inherit hover:text-indigo-600 transition shrink-0 p-0.5 cursor-pointer"
+                      class="opacity-0 group-hover/chip:opacity-100 hover:scale-125 ml-1 text-inherit hover:text-primary transition shrink-0 p-0.5 cursor-pointer"
                       title="แก้ไขกิจกรรมนี้">
-                      <i data-lucide="pen" class="w-2.5 h-2.5"></i>
+                      <i data-lucide="square-pen" class="w-2.5 h-2.5"></i>
                     </button>
                   ` : ''}
                 </div>
@@ -2622,8 +2623,10 @@
             <!-- Event Details -->
             <div class="space-y-1 min-w-0 flex-1">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${styles.bg} ${styles.text} border ${styles.border}">
-                  <i data-lucide="${catInfo.icon || 'star'}" class="w-3 h-3 inline-block mr-0.5"></i> ${catInfo.label}
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${catInfo.bg || styles.bg} ${catInfo.text || styles.text} border ${catInfo.border || styles.border}">
+                  <span class="w-1.5 h-1.5 rounded-full ${catInfo.dot || styles.dot} shrink-0"></span>
+                  <i data-lucide="${catInfo.icon || 'star'}" class="w-3 h-3 inline-block"></i>
+                  <span>${catInfo.label || 'กิจกรรม'}</span>
                 </span>
                 <span class="text-xs text-muted-foreground font-medium flex items-center gap-1">
                   <i data-lucide="clock" class="w-3 h-3"></i>
@@ -3064,14 +3067,15 @@
               const styles = typeof window.getEventVisualStyles === 'function'
                 ? window.getEventVisualStyles(e)
                 : { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', dot: 'bg-primary' };
+              const catInfo = styles.catMeta || {};
               return `
                 <div onclick="openCalendarEventDetailModal('${e.id}')"
                   class="px-1.5 py-0.5 rounded text-[10px] font-semibold truncate cursor-pointer transition ${styles.bg} ${styles.text} border ${styles.border} hover:scale-[1.02] flex items-center justify-between group/chip"
                   title="${e.title} (${e.startTime || ''})">
-                  <span class="truncate flex-1 flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full ${styles.dot} shrink-0"></span>
-                    ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5">${e.startTime}</span>` : ''}
-                    ${e.title}
+                  <span class="truncate flex-1 flex items-center gap-1 min-w-0">
+                    <span class="w-1.5 h-1.5 rounded-full ${styles.dot} shrink-0" title="ประเภท: ${catInfo.label || ''}"></span>
+                    ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5 shrink-0">${e.startTime}</span>` : ''}
+                    <span class="truncate font-semibold">${e.title}</span>
                   </span>
                   <button type="button" onclick="event.stopPropagation(); openAddCalendarEventModal('${e.id}', null, '${targetId}')"
                     class="opacity-0 group-hover/chip:opacity-100 hover:scale-125 ml-1 text-inherit hover:text-primary transition shrink-0 p-0.5 cursor-pointer"
@@ -3189,8 +3193,10 @@
             </div>
             <div class="space-y-0.5 min-w-0">
               <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${styles.bg} ${styles.text} border ${styles.border}">
-                  <i data-lucide="${catInfo.icon || 'star'}" class="w-2.5 h-2.5 inline-block mr-0.5"></i> ${catInfo.label}
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${catInfo.bg || styles.bg} ${catInfo.text || styles.text} border ${catInfo.border || styles.border}">
+                  <span class="w-1.5 h-1.5 rounded-full ${catInfo.dot || styles.dot} shrink-0"></span>
+                  <i data-lucide="${catInfo.icon || 'star'}" class="w-2.5 h-2.5 inline-block"></i>
+                  <span>${catInfo.label || 'กิจกรรม'}</span>
                 </span>
                 <span class="text-[11px] text-muted-foreground flex items-center gap-1">
                   <i data-lucide="clock" class="w-3 h-3"></i>
