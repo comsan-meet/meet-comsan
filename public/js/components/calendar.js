@@ -1182,6 +1182,9 @@ async function addNewCalendarCategory() {
   if (typeof window.renderProjectCalendarView === 'function' && window.activeDetailProjectId) {
     window.renderProjectCalendarView(window.activeDetailProjectId);
   }
+  if (typeof window.renderFormCalendarEvents === 'function') {
+    window.renderFormCalendarEvents();
+  }
 
   if (typeof showToast === 'function') showToast(`เพิ่มประเภท "${label}" เรียบร้อยแล้ว`, 'success');
 }
@@ -1228,6 +1231,9 @@ async function deleteCalendarCategory(key, label) {
   if (typeof renderUserCalendarSection === 'function') renderUserCalendarSection();
   if (typeof window.renderProjectCalendarView === 'function' && window.activeDetailProjectId) {
     window.renderProjectCalendarView(window.activeDetailProjectId);
+  }
+  if (typeof window.renderFormCalendarEvents === 'function') {
+    window.renderFormCalendarEvents();
   }
 
   if (typeof showToast === 'function') showToast(`ลบประเภท "${label}" เรียบร้อยแล้ว`, 'info');
@@ -1503,6 +1509,9 @@ function saveCalendarEventFromModal() {
       if (typeof window.renderProjectCalendarView === 'function') {
         window.renderProjectCalendarView(projectId);
       }
+      if (typeof window.renderFormCalendarEvents === 'function') {
+        window.renderFormCalendarEvents(projectId);
+      }
       const countBadge = document.getElementById('prjDetailCalCountBadge');
       if (countBadge) countBadge.textContent = prj.calendarEvents.length;
       const totalBadge = document.getElementById('prjCalEventsTotalBadge');
@@ -1582,6 +1591,9 @@ async function confirmDeleteCalendarEvent(eventId, title, projectId = null) {
       if (typeof window.saveLocalState === 'function') window.saveLocalState();
       if (typeof window.renderProjectCalendarView === 'function') {
         window.renderProjectCalendarView(targetProjectId);
+      }
+      if (typeof window.renderFormCalendarEvents === 'function') {
+        window.renderFormCalendarEvents(targetProjectId);
       }
       const countBadge = document.getElementById('prjDetailCalCountBadge');
       if (countBadge) countBadge.textContent = prj.calendarEvents.length;
