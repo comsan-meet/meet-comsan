@@ -757,21 +757,24 @@ function renderMonthGridView(events, currentUser, isAdmin = false) {
   let html = `
     <div class="space-y-4">
       <div class="flex items-center justify-between px-1">
-        <div class="flex items-center gap-2">
-          <h4 class="font-extrabold text-base sm:text-lg text-foreground">
-            ${THAI_MONTHS[month]} ${year + 543}
-          </h4>
-          <button type="button" onclick="navigateCalendarMonth(0)" class="text-xs font-semibold px-2 py-1 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition">
+        <h4 class="font-extrabold text-base sm:text-lg text-foreground">
+          ${THAI_MONTHS[month]} ${year + 543}
+        </h4>
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button type="button" onclick="navigateCalendarMonth(0)"
+            class="h-8 px-3 rounded-full border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center justify-center transition shadow-2xs cursor-pointer active:scale-95" title="กลับไปเดือนปัจจุบัน">
             วันนี้
           </button>
-        </div>
-        <div class="flex items-center gap-1">
-          <button type="button" onclick="navigateCalendarMonth(-1)" class="w-8 h-8 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition" title="เดือนก่อนหน้า">
-            <i data-lucide="chevron-left" class="w-4 h-4"></i>
-          </button>
-          <button type="button" onclick="navigateCalendarMonth(1)" class="w-8 h-8 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition" title="เดือนถัดไป">
-            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-          </button>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="navigateCalendarMonth(-1)"
+              class="w-8 h-8 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนก่อนหน้า">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button type="button" onclick="navigateCalendarMonth(1)"
+              class="w-8 h-8 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนถัดไป">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
       </div>
 

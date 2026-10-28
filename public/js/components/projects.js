@@ -2463,24 +2463,24 @@
       <div class="space-y-4">
         <!-- Month Navigation Header -->
         <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-2">
-            <h4 class="font-extrabold text-base sm:text-lg text-foreground">
-              ${thaiMonths[month]} ${year + 543}
-            </h4>
+          <h4 class="font-extrabold text-base sm:text-lg text-foreground">
+            ${thaiMonths[month]} ${year + 543}
+          </h4>
+          <div class="flex items-center gap-1.5 sm:gap-2">
             <button type="button" onclick="navigateProjectCalendarMonth(0)"
-              class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition cursor-pointer">
+              class="h-8 px-3 rounded-full border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center justify-center transition shadow-2xs cursor-pointer active:scale-95" title="กลับไปเดือนปัจจุบัน">
               วันนี้
             </button>
-          </div>
-          <div class="flex items-center gap-1">
-            <button type="button" onclick="navigateProjectCalendarMonth(-1)"
-              class="w-8 h-8 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition cursor-pointer" title="เดือนก่อนหน้า">
-              <i data-lucide="chevron-left" class="w-4 h-4"></i>
-            </button>
-            <button type="button" onclick="navigateProjectCalendarMonth(1)"
-              class="w-8 h-8 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition cursor-pointer" title="เดือนถัดไป">
-              <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            </button>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="navigateProjectCalendarMonth(-1)"
+                class="w-8 h-8 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนก่อนหน้า">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button type="button" onclick="navigateProjectCalendarMonth(1)"
+                class="w-8 h-8 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนถัดไป">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -3002,24 +3002,24 @@
       <div class="space-y-3">
         <!-- Month Navigation Header -->
         <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-2">
-            <h4 class="font-extrabold text-sm sm:text-base text-foreground">
-              ${thaiMonths[month]} ${year + 543}
-            </h4>
+          <h4 class="font-extrabold text-sm sm:text-base text-foreground">
+            ${thaiMonths[month]} ${year + 543}
+          </h4>
+          <div class="flex items-center gap-1.5">
             <button type="button" onclick="navigateFormCalendarMonth(0)"
-              class="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition cursor-pointer">
+              class="h-7 px-2.5 rounded-full border border-border bg-card hover:bg-muted text-foreground text-[11px] font-semibold flex items-center justify-center transition shadow-2xs cursor-pointer active:scale-95" title="กลับไปเดือนปัจจุบัน">
               วันนี้
             </button>
-          </div>
-          <div class="flex items-center gap-1">
-            <button type="button" onclick="navigateFormCalendarMonth(-1)"
-              class="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition cursor-pointer" title="เดือนก่อนหน้า">
-              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-            </button>
-            <button type="button" onclick="navigateFormCalendarMonth(1)"
-              class="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition cursor-pointer" title="เดือนถัดไป">
-              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-            </button>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="navigateFormCalendarMonth(-1)"
+                class="w-7 h-7 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนก่อนหน้า">
+                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+              </button>
+              <button type="button" onclick="navigateFormCalendarMonth(1)"
+                class="w-7 h-7 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนถัดไป">
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
           </div>
         </div>
 
