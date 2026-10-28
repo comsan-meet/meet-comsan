@@ -2959,7 +2959,7 @@ label svg, label i {
               <span id="prjCalEventsTotalBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">0 กิจกรรม</span>
             </div>
             <!-- Toggle Show in Main Calendar -->
-            <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground pt-1 select-none">
+            <label id="prjShowInMainCalLabel" class="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground pt-1 select-none">
               <input type="checkbox" id="prjShowInMainCalToggle" onchange="toggleCurrentProjectShowInMainCalendar(this.checked)"
                 class="rounded text-primary focus:ring-primary w-4 h-4 cursor-pointer">
               <span>แสดงกิจกรรมโครงการนี้ในปฏิทินรวมของชมรม</span>
@@ -2968,28 +2968,32 @@ label svg, label i {
 
           <!-- Actions -->
           <div class="flex items-center gap-1.5 flex-wrap shrink-0">
-            <button type="button" onclick="openAddCalendarEventModal(null, null, activeDetailProjectId)"
-              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-              <span>เพิ่มกิจกรรม</span>
-            </button>
-            <button type="button" onclick="triggerImportProjectCalendarIcs()"
-              class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
-              title="นำเข้าไฟล์ปฏิทิน .ics สำหรับโครงการนี้">
-              <i data-lucide="upload" class="w-3.5 h-3.5 text-muted-foreground"></i>
-              <span class="hidden sm:inline">นำเข้า .ics</span>
-            </button>
+            <!-- Admin Only Calendar Actions -->
+            <div id="prjCalAdminActionGroup" class="hidden flex items-center gap-1.5 flex-wrap">
+              <button type="button" id="prjCalBtnAddEvent" onclick="openAddCalendarEventModal(null, null, activeDetailProjectId)"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>เพิ่มกิจกรรม</span>
+              </button>
+              <button type="button" id="prjCalBtnImportIcs" onclick="triggerImportProjectCalendarIcs()"
+                class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
+                title="นำเข้าไฟล์ปฏิทิน .ics สำหรับโครงการนี้">
+                <i data-lucide="upload" class="w-3.5 h-3.5 text-muted-foreground"></i>
+                <span class="hidden sm:inline">นำเข้า .ics</span>
+              </button>
+              <button type="button" id="prjCalBtnManageCat" onclick="openCalendarCategoryModal()"
+                class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
+                title="จัดการประเภทกิจกรรม">
+                <i data-lucide="tags" class="w-3.5 h-3.5 text-muted-foreground"></i>
+                <span class="hidden sm:inline">จัดการประเภท</span>
+              </button>
+            </div>
+            <!-- Export .ics available for all users -->
             <button type="button" onclick="exportCurrentProjectCalendarIcs()"
               class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
               title="ส่งออกปฏิทินโครงการเป็นไฟล์ .ics">
               <i data-lucide="download" class="w-3.5 h-3.5 text-muted-foreground"></i>
               <span class="hidden sm:inline">ส่งออก .ics</span>
-            </button>
-            <button type="button" onclick="openCalendarCategoryModal()"
-              class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
-              title="จัดการประเภทกิจกรรม">
-              <i data-lucide="tags" class="w-3.5 h-3.5 text-muted-foreground"></i>
-              <span class="hidden sm:inline">จัดการประเภท</span>
             </button>
             <!-- View Mode Switcher (Month / List) -->
             <div class="bg-muted p-1 rounded-xl flex items-center gap-1 border border-border/60">

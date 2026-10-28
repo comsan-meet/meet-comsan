@@ -132,19 +132,11 @@ function getAllCalendarEventsForMain() {
 }
 
 /**
- * Helper to verify if the active session is currently an authenticated Admin or Project Leader
+ * Helper to verify if the active session is currently an authenticated Admin
+ * Only ADMIN can create, update, delete events, import ICS, or manage categories.
  */
-function isCalendarAdmin(projectId = null) {
-  if (window.currentRole === 'ADMIN' && window.isAdminAuthenticated) return true;
-  if (projectId) {
-    const myId = window.currentUserId;
-    const allProjects = (typeof window.getProjectsList === 'function' ? window.getProjectsList() : (window.appState && window.appState.projects)) || [];
-    const prj = allProjects.find(p => p && p.id === projectId);
-    if (prj && Array.isArray(prj.leaders) && myId) {
-      if (prj.leaders.some(l => l.userId === myId || l.id === myId || l.name === window.currentUserObj?.name)) return true;
-    }
-  }
-  return false;
+function isCalendarAdmin() {
+  return Boolean(window.currentRole === 'ADMIN' && window.isAdminAuthenticated);
 }
 
 // =========================================================================
@@ -1087,6 +1079,12 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
 // CATEGORY MANAGEMENT MODAL & CONTROLS
 // ==========================================
 function openCalendarCategoryModal() {
+  if (!isCalendarAdmin()) {
+    if (typeof showToast === 'function') {
+      showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถจัดการประเภทกิจกรรมได้', 'warning');
+    }
+    return;
+  }
   const modal = document.getElementById('calendarCategoryModal');
   if (!modal) return;
   renderCalendarCategoriesList();
@@ -1141,6 +1139,12 @@ function renderCalendarCategoriesList() {
 }
 
 async function addNewCalendarCategory() {
+  if (!isCalendarAdmin()) {
+    if (typeof showToast === 'function') {
+      showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถจัดการประเภทกิจกรรมได้', 'warning');
+    }
+    return;
+  }
   const labelInput = document.getElementById('newCatLabel');
   const colorSelect = document.getElementById('newCatColor');
   const iconSelect = document.getElementById('newCatIcon');
@@ -1183,6 +1187,12 @@ async function addNewCalendarCategory() {
 }
 
 async function deleteCalendarCategory(key, label) {
+  if (!isCalendarAdmin()) {
+    if (typeof showToast === 'function') {
+      showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถจัดการประเภทกิจกรรมได้', 'warning');
+    }
+    return;
+  }
   const confirmed = typeof window.showConfirmDialog === 'function'
     ? await window.showConfirmDialog({
         title: 'ยืนยันการลบประเภทกิจกรรม',
@@ -1267,13 +1277,13 @@ function selectEventColor(colorKey) {
 
 // Add / Edit Modal
 function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null, projectId = null) {
-  const targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
-  if (!isCalendarAdmin(targetProjectId)) {
+  if (!isCalendarAdmin()) {
     if (typeof showToast === 'function') {
-      showToast('เฉพาะผู้ดูแลระบบหรือผู้รับผิดชอบโครงการเท่านั้นที่สามารถจัดการกิจกรรมได้', 'warning');
+      showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถจัดการกิจกรรมได้', 'warning');
     }
     return;
   }
+  const targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
 
   const modal = document.getElementById('calendarEventModal');
   if (!modal) return;
@@ -1538,13 +1548,13 @@ function saveCalendarEventFromModal() {
 }
 
 async function confirmDeleteCalendarEvent(eventId, title, projectId = null) {
-  const targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
-  if (!isCalendarAdmin(targetProjectId)) {
+  if (!isCalendarAdmin()) {
     if (typeof showToast === 'function') {
-      showToast('เฉพาะผู้ดูแลระบบหรือผู้รับผิดชอบโครงการเท่านั้นที่สามารถลบกิจกรรมได้', 'warning');
+      showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถลบกิจกรรมได้', 'warning');
     }
     return;
   }
+  const targetProjectId = projectId || (document.getElementById('calProjectId')?.value) || null;
   const confirmed = typeof window.showConfirmDialog === 'function'
     ? await window.showConfirmDialog({
         title: 'ยืนยันการลบกิจกรรมปฏิทิน',

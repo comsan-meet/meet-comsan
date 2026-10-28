@@ -2286,11 +2286,34 @@
     }
 
     // Setup Calendar Tab state & badges
+    const isCalAdmin = typeof window.isCalendarAdmin === 'function'
+      ? window.isCalendarAdmin()
+      : Boolean(window.currentRole === 'ADMIN' && window.isAdminAuthenticated);
     const calEvents = Array.isArray(p.calendarEvents) ? p.calendarEvents : [];
     const countBadge = document.getElementById('prjDetailCalCountBadge');
     if (countBadge) countBadge.textContent = calEvents.length;
     const toggleMain = document.getElementById('prjShowInMainCalToggle');
-    if (toggleMain) toggleMain.checked = p.showInMainCalendar !== false;
+    const labelMain = document.getElementById('prjShowInMainCalLabel');
+    if (toggleMain) {
+      toggleMain.checked = p.showInMainCalendar !== false;
+      toggleMain.disabled = !isCalAdmin;
+      toggleMain.classList.toggle('cursor-not-allowed', !isCalAdmin);
+      toggleMain.classList.toggle('opacity-60', !isCalAdmin);
+    }
+    if (labelMain) {
+      labelMain.classList.toggle('cursor-not-allowed', !isCalAdmin);
+      labelMain.title = isCalAdmin ? 'คลิกเพื่อเปิด/ปิดการแสดงในปฏิทินชมรม' : 'เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถเปลี่ยนการตั้งค่านี้ได้';
+    }
+    const adminActionGroup = document.getElementById('prjCalAdminActionGroup');
+    if (adminActionGroup) {
+      if (isCalAdmin) {
+        adminActionGroup.classList.remove('hidden');
+        adminActionGroup.classList.add('flex');
+      } else {
+        adminActionGroup.classList.add('hidden');
+        adminActionGroup.classList.remove('flex');
+      }
+    }
 
     // Reset to Overview tab by default
     switchProjectDetailTab('OVERVIEW');
@@ -2350,6 +2373,9 @@
       currentDate: new Date(),
       categoryFilter: 'ALL'
     };
+    const isCalAdmin = typeof window.isCalendarAdmin === 'function'
+      ? window.isCalendarAdmin()
+      : Boolean(window.currentRole === 'ADMIN' && window.isAdminAuthenticated);
     const pState = window.projectCalendarState[projectId];
     const calEvents = Array.isArray(p.calendarEvents) ? p.calendarEvents : [];
 
@@ -2360,7 +2386,28 @@
     if (totalBadge) totalBadge.textContent = `${calEvents.length} กิจกรรม`;
 
     const toggleMain = document.getElementById('prjShowInMainCalToggle');
-    if (toggleMain) toggleMain.checked = p.showInMainCalendar !== false;
+    const labelMain = document.getElementById('prjShowInMainCalLabel');
+    if (toggleMain) {
+      toggleMain.checked = p.showInMainCalendar !== false;
+      toggleMain.disabled = !isCalAdmin;
+      toggleMain.classList.toggle('cursor-not-allowed', !isCalAdmin);
+      toggleMain.classList.toggle('opacity-60', !isCalAdmin);
+    }
+    if (labelMain) {
+      labelMain.classList.toggle('cursor-not-allowed', !isCalAdmin);
+      labelMain.title = isCalAdmin ? 'คลิกเพื่อเปิด/ปิดการแสดงในปฏิทินชมรม' : 'เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถเปลี่ยนการตั้งค่านี้ได้';
+    }
+
+    const adminActionGroup = document.getElementById('prjCalAdminActionGroup');
+    if (adminActionGroup) {
+      if (isCalAdmin) {
+        adminActionGroup.classList.remove('hidden');
+        adminActionGroup.classList.add('flex');
+      } else {
+        adminActionGroup.classList.add('hidden');
+        adminActionGroup.classList.remove('flex');
+      }
+    }
 
     // View switch buttons styling
     const btnMonth = document.getElementById('prjCalBtnViewMonth');
@@ -2412,9 +2459,9 @@
     if (!bodyEl) return;
 
     if (pState.view === 'MONTH') {
-      bodyEl.innerHTML = renderProjectMonthGridView(filteredEvents, pState, p);
+      bodyEl.innerHTML = renderProjectMonthGridView(filteredEvents, pState, p, isCalAdmin);
     } else {
-      bodyEl.innerHTML = renderProjectAgendaListView(filteredEvents, pState, p);
+      bodyEl.innerHTML = renderProjectAgendaListView(filteredEvents, pState, p, isCalAdmin);
     }
 
     if (typeof window.refreshIcons === 'function') window.refreshIcons();
@@ -2447,7 +2494,7 @@
     renderProjectCalendarView(activeDetailProjectId);
   }
 
-  function renderProjectMonthGridView(events, pState, project) {
+  function renderProjectMonthGridView(events, pState, project, isAdmin = false) {
     const current = pState.currentDate || new Date();
     const year = current.getFullYear();
     const month = current.getMonth();
@@ -2516,10 +2563,12 @@
             <span class="text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center ${isToday ? 'bg-primary text-white shadow-xs' : 'text-foreground'}">
               ${day}
             </span>
-            <button type="button" onclick="openAddCalendarEventModal(null, '${dayDateStr}', '${project.id}')"
-              class="opacity-0 group-hover:opacity-100 transition w-5 h-5 rounded hover:bg-primary/10 text-primary flex items-center justify-center text-[10px] cursor-pointer" title="เพิ่มกิจกรรมในวันนี้">
-              <i data-lucide="plus" class="w-3 h-3"></i>
-            </button>
+            ${isAdmin ? `
+              <button type="button" onclick="openAddCalendarEventModal(null, '${dayDateStr}', '${project.id}')"
+                class="opacity-0 group-hover:opacity-100 transition w-5 h-5 rounded hover:bg-primary/10 text-primary flex items-center justify-center text-[10px] cursor-pointer" title="เพิ่มกิจกรรมในวันนี้">
+                <i data-lucide="plus" class="w-3 h-3"></i>
+              </button>
+            ` : ''}
           </div>
 
           <!-- Event badges in day cell -->
@@ -2537,11 +2586,13 @@
                     ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5">${e.startTime}</span>` : ''}
                     ${e.title}
                   </span>
-                  <button type="button" onclick="event.stopPropagation(); openAddCalendarEventModal('${e.id}', null, '${project.id}')"
-                    class="opacity-0 group-hover/chip:opacity-100 hover:scale-125 ml-1 text-inherit hover:text-indigo-600 transition shrink-0 p-0.5 cursor-pointer"
-                    title="แก้ไขกิจกรรมนี้">
-                    <i data-lucide="pen" class="w-2.5 h-2.5"></i>
-                  </button>
+                  ${isAdmin ? `
+                    <button type="button" onclick="event.stopPropagation(); openAddCalendarEventModal('${e.id}', null, '${project.id}')"
+                      class="opacity-0 group-hover/chip:opacity-100 hover:scale-125 ml-1 text-inherit hover:text-indigo-600 transition shrink-0 p-0.5 cursor-pointer"
+                      title="แก้ไขกิจกรรมนี้">
+                      <i data-lucide="pen" class="w-2.5 h-2.5"></i>
+                    </button>
+                  ` : ''}
                 </div>
               `;
             }).join('')}
@@ -2565,7 +2616,7 @@
     return html;
   }
 
-  function renderProjectAgendaListView(events, pState, project) {
+  function renderProjectAgendaListView(events, pState, project, isAdmin = false) {
     if (events.length === 0) {
       return `
         <div class="text-center py-12 px-4 bg-muted/20 border border-dashed border-border rounded-2xl space-y-3">
@@ -2574,18 +2625,20 @@
           </div>
           <div>
             <h4 class="text-sm font-bold text-foreground">ยังไม่มีกำหนดการหรือกิจกรรมในโครงการนี้</h4>
-            <p class="text-xs text-muted-foreground mt-0.5">คุณสามารถเพิ่มกิจกรรมใหม่ หรือนำเข้าไฟล์ปฏิทิน .ics เข้าสู่โครงการได้ทันที</p>
+            <p class="text-xs text-muted-foreground mt-0.5">${isAdmin ? 'คุณสามารถเพิ่มกิจกรรมใหม่ หรือนำเข้าไฟล์ปฏิทิน .ics เข้าสู่โครงการได้ทันที' : 'ขณะนี้ยังไม่มีกิจกรรมที่กำหนดไว้สำหรับโครงการนี้'}</p>
           </div>
-          <div class="flex items-center justify-center gap-2 pt-2">
-            <button type="button" onclick="openAddCalendarEventModal(null, null, '${project.id}')"
-              class="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มกิจกรรมแรก
-            </button>
-            <button type="button" onclick="triggerImportProjectCalendarIcs()"
-              class="px-3.5 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
-              <i data-lucide="upload" class="w-3.5 h-3.5 text-muted-foreground"></i> นำเข้าไฟล์ .ics
-            </button>
-          </div>
+          ${isAdmin ? `
+            <div class="flex items-center justify-center gap-2 pt-2">
+              <button type="button" onclick="openAddCalendarEventModal(null, null, '${project.id}')"
+                class="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มกิจกรรมแรก
+              </button>
+              <button type="button" onclick="triggerImportProjectCalendarIcs()"
+                class="px-3.5 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="upload" class="w-3.5 h-3.5 text-muted-foreground"></i> นำเข้าไฟล์ .ics
+              </button>
+            </div>
+          ` : ''}
         </div>
       `;
     }
@@ -2654,14 +2707,16 @@
               class="px-2.5 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold transition cursor-pointer" title="ดูรายละเอียด">
               <i data-lucide="eye" class="w-3.5 h-3.5"></i>
             </button>
-            <button type="button" onclick="openAddCalendarEventModal('${evt.id}', null, '${project.id}')"
-              class="px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition cursor-pointer" title="แก้ไข">
-              <i data-lucide="square-pen" class="w-3.5 h-3.5"></i>
-            </button>
-            <button type="button" onclick="confirmDeleteCalendarEvent('${evt.id}', '${evt.title}', '${project.id}')"
-              class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold transition cursor-pointer" title="ลบ">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            </button>
+            ${isAdmin ? `
+              <button type="button" onclick="openAddCalendarEventModal('${evt.id}', null, '${project.id}')"
+                class="px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition cursor-pointer" title="แก้ไข">
+                <i data-lucide="square-pen" class="w-3.5 h-3.5"></i>
+              </button>
+              <button type="button" onclick="confirmDeleteCalendarEvent('${evt.id}', '${evt.title}', '${project.id}')"
+                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold transition cursor-pointer" title="ลบ">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            ` : ''}
           </div>
         </div>
       `;
@@ -2671,6 +2726,21 @@
   }
 
   function toggleCurrentProjectShowInMainCalendar(projectIdOrChecked, maybeChecked) {
+    const isAdmin = typeof window.isCalendarAdmin === 'function'
+      ? window.isCalendarAdmin()
+      : Boolean(window.currentRole === 'ADMIN' && window.isAdminAuthenticated);
+    if (!isAdmin) {
+      if (typeof showToast === 'function') {
+        showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถตั้งค่านี้ได้', 'warning');
+      }
+      const toggleEl = document.getElementById('prjShowInMainCalToggle');
+      if (toggleEl && activeDetailProjectId) {
+        const allProjects = getProjectsList();
+        const prj = allProjects.find(p => p && p.id === activeDetailProjectId);
+        if (prj) toggleEl.checked = prj.showInMainCalendar !== false;
+      }
+      return;
+    }
     const targetId = (typeof projectIdOrChecked === 'string') ? projectIdOrChecked : activeDetailProjectId;
     const isChecked = (typeof projectIdOrChecked === 'string') ? Boolean(maybeChecked) : Boolean(projectIdOrChecked);
     if (!targetId) return;
@@ -2704,11 +2774,30 @@
   }
 
   function triggerImportProjectCalendarIcs() {
+    const isAdmin = typeof window.isCalendarAdmin === 'function'
+      ? window.isCalendarAdmin()
+      : Boolean(window.currentRole === 'ADMIN' && window.isAdminAuthenticated);
+    if (!isAdmin) {
+      if (typeof showToast === 'function') {
+        showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถนำเข้าไฟล์ .ics ได้', 'warning');
+      }
+      return;
+    }
     const input = document.getElementById('prjDetailCalIcsFileInput');
     if (input) input.click();
   }
 
   function handleProjectCalendarIcsFileSelected(e) {
+    const isAdmin = typeof window.isCalendarAdmin === 'function'
+      ? window.isCalendarAdmin()
+      : Boolean(window.currentRole === 'ADMIN' && window.isAdminAuthenticated);
+    if (!isAdmin) {
+      if (typeof showToast === 'function') {
+        showToast('เฉพาะผู้ดูแลระบบ (ADMIN) เท่านั้นที่สามารถนำเข้าไฟล์ .ics ได้', 'warning');
+      }
+      e.target.value = '';
+      return;
+    }
     const file = e.target.files && e.target.files[0];
     if (!file || !activeDetailProjectId) return;
 
