@@ -1118,6 +1118,9 @@
     });
     return unique;
   }
+  if (typeof window !== 'undefined') {
+    window.getProjectsList = getProjectsList;
+  }
 
   function escapeJs(str) {
     if (!str) return '';
@@ -2829,6 +2832,158 @@
     return formId;
   }
 
+  // Form Project Calendar View State (Month vs List)
+  let formCalendarView = 'MONTH';
+  let formCalendarCurrentDate = new Date();
+
+  function setFormCalendarView(view) {
+    formCalendarView = (view === 'LIST') ? 'LIST' : 'MONTH';
+    const monthBtn = document.getElementById('prjFormCalBtnViewMonth');
+    const listBtn = document.getElementById('prjFormCalBtnViewList');
+    if (monthBtn && listBtn) {
+      if (formCalendarView === 'MONTH') {
+        monthBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer';
+        listBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer';
+      } else {
+        listBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer';
+        monthBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer';
+      }
+    }
+    renderFormCalendarEvents(getFormProjectId());
+  }
+
+  function navigateFormCalendarMonth(delta) {
+    if (delta === 0) {
+      formCalendarCurrentDate = new Date();
+    } else {
+      const year = formCalendarCurrentDate.getFullYear();
+      const month = formCalendarCurrentDate.getMonth();
+      formCalendarCurrentDate = new Date(year, month + delta, 1);
+    }
+    renderFormCalendarEvents(getFormProjectId());
+  }
+
+  function renderFormMonthGridView(events, targetId) {
+    const thaiMonths = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+    const thaiDays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+    const cur = formCalendarCurrentDate || new Date();
+    const year = cur.getFullYear();
+    const month = cur.getMonth();
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    let html = `
+      <div class="space-y-3">
+        <!-- Month Navigation Header -->
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <h4 class="font-extrabold text-sm sm:text-base text-foreground">
+              ${thaiMonths[month]} ${year + 543}
+            </h4>
+            <button type="button" onclick="navigateFormCalendarMonth(0)"
+              class="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition cursor-pointer">
+              วันนี้
+            </button>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="navigateFormCalendarMonth(-1)"
+              class="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition cursor-pointer" title="เดือนก่อนหน้า">
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+            </button>
+            <button type="button" onclick="navigateFormCalendarMonth(1)"
+              class="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition cursor-pointer" title="เดือนถัดไป">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Month Grid -->
+        <div class="bg-card border border-border rounded-2xl overflow-hidden shadow-2xs">
+          <!-- Day names -->
+          <div class="grid grid-cols-7 bg-muted/60 border-b border-border text-center py-1.5 text-[11px] font-bold text-muted-foreground">
+            ${thaiDays.map((d, idx) => `<div class="${idx === 0 ? 'text-rose-500' : ''}">${d}</div>`).join('')}
+          </div>
+
+          <!-- Day cells -->
+          <div class="grid grid-cols-7 divide-x divide-y divide-border/60">
+    `;
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div class="min-h-[75px] sm:min-h-[85px] p-1 bg-muted/10 opacity-40"></div>`;
+    }
+
+    // Days cells
+    for (let day = 1; day <= totalDays; day++) {
+      const dayDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = events.filter(e => {
+        const sd = String(e.startDate || '').slice(0, 10);
+        const ed = String(e.endDate || e.startDate || '').slice(0, 10);
+        return sd && sd <= dayDateStr && dayDateStr <= (ed >= sd ? ed : sd);
+      });
+      const isToday = dayDateStr === todayIso;
+
+      html += `
+        <div class="min-h-[75px] sm:min-h-[85px] p-1 sm:p-1.5 bg-card hover:bg-muted/30 transition flex flex-col justify-between group">
+          <div class="flex items-center justify-between mb-0.5">
+            <span class="text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center ${isToday ? 'bg-primary text-white shadow-2xs' : 'text-foreground'}">
+              ${day}
+            </span>
+            <button type="button" onclick="openAddCalendarEventModal(null, '${dayDateStr}', '${targetId}')"
+              class="opacity-0 group-hover:opacity-100 transition w-5 h-5 rounded hover:bg-primary/10 text-primary flex items-center justify-center text-[10px] cursor-pointer" title="เพิ่มกิจกรรมในวันที่ ${day}">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- Event badges in day cell -->
+          <div class="space-y-0.5 overflow-y-auto max-h-[50px] scrollbar-none">
+            ${dayEvents.map(e => {
+              const styles = typeof window.getEventVisualStyles === 'function'
+                ? window.getEventVisualStyles(e)
+                : { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', dot: 'bg-primary' };
+              return `
+                <div onclick="openCalendarEventDetailModal('${e.id}')"
+                  class="px-1.5 py-0.5 rounded text-[10px] font-semibold truncate cursor-pointer transition ${styles.bg} ${styles.text} border ${styles.border} hover:scale-[1.02] flex items-center justify-between group/chip"
+                  title="${e.title} (${e.startTime || ''})">
+                  <span class="truncate flex-1 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full ${styles.dot} shrink-0"></span>
+                    ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5">${e.startTime}</span>` : ''}
+                    ${e.title}
+                  </span>
+                  <button type="button" onclick="event.stopPropagation(); openAddCalendarEventModal('${e.id}', null, '${targetId}')"
+                    class="opacity-0 group-hover/chip:opacity-100 hover:scale-125 ml-1 text-inherit hover:text-primary transition shrink-0 p-0.5 cursor-pointer"
+                    title="แก้ไขกิจกรรมนี้">
+                    <i data-lucide="square-pen" class="w-2.5 h-2.5"></i>
+                  </button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Trailing empty cells
+    const totalSlots = firstDay + totalDays;
+    const trailing = (7 - (totalSlots % 7)) % 7;
+    for (let i = 0; i < trailing; i++) {
+      html += `<div class="min-h-[75px] sm:min-h-[85px] p-1 bg-muted/10 opacity-40"></div>`;
+    }
+
+    html += `
+          </div>
+        </div>
+      </div>
+    `;
+    return html;
+  }
+
   function renderFormCalendarEvents(projectId = null) {
     const targetId = projectId || getFormProjectId();
     const container = document.getElementById('prjFormCalendarEventsContainer');
@@ -2841,6 +2996,28 @@
 
     if (badge) badge.textContent = `${events.length} กิจกรรม`;
 
+    // Sync switcher buttons state
+    const monthBtn = document.getElementById('prjFormCalBtnViewMonth');
+    const listBtn = document.getElementById('prjFormCalBtnViewList');
+    if (monthBtn && listBtn) {
+      if (formCalendarView === 'MONTH') {
+        monthBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer';
+        listBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer';
+      } else {
+        listBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer';
+        monthBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer';
+      }
+    }
+
+    // Render Month Grid
+    if (formCalendarView === 'MONTH') {
+      container.innerHTML = renderFormMonthGridView(events, targetId);
+      if (typeof window.refreshIcons === 'function') window.refreshIcons();
+      else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+      return;
+    }
+
+    // Render List View
     if (events.length === 0) {
       container.innerHTML = `
         <div class="text-center py-6 px-4 bg-muted/20 border border-dashed border-border rounded-2xl space-y-2">
@@ -2861,6 +3038,7 @@
         </div>
       `;
       if (typeof window.refreshIcons === 'function') window.refreshIcons();
+      else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
       return;
     }
 
@@ -2872,7 +3050,7 @@
 
     const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
-    let html = '';
+    let html = '<div class="space-y-2 max-h-[360px] overflow-y-auto pr-1">';
     events.forEach(evt => {
       const styles = typeof window.getEventVisualStyles === 'function'
         ? window.getEventVisualStyles(evt)
@@ -2929,9 +3107,114 @@
         </div>
       `;
     });
+    html += '</div>';
 
     container.innerHTML = html;
     if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  // Helper: Retrieve all project stakeholders & duties for calendar assignee selection
+  function getProjectStakeholdersForCalendar(projectId) {
+    const list = [];
+    const roleSet = new Set();
+    const isCurrentForm = Boolean(projectId && document.getElementById('prjFormId')?.value === projectId);
+
+    let leaders = [];
+    let members = [];
+    let advisors = [];
+    let smoOfficers = [];
+
+    if (isCurrentForm) {
+      leaders = Array.isArray(prjFormLeaders) ? prjFormLeaders : [];
+      members = Array.isArray(prjFormMembers) ? prjFormMembers : [];
+      advisors = Array.isArray(prjFormAdvisors) ? prjFormAdvisors : [];
+      smoOfficers = Array.isArray(prjFormSmoOfficers) ? prjFormSmoOfficers : [];
+    }
+
+    if (leaders.length === 0 && members.length === 0 && advisors.length === 0 && smoOfficers.length === 0 && projectId) {
+      const allProjects = typeof getProjectsList === 'function' ? getProjectsList() : (window.appState?.projects || []);
+      const prj = allProjects.find(p => p && p.id === projectId);
+      if (prj) {
+        leaders = Array.isArray(prj.leaders) ? prj.leaders : [];
+        members = Array.isArray(prj.members) ? prj.members : [];
+        advisors = Array.isArray(prj.advisors) ? prj.advisors : [];
+        smoOfficers = Array.isArray(prj.smoOfficers) ? prj.smoOfficers : [];
+      }
+    }
+
+    // Default common project duties
+    const defaultRoles = [
+      'หัวหน้าโครงการ',
+      'รองหัวหน้าโครงการ',
+      'ผู้ประสานงานโครงการ',
+      'เลขานุการโครงการ',
+      'ฝ่ายสถานที่และอุปกรณ์',
+      'ฝ่ายพิธีการและสันทนาการ',
+      'ฝ่ายทะเบียนและต้อนรับ',
+      'ฝ่ายสวัสดิการและพยาบาล',
+      'ฝ่ายสื่อ สารสนเทศและประชาสัมพันธ์',
+      'ฝ่ายการเงินและงบประมาณ',
+      'ฝ่ายประเมินผล',
+      'อาจารย์ที่ปรึกษาโครงการ',
+      'ผู้ดูแลจากสโมสรนักศึกษา'
+    ];
+    defaultRoles.forEach(r => roleSet.add(r));
+
+    // Process leaders
+    leaders.forEach(l => {
+      if (!l || !l.name || !l.name.trim()) return;
+      const name = l.name.trim();
+      const nick = (l.nickname || '').trim();
+      const displayName = nick ? `${name} (${nick})` : name;
+      const duty = (l.duty || l.dept || 'หัวหน้าโครงการ').trim();
+      if (duty) roleSet.add(duty);
+      list.push({ name, nickname: nick, displayName, duty, group: 'ผู้รับผิดชอบโครงการ (Leaders)' });
+    });
+
+    // Process members
+    members.forEach(m => {
+      if (!m || !m.name || !m.name.trim()) return;
+      const name = m.name.trim();
+      const nick = (m.nickname || '').trim();
+      const displayName = nick ? `${name} (${nick})` : name;
+      const duty = (m.duty || m.dept || 'ฝ่ายดำเนินงาน').trim();
+      if (duty) roleSet.add(duty);
+      if (m.dept && m.dept.trim()) roleSet.add(m.dept.trim());
+      list.push({ name, nickname: nick, displayName, duty, dept: m.dept || '', group: 'สมาชิกโครงการ (Members)' });
+    });
+
+    // Process advisors
+    advisors.forEach(a => {
+      if (!a || !a.name || !a.name.trim()) return;
+      const name = a.name.trim();
+      const nick = (a.nickname || '').trim();
+      const displayName = nick ? `${name} (${nick})` : name;
+      const duty = (a.duty || a.dept || 'อาจารย์ที่ปรึกษาโครงการ').trim();
+      if (duty) roleSet.add(duty);
+      list.push({ name, nickname: nick, displayName, duty, group: 'ที่ปรึกษาโครงการ (Advisors)' });
+    });
+
+    // Process smo
+    smoOfficers.forEach(s => {
+      if (!s || !s.name || !s.name.trim()) return;
+      const name = s.name.trim();
+      const nick = (s.nickname || '').trim();
+      const displayName = nick ? `${name} (${nick})` : name;
+      const duty = (s.duty || s.dept || 'ผู้ดูแลจากสโมสรนักศึกษา').trim();
+      if (duty) roleSet.add(duty);
+      list.push({ name, nickname: nick, displayName, duty, group: 'สโมสรนักศึกษา (SMO)' });
+    });
+
+    return {
+      stakeholders: list,
+      roles: Array.from(roleSet)
+    };
+  }
+  if (typeof window !== 'undefined') {
+    window.getProjectStakeholdersForCalendar = getProjectStakeholdersForCalendar;
+    window.setFormCalendarView = setFormCalendarView;
+    window.navigateFormCalendarMonth = navigateFormCalendarMonth;
   }
 
   function triggerImportProjectCalendarIcsForForm() {
@@ -3026,20 +3309,34 @@
   function handleFormShowInMainCalToggleChanged(isChecked) {
     const projectId = getFormProjectId();
     if (!projectId) return;
+    const isBool = Boolean(isChecked);
+
     const allProjects = getProjectsList();
     const prj = allProjects.find(p => p && p.id === projectId);
     if (prj) {
-      prj.showInMainCalendar = Boolean(isChecked);
-      if (window.socket && typeof window.socket.emit === 'function') {
-        window.socket.emit('admin:updateProjectCalendar', {
-          projectId,
-          calendarEvents: prj.calendarEvents || [],
-          showInMainCalendar: prj.showInMainCalendar
-        });
-      }
-      if (typeof window.saveLocalState === 'function') window.saveLocalState();
-      if (typeof window.renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') window.renderAdminCalendarSection();
-      if (typeof window.renderUserCalendarSection === 'function') window.renderUserCalendarSection();
+      prj.showInMainCalendar = isBool;
+    }
+    if (window.appState && Array.isArray(window.appState.projects)) {
+      const statePrj = window.appState.projects.find(p => p && p.id === projectId);
+      if (statePrj) statePrj.showInMainCalendar = isBool;
+    }
+
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('admin:updateProjectCalendar', {
+        projectId,
+        calendarEvents: (prj && prj.calendarEvents) || [],
+        showInMainCalendar: isBool
+      });
+    }
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+    if (typeof window.renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') {
+      window.renderAdminCalendarSection();
+    }
+    if (typeof window.renderUserCalendarSection === 'function') {
+      window.renderUserCalendarSection();
+    }
+    if (typeof window.renderTodayEventsBanner === 'function') {
+      window.renderTodayEventsBanner();
     }
   }
 
@@ -5087,6 +5384,9 @@
       ? document.getElementById('prjFormShowInMainCalToggle').checked
       : true;
 
+    const existingPrj = (getProjectsList() || []).find(p => p && p.id === id);
+    const existingCalEvents = (existingPrj && Array.isArray(existingPrj.calendarEvents)) ? existingPrj.calendarEvents : [];
+
     const projectPayload = {
       id: id || undefined,
       title,
@@ -5117,6 +5417,7 @@
       members: prjFormMembers.filter(m => m.name && m.name.trim()),
       advisors: prjFormAdvisors.filter(a => a.name && a.name.trim()),
       smoOfficers: prjFormSmoOfficers.filter(s => s.name && s.name.trim()),
+      calendarEvents: existingCalEvents,
       showInMainCalendar
     };
 
@@ -5207,6 +5508,15 @@
     else {
       renderUserProjectsSection();
       renderAdminProjectsSection();
+    }
+    if (typeof window.renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') {
+      window.renderAdminCalendarSection();
+    }
+    if (typeof window.renderUserCalendarSection === 'function') {
+      window.renderUserCalendarSection();
+    }
+    if (typeof window.renderTodayEventsBanner === 'function') {
+      window.renderTodayEventsBanner();
     }
   }
 
@@ -5718,6 +6028,10 @@
     window.triggerImportProjectCalendarIcs = triggerImportProjectCalendarIcs;
     window.handleProjectCalendarIcsFileSelected = handleProjectCalendarIcsFileSelected;
     window.exportCurrentProjectCalendarIcs = exportCurrentProjectCalendarIcs;
+    window.getProjectsList = getProjectsList;
+    window.getProjectStakeholdersForCalendar = getProjectStakeholdersForCalendar;
+    window.setFormCalendarView = setFormCalendarView;
+    window.navigateFormCalendarMonth = navigateFormCalendarMonth;
     window.getFormProjectId = getFormProjectId;
     window.renderFormCalendarEvents = renderFormCalendarEvents;
     window.triggerImportProjectCalendarIcsForForm = triggerImportProjectCalendarIcsForForm;
@@ -5757,6 +6071,10 @@
     triggerImportProjectCalendarIcs,
     handleProjectCalendarIcsFileSelected,
     exportCurrentProjectCalendarIcs,
+    getProjectsList,
+    getProjectStakeholdersForCalendar,
+    setFormCalendarView,
+    navigateFormCalendarMonth,
     getFormProjectId,
     renderFormCalendarEvents,
     triggerImportProjectCalendarIcsForForm,

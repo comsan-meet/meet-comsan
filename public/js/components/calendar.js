@@ -112,10 +112,30 @@ function getAllCalendarEventsForMain() {
   }));
 
   const projectEvents = [];
-  const projects = Array.isArray(state.projects) ? state.projects : [];
+  let rawProjects = [];
+  if (typeof window.getProjectsList === 'function') {
+    try { rawProjects = window.getProjectsList(); } catch (e) {}
+  }
+  if (!rawProjects || rawProjects.length === 0) {
+    rawProjects = Array.isArray(state.projects) ? state.projects : [];
+  }
+
+  // Deduplicate projects by ID
+  const seenPrjIds = new Set();
+  const projects = [];
+  (rawProjects || []).forEach(p => {
+    if (p && p.id && !seenPrjIds.has(p.id)) {
+      seenPrjIds.add(p.id);
+      projects.push(p);
+    }
+  });
+
   projects.forEach(p => {
-    if (p && p.showInMainCalendar !== false && Array.isArray(p.calendarEvents)) {
+    const isShown = (p.showInMainCalendar === true || p.showInMainCalendar === 'true') ||
+      (p.showInMainCalendar !== false && p.showInMainCalendar !== 'false');
+    if (isShown && Array.isArray(p.calendarEvents)) {
       p.calendarEvents.forEach(e => {
+        if (!e) return;
         projectEvents.push({
           ...e,
           isProjectEvent: true,
@@ -128,7 +148,11 @@ function getAllCalendarEventsForMain() {
     }
   });
 
-  return [...clubEvents, ...projectEvents];
+  return [...clubEvents, ...projectEvents].sort((a, b) => {
+    const da = `${a.startDate || ''} ${a.startTime || '00:00'}`;
+    const db = `${b.startDate || ''} ${b.startTime || '00:00'}`;
+    return da.localeCompare(db);
+  });
 }
 
 /**
@@ -479,7 +503,7 @@ function renderUserCalendarSection() {
   const container = document.getElementById('uToolSec_CALENDAR');
   if (!container) return;
 
-  const events = (window.appState && window.appState.calendarEvents) || [];
+  const events = getAllCalendarEventsForMain();
   const me = (window.appState && window.appState.users || []).find(u => u.id === window.currentUserId) || {};
 
   // Filter events
@@ -1315,9 +1339,10 @@ function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null, pro
   const modalIcon = document.getElementById('calModalIcon');
   if (modalIcon) {
     if (typeof updateIcon === 'function') {
-      updateIcon(modalIcon, event ? 'pen' : 'calendar-plus');
+      updateIcon(modalIcon, event ? 'square-pen' : 'calendar-plus');
     } else {
-      modalIcon.setAttribute('data-lucide', event ? 'pen' : 'calendar-plus');
+      modalIcon.setAttribute('data-lucide', event ? 'square-pen' : 'calendar-plus');
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
     }
   }
 
@@ -1369,6 +1394,60 @@ function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null, pro
     }
   }
 
+  // Setup project assignees & roles datalists
+  const stakeholderData = (targetProjectId && typeof window.getProjectStakeholdersForCalendar === 'function')
+    ? window.getProjectStakeholdersForCalendar(targetProjectId)
+    : { stakeholders: [], roles: [] };
+
+  window._currentCalStakeholders = stakeholderData.stakeholders || [];
+
+  const noticeEl = document.getElementById('calProjectAssigneeNotice');
+  if (noticeEl) {
+    if (targetProjectId && stakeholderData.stakeholders && stakeholderData.stakeholders.length > 0) {
+      noticeEl.textContent = `✨ สามารถเลือกผู้รับผิดชอบ (${stakeholderData.stakeholders.length} คน) และหน้าที่จากโครงการนี้ได้`;
+      noticeEl.classList.remove('hidden');
+    } else {
+      noticeEl.classList.add('hidden');
+    }
+  }
+
+  // Populate calAssigneeNameList datalist
+  let nameDatalist = document.getElementById('calAssigneeNameList');
+  if (!nameDatalist) {
+    nameDatalist = document.createElement('datalist');
+    nameDatalist.id = 'calAssigneeNameList';
+    document.body.appendChild(nameDatalist);
+  }
+  let nameOptionsHtml = '';
+  if (stakeholderData.stakeholders && stakeholderData.stakeholders.length > 0) {
+    nameOptionsHtml += stakeholderData.stakeholders.map(s => {
+      const label = s.duty ? `${s.group}: ${s.duty}` : s.group;
+      return `<option value="${s.displayName}">${label}</option>`;
+    }).join('');
+  }
+  users.forEach(u => {
+    const val = u.nickname ? `${u.nickname} (${u.firstName} ${u.lastName})` : `${u.firstName} ${u.lastName}`;
+    nameOptionsHtml += `<option value="${val}">สมาชิกชมรม (${u.position || 'สมาชิก'})</option>`;
+  });
+  nameDatalist.innerHTML = nameOptionsHtml;
+
+  // Populate calAssigneeRoleList datalist
+  let roleDatalist = document.getElementById('calAssigneeRoleList');
+  if (!roleDatalist) {
+    roleDatalist = document.createElement('datalist');
+    roleDatalist.id = 'calAssigneeRoleList';
+    document.body.appendChild(roleDatalist);
+  }
+  const allRoles = (stakeholderData.roles && stakeholderData.roles.length > 0)
+    ? stakeholderData.roles
+    : [
+      'หัวหน้าโครงการ', 'รองหัวหน้าโครงการ', 'ผู้ประสานงานโครงการ', 'เลขานุการโครงการ',
+      'ฝ่ายสถานที่และอุปกรณ์', 'ฝ่ายพิธีการและสันทนาการ', 'ฝ่ายทะเบียนและต้อนรับ',
+      'ฝ่ายสวัสดิการและพยาบาล', 'ฝ่ายสื่อ สารสนเทศและประชาสัมพันธ์',
+      'ฝ่ายการเงินและงบประมาณ', 'ฝ่ายประเมินผล', 'ผู้รับผิดชอบกิจกรรม'
+    ];
+  roleDatalist.innerHTML = allRoles.map(r => `<option value="${r}"></option>`).join('');
+
   // Render assignees list builder
   renderAssigneeRows(event && Array.isArray(event.assignees) ? event.assignees : []);
 
@@ -1400,29 +1479,45 @@ function addAssigneeRow(name = '', role = '') {
   const container = document.getElementById('calAssigneesContainer');
   if (!container) return;
 
-  const users = (window.appState && window.appState.users) || [];
-
   const row = document.createElement('div');
   row.className = 'flex items-center gap-2 cal-assignee-row';
   row.innerHTML = `
     <div class="flex-1 min-w-0">
-      <input type="text" list="clubMemberList" placeholder="ชื่อผู้รับผิดชอบ หรือพิมพ์เลือก..." value="${name || ''}"
+      <input type="text" list="calAssigneeNameList" placeholder="ชื่อผู้รับผิดชอบ หรือพิมพ์เลือก..." value="${name || ''}"
+        oninput="handleAssigneeNameInput(this)"
         class="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border text-xs text-foreground placeholder:text-muted-foreground/70 focus:bg-card focus:ring-1 focus:ring-primary outline-none assignee-name">
-      <datalist id="clubMemberList">
-        ${users.map(u => `<option value="${u.nickname} (${u.firstName} ${u.lastName})">${u.position}</option>`).join('')}
-      </datalist>
     </div>
     <div class="flex-1 min-w-0">
-      <input type="text" placeholder="บทบาทหน้าที่ (เช่น ผู้ประสานงาน, ฝ่ายสถานที่)..." value="${role || ''}"
+      <input type="text" list="calAssigneeRoleList" placeholder="บทบาทหน้าที่ (เลือกหรือพิมพ์)..." value="${role || ''}"
         class="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border text-xs text-foreground placeholder:text-muted-foreground/70 focus:bg-card focus:ring-1 focus:ring-primary outline-none assignee-role">
     </div>
     <button type="button" onclick="this.closest('.cal-assignee-row').remove()"
-      class="w-8 h-8 rounded-xl hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 flex items-center justify-center transition shrink-0" title="ลบผู้รับผิดชอบนี้">
+      class="w-8 h-8 rounded-xl hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 flex items-center justify-center transition shrink-0 cursor-pointer" title="ลบผู้รับผิดชอบนี้">
       <i data-lucide="x" class="w-3.5 h-3.5"></i>
     </button>
   `;
   container.appendChild(row);
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
+  }
 }
+
+function handleAssigneeNameInput(input) {
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  const row = input.closest('.cal-assignee-row');
+  if (!row) return;
+  const roleInput = row.querySelector('.assignee-role');
+  if (!roleInput || roleInput.value.trim() !== '') return;
+
+  const stakeholders = window._currentCalStakeholders || [];
+  const match = stakeholders.find(s => s.displayName === val || s.name === val || (s.nickname && val.includes(s.nickname)));
+  if (match && (match.duty || match.dept)) {
+    roleInput.value = match.duty || match.dept;
+  }
+}
+window.handleAssigneeNameInput = handleAssigneeNameInput;
 
 function saveCalendarEventFromModal() {
   if (!isCalendarAdmin()) {
@@ -1521,6 +1616,7 @@ function saveCalendarEventFromModal() {
       if (prj.showInMainCalendar !== false) {
         if (typeof renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') renderAdminCalendarSection();
         if (typeof renderUserCalendarSection === 'function') renderUserCalendarSection();
+        if (typeof renderTodayEventsBanner === 'function') renderTodayEventsBanner();
       }
       showToast('บันทึกกิจกรรมในโครงการเรียบร้อยแล้ว', 'success');
     } else {
@@ -1603,6 +1699,7 @@ async function confirmDeleteCalendarEvent(eventId, title, projectId = null) {
       if (prj.showInMainCalendar !== false) {
         if (typeof renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') renderAdminCalendarSection();
         if (typeof renderUserCalendarSection === 'function') renderUserCalendarSection();
+        if (typeof renderTodayEventsBanner === 'function') renderTodayEventsBanner();
       }
       showToast(`ลบกิจกรรม "${title}" ออกจากโครงการแล้ว`, 'info');
       return;
