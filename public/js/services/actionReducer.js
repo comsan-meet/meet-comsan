@@ -16,6 +16,48 @@
   }
 })(typeof self !== 'undefined' ? self : this, function () {
 
+  function findUserFlexible(users, rawIdentifier) {
+  if (!Array.isArray(users) || !rawIdentifier) return null;
+  const raw = String(rawIdentifier).trim().toLowerCase();
+  if (!raw) return null;
+  const rawNoPunct = raw.replace(/[\s_-]/g, '');
+
+  return users.find(u => {
+    if (!u) return false;
+    const uId = String(u.id || '').trim().toLowerCase();
+    const uIdNoPunct = uId.replace(/[\s_-]/g, '');
+    const nick = String(u.nickname || '').trim().toLowerCase();
+    const fName = String(u.firstName || '').trim().toLowerCase();
+    const lName = String(u.lastName || '').trim().toLowerCase();
+    const fullName = (fName + ' ' + lName).trim();
+    const fullNameNoSpace = (fName + lName);
+    const pass = String(u.password || '').trim().toLowerCase();
+
+    return (
+      (uId && uId === raw) ||
+      (uIdNoPunct && uIdNoPunct === rawNoPunct) ||
+      (nick && nick === raw) ||
+      (fName && fName === raw) ||
+      (lName && lName === raw) ||
+      (fullName && fullName === raw) ||
+      (fullNameNoSpace && fullNameNoSpace === rawNoPunct) ||
+      (pass && pass === raw)
+    );
+  }) || null;
+  }
+
+  function recalculateMeetingStats(meetingObj) {
+    if (!meetingObj || !Array.isArray(meetingObj.users)) return;
+    const users = meetingObj.users;
+    meetingObj.stats = {
+      total: users.length,
+      onTime: users.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length,
+      late: users.filter(u => u.checkedIn && u.isLate && !u.isLeave).length,
+      leave: users.filter(u => u.isLeave).length,
+      absent: users.filter(u => !u.checkedIn && !u.isLeave).length
+    };
+  }
+
   function isCurrentlyAfterCutoff(cutoffHHMM) {
     if (!cutoffHHMM) return false;
     const now = new Date();
@@ -120,7 +162,8 @@
           state.meeting.onlinePlatform = 'GOOGLE_MEET';
           state.meeting.onlineUrl = '';
           state.meeting.onlinePasscode = '';
-          state.meeting.checkinToken = null;
+          const randomDigits = Math.floor(100000 + Math.random() * 900000);
+          state.meeting.checkinToken = 'CS-' + randomDigits;
         }
 
         state.meeting.startedAtMs = Date.now();
@@ -165,29 +208,37 @@
         const dateStr = nowObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
         const timeStr = nowObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
-        const totalUsers = state.users.length;
-        const onTimeCount = state.users.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
-        const lateCount = state.users.filter(u => u.checkedIn && u.isLate && !u.isLeave).length;
-        const leaveCount = state.users.filter(u => u.isLeave).length;
-        const absentCount = state.users.filter(u => !u.checkedIn && !u.isLeave).length;
+        // If payload has users snapshot or lastMeetingSummary has attendance, preserve them
+        let usersSnapshot = JSON.parse(JSON.stringify(state.users || []));
+        if (payload && Array.isArray(payload.users) && payload.users.some(u => u.checkedIn || u.isLeave)) {
+          usersSnapshot = JSON.parse(JSON.stringify(payload.users));
+        } else if (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users) && state.lastMeetingSummary.users.some(u => u.checkedIn || u.isLeave)) {
+          usersSnapshot = JSON.parse(JSON.stringify(state.lastMeetingSummary.users));
+        }
+
+        const totalUsers = usersSnapshot.length;
+        const onTimeCount = usersSnapshot.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
+        const lateCount = usersSnapshot.filter(u => u.checkedIn && u.isLate && !u.isLeave).length;
+        const leaveCount = usersSnapshot.filter(u => u.isLeave).length;
+        const absentCount = usersSnapshot.filter(u => !u.checkedIn && !u.isLeave).length;
 
         const summaryRecord = {
-          id: 'MTG-' + endedAt,
-          title: state.meeting.title || 'การประชุมชมรมสันทนาการ',
-          meetingTitle: state.meeting.title || 'การประชุมชมรมสันทนาการ',
-          date: state.meeting.date || todayISO,
-          endDate: state.meeting.endDate || state.meeting.date || todayISO,
-          meetingDate: state.meeting.date || todayISO,
-          meetingEndDate: state.meeting.endDate || state.meeting.date || todayISO,
-          location: state.meeting.location || '-',
-          format: state.meeting.format || 'ONSITE',
-          onlinePlatform: state.meeting.onlinePlatform || null,
-          onlineUrl: state.meeting.onlineUrl || '',
-          startTime: state.meeting.startTime || '17:00',
-          endTime: state.meeting.endTime || '19:00',
-          scheduledEndTime: state.meeting.endTime || '19:00',
+          id: (payload && payload.id) || ('MTG-' + endedAt),
+          title: (payload && payload.title) || state.meeting.title || 'การประชุมชมรมสันทนาการ',
+          meetingTitle: (payload && payload.title) || state.meeting.title || 'การประชุมชมรมสันทนาการ',
+          date: (payload && payload.date) || state.meeting.date || todayISO,
+          endDate: (payload && payload.endDate) || state.meeting.endDate || state.meeting.date || todayISO,
+          meetingDate: (payload && payload.date) || state.meeting.date || todayISO,
+          meetingEndDate: (payload && payload.endDate) || state.meeting.endDate || state.meeting.date || todayISO,
+          location: (payload && payload.location) || state.meeting.location || '-',
+          format: (payload && payload.format) || state.meeting.format || 'ONSITE',
+          onlinePlatform: (payload && payload.onlinePlatform) || state.meeting.onlinePlatform || null,
+          onlineUrl: (payload && payload.onlineUrl) || state.meeting.onlineUrl || '',
+          startTime: (payload && payload.startTime) || state.meeting.startTime || '17:00',
+          endTime: (payload && payload.endTime) || state.meeting.endTime || '19:00',
+          scheduledEndTime: (payload && payload.endTime) || state.meeting.endTime || '19:00',
           actualEndTime: timeStr,
-          lateTime: state.meeting.lateTime || '17:15',
+          lateTime: (payload && payload.lateTime) || state.meeting.lateTime || '17:15',
           startedAtMs: state.meeting.startedAtMs,
           endedAtMs: endedAt,
           endedDateStr: dateStr,
@@ -199,12 +250,20 @@
             leave: leaveCount,
             absent: absentCount
           },
-          users: JSON.parse(JSON.stringify(state.users || [])),
+          users: JSON.parse(JSON.stringify(usersSnapshot || [])),
           motions: JSON.parse(JSON.stringify(state.motions || []))
         };
 
         state.lastMeetingSummary = summaryRecord;
-        state.meetingHistory.unshift(summaryRecord);
+        if (!Array.isArray(state.meetingHistory)) {
+          state.meetingHistory = [];
+        }
+        const existingIdx = state.meetingHistory.findIndex(m => m.id === summaryRecord.id);
+        if (existingIdx >= 0) {
+          state.meetingHistory[existingIdx] = summaryRecord;
+        } else {
+          state.meetingHistory.unshift(summaryRecord);
+        }
         if (state.meetingHistory.length > 100) {
           state.meetingHistory = state.meetingHistory.slice(0, 100);
         }
@@ -297,13 +356,7 @@
           break;
         }
 
-        const cleanId = String(identifier || '').trim().toLowerCase();
-        const user = state.users.find(
-          u => (u.id && u.id.toLowerCase() === cleanId) ||
-               (u.nickname && u.nickname.toLowerCase() === cleanId) ||
-               (u.firstName && u.firstName.toLowerCase() === cleanId)
-        );
-
+        const user = findUserFlexible(state.users, identifier);
         if (!user) {
           result = { ok: false, message: `ไม่พบข้อมูลสมาชิก: "${identifier}"` };
           shouldPersist = false;
@@ -312,12 +365,24 @@
 
         const now = new Date();
         const late = isCurrentlyAfterCutoff(state.meeting.lateTime);
-        user.checkedIn = true;
+                user.checkedIn = true;
         user.isLeave = false;
         user.checkInTimestamp = now.getTime();
         user.checkInTimeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         user.isLate = late;
         user.attendedMinutes = 1;
+
+        if (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users)) {
+          const sumUser = state.lastMeetingSummary.users.find(u => u.id === user.id);
+          if (sumUser) {
+            sumUser.checkedIn = true;
+            sumUser.isLeave = false;
+            sumUser.checkInTimestamp = user.checkInTimestamp;
+            sumUser.checkInTimeStr = user.checkInTimeStr;
+            sumUser.isLate = user.isLate;
+            recalculateMeetingStats(state.lastMeetingSummary);
+          }
+        }
 
         result = { ok: true, message: `เช็คชื่อสำเร็จ: ${user.nickname} (${late ? 'มาสาย' : 'มาทันเวลา'})`, user };
         break;
@@ -335,11 +400,7 @@
           shouldPersist = false;
           break;
         }
-        if (state.meeting.format !== 'ONLINE') {
-          result = { ok: false, message: 'การประชุมนี้เป็นแบบ On-site กรุณาแสดง QR Code ประจำตัวให้ผู้ดูแลระบบสแกน' };
-          shouldPersist = false;
-          break;
-        }
+        // Allow checkin regardless of meeting format if token matches
 
         let cleanToken = String(token || '').trim().toUpperCase();
         const expectedToken = String(state.meeting.checkinToken || '').trim().toUpperCase();
@@ -357,12 +418,7 @@
           break;
         }
 
-        const cleanId = String(userId || '').trim().toLowerCase();
-        const user = state.users.find(
-          u => (u.id && u.id.toLowerCase() === cleanId) ||
-               (u.nickname && u.nickname.toLowerCase() === cleanId)
-        );
-
+        const user = findUserFlexible(state.users, userId) || state.users.find(u => u.id === userId);
         if (!user) {
           result = { ok: false, message: 'ไม่พบข้อมูลสมาชิกของคุณในระบบ' };
           shouldPersist = false;
@@ -377,12 +433,24 @@
 
         const now = new Date();
         const late = isCurrentlyAfterCutoff(state.meeting.lateTime);
-        user.checkedIn = true;
+                user.checkedIn = true;
         user.isLeave = false;
         user.checkInTimestamp = now.getTime();
         user.checkInTimeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         user.isLate = late;
         user.attendedMinutes = 1;
+
+        if (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users)) {
+          const sumUser = state.lastMeetingSummary.users.find(u => u.id === user.id);
+          if (sumUser) {
+            sumUser.checkedIn = true;
+            sumUser.isLeave = false;
+            sumUser.checkInTimestamp = user.checkInTimestamp;
+            sumUser.checkInTimeStr = user.checkInTimeStr;
+            sumUser.isLate = user.isLate;
+            recalculateMeetingStats(state.lastMeetingSummary);
+          }
+        }
 
         notify('notify:event', {
           type: 'success',
@@ -456,6 +524,33 @@
             }
           }
         });
+
+        if (state.lastMeetingSummary) {
+          recalculateMeetingStats(state.lastMeetingSummary);
+        }
+
+        if (Array.isArray(state.meetingHistory)) {
+          state.meetingHistory.forEach(hist => {
+            if (Array.isArray(hist.users)) {
+              const hUser = hist.users.find(u => u.id === userId);
+              if (hUser) {
+                if (status === 'LEAVE') {
+                  hUser.isLeave = true; hUser.checkedIn = false; hUser.isLate = false; hUser.leaveReason = reason || 'ผู้ดูแลระบบบันทึกสถานะลา'; hUser.checkInTimeStr = 'ลาประชุม';
+                } else if (status === 'ABSENT') {
+                  hUser.isLeave = false; hUser.checkedIn = false; hUser.isLate = false; hUser.leaveReason = ''; hUser.checkInTimeStr = '-'; hUser.attendedMinutes = 0;
+                } else if (status === 'ONTIME') {
+                  hUser.isLeave = false; hUser.checkedIn = true; hUser.isLate = false;
+                  if (['-', 'ลาประชุม', 'แจ้งลา'].includes(hUser.checkInTimeStr)) hUser.checkInTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                } else if (status === 'LATE') {
+                  hUser.isLeave = false; hUser.checkedIn = true; hUser.isLate = true;
+                  if (['-', 'ลาประชุม', 'แจ้งลา'].includes(hUser.checkInTimeStr)) hUser.checkInTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                }
+                recalculateMeetingStats(hist);
+              }
+            }
+          });
+        }
+
         result = { ok: true };
         break;
       }

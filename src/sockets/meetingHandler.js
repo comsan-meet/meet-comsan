@@ -61,7 +61,8 @@ module.exports = function registerMeetingHandlers(io, socket) {
       state.meeting.onlinePlatform = 'GOOGLE_MEET';
       state.meeting.onlineUrl = '';
       state.meeting.onlinePasscode = '';
-      state.meeting.checkinToken = null;
+      const randomDigits = Math.floor(100000 + Math.random() * 900000);
+      state.meeting.checkinToken = `CS-${randomDigits}`;
     }
 
     state.meeting.startedAtMs = Date.now();
@@ -94,7 +95,7 @@ module.exports = function registerMeetingHandlers(io, socket) {
     stateService.persistAndBroadcast();
   });
 
-  socket.on('admin:endMeeting', () => {
+  socket.on('admin:endMeeting', (incomingSummary) => {
     state.meeting.isEnded = true;
     state.activeStream = null;
     (state.motions || []).forEach(m => {
@@ -109,6 +110,27 @@ module.exports = function registerMeetingHandlers(io, socket) {
     const dateStr = nowObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
     const timeStr = nowObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
+    // Merge incoming users snapshot if provided (to preserve any client-side recorded check-ins)
+    if (incomingSummary && Array.isArray(incomingSummary.users) && incomingSummary.users.length > 0) {
+      incomingSummary.users.forEach(inU => {
+        if (!inU || !inU.id) return;
+        const localU = state.users.find(u => u.id === inU.id);
+        if (localU) {
+          if (inU.checkedIn && !localU.checkedIn) {
+            localU.checkedIn = true;
+            localU.checkInTimestamp = inU.checkInTimestamp || endedAt;
+            localU.checkInTimeStr = inU.checkInTimeStr || timeStr;
+            localU.isLate = Boolean(inU.isLate);
+            localU.isLeave = false;
+          } else if (inU.isLeave && !localU.isLeave) {
+            localU.isLeave = true;
+            localU.leaveReason = inU.leaveReason || 'แจ้งลา';
+            localU.checkInTimeStr = inU.checkInTimeStr || 'ลาประชุม';
+          }
+        }
+      });
+    }
+
     const totalUsers = state.users.length;
     const onTimeCount = state.users.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
     const lateCount = state.users.filter(u => u.checkedIn && u.isLate && !u.isLeave).length;
@@ -117,22 +139,22 @@ module.exports = function registerMeetingHandlers(io, socket) {
 
     // Save final summary snapshot of the finished meeting
     const summaryRecord = {
-      id: 'MTG-' + endedAt,
-      title: state.meeting.title || 'การประชุมชมรมสันทนาการ',
-      meetingTitle: state.meeting.title || 'การประชุมชมรมสันทนาการ',
-      date: state.meeting.date || todayISO,
-      endDate: state.meeting.endDate || state.meeting.date || todayISO,
-      meetingDate: state.meeting.date || todayISO,
-      meetingEndDate: state.meeting.endDate || state.meeting.date || todayISO,
-      location: state.meeting.location || '-',
-      format: state.meeting.format || 'ONSITE',
-      onlinePlatform: state.meeting.onlinePlatform || null,
-      onlineUrl: state.meeting.onlineUrl || '',
-      startTime: state.meeting.startTime || '17:00',
-      endTime: state.meeting.endTime || '19:00',
-      scheduledEndTime: state.meeting.endTime || '19:00',
+      id: (incomingSummary && incomingSummary.id) ? incomingSummary.id : ('MTG-' + endedAt),
+      title: (incomingSummary && incomingSummary.title) || state.meeting.title || 'การประชุมชมรมสันทนาการ',
+      meetingTitle: (incomingSummary && incomingSummary.title) || state.meeting.title || 'การประชุมชมรมสันทนาการ',
+      date: (incomingSummary && incomingSummary.date) || state.meeting.date || todayISO,
+      endDate: (incomingSummary && incomingSummary.endDate) || state.meeting.endDate || state.meeting.date || todayISO,
+      meetingDate: (incomingSummary && incomingSummary.date) || state.meeting.date || todayISO,
+      meetingEndDate: (incomingSummary && incomingSummary.endDate) || state.meeting.endDate || state.meeting.date || todayISO,
+      location: (incomingSummary && incomingSummary.location) || state.meeting.location || '-',
+      format: (incomingSummary && incomingSummary.format) || state.meeting.format || 'ONSITE',
+      onlinePlatform: (incomingSummary && incomingSummary.onlinePlatform) || state.meeting.onlinePlatform || null,
+      onlineUrl: (incomingSummary && incomingSummary.onlineUrl) || state.meeting.onlineUrl || '',
+      startTime: (incomingSummary && incomingSummary.startTime) || state.meeting.startTime || '17:00',
+      endTime: (incomingSummary && incomingSummary.endTime) || state.meeting.endTime || '19:00',
+      scheduledEndTime: (incomingSummary && incomingSummary.endTime) || state.meeting.endTime || '19:00',
       actualEndTime: timeStr,
-      lateTime: state.meeting.lateTime || '17:15',
+      lateTime: (incomingSummary && incomingSummary.lateTime) || state.meeting.lateTime || '17:15',
       startedAtMs: state.meeting.startedAtMs,
       endedAtMs: endedAt,
       endedDateStr: dateStr,
@@ -153,7 +175,12 @@ module.exports = function registerMeetingHandlers(io, socket) {
     if (!Array.isArray(state.meetingHistory)) {
       state.meetingHistory = [];
     }
-    state.meetingHistory.unshift(summaryRecord);
+    const existingIdx = state.meetingHistory.findIndex(m => m.id === summaryRecord.id);
+    if (existingIdx >= 0) {
+      state.meetingHistory[existingIdx] = summaryRecord;
+    } else {
+      state.meetingHistory.unshift(summaryRecord);
+    }
     if (state.meetingHistory.length > 100) {
       state.meetingHistory = state.meetingHistory.slice(0, 100);
     }

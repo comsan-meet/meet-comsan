@@ -293,7 +293,12 @@ function exportSummaryExcel(customMeetingRecord) {
 
 function exportHistoryMeetingExcel(meetingId) {
   const state = window.appState;
-  if (!state || !Array.isArray(state.meetingHistory)) return;
+  if (!state) return;
+  if (meetingId === 'LIVE_CURRENT' || !meetingId) {
+    if (typeof exportSummaryExcel === 'function') exportSummaryExcel();
+    return;
+  }
+  if (!Array.isArray(state.meetingHistory)) return;
   const target = state.meetingHistory.find(h => h.id === meetingId);
   if (!target) {
     if (typeof showToast === 'function') showToast('ไม่พบข้อมูลการประชุมย้อนหลังที่ต้องการดาวน์โหลด', 'error');

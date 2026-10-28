@@ -2,6 +2,37 @@
  * COMSAN Meeting System - Admin View Controller
  */
 
+function findUserFlexible(users, rawIdentifier) {
+  if (!Array.isArray(users) || !rawIdentifier) return null;
+  const raw = String(rawIdentifier).trim().toLowerCase();
+  if (!raw) return null;
+  const rawNoPunct = raw.replace(/[\s_-]/g, '');
+
+  return users.find(u => {
+    if (!u) return false;
+    const uId = String(u.id || '').trim().toLowerCase();
+    const uIdNoPunct = uId.replace(/[\s_-]/g, '');
+    const nick = String(u.nickname || '').trim().toLowerCase();
+    const fName = String(u.firstName || '').trim().toLowerCase();
+    const lName = String(u.lastName || '').trim().toLowerCase();
+    const fullName = (fName + ' ' + lName).trim();
+    const fullNameNoSpace = (fName + lName);
+    const pass = String(u.password || '').trim().toLowerCase();
+
+    return (
+      (uId && uId === raw) ||
+      (uIdNoPunct && uIdNoPunct === rawNoPunct) ||
+      (nick && nick === raw) ||
+      (fName && fName === raw) ||
+      (lName && lName === raw) ||
+      (fullName && fullName === raw) ||
+      (fullNameNoSpace && fullNameNoSpace === rawNoPunct) ||
+      (pass && pass === raw)
+    );
+  }) || null;
+}
+window.findUserFlexible = findUserFlexible;
+
 function requestAdminAccess() {
   if (window.isAdminAuthenticated) {
     window._pendingAdminTabAfterLogin = 'DASHBOARD';
@@ -264,33 +295,80 @@ async function endMeetingNow(skipConfirm = false) {
     if (!confirmed) return;
   }
 
+  const endedAt = Date.now();
+  const nowObj = new Date(endedAt);
+  const dateStr = nowObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+  const timeStr = nowObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
   window.appState.meeting.isEnded = true;
   (window.appState.motions || []).forEach(m => {
     m.isOpen = false;
   });
 
-  window.appState.lastMeetingSummary = {
-    meetingTitle: window.appState.meeting.title,
-    meetingDate: window.appState.meeting.date,
-    location: window.appState.meeting.location,
-    format: window.appState.meeting.format,
-    onlinePlatform: window.appState.meeting.onlinePlatform,
-    startTime: window.appState.meeting.startTime,
-    endTime: window.appState.meeting.endTime,
-    lateTime: window.appState.meeting.lateTime,
-    endedAtMs: Date.now(),
+  const totalUsers = (window.appState.users || []).length;
+  const onTimeCount = (window.appState.users || []).filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
+  const lateCount = (window.appState.users || []).filter(u => u.checkedIn && u.isLate && !u.isLeave).length;
+  const leaveCount = (window.appState.users || []).filter(u => u.isLeave).length;
+  const absentCount = (window.appState.users || []).filter(u => !u.checkedIn && !u.isLeave).length;
+
+  const summaryRecord = {
+    id: 'MTG-' + endedAt,
+    title: window.appState.meeting.title || 'การประชุมชมรมสันทนาการ',
+    meetingTitle: window.appState.meeting.title || 'การประชุมชมรมสันทนาการ',
+    date: window.appState.meeting.date || new Date().toISOString().slice(0, 10),
+    endDate: window.appState.meeting.endDate || window.appState.meeting.date || new Date().toISOString().slice(0, 10),
+    meetingDate: window.appState.meeting.date || new Date().toISOString().slice(0, 10),
+    meetingEndDate: window.appState.meeting.endDate || window.appState.meeting.date || new Date().toISOString().slice(0, 10),
+    location: window.appState.meeting.location || '-',
+    format: window.appState.meeting.format || 'ONSITE',
+    onlinePlatform: window.appState.meeting.onlinePlatform || null,
+    onlineUrl: window.appState.meeting.onlineUrl || '',
+    startTime: window.appState.meeting.startTime || '17:00',
+    endTime: window.appState.meeting.endTime || '19:00',
+    scheduledEndTime: window.appState.meeting.endTime || '19:00',
+    actualEndTime: timeStr,
+    lateTime: window.appState.meeting.lateTime || '17:15',
+    startedAtMs: window.appState.meeting.startedAtMs,
+    endedAtMs: endedAt,
+    endedDateStr: dateStr,
+    endedTimeStr: timeStr,
+    stats: {
+      total: totalUsers,
+      onTime: onTimeCount,
+      late: lateCount,
+      leave: leaveCount,
+      absent: absentCount
+    },
     users: JSON.parse(JSON.stringify(window.appState.users || [])),
     motions: JSON.parse(JSON.stringify(window.appState.motions || []))
   };
 
+  window.appState.lastMeetingSummary = summaryRecord;
+  if (!Array.isArray(window.appState.meetingHistory)) {
+    window.appState.meetingHistory = [];
+  }
+  const existingIdx = window.appState.meetingHistory.findIndex(m => m.id === summaryRecord.id);
+  if (existingIdx >= 0) {
+    window.appState.meetingHistory[existingIdx] = summaryRecord;
+  } else {
+    window.appState.meetingHistory.unshift(summaryRecord);
+  }
+  if (window.appState.meetingHistory.length > 100) {
+    window.appState.meetingHistory = window.appState.meetingHistory.slice(0, 100);
+  }
+
+  // Socket emit with snapshot record BEFORE wiping live attendance
+  window.socket.emit('admin:endMeeting', summaryRecord);
+
+  // Now reset live attendance for next session
   resetAllUsersAttendance(window.appState.users);
   window.appState.raiseHandQueue = [];
+  window.appState.meeting.checkinToken = null;
 
   window.saveLocalState();
-  window.socket.emit('admin:endMeeting');
   if (typeof window.switchAdminTab === 'function') window.switchAdminTab('SUMMARY');
   if (typeof window.renderAll === 'function') window.renderAll();
-  showToast('จบการประชุมเรียบร้อยแล้ว', 'info');
+  showToast('จบการประชุมเรียบร้อยแล้ว และบันทึกประวัติสรุปการประชุมสำเร็จ', 'info');
 }
 
 async function handleAdminMeetingToggle(isChecked) {
@@ -348,17 +426,45 @@ function processUserCheckIn(identifier) {
     return showToast('การประชุมสิ้นสุดลงแล้ว ไม่สามารถเช็คชื่อได้', 'warning');
   }
 
-  const cleanId = String(identifier || '').trim().toLowerCase();
-  const user = (state.users || []).find(
-    u => u.id.toLowerCase() === cleanId ||
-         u.nickname.toLowerCase() === cleanId ||
-         u.firstName.toLowerCase() === cleanId
-  );
+  const user = (typeof findUserFlexible === 'function')
+    ? findUserFlexible(state.users || [], identifier)
+    : (state.users || []).find(
+        u => u.id.toLowerCase() === String(identifier || '').trim().toLowerCase() ||
+             u.nickname.toLowerCase() === String(identifier || '').trim().toLowerCase()
+      );
+
   if (!user) return showToast(`ไม่พบสมาชิก: "${identifier}"`, 'error');
+
+  const now = new Date();
+  const late = (typeof isCurrentlyAfterCutoff === 'function' && state.meeting.lateTime)
+    ? isCurrentlyAfterCutoff(state.meeting.lateTime)
+    : false;
+
   user.checkedIn = true;
   user.isLeave = false;
-  user.checkInTimestamp = Date.now();
-  user.checkInTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  user.checkInTimestamp = now.getTime();
+  user.checkInTimeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  user.isLate = late;
+  user.attendedMinutes = 1;
+
+  if (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users)) {
+    const sumUser = state.lastMeetingSummary.users.find(u => u.id === user.id);
+    if (sumUser) {
+      sumUser.checkedIn = true;
+      sumUser.isLeave = false;
+      sumUser.checkInTimestamp = user.checkInTimestamp;
+      sumUser.checkInTimeStr = user.checkInTimeStr;
+      sumUser.isLate = user.isLate;
+      state.lastMeetingSummary.stats = {
+        total: state.lastMeetingSummary.users.length,
+        onTime: state.lastMeetingSummary.users.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length,
+        late: state.lastMeetingSummary.users.filter(u => u.checkedIn && u.isLate && !u.isLeave).length,
+        leave: state.lastMeetingSummary.users.filter(u => u.isLeave).length,
+        absent: state.lastMeetingSummary.users.filter(u => !u.checkedIn && !u.isLeave).length
+      };
+    }
+  }
+
   window.saveLocalState();
   window.socket.emit('admin:checkIn', identifier, (res) => {
     if (res && !res.ok) {
@@ -366,7 +472,7 @@ function processUserCheckIn(identifier) {
     }
   });
   if (typeof window.renderAll === 'function') window.renderAll();
-  showToast(`เช็คชื่อสำเร็จ: ${user.nickname}`, 'success');
+  showToast(`เช็คชื่อสำเร็จ: ${user.nickname} (${late ? 'มาสาย' : 'มาทันเวลา'})`, 'success');
 }
 
 function handleManualCheckIn() {
@@ -479,11 +585,12 @@ function renderMeetingHistoryList() {
   const listEl = document.getElementById('adminHistoryList');
   const badgeEl = document.getElementById('adminHistoryBadgeCount');
   const history = (state && Array.isArray(state.meetingHistory)) ? state.meetingHistory : [];
+  const isLive = Boolean(state && state.meeting && state.meeting.isStarted && !state.meeting.isEnded);
 
-  if (badgeEl) badgeEl.textContent = history.length;
+  if (badgeEl) badgeEl.textContent = isLive ? (history.length + 1) : history.length;
 
   if (!listEl) return;
-  if (history.length === 0) {
+  if (history.length === 0 && !isLive) {
     listEl.innerHTML = `
       <div class="p-6 text-center text-xs text-muted-foreground bg-card/60 rounded-xl border border-dashed border-border">
         <i data-lucide="folder-open" class="w-8 h-8 text-muted-foreground/40 mb-2 mx-auto block"></i>
@@ -491,10 +598,79 @@ function renderMeetingHistoryList() {
         <span class="text-[11px] opacity-75">(ระบบจะบันทึกให้อัตโนมัติเมื่อกด "จบการประชุม" ทุกครั้ง)</span>
       </div>
     `;
+    if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+      lucide.createIcons();
+    }
     return;
   }
 
-  listEl.innerHTML = history.map(rec => {
+  let liveCardHtml = '';
+  if (isLive) {
+    const isOnline = state.meeting.format === 'ONLINE';
+    const liveUsers = state.users || [];
+    const liveTotal = liveUsers.length;
+    const liveOnTime = liveUsers.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
+    const liveLate = liveUsers.filter(u => u.checkedIn && u.isLate && !u.isLeave).length;
+    const liveLeave = liveUsers.filter(u => u.isLeave).length;
+    const liveAbsent = liveUsers.filter(u => !u.checkedIn && !u.isLeave).length;
+    const isViewingLive = !window.selectedHistoryMeetingId;
+
+    liveCardHtml = `
+      <div class="p-3.5 rounded-xl border transition-all ${
+        isViewingLive
+          ? 'bg-rose-500/[0.08] border-rose-500/40 shadow-xs'
+          : 'bg-card border-border hover:border-rose-500/30'
+      } flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5">
+        <div class="min-w-0 space-y-1.5 flex-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> กำลังประชุมอยู่ (Live)
+            </span>
+            <span class="font-bold text-xs sm:text-sm text-foreground truncate">${state.meeting.title || 'การประชุมชมรม'}</span>
+            ${isViewingLive ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground shrink-0">กำลังแสดงผล</span>` : ''}
+            <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+              isOnline ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+            }">
+              <i data-lucide="${isOnline ? 'globe' : 'map-pin'}" class="w-3 h-3"></i>
+              ${isOnline ? `ออนไลน์ (${state.meeting.onlinePlatform || 'Online'})` : `ออนไซต์ (${state.meeting.location || '-'})`}
+            </span>
+          </div>
+          <div class="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
+            <span class="inline-flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>${state.meeting.date || '-'}</span>
+            <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>เวลา ${state.meeting.startTime || '17:00'} - ${state.meeting.endTime || '19:00'} น.</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-[11px] flex-wrap pt-0.5">
+            <span class="text-muted-foreground">เข้าแล้ว <strong>${liveOnTime + liveLate}</strong> / ${liveTotal}</span>
+            <span class="text-border">•</span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-semibold">ทัน ${liveOnTime}</span>
+            <span class="text-border">•</span>
+            <span class="text-amber-600 dark:text-amber-400 font-semibold">สาย ${liveLate}</span>
+            <span class="text-border">•</span>
+            <span class="text-sky-600 dark:text-sky-400 font-semibold">ลา ${liveLeave}</span>
+            <span class="text-border">•</span>
+            <span class="text-rose-600 dark:text-rose-400 font-semibold">ยังไม่เช็คชื่อ ${liveAbsent}</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+          <button type="button" onclick="returnToCurrentMeetingSummary()"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              isViewingLive
+                ? 'bg-rose-600 text-white shadow-2xs'
+                : 'bg-muted hover:bg-muted/80 text-foreground'
+            }">
+            <i data-lucide="eye" class="w-3.5 h-3.5"></i> <span>${isViewingLive ? 'กำลังดูสด' : 'ดูสรุปผลสด'}</span>
+          </button>
+          <button type="button" onclick="exportHistoryMeetingExcel('LIVE_CURRENT')" title="ดาวน์โหลดสรุปผลสด"
+            class="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> <span>Excel</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  const pastCardsHtml = history.map(rec => {
     const isSelected = window.selectedHistoryMeetingId === rec.id;
     const isOnline = rec.format === 'ONLINE';
     const st = rec.stats || { total: 0, onTime: 0, late: 0, leave: 0, absent: 0 };
@@ -559,6 +735,11 @@ function renderMeetingHistoryList() {
       </div>
     `;
   }).join('');
+
+  listEl.innerHTML = liveCardHtml + pastCardsHtml;
+  if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+    lucide.createIcons();
+  }
 }
 window.renderMeetingHistoryList = renderMeetingHistoryList;
 
@@ -675,6 +856,25 @@ async function adminChangeUserStatus(userId, newStatus) {
       if (['-', 'ลาประชุม', 'แจ้งลา'].includes(u.checkInTimeStr)) u.checkInTimeStr = nowTimeStr;
     }
   });
+
+  if (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users)) {
+    const lUsers = state.lastMeetingSummary.users;
+    state.lastMeetingSummary.stats = {
+      total: lUsers.length,
+      onTime: lUsers.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length,
+      late: lUsers.filter(u => u.checkedIn && u.isLate && !u.isLeave).length,
+      leave: lUsers.filter(u => u.isLeave).length,
+      absent: lUsers.filter(u => !u.checkedIn && !u.isLeave).length
+    };
+    if (Array.isArray(state.meetingHistory)) {
+      const matchHist = state.meetingHistory.find(h => h.id === state.lastMeetingSummary.id);
+      if (matchHist) {
+        matchHist.users = JSON.parse(JSON.stringify(lUsers));
+        matchHist.stats = JSON.parse(JSON.stringify(state.lastMeetingSummary.stats));
+        window.socket.emit('admin:updateMeetingHistory', matchHist);
+      }
+    }
+  }
 
   window.saveLocalState();
   window.socket.emit('admin:setAttendanceStatus', { userId, status: newStatus, reason });

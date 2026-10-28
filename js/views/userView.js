@@ -846,16 +846,78 @@ function renderUserMeetingHistoryList() {
   const listEl = document.getElementById('userMeetingHistoryList');
   if (!listEl) return;
   const history = (state && Array.isArray(state.meetingHistory)) ? state.meetingHistory : [];
-  if (history.length === 0) {
+  const isLive = Boolean(state && state.meeting && state.meeting.isStarted && !state.meeting.isEnded);
+
+  if (history.length === 0 && !isLive) {
     listEl.innerHTML = `
       <div class="p-8 text-center text-xs text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border">
         <i data-lucide="folder-open" class="w-8 h-8 text-muted-foreground/40 mb-2 mx-auto block"></i>
         ยังไม่มีประวัติการประชุมที่ผ่านมาในระบบ
       </div>
     `;
+    if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+      lucide.createIcons();
+    }
     return;
   }
-  listEl.innerHTML = history.map(rec => {
+
+  let liveCardHtml = '';
+  if (isLive) {
+    const isOnline = state.meeting.format === 'ONLINE';
+    const liveUsers = state.users || [];
+    const myRecord = window.currentUserId ? liveUsers.find(u => u.id === window.currentUserId) : null;
+    let myBadge = '';
+    if (myRecord) {
+      if (myRecord.isLeave) {
+        myBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400">ฉัน: ลาประชุม (${myRecord.leaveReason || 'แจ้งลา'})</span>`;
+      } else if (myRecord.checkedIn && myRecord.isLate) {
+        myBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400">ฉัน: เช็คชื่อแล้ว (มาสาย • ${myRecord.checkInTimeStr} น.)</span>`;
+      } else if (myRecord.checkedIn) {
+        myBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">ฉัน: เช็คชื่อแล้ว (มาทันเวลา • ${myRecord.checkInTimeStr} น.)</span>`;
+      } else {
+        myBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400">ฉัน: ยังไม่ได้เช็คชื่อ (การประชุมกำลังดำเนินอยู่)</span>`;
+      }
+    }
+    const liveOnTime = liveUsers.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
+    const liveLate = liveUsers.filter(u => u.checkedIn && u.isLate && !u.isLeave).length;
+
+    liveCardHtml = `
+      <div class="p-3.5 rounded-2xl bg-card border-2 border-rose-500/40 shadow-xs space-y-2.5">
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> กำลังประชุมอยู่ (Live)
+            </span>
+            <h4 class="font-bold text-xs sm:text-sm text-foreground leading-snug">${state.meeting.title || 'การประชุมชมรมสันทนาการ'}</h4>
+          </div>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+              isOnline ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+            }">
+              <i data-lucide="${isOnline ? 'globe' : 'map-pin'}" class="w-3 h-3"></i>
+              ${isOnline ? `ออนไลน์ (${state.meeting.onlinePlatform || 'Online'})` : `ออนไซต์ (${state.meeting.location || '-'})`}
+            </span>
+            ${myBadge}
+            <span class="text-[10px] text-muted-foreground ml-auto inline-flex items-center gap-1">
+              <i data-lucide="clock" class="w-3 h-3"></i>เวลา ${state.meeting.startTime || '17:00'} - ${state.meeting.endTime || '19:00'} น.
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+          <div class="text-[11px] text-muted-foreground">
+            เข้าประชุมแล้ว <strong>${liveOnTime + liveLate}</strong> / ${liveUsers.length} คน
+          </div>
+          <button type="button" onclick="exportHistoryMeetingExcel('LIVE_CURRENT')"
+            class="px-3 py-1.5 rounded-xl gradient-primary text-white text-xs font-bold shadow-xs hover:opacity-95 transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> <span>ดาวน์โหลดสรุปสด (.xlsx)</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  const pastCardsHtml = history.map(rec => {
     const isOnline = rec.format === 'ONLINE';
     const st = rec.stats || { total: 0, onTime: 0, late: 0, leave: 0, absent: 0 };
     const dateFormatted = (rec.endDate && rec.endDate !== rec.date)
@@ -902,6 +964,11 @@ function renderUserMeetingHistoryList() {
       </div>
     `;
   }).join('');
+
+  listEl.innerHTML = liveCardHtml + pastCardsHtml;
+  if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+    lucide.createIcons();
+  }
 }
 
 window.openUserMeetingHistoryModal = openUserMeetingHistoryModal;
