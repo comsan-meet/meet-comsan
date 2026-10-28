@@ -53,6 +53,8 @@ function registerProjectHandlers(io, socket) {
         smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
         calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : [],
         showInMainCalendar: data.showInMainCalendar !== undefined ? Boolean(data.showInMainCalendar) : true,
+        calendarColor: data.calendarColor !== undefined ? String(data.calendarColor).trim() : 'indigo',
+        color: data.color !== undefined ? String(data.color).trim() : (data.calendarColor || 'indigo'),
         createdAt: data.createdAt || nowISO,
         updatedAt: nowISO
       };
@@ -119,6 +121,10 @@ function registerProjectHandlers(io, socket) {
           members: Array.isArray(data.members) ? data.members : [],
           advisors: Array.isArray(data.advisors) ? data.advisors : [],
           smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : [],
+          calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : [],
+          showInMainCalendar: data.showInMainCalendar !== undefined ? Boolean(data.showInMainCalendar) : true,
+          calendarColor: data.calendarColor !== undefined ? String(data.calendarColor).trim() : 'indigo',
+          color: data.color !== undefined ? String(data.color).trim() : (data.calendarColor || 'indigo'),
           createdAt: data.createdAt || nowISO,
           updatedAt: nowISO
         };
@@ -151,6 +157,8 @@ function registerProjectHandlers(io, socket) {
         smoOfficers: Array.isArray(data.smoOfficers) ? data.smoOfficers : state.projects[index].smoOfficers,
         calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : (state.projects[index].calendarEvents || []),
         showInMainCalendar: data.showInMainCalendar !== undefined ? Boolean(data.showInMainCalendar) : (state.projects[index].showInMainCalendar !== undefined ? state.projects[index].showInMainCalendar : true),
+        calendarColor: data.calendarColor !== undefined ? String(data.calendarColor).trim() : (state.projects[index].calendarColor || 'indigo'),
+        color: data.color !== undefined ? String(data.color).trim() : (state.projects[index].color || data.calendarColor || 'indigo'),
         updatedAt: nowISO
       };
 
@@ -203,6 +211,12 @@ function registerProjectHandlers(io, socket) {
       }
       if (data.showInMainCalendar !== undefined) {
         prj.showInMainCalendar = Boolean(data.showInMainCalendar);
+      }
+      if (data.calendarColor !== undefined) {
+        prj.calendarColor = String(data.calendarColor).trim();
+      }
+      if (data.color !== undefined) {
+        prj.color = String(data.color).trim();
       }
       prj.updatedAt = new Date().toISOString();
 

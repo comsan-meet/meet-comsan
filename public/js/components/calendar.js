@@ -89,7 +89,7 @@ const CALENDAR_CATEGORIES = new Proxy({}, {
 function getEventVisualStyles(evt) {
   if (!evt) return getCategoryMeta('EVENT');
   const catMeta = getCategoryMeta(evt.category);
-  const colorKey = evt.color || catMeta.color || 'indigo';
+  const colorKey = evt.color || evt.projectColor || catMeta.color || 'indigo';
   const palette = CALENDAR_COLOR_PALETTES[colorKey] || CALENDAR_COLOR_PALETTES.indigo;
   return {
     colorKey,
@@ -133,16 +133,18 @@ function getAllCalendarEventsForMain() {
   projects.forEach(p => {
     const isShown = (p.showInMainCalendar === true || p.showInMainCalendar === 'true') ||
       (p.showInMainCalendar !== false && p.showInMainCalendar !== 'false');
+    const prjColor = p.calendarColor || p.color || 'indigo';
     if (isShown && Array.isArray(p.calendarEvents)) {
       p.calendarEvents.forEach(e => {
         if (!e) return;
         projectEvents.push({
           ...e,
+          color: e.color || prjColor,
+          projectColor: prjColor,
           isProjectEvent: true,
           projectId: p.id,
           projectTitle: p.title || 'โครงการ',
-          projectCode: p.code || '',
-          projectColor: p.color || null
+          projectCode: p.code || ''
         });
       });
     }
@@ -817,20 +819,22 @@ function renderMonthGridView(events, currentUser, isAdmin = false) {
         <!-- Event badges inside day cell -->
         <div class="space-y-1 overflow-y-auto max-h-[60px] scrollbar-none">
           ${dayEvents.map(e => {
-            const catInfo = CALENDAR_CATEGORIES[e.category] || CALENDAR_CATEGORIES.EVENT;
+            const styles = getEventVisualStyles(e);
             return `
               <div onclick="openCalendarEventDetailModal('${e.id}')"
-                class="px-1.5 py-0.5 rounded text-[10px] font-semibold truncate cursor-pointer transition ${catInfo.bg} ${catInfo.text} border ${catInfo.border} hover:scale-[1.02] flex items-center justify-between group/chip"
-                title="${e.title} (${e.startTime || ''}) - คลิกเพื่อดูรายละเอียดหรือแก้ไข">
-                <span class="truncate flex-1">
+                class="px-1.5 py-0.5 rounded text-[10px] font-semibold truncate cursor-pointer transition ${styles.bg} ${styles.text} border ${styles.border} hover:scale-[1.02] flex items-center justify-between group/chip"
+                title="${e.projectTitle ? '[' + e.projectTitle + '] ' : ''}${e.title} (${e.startTime || ''}) - คลิกเพื่อดูรายละเอียด">
+                <span class="truncate flex-1 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full ${styles.dot} shrink-0"></span>
                   ${(e.startTime && !e.isAllDay && String(e.startDate).slice(0, 10) === dayDateStr) ? `<span class="opacity-75 mr-0.5">${e.startTime}</span>` : ''}
-                  ${e.title}
+                  ${e.isProjectEvent ? `<span class="opacity-90 font-bold shrink-0">[${e.projectCode || 'โครงการ'}]</span>` : ''}
+                  <span class="truncate">${e.title}</span>
                 </span>
                 ${canManage ? `
-                  <button type="button" onclick="event.stopPropagation(); openAddCalendarEventModal('${e.id}')"
-                    class="opacity-0 group-hover/chip:opacity-100 hover:scale-125 ml-1 text-inherit hover:text-indigo-600 transition shrink-0 p-0.5"
+                  <button type="button" onclick="event.stopPropagation(); openAddCalendarEventModal('${e.id}', null, '${e.projectId || ''}')"
+                    class="opacity-0 group-hover/chip:opacity-100 hover:scale-125 ml-1 text-inherit hover:text-primary transition shrink-0 p-0.5 cursor-pointer"
                     title="แก้ไขงานนี้ทันที">
-                    <i data-lucide="pen" class="w-2.5 h-2.5"></i>
+                    <i data-lucide="square-pen" class="w-2.5 h-2.5"></i>
                   </button>
                 ` : ''}
               </div>
@@ -952,7 +956,8 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
   let html = `<div class="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 mt-4">`;
 
   events.forEach(evt => {
-    const catInfo = CALENDAR_CATEGORIES[evt.category] || CALENDAR_CATEGORIES.EVENT;
+    const styles = getEventVisualStyles(evt);
+    const catInfo = styles.catMeta || CALENDAR_CATEGORIES.EVENT;
 
     // Format Thai Date matching Choice (e.g. "19 ตุลาคม 2569")
     let dateStr = evt.startDate || '';
@@ -1023,8 +1028,14 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
             ${evt.title}
           </h3>
 
-          <!-- Category & Assignee Tag -->
+          <!-- Category, Project & Assignee Tag -->
           <div class="flex items-center gap-1.5 flex-wrap mt-2">
+            ${evt.isProjectEvent ? `
+              <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${styles.bg} ${styles.text} border ${styles.border} truncate max-w-[220px]" title="${evt.projectTitle}">
+                <i data-lucide="folder-kanban" class="w-3 h-3 shrink-0"></i>
+                <span class="truncate">${evt.projectTitle}</span>
+              </span>
+            ` : ''}
             <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">
               ${catInfo.label}
             </div>
@@ -1360,7 +1371,8 @@ function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null, pro
 
   // Populate dynamic categories and color swatches
   populateCategorySelectOptions(event ? event.category : 'EVENT');
-  renderEventColorPicker(event ? (event.color || 'indigo') : 'indigo');
+  const defaultEventColor = (currentProject && (currentProject.calendarColor || currentProject.color)) || 'indigo';
+  renderEventColorPicker(event ? (event.color || defaultEventColor) : defaultEventColor);
   document.getElementById('calStartDate').value = event ? event.startDate : (defaultDate || new Date().toISOString().slice(0, 10));
   document.getElementById('calStartTime').value = event ? event.startTime : '09:00';
   document.getElementById('calEndDate').value = event ? (event.endDate || event.startDate) : (defaultDate || new Date().toISOString().slice(0, 10));
@@ -1884,17 +1896,17 @@ function openCalendarEventDetailModal(eventId) {
 
   document.getElementById('detailCalTitle').textContent = evt.title;
   let categoryBadgeHtml = `
-    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${styles.bg} ${styles.text} border ${styles.border}">
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${styles.bg} ${styles.text} border ${styles.border} shrink-0">
       <i data-lucide="${catInfo.icon || 'star'}" class="w-3.5 h-3.5 mr-1 inline-block"></i> ${catInfo.label}
     </span>
   `;
   if (evt.isProjectEvent) {
     categoryBadgeHtml += `
       <button type="button" onclick="closeCalendarEventDetailModal(); openProjectDetailModal('${evt.projectId}');"
-        class="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground border border-border cursor-pointer transition"
-        title="เปิดดูโครงการนี้">
-        <i data-lucide="folder-kanban" class="w-3.5 h-3.5 text-primary"></i>
-        <span>${evt.projectTitle}</span>
+        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${styles.bg} ${styles.text} border ${styles.border} hover:opacity-85 cursor-pointer transition min-w-0 max-w-[220px] sm:max-w-[280px] shadow-2xs group/prjBadge"
+        title="${(evt.projectTitle || '').replace(/"/g, '&quot;')} (คลิกเพื่อเปิดดูโครงการ)">
+        <i data-lucide="folder-kanban" class="w-3.5 h-3.5 shrink-0"></i>
+        <span class="truncate block">${evt.projectTitle}</span>
       </button>
     `;
   }

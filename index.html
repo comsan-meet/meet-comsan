@@ -2504,9 +2504,9 @@ label svg, label i {
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2 flex-wrap mb-1.5">
             <div id="detailCalDateBadge" class="shrink-0"></div>
-            <div id="detailCalCategory" class="shrink-0"></div>
+            <div id="detailCalCategory" class="flex items-center gap-1.5 flex-wrap min-w-0 max-w-full"></div>
           </div>
-          <h3 id="detailCalTitle" class="text-base sm:text-lg font-extrabold text-foreground leading-snug">ชื่องาน</h3>
+          <h3 id="detailCalTitle" class="text-base sm:text-lg font-extrabold text-foreground leading-snug break-words">ชื่องาน</h3>
         </div>
         <div class="flex items-center gap-1 shrink-0">
           <button type="button" id="detailCalHeaderBtnEdit" class="hidden w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 items-center justify-center transition" title="แก้ไขรายการนี้">
@@ -3445,6 +3445,19 @@ label svg, label i {
                   class="rounded text-primary focus:ring-primary w-4 h-4 cursor-pointer">
                 <span>แสดงกิจกรรมโครงการนี้ในปฏิทินรวมของชมรม</span>
               </label>
+
+              <!-- Project Calendar Color Selector (สีประจำโครงการในปฏิทินรวม) -->
+              <div class="pt-2 border-t border-border/50 space-y-1.5">
+                <div class="flex items-center justify-between gap-2">
+                  <label class="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                    <i data-lucide="palette" class="w-3.5 h-3.5 text-primary"></i>
+                    <span>สีประจำโครงการในปฏิทินรวม:</span>
+                  </label>
+                  <span id="prjFormCalColorNameBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">คราม (Indigo)</span>
+                </div>
+                <div id="prjFormCalColorSwatches" class="flex items-center gap-1.5 flex-wrap"></div>
+                <input type="hidden" id="prjFormCalendarColor" value="indigo">
+              </div>
             </div>
 
             <!-- Action Buttons for Calendar in Edit Form -->

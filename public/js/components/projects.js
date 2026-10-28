@@ -2832,6 +2832,123 @@
     return formId;
   }
 
+
+  // Project Calendar Color Palette & Picker Helpers
+  const PROJECT_CAL_PALETTES = {
+    indigo: { label: 'คราม (Indigo)', bg: 'bg-indigo-500/10 dark:bg-indigo-500/20', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-500/30', dot: 'bg-indigo-500', solid: 'bg-indigo-600' },
+    blue: { label: 'น้ำเงิน (Blue)', bg: 'bg-blue-500/10 dark:bg-blue-500/20', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30', dot: 'bg-blue-500', solid: 'bg-blue-600' },
+    emerald: { label: 'เขียวมรกต (Emerald)', bg: 'bg-emerald-500/10 dark:bg-emerald-500/20', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30', dot: 'bg-emerald-500', solid: 'bg-emerald-600' },
+    amber: { label: 'เหลืองอำพัน (Amber)', bg: 'bg-amber-500/10 dark:bg-amber-500/20', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/30', dot: 'bg-amber-500', solid: 'bg-amber-600' },
+    rose: { label: 'แดงกุหลาบ (Rose)', bg: 'bg-rose-500/10 dark:bg-rose-500/20', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/30', dot: 'bg-rose-500', solid: 'bg-rose-600' },
+    purple: { label: 'ม่วง (Purple)', bg: 'bg-purple-500/10 dark:bg-purple-500/20', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30', dot: 'bg-purple-500', solid: 'bg-purple-600' },
+    cyan: { label: 'ฟ้าคราม (Cyan)', bg: 'bg-cyan-500/10 dark:bg-cyan-500/20', text: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-500/30', dot: 'bg-cyan-500', solid: 'bg-cyan-600' },
+    pink: { label: 'ชมพู (Pink)', bg: 'bg-pink-500/10 dark:bg-pink-500/20', text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-500/30', dot: 'bg-pink-500', solid: 'bg-pink-600' },
+    orange: { label: 'ส้มสด (Orange)', bg: 'bg-orange-500/10 dark:bg-orange-500/20', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/30', dot: 'bg-orange-500', solid: 'bg-orange-600' },
+    teal: { label: 'เขียวไข่กา (Teal)', bg: 'bg-teal-500/10 dark:bg-teal-500/20', text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-500/30', dot: 'bg-teal-500', solid: 'bg-teal-600' },
+    slate: { label: 'เทาเข้ม (Slate)', bg: 'bg-slate-500/10 dark:bg-slate-500/20', text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-500/30', dot: 'bg-slate-500', solid: 'bg-slate-600' }
+  };
+
+  function renderProjectColorPicker(selectedColor = 'indigo') {
+    const container = document.getElementById('prjFormCalColorSwatches');
+    const badge = document.getElementById('prjFormCalColorNameBadge');
+    const input = document.getElementById('prjFormCalendarColor');
+    if (!container) return;
+
+    const chosen = selectedColor || (input && input.value) || 'indigo';
+    if (input) input.value = chosen;
+
+    const pal = PROJECT_CAL_PALETTES[chosen] || PROJECT_CAL_PALETTES.indigo;
+    if (badge) {
+      badge.textContent = pal.label;
+      badge.className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${pal.bg} ${pal.text} border ${pal.border}`;
+    }
+
+    container.innerHTML = Object.entries(PROJECT_CAL_PALETTES).map(([k, p]) => {
+      const isSel = k === chosen;
+      return `
+        <button type="button" onclick="selectProjectCalendarColor('${k}')"
+          class="w-6 h-6 rounded-full ${p.solid} transition cursor-pointer flex items-center justify-center ${isSel ? 'ring-2 ring-offset-2 ring-primary scale-110 shadow-xs' : 'opacity-80 hover:opacity-100 hover:scale-105'}"
+          title="${p.label}">
+          ${isSel ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>' : ''}
+        </button>
+      `;
+    }).join('');
+
+    if (typeof window.refreshIcons === 'function') window.refreshIcons();
+    else if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  function selectProjectCalendarColor(colorKey) {
+    const input = document.getElementById('prjFormCalendarColor');
+    if (input) input.value = colorKey;
+
+    renderProjectColorPicker(colorKey);
+
+    const projectId = getFormProjectId();
+    if (!projectId) return;
+
+    const allProjects = getProjectsList();
+    const prj = allProjects.find(p => p && p.id === projectId);
+    if (prj) {
+      prj.calendarColor = colorKey;
+      prj.color = colorKey;
+      if (Array.isArray(prj.calendarEvents)) {
+        // Update all events of this project to use the project theme color
+        prj.calendarEvents = prj.calendarEvents.map(e => ({
+          ...e,
+          color: colorKey,
+          projectColor: colorKey
+        }));
+      }
+    }
+
+    if (window.appState && Array.isArray(window.appState.projects)) {
+      const statePrj = window.appState.projects.find(p => p && p.id === projectId);
+      if (statePrj) {
+        statePrj.calendarColor = colorKey;
+        statePrj.color = colorKey;
+        if (Array.isArray(statePrj.calendarEvents)) {
+          statePrj.calendarEvents = statePrj.calendarEvents.map(e => ({
+            ...e,
+            color: colorKey,
+            projectColor: colorKey
+          }));
+        }
+      }
+    }
+
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('admin:updateProjectCalendar', {
+        projectId,
+        calendarEvents: (prj && prj.calendarEvents) || [],
+        showInMainCalendar: (prj && prj.showInMainCalendar !== false),
+        calendarColor: colorKey,
+        color: colorKey
+      });
+    }
+
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+
+    renderFormCalendarEvents(projectId);
+    if (typeof window.renderProjectCalendarView === 'function' && window.activeDetailProjectId === projectId) {
+      window.renderProjectCalendarView(projectId);
+    }
+    if (typeof window.renderAdminCalendarSection === 'function' && window.currentRole === 'ADMIN') {
+      window.renderAdminCalendarSection();
+    }
+    if (typeof window.renderUserCalendarSection === 'function') {
+      window.renderUserCalendarSection();
+    }
+    if (typeof window.renderTodayEventsBanner === 'function') {
+      window.renderTodayEventsBanner();
+    }
+
+    const pal = PROJECT_CAL_PALETTES[colorKey] || PROJECT_CAL_PALETTES.indigo;
+    if (typeof showToast === 'function') {
+      showToast(`ปรับสีปฏิทินโครงการเป็น "${pal.label}" เรียบร้อยแล้ว`, 'success');
+    }
+  }
+
   // Form Project Calendar View State (Month vs List)
   let formCalendarView = 'MONTH';
   let formCalendarCurrentDate = new Date();
@@ -3213,6 +3330,8 @@
   }
   if (typeof window !== 'undefined') {
     window.getProjectStakeholdersForCalendar = getProjectStakeholdersForCalendar;
+    window.renderProjectColorPicker = renderProjectColorPicker;
+    window.selectProjectCalendarColor = selectProjectCalendarColor;
     window.setFormCalendarView = setFormCalendarView;
     window.navigateFormCalendarMonth = navigateFormCalendarMonth;
   }
@@ -4667,6 +4786,10 @@
     if (toggleShowInMain) {
       toggleShowInMain.checked = (isEdit && p && p.showInMainCalendar !== false) || !isEdit;
     }
+    const calColor = (isEdit && p && (p.calendarColor || p.color)) || 'indigo';
+    const colorInput = document.getElementById('prjFormCalendarColor');
+    if (colorInput) colorInput.value = calColor;
+    renderProjectColorPicker(calColor);
     renderFormCalendarEvents((isEdit && p) ? p.id : null);
 
     // Render repeaters
@@ -5418,6 +5541,8 @@
       advisors: prjFormAdvisors.filter(a => a.name && a.name.trim()),
       smoOfficers: prjFormSmoOfficers.filter(s => s.name && s.name.trim()),
       calendarEvents: existingCalEvents,
+      calendarColor: document.getElementById('prjFormCalendarColor')?.value || 'indigo',
+      color: document.getElementById('prjFormCalendarColor')?.value || 'indigo',
       showInMainCalendar
     };
 
@@ -6040,6 +6165,8 @@
   }
 
   return {
+    renderProjectColorPicker,
+    selectProjectCalendarColor,
     renderUserProjectsSection,
     renderAdminProjectsSection,
     openProjectDetailModal,
