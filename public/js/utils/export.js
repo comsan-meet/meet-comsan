@@ -35,8 +35,18 @@ function wrapThaiTextLines(ctx, text, maxWidth) {
 
 async function generatePDFForUser(userId) {
   const state = window.appState || {};
-  const user = (state.users || []).find(u => u.id === userId);
-  if (!user) return;
+  let user = (state.users || []).find(u => u.id === userId);
+  if (!user && window.appState && window.appState.currentUser) {
+    user = window.appState.currentUser;
+  }
+  if (!user) {
+    user = {
+      firstName: 'สมาชิก',
+      lastName: 'ชมรม',
+      nickname: 'COMSAN',
+      position: 'สมาชิกชมรม'
+    };
+  }
   const m = state.meeting || {};
 
   const ed = document.getElementById('userNoteEditor');
@@ -59,63 +69,75 @@ async function generatePDFForUser(userId) {
     noteHtml = noteHtml.split('\n').map(line => `<p style="margin: 4px 0;">${line || '&nbsp;'}</p>`).join('');
   }
 
-  showToast('กำลังสร้างไฟล์ PDF หลายหน้า...', 'info');
+  if (typeof showToast === 'function') {
+    showToast('กำลังสร้างไฟล์ PDF หลายหน้า...', 'info');
+  }
 
   try {
     if (document.fonts && document.fonts.ready) {
       await document.fonts.ready;
     }
 
-    // Build print container for multi-page PDF (fixed at 0,0 behind everything with scroll 0)
+    // Build print container for multi-page PDF (clean normal flow container, without fixed positioning or negative z-index)
     const printContainer = document.createElement('div');
     printContainer.id = 'pdfNoteExportContainer';
     printContainer.style.cssText = `
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: 780px;
-      z-index: -99999;
-      pointer-events: none;
-      background: #ffffff;
+      width: 750px;
+      margin: 0 auto;
+      background-color: #ffffff;
       color: #0f172a;
       font-family: 'Prompt', Tahoma, -apple-system, sans-serif;
-      padding: 30px 36px;
+      padding: 28px 32px;
       box-sizing: border-box;
       line-height: 1.6;
     `;
 
-    // Modern Header Meta Box
+    // Modern Header Meta Box with scoped CSS for formatted notes
     const headerHtml = `
-      <div style="background: #eef2ff; border: 2px solid #4338ca; border-radius: 14px; padding: 18px 22px; margin-bottom: 22px;">
+      <style>
+        #pdfNoteExportContainer { background-color: #ffffff !important; color: #0f172a !important; font-family: 'Prompt', Tahoma, sans-serif; }
+        #pdfNoteExportContainer * { box-sizing: border-box; }
+        #pdfNoteExportContainer p { margin: 6px 0; }
+        #pdfNoteExportContainer ul { list-style-type: disc; margin: 8px 0 8px 24px; padding-left: 10px; }
+        #pdfNoteExportContainer ol { list-style-type: decimal; margin: 8px 0 8px 24px; padding-left: 10px; }
+        #pdfNoteExportContainer li { margin: 3px 0; }
+        #pdfNoteExportContainer h1 { font-size: 18px; font-weight: 700; margin: 12px 0 6px 0; color: #1e1b4b; }
+        #pdfNoteExportContainer h2 { font-size: 16px; font-weight: 700; margin: 10px 0 5px 0; color: #1e293b; }
+        #pdfNoteExportContainer h3 { font-size: 14px; font-weight: 600; margin: 8px 0 4px 0; color: #334155; }
+        #pdfNoteExportContainer img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; display: block; }
+        #pdfNoteExportContainer table { border-collapse: collapse; width: 100%; }
+      </style>
+
+      <div style="background: #eef2ff; border: 2px solid #4338ca; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(67, 56, 202, 0.2); padding-bottom: 8px;">
-          <h1 style="font-size: 19px; font-weight: 800; color: #312e81; margin: 0;">บันทึกการประชุมชมรมสันทนาการ (COMSAN)</h1>
+          <h1 style="font-size: 18px; font-weight: 800; color: #312e81; margin: 0; font-family: 'Prompt', sans-serif;">บันทึกการประชุมชมรมสันทนาการ (COMSAN)</h1>
           <span style="font-size: 11px; font-weight: 700; color: #4338ca; background: #ffffff; border: 1px solid rgba(67, 56, 202, 0.3); padding: 3px 10px; border-radius: 9999px;">เอกสารบันทึกส่วนบุคคล</span>
         </div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; font-family: 'Prompt', sans-serif;">
           <tr>
-            <td style="width: 130px; font-weight: 700; color: #1e293b; padding: 4px 0;">หัวข้อการประชุม:</td>
-            <td style="color: #334155; padding: 4px 0; font-weight: 600;">${m.title || '-'}</td>
+            <td style="width: 130px; font-weight: 700; color: #1e293b; padding: 3px 0;">หัวข้อการประชุม:</td>
+            <td style="color: #334155; padding: 3px 0; font-weight: 600;">${m.title || '-'}</td>
           </tr>
           <tr>
-            <td style="font-weight: 700; color: #1e293b; padding: 4px 0;">สถานที่ / วันที่:</td>
-            <td style="color: #334155; padding: 4px 0;">${m.location || '-'} (${m.date || '-'})</td>
+            <td style="font-weight: 700; color: #1e293b; padding: 3px 0;">สถานที่ / วันที่:</td>
+            <td style="color: #334155; padding: 3px 0;">${m.location || '-'} (${m.date || '-'})</td>
           </tr>
           <tr>
-            <td style="font-weight: 700; color: #1e293b; padding: 4px 0;">ผู้จดบันทึก:</td>
-            <td style="color: #334155; padding: 4px 0; font-weight: 600;">${user.firstName} ${user.lastName} (${user.nickname}) — <span style="color: #4338ca;">ตำแหน่ง: ${user.position}</span></td>
+            <td style="font-weight: 700; color: #1e293b; padding: 3px 0;">ผู้จดบันทึก:</td>
+            <td style="color: #334155; padding: 3px 0; font-weight: 600;">${user.firstName} ${user.lastName} (${user.nickname || '-'}) — <span style="color: #4338ca;">ตำแหน่ง: ${user.position || '-'}</span></td>
           </tr>
         </table>
       </div>
 
       <div style="margin-bottom: 14px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px;">
-        <h2 style="font-size: 14px; font-weight: 700; color: #334155; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">รายละเอียดบันทึกการประชุม</h2>
+        <h2 style="font-size: 14px; font-weight: 700; color: #334155; margin: 0; text-transform: uppercase; font-family: 'Prompt', sans-serif;">รายละเอียดบันทึกการประชุม</h2>
       </div>
 
-      <div class="note-body-content" style="font-size: 13.5px; color: #1e293b; word-break: break-word;">
+      <div class="note-body-content" style="font-size: 13.5px; color: #1e293b; word-break: break-word; font-family: 'Prompt', sans-serif;">
         ${noteHtml}
       </div>
 
-      <div style="margin-top: 32px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+      <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; font-family: 'Prompt', sans-serif;">
         <span>ระบบจัดการประชุมชมรมสันทนาการ (COMSAN Meeting)</span>
         <span>ส่งออกเมื่อ: ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span>
       </div>
@@ -133,8 +155,6 @@ async function generatePDFForUser(userId) {
       img.style.display = 'block';
     });
 
-    document.body.appendChild(printContainer);
-
     // Wait for images inside container to finish loading
     if (noteImgs.length > 0) {
       await Promise.all(Array.from(noteImgs).map(img => {
@@ -142,11 +162,13 @@ async function generatePDFForUser(userId) {
         return new Promise(resolve => {
           img.onload = resolve;
           img.onerror = resolve;
+          setTimeout(resolve, 2500);
         });
       }));
     }
 
-    const filename = `Note_${user.nickname}_COMSAN.pdf`;
+    const safeNickname = String(user.nickname || user.firstName || 'สมาชิก').replace(/[/\\?%*:|"<>]/g, '_');
+    const filename = `Note_${safeNickname}_COMSAN.pdf`;
 
     if (typeof html2pdf !== 'undefined') {
       const opt = {
@@ -157,36 +179,40 @@ async function generatePDFForUser(userId) {
           scale: 2,
           useCORS: true,
           letterRendering: true,
-          logging: false,
-          scrollY: 0,
-          scrollX: 0
+          logging: false
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      const pdfBlob = await html2pdf().set(opt).from(printContainer).output('blob');
-      if (printContainer.parentNode) printContainer.parentNode.removeChild(printContainer);
+      const worker = html2pdf().set(opt).from(printContainer);
+      const pdfBlob = await worker.output('blob');
 
       if (pdfBlob && typeof triggerUniversalBlobDownload === 'function') {
         await triggerUniversalBlobDownload(pdfBlob, filename);
-        showToast('ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว!', 'success');
+        if (typeof showToast === 'function') showToast('ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว!', 'success');
       } else if (pdfBlob) {
         const url = URL.createObjectURL(pdfBlob);
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
-        showToast('ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว!', 'success');
+        setTimeout(() => {
+          if (a.parentNode) document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 10000);
+        if (typeof showToast === 'function') showToast('ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว!', 'success');
+      } else {
+        await worker.save();
+        if (typeof showToast === 'function') showToast('ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว!', 'success');
       }
     } else {
-      if (printContainer.parentNode) printContainer.parentNode.removeChild(printContainer);
-      showToast('ไม่พบไลบรารีสร้าง PDF', 'error');
+      if (typeof showToast === 'function') showToast('ไม่พบไลบรารีสร้าง PDF', 'error');
     }
   } catch (err) {
     console.error('PDF generation error:', err);
-    showToast('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF', 'error');
+    if (typeof showToast === 'function') showToast('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF', 'error');
   }
 }
 

@@ -4858,7 +4858,7 @@ label svg, label i {
           </div>
 
           <!-- Left spacer for mobile only, to balance right buttons and keep role switcher dead-center on mobile -->
-          <div id="desktopMainHeaderMobileLeftSpacer" class="hidden md:!hidden w-[88px] shrink-0 pointer-events-none"></div>
+          <div id="desktopMainHeaderMobileLeftSpacer" class="hidden md:!hidden w-10 sm:w-11 shrink-0 pointer-events-none"></div>
 
           <!-- Role Switcher Pill (User <-> Admin): Centered on mobile (flex-1), at original right position on desktop (md:flex-none) -->
           <div id="desktopMainHeaderCenterBox" class="flex-1 md:flex-none flex items-center justify-center md:justify-end shrink-0">
@@ -5684,7 +5684,8 @@ label svg, label i {
                 <p id="userProfileSub" class="text-sm text-muted-foreground">-</p>
                 <div class="flex gap-3 pt-2">
                   <button type="button" onclick="openSettingsModal()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary hover:bg-primary/90 h-10 px-4 py-2 flex-1 gradient-primary text-primary-foreground">
-                    แก้ไขโปรไฟล์
+                    <i data-lucide="settings" class="h-4 w-4 mr-1"></i>
+                    <span>การตั้งค่า</span>
                   </button>
                   <button type="button" onclick="logoutUser()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-white h-10 px-4 py-2 flex-1">
                     <i data-lucide="log-out" class="h-4 w-4 mr-1"></i>
