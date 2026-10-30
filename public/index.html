@@ -4846,8 +4846,9 @@ label svg, label i {
       <div class="min-h-screen pb-20 md:pb-10 bg-background text-foreground flex-1 flex flex-col">
         <!-- Unified Page Title & Top Actions Header (Exact Choice pt-6 pb-2 header on Mobile & Desktop) -->
         <!-- Unified Page Title & Top Actions Header (Exact Choice Image 2 header on Mobile & Desktop) -->
-        <div id="desktopMainHeader" class="flex pt-6 pb-2 px-3 sm:px-4 md:px-5 lg:px-8 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full items-center justify-between gap-3">
-          <div class="min-w-0 flex-1">
+        <div id="desktopMainHeader" class="flex pt-6 pb-2 px-3 sm:px-4 md:px-5 lg:px-8 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full items-center justify-between gap-3 relative">
+          <!-- Left: Title & Subtitle (hidden on mobile when role switcher is active) -->
+          <div id="desktopMainHeaderTitleBox" class="min-w-0 flex-1 md:flex-initial">
             <button type="button" id="mobilePageBackBtn" onclick="switchUserTab('HOME')" class="hidden inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-sm font-medium hover:bg-accent hover:!text-white h-9 rounded-md px-3 md:hidden mb-3 -ml-2 text-muted-foreground transition-colors cursor-pointer">
               <i data-lucide="arrow-left" class="h-4 w-4"></i>
               <span>ย้อนกลับ</span>
@@ -4855,9 +4856,13 @@ label svg, label i {
             <h1 class="text-2xl sm:text-3xl font-bold font-prompt text-foreground leading-tight tracking-tight" id="desktopHeadingTitle">สวัสดี</h1>
             <p class="text-muted-foreground mt-0.5 text-xs sm:text-sm md:text-base truncate font-prompt" id="desktopHeadingSubtitle">ระบบจัดการการประชุม</p>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <!-- Role Switcher Pill (User <-> Admin) - Shown ONLY when Admin is authenticated, next to theme button -->
-            <div id="userHeaderRoleSwitcher" class="hidden relative grid grid-cols-2 items-center bg-muted/70 p-1 rounded-full border border-border/60 select-none isolate w-[172px] sm:w-[196px]">
+
+          <!-- Left spacer for mobile only, to balance right buttons and keep role switcher dead-center -->
+          <div id="desktopMainHeaderMobileLeftSpacer" class="hidden md:!hidden w-[88px] shrink-0 pointer-events-none"></div>
+
+          <!-- Center: Role Switcher Pill (User <-> Admin) - Shown ONLY when Admin is authenticated -->
+          <div id="desktopMainHeaderCenterBox" class="flex-1 flex items-center justify-center">
+            <div id="userHeaderRoleSwitcher" class="hidden relative grid grid-cols-2 items-center bg-muted/70 p-1 rounded-full border border-border/60 select-none isolate w-[168px] sm:w-[196px]">
               <div id="roleSwitcherGlider" class="absolute top-1 bottom-1 rounded-full gradient-primary shadow-xs transition-transform duration-200 ease-out pointer-events-none -z-10 will-change-transform" style="left: 4px; width: calc(50% - 4px); transform: translate3d(0, 0, 0);"></div>
               <button type="button" onclick="switchRoleView('USER')" id="btnRoleUser" class="relative z-10 w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150 text-white cursor-pointer select-none" title="สลับไปมุมมองสมาชิก">
                 <i data-lucide="user" class="pointer-events-none inline h-3.5 w-3.5 shrink-0"></i> <span class="pointer-events-none font-medium">สมาชิก</span>
@@ -4866,7 +4871,10 @@ label svg, label i {
                 <i data-lucide="shield-check" class="pointer-events-none inline h-3.5 w-3.5 shrink-0"></i> <span class="pointer-events-none font-medium">ADMIN</span>
               </button>
             </div>
-            <!-- Action Buttons in Comsan Choice style (Rounded-[16px] squircle matching Choice Image 2) -->
+          </div>
+
+          <!-- Right: Action Buttons in Comsan Choice style (Rounded-[16px] squircle matching Choice Image 2) -->
+          <div class="flex items-center gap-2 shrink-0">
             <button type="button" onclick="toggleTheme()" class="h-10 w-10 sm:h-11 sm:w-11 inline-flex items-center justify-center rounded-[16px] border border-border/70 bg-card hover:bg-muted text-foreground transition shadow-2xs cursor-pointer" title="เปลี่ยนธีม (สว่าง/มืด)" id="userHeaderThemeBtn">
               <i data-lucide="sun" id="userHeaderThemeIcon" class="theme-toggle-icon h-5 w-5 text-amber-500"></i>
             </button>

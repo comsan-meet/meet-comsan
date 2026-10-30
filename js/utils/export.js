@@ -66,14 +66,16 @@ async function generatePDFForUser(userId) {
       await document.fonts.ready;
     }
 
-    // Build print container for multi-page PDF
+    // Build print container for multi-page PDF (fixed at 0,0 behind everything with scroll 0)
     const printContainer = document.createElement('div');
     printContainer.id = 'pdfNoteExportContainer';
     printContainer.style.cssText = `
-      position: absolute;
-      left: -9999px;
+      position: fixed;
+      left: 0;
       top: 0;
       width: 780px;
+      z-index: -99999;
+      pointer-events: none;
       background: #ffffff;
       color: #0f172a;
       font-family: 'Prompt', Tahoma, -apple-system, sans-serif;
@@ -151,7 +153,14 @@ async function generatePDFForUser(userId) {
         margin: [10, 10, 10, 10], // 10mm margins on all sides
         filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          logging: false,
+          scrollY: 0,
+          scrollX: 0
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] }
       };

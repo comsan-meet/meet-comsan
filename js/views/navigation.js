@@ -631,6 +631,8 @@ window.updateRoleSwitcherPill = updateRoleSwitcherPill;
 
 function updateHeaderRoleSwitcherVisibility() {
   const switcher = document.getElementById('userHeaderRoleSwitcher');
+  const titleBox = document.getElementById('desktopMainHeaderTitleBox');
+  const mobileSpacer = document.getElementById('desktopMainHeaderMobileLeftSpacer');
   if (!switcher) return;
 
   const isAdminAuth = Boolean(window.isAdminAuthenticated);
@@ -638,12 +640,24 @@ function updateHeaderRoleSwitcherVisibility() {
     const wasHidden = switcher.classList.contains('hidden');
     switcher.classList.remove('hidden');
     switcher.classList.add('grid');
+    if (titleBox) {
+      titleBox.classList.add('hidden', 'md:block');
+    }
+    if (mobileSpacer) {
+      mobileSpacer.classList.remove('hidden');
+    }
     if (wasHidden) {
       updateRoleSwitcherPill(window.currentRole, true);
     }
   } else {
     switcher.classList.add('hidden');
     switcher.classList.remove('grid', 'flex');
+    if (titleBox) {
+      titleBox.classList.remove('hidden', 'md:block');
+    }
+    if (mobileSpacer) {
+      mobileSpacer.classList.add('hidden');
+    }
   }
 }
 
