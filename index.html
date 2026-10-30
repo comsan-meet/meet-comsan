@@ -4847,8 +4847,8 @@ label svg, label i {
         <!-- Unified Page Title & Top Actions Header (Exact Choice pt-6 pb-2 header on Mobile & Desktop) -->
         <!-- Unified Page Title & Top Actions Header (Exact Choice Image 2 header on Mobile & Desktop) -->
         <div id="desktopMainHeader" class="flex pt-6 pb-2 px-3 sm:px-4 md:px-5 lg:px-8 max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full items-center justify-between gap-3 relative">
-          <!-- Left: Title & Subtitle (hidden on mobile when role switcher is active) -->
-          <div id="desktopMainHeaderTitleBox" class="min-w-0 flex-1 md:flex-initial">
+          <!-- Left: Title & Subtitle (hidden on mobile when role switcher is active, visible on desktop) -->
+          <div id="desktopMainHeaderTitleBox" class="min-w-0 flex-1">
             <button type="button" id="mobilePageBackBtn" onclick="switchUserTab('HOME')" class="hidden inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-sm font-medium hover:bg-accent hover:!text-white h-9 rounded-md px-3 md:hidden mb-3 -ml-2 text-muted-foreground transition-colors cursor-pointer">
               <i data-lucide="arrow-left" class="h-4 w-4"></i>
               <span>ย้อนกลับ</span>
@@ -4857,11 +4857,11 @@ label svg, label i {
             <p class="text-muted-foreground mt-0.5 text-xs sm:text-sm md:text-base truncate font-prompt" id="desktopHeadingSubtitle">ระบบจัดการการประชุม</p>
           </div>
 
-          <!-- Left spacer for mobile only, to balance right buttons and keep role switcher dead-center -->
+          <!-- Left spacer for mobile only, to balance right buttons and keep role switcher dead-center on mobile -->
           <div id="desktopMainHeaderMobileLeftSpacer" class="hidden md:!hidden w-[88px] shrink-0 pointer-events-none"></div>
 
-          <!-- Center: Role Switcher Pill (User <-> Admin) - Shown ONLY when Admin is authenticated -->
-          <div id="desktopMainHeaderCenterBox" class="flex-1 flex items-center justify-center">
+          <!-- Role Switcher Pill (User <-> Admin): Centered on mobile (flex-1), at original right position on desktop (md:flex-none) -->
+          <div id="desktopMainHeaderCenterBox" class="flex-1 md:flex-none flex items-center justify-center md:justify-end shrink-0">
             <div id="userHeaderRoleSwitcher" class="hidden relative grid grid-cols-2 items-center bg-muted/70 p-1 rounded-full border border-border/60 select-none isolate w-[168px] sm:w-[196px]">
               <div id="roleSwitcherGlider" class="absolute top-1 bottom-1 rounded-full gradient-primary shadow-xs transition-transform duration-200 ease-out pointer-events-none -z-10 will-change-transform" style="left: 4px; width: calc(50% - 4px); transform: translate3d(0, 0, 0);"></div>
               <button type="button" onclick="switchRoleView('USER')" id="btnRoleUser" class="relative z-10 w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150 text-white cursor-pointer select-none" title="สลับไปมุมมองสมาชิก">
