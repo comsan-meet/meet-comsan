@@ -1150,11 +1150,17 @@ function switchUserToolSubTab(subTab) {
   });
 
   if (targetSub === 'NOTE') {
-    const noteTa = document.getElementById('userNoteTextarea');
     const uid = window.currentUserId;
-    if (noteTa && window.appState && uid) {
+    if (window.appState && uid) {
       const me = (window.appState.users || []).find(u => u.id === uid);
-      if (me && !noteTa.value && me.note) noteTa.value = me.note;
+      if (me && me.note) {
+        if (typeof window.loadUserNoteToEditor === 'function') {
+          window.loadUserNoteToEditor(me.note);
+        } else {
+          const noteTa = document.getElementById('userNoteTextarea');
+          if (noteTa) noteTa.value = me.note;
+        }
+      }
     }
   } else if (targetSub === 'STREAM') {
     if (typeof window.renderStreamSection === 'function') window.renderStreamSection();

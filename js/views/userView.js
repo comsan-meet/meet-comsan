@@ -204,9 +204,13 @@ function handleUserLogin(e) {
   renderUserQrCode(found.id);
 
   const qrText = document.getElementById('userQrCodeText');
-  const noteTa = document.getElementById('userNoteTextarea');
   if (qrText) qrText.textContent = found.id;
-  if (noteTa) noteTa.value = found.note || '';
+  if (typeof loadUserNoteToEditor === 'function') {
+    loadUserNoteToEditor(found.note || '');
+  } else {
+    const noteTa = document.getElementById('userNoteTextarea');
+    if (noteTa) noteTa.value = found.note || '';
+  }
 
   window.activeUserToolSubTab = 'OVERVIEW';
   if (typeof window.switchRoleView === 'function') window.switchRoleView('USER');
@@ -366,26 +370,157 @@ function submitLeaveRequest(e) {
   showToast('บันทึกการแจ้งลาประชุมเรียบร้อยแล้ว', 'info');
 }
 
-function insertNotePrefix(prefix) {
+function loadUserNoteToEditor(noteContent) {
+  const ed = document.getElementById('userNoteEditor');
   const ta = document.getElementById('userNoteTextarea');
-  if (!ta) return;
-  const start = ta.selectionStart || 0;
-  const val = ta.value;
-  const needNewLine = start > 0 && val[start - 1] !== '\n';
-  const insertStr = (needNewLine ? '\n' : '') + prefix;
-  ta.value = val.slice(0, start) + insertStr + val.slice(ta.selectionEnd || start);
-  ta.focus();
+  const content = noteContent || '';
+  if (ta) ta.value = content;
+  if (ed) {
+    if (content.includes('<') && content.includes('>')) {
+      ed.innerHTML = content;
+    } else {
+      ed.innerHTML = content ? content.replace(/\n/g, '<br>') : '';
+    }
+  }
+}
+window.loadUserNoteToEditor = loadUserNoteToEditor;
+
+function formatNoteDoc(cmd, val = null) {
+  document.execCommand(cmd, false, val);
+  const ed = document.getElementById('userNoteEditor');
+  if (ed) ed.focus();
   saveUserNoteDraft();
 }
+window.formatNoteDoc = formatNoteDoc;
+
+function applyNoteHeading(val) {
+  if (val === 'p') {
+    document.execCommand('formatBlock', false, '<p>');
+  } else if (val === 'small') {
+    document.execCommand('fontSize', false, '2');
+  } else {
+    document.execCommand('formatBlock', false, `<${val}>`);
+  }
+  const ed = document.getElementById('userNoteEditor');
+  if (ed) ed.focus();
+  saveUserNoteDraft();
+}
+window.applyNoteHeading = applyNoteHeading;
+
+function applyNoteTextColor(color) {
+  document.execCommand('foreColor', false, color);
+  const bar = document.getElementById('noteTextColorBar');
+  if (bar) bar.style.backgroundColor = color;
+  const ed = document.getElementById('userNoteEditor');
+  if (ed) ed.focus();
+  saveUserNoteDraft();
+}
+window.applyNoteTextColor = applyNoteTextColor;
+
+function applyNoteHighlightColor(color) {
+  document.execCommand('hiliteColor', false, color);
+  const ed = document.getElementById('userNoteEditor');
+  if (ed) ed.focus();
+  saveUserNoteDraft();
+}
+window.applyNoteHighlightColor = applyNoteHighlightColor;
+
+function triggerNoteImageUpload() {
+  const input = document.getElementById('userNoteImageInput');
+  if (input) input.click();
+}
+window.triggerNoteImageUpload = triggerNoteImageUpload;
+
+function handleNoteImageSelected(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    if (typeof showToast === 'function') showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'warning');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    const imgHtml = `<div style="margin: 10px 0;"><img src="${dataUrl}" alt="รูปภาพประกอบ" style="max-width:100%; border-radius:10px; max-height:450px; display:inline-block;" /></div><p><br></p>`;
+    insertHtmlInNoteEditor(imgHtml);
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+window.handleNoteImageSelected = handleNoteImageSelected;
+
+function insertHtmlInNoteEditor(html) {
+  const ed = document.getElementById('userNoteEditor');
+  if (!ed) return;
+  ed.focus();
+  const sel = window.getSelection();
+  if (sel.getRangeAt && sel.rangeCount) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    const frag = document.createDocumentFragment();
+    let node, lastNode;
+    while ((node = tempDiv.firstChild)) {
+      lastNode = frag.appendChild(node);
+    }
+    range.insertNode(frag);
+    if (lastNode) {
+      range = range.cloneRange();
+      range.setStartAfter(lastNode);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  } else {
+    ed.innerHTML += html;
+  }
+  saveUserNoteDraft();
+}
+window.insertHtmlInNoteEditor = insertHtmlInNoteEditor;
+
+function insertNoteKeyPoint() {
+  insertHtmlInNoteEditor('<p style="padding: 6px 12px; background: rgba(245, 158, 11, 0.12); border-left: 4px solid #f59e0b; border-radius: 4px; margin: 8px 0; font-weight: 600;">📌 ประเด็นสำคัญ: </p><p><br></p>');
+}
+window.insertNoteKeyPoint = insertNoteKeyPoint;
+
+function insertNotePrefix(prefix) {
+  insertHtmlInNoteEditor(`<p>${prefix}</p>`);
+}
+window.insertNotePrefix = insertNotePrefix;
+
+// Clipboard paste listener to allow pasting screenshots directly into note
+document.addEventListener('paste', function(e) {
+  const ed = document.getElementById('userNoteEditor');
+  if (!ed || !ed.contains(document.activeElement)) return;
+  const items = (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData))?.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.kind === 'file' && item.type.startsWith('image/')) {
+      const blob = item.getAsFile();
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        insertHtmlInNoteEditor(`<div style="margin: 10px 0;"><img src="${event.target.result}" alt="รูปภาพวางจากคลิปบอร์ด" style="max-width:100%; border-radius:10px; max-height:450px; display:inline-block;" /></div><p><br></p>`);
+      };
+      reader.readAsDataURL(blob);
+      e.preventDefault();
+      break;
+    }
+  }
+});
 
 function saveUserNoteDraft() {
   const userId = window.currentUserId;
   const state = window.appState;
   if (!userId || !state) return;
+  const ed = document.getElementById('userNoteEditor');
   const ta = document.getElementById('userNoteTextarea');
-  const noteText = ta ? ta.value : '';
+  const noteHtml = ed ? ed.innerHTML : (ta ? ta.value : '');
+  if (ta && ed && ta.value !== noteHtml) ta.value = noteHtml;
+
   const me = (state.users || []).find(u => u.id === userId);
-  if (me) me.note = noteText;
+  if (me) me.note = noteHtml;
   const statusEl = document.getElementById('noteAutoSaveStatus');
   if (statusEl) {
     const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
@@ -393,9 +528,11 @@ function saveUserNoteDraft() {
   }
   clearTimeout(window.noteSyncTimeout);
   window.noteSyncTimeout = setTimeout(() => {
-    window.saveLocalState();
-    window.socket.emit('user:updateNote', { userId, note: noteText });
-  }, 300);
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+    if (window.socket && typeof window.socket.emit === 'function') {
+      window.socket.emit('user:updateNote', { userId, note: noteHtml });
+    }
+  }, 400);
 }
 
 function renderUserProfile() {

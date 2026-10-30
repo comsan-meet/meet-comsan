@@ -2457,7 +2457,7 @@
 
     const firstDay = new Date(year, month, 1).getDay();
     const totalDays = new Date(year, month + 1, 0).getDate();
-    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayIso = (typeof window.getLocalTodayIso === 'function') ? window.getLocalTodayIso() : (new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0'));
 
     let html = `
       <div class="space-y-4">
@@ -2571,21 +2571,70 @@
   }
 
   function renderProjectAgendaListView(events, pState, project, isAdmin = false) {
-    if (events.length === 0) {
-      return `
-        <div class="text-center py-12 px-4 bg-muted/20 border border-dashed border-border rounded-2xl space-y-3">
-          <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto text-xl">
-            <i data-lucide="calendar-x-2" class="w-6 h-6"></i>
+    const current = pState.currentDate || new Date();
+    const year = current.getFullYear();
+    const month = current.getMonth();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const monthStartIso = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const monthEndIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(totalDays).padStart(2, '0')}`;
+
+    // Filter events occurring or active in this month
+    const monthEvents = events.filter(evt => {
+      const s = String(evt.startDate || '').slice(0, 10);
+      const e = String(evt.endDate || evt.startDate || '').slice(0, 10);
+      if (!s) return false;
+      const end = (e >= s) ? e : s;
+      return s <= monthEndIso && end >= monthStartIso;
+    });
+
+    const fullThaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+    let html = `
+      <div class="space-y-4">
+        <!-- Month Navigation Header in Project List View -->
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <h4 class="font-extrabold text-base sm:text-lg text-foreground">
+              ${fullThaiMonths[month]} ${year + 543}
+            </h4>
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+              ${monthEvents.length} รายการ
+            </span>
+          </div>
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <button type="button" onclick="navigateProjectCalendarMonth(0)"
+              class="h-8 px-3 rounded-full border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center justify-center transition shadow-2xs cursor-pointer active:scale-95" title="กลับไปเดือนปัจจุบัน">
+              วันนี้
+            </button>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="navigateProjectCalendarMonth(-1)"
+                class="w-8 h-8 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนก่อนหน้า">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button type="button" onclick="navigateProjectCalendarMonth(1)"
+                class="w-8 h-8 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนถัดไป">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+    `;
+
+    if (monthEvents.length === 0) {
+      html += `
+        <div class="text-center py-10 px-4 bg-muted/20 border border-dashed border-border rounded-2xl space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-muted/60 text-muted-foreground flex items-center justify-center mx-auto text-xl">
+            <i data-lucide="calendar-x" class="w-6 h-6"></i>
           </div>
           <div>
-            <h4 class="text-sm font-bold text-foreground">ยังไม่มีกำหนดการหรือกิจกรรมในโครงการนี้</h4>
-            <p class="text-xs text-muted-foreground mt-0.5">${isAdmin ? 'คุณสามารถเพิ่มกิจกรรมใหม่ หรือนำเข้าไฟล์ปฏิทิน .ics เข้าสู่โครงการได้ทันที' : 'ขณะนี้ยังไม่มีกิจกรรมที่กำหนดไว้สำหรับโครงการนี้'}</p>
+            <h4 class="text-sm font-bold text-foreground">ไม่มีกำหนดการในเดือน ${fullThaiMonths[month]} ${year + 543}</h4>
+            <p class="text-xs text-muted-foreground mt-0.5">${isAdmin ? 'คุณสามารถเพิ่มกิจกรรมใหม่ หรือนำเข้าไฟล์ปฏิทิน .ics เข้าสู่โครงการได้ทันที' : 'ขณะนี้ยังไม่มีกิจกรรมที่กำหนดไว้ในเดือนนี้'}</p>
           </div>
           ${isAdmin ? `
-            <div class="flex items-center justify-center gap-2 pt-2">
-              <button type="button" onclick="openAddCalendarEventModal(null, null, '${project.id}')"
+            <div class="flex items-center justify-center gap-2 pt-1">
+              <button type="button" onclick="openAddCalendarEventModal(null, '${monthStartIso}', '${project.id}')"
                 class="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs">
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มกิจกรรมแรก
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> เพิ่มกิจกรรมในเดือนนี้
               </button>
               <button type="button" onclick="triggerImportProjectCalendarIcs()"
                 class="px-3.5 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
@@ -2594,13 +2643,14 @@
             </div>
           ` : ''}
         </div>
-      `;
+      </div>`;
+      return html;
     }
 
     const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
-    let html = `<div class="space-y-3">`;
-    events.forEach(evt => {
+    html += `<div class="space-y-3">`;
+    monthEvents.forEach(evt => {
       const styles = typeof window.getEventVisualStyles === 'function'
         ? window.getEventVisualStyles(evt)
         : { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', dot: 'bg-primary' };
@@ -2677,7 +2727,7 @@
         </div>
       `;
     });
-    html += `</div>`;
+    html += `</div></div>`;
     return html;
   }
 

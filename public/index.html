@@ -844,6 +844,49 @@ button.gradient-primary.rounded-full {
   z-index: 20;
 }
 
+/* User Note Editor Styles */
+#userNoteEditor:empty:before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+  font-style: italic;
+}
+#userNoteEditor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+  display: block;
+}
+#userNoteEditor ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.4rem 0;
+}
+#userNoteEditor ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.4rem 0;
+}
+#userNoteEditor h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0.75rem 0 0.25rem;
+  color: inherit;
+}
+#userNoteEditor h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.25rem;
+  color: inherit;
+}
+#userNoteEditor h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.5rem 0 0.25rem;
+  color: inherit;
+}
+
 /* Modals & Dialogs matching Choice Dialog */
 .modal-overlay {
   background-color: rgba(0, 0, 0, 0.65);
@@ -2818,13 +2861,13 @@ label svg, label i {
       <!-- Category 2: รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด (รูปแบบตาราง และฝ่ายงาน) -->
       <div class="space-y-3.5 pt-3 border-t border-border/80">
         <!-- Section Header with Actions -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="space-y-0.5">
+        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+          <div class="space-y-0.5 min-w-0 flex-1">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="p-1 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0">
+              <span class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0">
                 <i data-lucide="users" class="h-4 w-4"></i>
               </span>
-              <h4 class="text-xs sm:text-sm font-bold text-foreground uppercase tracking-wider">
+              <h4 class="text-sm sm:text-base font-bold text-foreground">
                 รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด
               </h4>
               <span id="prjDetailMembersCountBadge" class="whitespace-nowrap shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"></span>
@@ -2833,7 +2876,7 @@ label svg, label i {
           </div>
 
           <!-- Action Buttons (Import XLSX, Template, Export) -->
-          <div class="flex items-center gap-1.5 flex-wrap shrink-0">
+          <div class="flex items-center gap-1.5 flex-wrap">
             <button type="button" id="prjDetailBtnAddMember" onclick="openAddProjectMemberModal()"
               class="hidden px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
               title="เพิ่มผู้เกี่ยวข้องรายใหม่ในโครงการนี้">
@@ -3430,69 +3473,77 @@ label svg, label i {
         <!-- (ย้ายมาไว้ใต้เล่มโครงการ & เล่มงบประมาณ พร้อมมุมมองปฏิทิน) -->
         <!-- ======================================================== -->
         <div id="prjFormCalendarSection" class="border-t border-border pt-4 space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/30 border border-border/70 rounded-2xl p-3.5">
-            <div class="space-y-1">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="p-1 rounded-lg bg-primary/10 text-primary">
+          <div class="bg-muted/30 border border-border/70 rounded-2xl p-3.5 sm:p-4 space-y-3.5">
+            <!-- Row 1: Title & Action buttons -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+              <div class="flex items-center gap-2">
+                <span class="p-1.5 rounded-xl bg-primary/10 text-primary shrink-0">
                   <i data-lucide="calendar-days" class="w-4 h-4"></i>
                 </span>
-                <h4 class="text-xs sm:text-sm font-bold text-foreground">ปฏิทินและกำหนดการของโครงการ</h4>
-                <span id="prjFormCalEventsTotalBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">0 กิจกรรม</span>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h4 class="text-xs sm:text-sm font-bold text-foreground">ปฏิทินและกำหนดการของโครงการ</h4>
+                    <span id="prjFormCalEventsTotalBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">0 กิจกรรม</span>
+                  </div>
+                  <p class="text-[11px] text-muted-foreground mt-0.5">กำหนดการและกิจกรรมที่เกี่ยวข้องกับโครงการนี้</p>
+                </div>
               </div>
+
+              <!-- Action Buttons for Calendar in Edit Form -->
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <!-- View Mode Switcher for Form (Month / List) -->
+                <div class="bg-muted p-1 rounded-xl flex items-center gap-1 border border-border/60">
+                  <button type="button" id="prjFormCalBtnViewMonth" onclick="setFormCalendarView('MONTH')"
+                    class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer"
+                    title="ดูแบบปฏิทินเดือน">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 inline-block sm:mr-1"></i><span class="hidden sm:inline">ปฏิทิน</span>
+                  </button>
+                  <button type="button" id="prjFormCalBtnViewList" onclick="setFormCalendarView('LIST')"
+                    class="px-2.5 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer"
+                    title="ดูแบบรายการ">
+                    <i data-lucide="list" class="w-3.5 h-3.5 inline-block sm:mr-1"></i><span class="hidden sm:inline">รายการ</span>
+                  </button>
+                </div>
+
+                <button type="button" onclick="openAddCalendarEventModal(null, null, getFormProjectId())"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span>เพิ่มกิจกรรม</span>
+                </button>
+                <button type="button" onclick="triggerImportProjectCalendarIcsForForm()"
+                  class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
+                  title="นำเข้าไฟล์ปฏิทิน .ics สำหรับโครงการนี้">
+                  <i data-lucide="upload" class="w-3.5 h-3.5 text-muted-foreground"></i>
+                  <span class="hidden sm:inline">นำเข้า .ics</span>
+                </button>
+                <button type="button" onclick="openCalendarCategoryModal()"
+                  class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
+                  title="จัดการประเภทกิจกรรม">
+                  <i data-lucide="tags" class="w-3.5 h-3.5 text-muted-foreground"></i>
+                  <span class="hidden sm:inline">จัดการประเภท</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Row 2: Settings (Toggle & Color Palette) -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-card/60 border border-border/60 rounded-xl p-3">
               <!-- Toggle Show in Main Calendar -->
-              <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground pt-1 select-none">
+              <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground select-none">
                 <input type="checkbox" id="prjFormShowInMainCalToggle" onchange="handleFormShowInMainCalToggleChanged(this.checked)"
                   class="rounded text-primary focus:ring-primary w-4 h-4 cursor-pointer">
                 <span>แสดงกิจกรรมโครงการนี้ในปฏิทินรวมของชมรม</span>
               </label>
 
-              <!-- Project Calendar Color Selector (สีประจำโครงการในปฏิทินรวม) -->
-              <div class="pt-2 border-t border-border/50 space-y-1.5">
-                <div class="flex items-center justify-between gap-2">
-                  <label class="text-[11px] font-bold text-foreground flex items-center gap-1.5">
-                    <i data-lucide="palette" class="w-3.5 h-3.5 text-primary"></i>
-                    <span>สีประจำโครงการในปฏิทินรวม:</span>
-                  </label>
-                  <span id="prjFormCalColorNameBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">คราม (Indigo)</span>
-                </div>
+              <!-- Project Calendar Color Selector -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <label class="text-[11px] font-bold text-foreground flex items-center gap-1.5 shrink-0">
+                  <i data-lucide="palette" class="w-3.5 h-3.5 text-primary"></i>
+                  <span>สีประจำโครงการในปฏิทินรวม:</span>
+                </label>
+                <span id="prjFormCalColorNameBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">คราม (Indigo)</span>
                 <div id="prjFormCalColorSwatches" class="flex items-center gap-1.5 flex-wrap"></div>
                 <input type="hidden" id="prjFormCalendarColor" value="indigo">
               </div>
-            </div>
-
-            <!-- Action Buttons for Calendar in Edit Form -->
-            <div class="flex items-center gap-1.5 flex-wrap shrink-0">
-              <!-- View Mode Switcher for Form (Month / List) -->
-              <div class="bg-muted p-1 rounded-xl flex items-center gap-1 border border-border/60">
-                <button type="button" id="prjFormCalBtnViewMonth" onclick="setFormCalendarView('MONTH')"
-                  class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-card text-foreground shadow-2xs transition cursor-pointer"
-                  title="ดูแบบปฏิทินเดือน">
-                  <i data-lucide="calendar" class="w-3.5 h-3.5 inline-block sm:mr-1"></i><span class="hidden sm:inline">ปฏิทิน</span>
-                </button>
-                <button type="button" id="prjFormCalBtnViewList" onclick="setFormCalendarView('LIST')"
-                  class="px-2.5 py-1 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer"
-                  title="ดูแบบรายการ">
-                  <i data-lucide="list" class="w-3.5 h-3.5 inline-block sm:mr-1"></i><span class="hidden sm:inline">รายการ</span>
-                </button>
-              </div>
-
-              <button type="button" onclick="openAddCalendarEventModal(null, null, getFormProjectId())"
-                class="px-3 py-1.5 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer">
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                <span>เพิ่มกิจกรรม</span>
-              </button>
-              <button type="button" onclick="triggerImportProjectCalendarIcsForForm()"
-                class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
-                title="นำเข้าไฟล์ปฏิทิน .ics สำหรับโครงการนี้">
-                <i data-lucide="upload" class="w-3.5 h-3.5 text-muted-foreground"></i>
-                <span class="hidden sm:inline">นำเข้า .ics</span>
-              </button>
-              <button type="button" onclick="openCalendarCategoryModal()"
-                class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-muted/80 text-foreground border border-border transition flex items-center gap-1 cursor-pointer"
-                title="จัดการประเภทกิจกรรม">
-                <i data-lucide="tags" class="w-3.5 h-3.5 text-muted-foreground"></i>
-                <span class="hidden sm:inline">จัดการประเภท</span>
-              </button>
             </div>
           </div>
 
@@ -3594,11 +3645,11 @@ label svg, label i {
 
         <!-- 2. Members (รายชื่อผู้เกี่ยวข้องในโครงการ + นำเข้า Excel + Accordion ย่อ/ขยาย + ตัวกรอง) -->
         <div class="border-t border-border pt-3 space-y-2.5">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <h4 class="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <i data-lucide="users" class="h-3.5 w-3.5 text-indigo-500"></i>
-              รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด
-              <span id="prjFormMembersCountBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"></span>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <h4 class="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5 min-w-0">
+              <i data-lucide="users" class="h-3.5 w-3.5 text-indigo-500 shrink-0"></i>
+              <span>รายชื่อผู้ที่เกี่ยวข้องกับโครงการนี้ทั้งหมด</span>
+              <span id="prjFormMembersCountBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0"></span>
             </h4>
             <div class="flex items-center gap-1.5 flex-wrap">
               <button type="button" id="prjFormToggleExpandBtn" onclick="toggleExpandAllMembersRepeater()"
@@ -5303,24 +5354,117 @@ label svg, label i {
                 </span>
               </div>
 
-              <div class="bg-card text-card-foreground border border-border rounded-xl shadow-sm shadow-card overflow-hidden">
-                <!-- แถบเครื่องมือด้านบน -->
-                <div class="px-4 py-2.5 border-b border-border flex items-center justify-between bg-muted/20">
-                  <div class="flex items-center gap-2 text-muted-foreground text-sm">
-                    <button type="button" onclick="insertNotePrefix('• ')" title="เพิ่มหัวข้อย่อย" class="hover:text-primary p-1.5 rounded-md hover:bg-muted transition cursor-pointer"><i data-lucide="list" class="h-4 w-4"></i></button>
-                    <button type="button" onclick="insertNotePrefix('☐ ')" title="เพิ่มรายการเช็คลิสต์" class="hover:text-primary p-1.5 rounded-md hover:bg-muted transition cursor-pointer"><i data-lucide="list-checks" class="h-4 w-4"></i></button>
-                    <button type="button" onclick="insertNotePrefix('📌 ประเด็นสำคัญ: ')" title="เน้นประเด็นสำคัญ" class="hover:text-primary px-2 py-1 rounded-md hover:bg-muted transition font-bold text-xs cursor-pointer">📌 ประเด็นสำคัญ</button>
+              <div class="bg-card text-card-foreground border border-border rounded-2xl shadow-sm overflow-hidden">
+                <!-- แถบเครื่องมือจัดการข้อความสไตล์ Word / Google Docs -->
+                <div class="px-3 py-2 border-b border-border bg-muted/30 flex flex-wrap items-center justify-between gap-2 select-none">
+                  <div class="flex items-center gap-1 flex-wrap text-muted-foreground text-xs">
+                    <!-- ขนาดอักษร / หัวข้อ -->
+                    <select id="noteHeadingSelect" onchange="applyNoteHeading(this.value)"
+                      class="h-7.5 px-2 rounded-lg border border-border bg-card text-foreground text-xs font-medium focus:outline-none cursor-pointer">
+                      <option value="p">ปกติ</option>
+                      <option value="h1">หัวข้อใหญ่ (H1)</option>
+                      <option value="h2">หัวข้อรอง (H2)</option>
+                      <option value="h3">หัวข้อย่อย (H3)</option>
+                      <option value="small">ตัวเล็ก</option>
+                    </select>
+
+                    <div class="h-4 w-px bg-border/80 mx-0.5"></div>
+
+                    <!-- รูปแบบตัวอักษร (ตัวหนา ตัวเอียง ขีดเส้นใต้ ขีดฆ่า) -->
+                    <button type="button" onclick="formatNoteDoc('bold')" title="ตัวหนา (Ctrl+B)"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center font-bold text-xs transition cursor-pointer border border-transparent hover:border-border">
+                      <strong>B</strong>
+                    </button>
+                    <button type="button" onclick="formatNoteDoc('italic')" title="ตัวเอียง (Ctrl+I)"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center italic text-xs transition cursor-pointer border border-transparent hover:border-border font-serif">
+                      <em>I</em>
+                    </button>
+                    <button type="button" onclick="formatNoteDoc('underline')" title="ขีดเส้นใต้ (Ctrl+U)"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center text-xs transition cursor-pointer border border-transparent hover:border-border underline">
+                      <u>U</u>
+                    </button>
+                    <button type="button" onclick="formatNoteDoc('strikeThrough')" title="ขีดฆ่า"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center text-xs transition cursor-pointer border border-transparent hover:border-border line-through">
+                      <s>S</s>
+                    </button>
+
+                    <div class="h-4 w-px bg-border/80 mx-0.5"></div>
+
+                    <!-- สีข้อความ และสีไฮไลท์ -->
+                    <label for="noteTextColorPicker" title="เปลี่ยนสีข้อความ"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex flex-col items-center justify-center text-xs transition cursor-pointer border border-transparent hover:border-border relative">
+                      <span class="font-bold leading-none text-xs">A</span>
+                      <span id="noteTextColorBar" class="w-3.5 h-1 bg-red-500 rounded-full mt-0.5"></span>
+                      <input type="color" id="noteTextColorPicker" value="#ef4444" onchange="applyNoteTextColor(this.value)" class="sr-only">
+                    </label>
+
+                    <label for="noteHighlightColorPicker" title="ไฮไลท์ข้อความ"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center text-xs transition cursor-pointer border border-transparent hover:border-border relative">
+                      <i data-lucide="highlighter" class="w-3.5 h-3.5 text-amber-500"></i>
+                      <input type="color" id="noteHighlightColorPicker" value="#fef08a" onchange="applyNoteHighlightColor(this.value)" class="sr-only">
+                    </label>
+
+                    <div class="h-4 w-px bg-border/80 mx-0.5"></div>
+
+                    <!-- การจัดเรียงย่อหน้า (ชิดซ้าย, กึ่งกลาง, ชิดขวา, กระจาย) -->
+                    <button type="button" onclick="formatNoteDoc('justifyLeft')" title="จัดชิดซ้าย"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center transition cursor-pointer border border-transparent hover:border-border">
+                      <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" onclick="formatNoteDoc('justifyCenter')" title="จัดกึ่งกลาง"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center transition cursor-pointer border border-transparent hover:border-border">
+                      <i data-lucide="align-center" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" onclick="formatNoteDoc('justifyRight')" title="จัดชิดขวา"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center transition cursor-pointer border border-transparent hover:border-border">
+                      <i data-lucide="align-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" onclick="formatNoteDoc('justifyFull')" title="จัดกระจายเต็มบรรทัด"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center transition cursor-pointer border border-transparent hover:border-border">
+                      <i data-lucide="align-justify" class="w-3.5 h-3.5"></i>
+                    </button>
+
+                    <div class="h-4 w-px bg-border/80 mx-0.5"></div>
+
+                    <!-- รายการลำดับ & แทรกรูปภาพ -->
+                    <button type="button" onclick="formatNoteDoc('insertUnorderedList')" title="หัวข้อย่อยแบบจุด"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center transition cursor-pointer border border-transparent hover:border-border">
+                      <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" onclick="formatNoteDoc('insertOrderedList')" title="หัวข้อย่อยแบบตัวเลข"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center transition cursor-pointer border border-transparent hover:border-border">
+                      <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i>
+                    </button>
+
+                    <button type="button" onclick="triggerNoteImageUpload()" title="แทรกรูปภาพ"
+                      class="w-7 h-7 rounded-lg hover:bg-card hover:text-foreground flex items-center justify-center transition cursor-pointer border border-transparent hover:border-border text-primary">
+                      <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <input type="file" id="userNoteImageInput" accept="image/*" class="hidden" onchange="handleNoteImageSelected(event)">
+
+                    <div class="h-4 w-px bg-border/80 mx-0.5"></div>
+
+                    <button type="button" onclick="insertNoteKeyPoint()" title="เน้นประเด็นสำคัญ"
+                      class="px-2 py-1 rounded-lg hover:bg-card hover:text-foreground text-[11px] font-bold text-amber-600 dark:text-amber-400 transition cursor-pointer border border-transparent hover:border-border flex items-center gap-1">
+                      <span>📌 ประเด็นสำคัญ</span>
+                    </button>
                   </div>
-                  <button type="button" onclick="exportUserNoteToPDF()" title="ดาวน์โหลดเป็นไฟล์ PDF"
-                    class="px-3.5 py-1.5 rounded-md gradient-primary text-white text-xs font-semibold shadow-xs hover:opacity-95 transition flex items-center gap-1.5 cursor-pointer">
-                    <i data-lucide="download" class="h-3.5 w-3.5"></i> <span>ดาวน์โหลด PDF</span>
-                  </button>
+
+                  <!-- ปุ่มดาวน์โหลด PDF -->
+                  <div class="flex items-center gap-2">
+                    <button type="button" onclick="exportUserNoteToPDF()" title="ดาวน์โหลดบันทึกทั้งหมดเป็นไฟล์ PDF หลายหน้า"
+                      class="px-3 py-1.5 rounded-xl gradient-primary text-white text-xs font-semibold shadow-xs hover:opacity-95 transition flex items-center gap-1.5 cursor-pointer active:scale-95">
+                      <i data-lucide="download" class="h-3.5 w-3.5"></i> <span>ดาวน์โหลด PDF</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div class="p-4 sm:p-5">
-                  <textarea id="userNoteTextarea" oninput="saveUserNoteDraft()" rows="9"
-                    placeholder="พิมพ์ประเด็นสำคัญ หรือสรุปเนื้อหาการประชุมที่นี่..."
-                    class="w-full bg-transparent text-sm text-foreground focus:outline-none resize-none leading-relaxed"></textarea>
+                <!-- กล่องข้อความ Rich-Text Editor -->
+                <div class="p-4 sm:p-5 bg-card">
+                  <div id="userNoteEditor" contenteditable="true" oninput="saveUserNoteDraft()"
+                    data-placeholder="พิมพ์ประเด็นสำคัญ หรือสรุปเนื้อหาการประชุมที่นี่ (รองรับตัวหนา ตัวเอียง ขีดเส้นใต้ สี ไฮไลท์ และแทรกรูปภาพ)..."
+                    class="w-full min-h-[220px] max-h-[500px] overflow-y-auto bg-transparent text-sm text-foreground focus:outline-none leading-relaxed"></div>
+                  <textarea id="userNoteTextarea" class="hidden" oninput="saveUserNoteDraft()"></textarea>
                 </div>
               </div>
 
@@ -5336,10 +5480,9 @@ label svg, label i {
               <div class="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-6 shadow-sm shadow-card">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div class="flex items-center gap-2.5">
-                    <button type="button" onclick="toggleSeatingChartCollapse('USER')"
-                      class="w-9 h-9 rounded-md border border-input bg-background hover:bg-accent hover:text-white text-muted-foreground flex items-center justify-center transition cursor-pointer" title="ย่อ/ขยาย">
-                      <i data-lucide="chevron-up" id="userSeatingCollapseIcon" class="h-4 w-4"></i>
-                    </button>
+                    <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <i data-lucide="users" class="h-4 w-4"></i>
+                    </div>
                     <div>
                       <h3 class="text-base sm:text-lg font-bold text-foreground">สมาชิกชมรมทั้งหมด</h3>
                       <p class="text-xs text-muted-foreground">ตำแหน่งของคุณจะมีกรอบสีทองล้อมรอบ</p>
@@ -5368,7 +5511,7 @@ label svg, label i {
                       <div class="w-56 mx-auto py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-center text-xs font-semibold text-primary">
                         ผังสมาชิกชมรมทั้งหมด
                       </div>
-                      <div id="userParliamentSeatsCanvas" class="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-10 gap-2 sm:gap-3 justify-items-center max-w-4xl mx-auto"></div>
+                      <div id="userParliamentSeatsCanvas" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-3.5 justify-items-center max-w-4xl mx-auto"></div>
                     </div>
                   </div>
                 </div>
@@ -5869,7 +6012,7 @@ label svg, label i {
                 <div class="w-60 mx-auto py-2 bg-primary/10 border border-primary/20 rounded-xl text-center text-xs font-bold text-primary">
                   สมาชิกชมรมทั้งหมด
                 </div>
-                <div id="parliamentSeatsCanvas" class="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-10 gap-2 sm:gap-3 justify-items-center max-w-4xl mx-auto"></div>
+                <div id="parliamentSeatsCanvas" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-3.5 justify-items-center max-w-4xl mx-auto"></div>
               </div>
             </div>
           </div>

@@ -83,9 +83,9 @@ function populateSeatGrid(canvasEl, users, activeMotion, showRealtime, isAdminCl
     const isMySeat = !isAdminClickable && window.currentUserId && u.id === window.currentUserId;
     const myRing = isMySeat ? 'ring-4 ring-amber-400 scale-110' : '';
     const seatEl = document.createElement('div');
-    seatEl.className = `seat-circle w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border flex flex-col items-center justify-center text-[10px] sm:text-xs font-semibold select-none shadow-2xs transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer hover:shadow-md ${bgClass} ${myRing}`;
+    seatEl.className = `seat-circle w-full max-w-[85px] sm:max-w-[100px] h-11 sm:h-12 px-2 rounded-2xl border flex flex-col items-center justify-center text-xs sm:text-sm font-semibold select-none shadow-2xs transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer hover:shadow-md ${bgClass} ${myRing}`;
     seatEl.title = `ที่นั่ง #${idx + 1}: ${u.nickname} (${u.firstName}) - คลิกดูข้อมูล`;
-    seatEl.innerHTML = `<span class="truncate max-w-full px-0.5">${u.nickname}</span>`;
+    seatEl.innerHTML = `<span class="truncate max-w-full text-center leading-tight tracking-tight">${u.nickname}</span>`;
 
     if (isAdminClickable) {
       seatEl.onclick = () => {

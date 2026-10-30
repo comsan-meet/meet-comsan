@@ -34,134 +34,146 @@ function wrapThaiTextLines(ctx, text, maxWidth) {
 }
 
 async function generatePDFForUser(userId) {
-  const state = window.appState;
+  const state = window.appState || {};
   const user = (state.users || []).find(u => u.id === userId);
   if (!user) return;
   const m = state.meeting || {};
 
-  const noteEl = document.getElementById('userNoteTextarea');
-  const liveNoteText = (userId === window.currentUserId && noteEl && noteEl.value.trim() !== '')
-    ? noteEl.value
-    : (user.note || '(ไม่มีข้อความบันทึก)');
+  const ed = document.getElementById('userNoteEditor');
+  const ta = document.getElementById('userNoteTextarea');
+  let noteHtml = '';
+  if (userId === window.currentUserId) {
+    if (ed && ed.innerHTML.trim() !== '' && ed.innerHTML.trim() !== '<br>') {
+      noteHtml = ed.innerHTML;
+    } else if (ta && ta.value.trim() !== '') {
+      noteHtml = ta.value;
+    }
+  }
+  if (!noteHtml) {
+    noteHtml = user.note || '';
+  }
 
-  showToast('กำลังสร้างไฟล์ PDF...', 'info');
+  if (!noteHtml || noteHtml.trim() === '' || noteHtml === '<br>') {
+    noteHtml = '<p style="color: #64748b; font-style: italic;">(ไม่มีข้อความบันทึกการประชุม)</p>';
+  } else if (!noteHtml.includes('<') || !noteHtml.includes('>')) {
+    noteHtml = noteHtml.split('\n').map(line => `<p style="margin: 4px 0;">${line || '&nbsp;'}</p>`).join('');
+  }
+
+  showToast('กำลังสร้างไฟล์ PDF หลายหน้า...', 'info');
 
   try {
     if (document.fonts && document.fonts.ready) {
       await document.fonts.ready;
     }
 
-    const PAGE_W = 1240;
-    const PAGE_H = 1754;
-    const MARGIN = 90;
-    const CONTENT_W = PAGE_W - MARGIN * 2;
+    // Build print container for multi-page PDF
+    const printContainer = document.createElement('div');
+    printContainer.id = 'pdfNoteExportContainer';
+    printContainer.style.cssText = `
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      width: 780px;
+      background: #ffffff;
+      color: #0f172a;
+      font-family: 'Prompt', Tahoma, -apple-system, sans-serif;
+      padding: 30px 36px;
+      box-sizing: border-box;
+      line-height: 1.6;
+    `;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = PAGE_W;
-    canvas.height = PAGE_H;
-    const ctx = canvas.getContext('2d');
+    // Modern Header Meta Box
+    const headerHtml = `
+      <div style="background: #eef2ff; border: 2px solid #4338ca; border-radius: 14px; padding: 18px 22px; margin-bottom: 22px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(67, 56, 202, 0.2); padding-bottom: 8px;">
+          <h1 style="font-size: 19px; font-weight: 800; color: #312e81; margin: 0;">บันทึกการประชุมชมรมสันทนาการ (COMSAN)</h1>
+          <span style="font-size: 11px; font-weight: 700; color: #4338ca; background: #ffffff; border: 1px solid rgba(67, 56, 202, 0.3); padding: 3px 10px; border-radius: 9999px;">เอกสารบันทึกส่วนบุคคล</span>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr>
+            <td style="width: 130px; font-weight: 700; color: #1e293b; padding: 4px 0;">หัวข้อการประชุม:</td>
+            <td style="color: #334155; padding: 4px 0; font-weight: 600;">${m.title || '-'}</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 700; color: #1e293b; padding: 4px 0;">สถานที่ / วันที่:</td>
+            <td style="color: #334155; padding: 4px 0;">${m.location || '-'} (${m.date || '-'})</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 700; color: #1e293b; padding: 4px 0;">ผู้จดบันทึก:</td>
+            <td style="color: #334155; padding: 4px 0; font-weight: 600;">${user.firstName} ${user.lastName} (${user.nickname}) — <span style="color: #4338ca;">ตำแหน่ง: ${user.position}</span></td>
+          </tr>
+        </table>
+      </div>
 
-    // Canvas Background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, PAGE_W, PAGE_H);
+      <div style="margin-bottom: 14px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px;">
+        <h2 style="font-size: 14px; font-weight: 700; color: #334155; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">รายละเอียดบันทึกการประชุม</h2>
+      </div>
 
-    const labelColW = 210;
-    const valColW = CONTENT_W - labelColW - 80;
-    ctx.font = '500 22px Prompt, Tahoma, sans-serif';
+      <div class="note-body-content" style="font-size: 13.5px; color: #1e293b; word-break: break-word;">
+        ${noteHtml}
+      </div>
 
-    const titleLines = wrapThaiTextLines(ctx, m.title || '-', valColW);
-    const locLines = wrapThaiTextLines(ctx, `${m.location || '-'} (วันที่: ${m.date || '-'})`, valColW);
-    const authorLines = wrapThaiTextLines(ctx, `${user.firstName} ${user.lastName} (${user.nickname}) — ตำแหน่ง: ${user.position}`, valColW);
+      <div style="margin-top: 32px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+        <span>ระบบจัดการประชุมชมรมสันทนาการ (COMSAN Meeting)</span>
+        <span>ส่งออกเมื่อ: ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span>
+      </div>
+    `;
 
-    const lineH = 34;
-    const boxHeight = 110 + (titleLines.length + locLines.length + authorLines.length) * lineH + 30;
+    printContainer.innerHTML = headerHtml;
 
-    const boxX = MARGIN;
-    const boxY = MARGIN;
-    ctx.fillStyle = '#EEF2FF';
-    ctx.strokeStyle = '#4338CA';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(boxX, boxY, CONTENT_W, boxHeight, 24);
-    } else {
-      ctx.rect(boxX, boxY, CONTENT_W, boxHeight);
-    }
-    ctx.fill();
-    ctx.stroke();
-
-    let curY = boxY + 55;
-    ctx.fillStyle = '#312E81';
-    ctx.font = '700 32px Prompt, Tahoma, sans-serif';
-    ctx.fillText('บันทึกการประชุมชมรมสันทนาการ (COMSAN)', boxX + 40, curY);
-
-    curY += 48;
-    const drawMetaRow = (label, linesArr) => {
-      ctx.fillStyle = '#1e293b';
-      ctx.font = '700 22px Prompt, Tahoma, sans-serif';
-      ctx.fillText(label, boxX + 40, curY);
-
-      ctx.font = '400 22px Prompt, Tahoma, sans-serif';
-      linesArr.forEach((ln, idx) => {
-        ctx.fillText(ln, boxX + 40 + labelColW, curY + idx * lineH);
-      });
-      curY += Math.max(1, linesArr.length) * lineH + 8;
-    };
-
-    drawMetaRow('หัวข้อการประชุม:', titleLines);
-    drawMetaRow('สถานที่ / วันที่:', locLines);
-    drawMetaRow('ผู้จดบันทึก:', authorLines);
-
-    curY = boxY + boxHeight + 55;
-    ctx.fillStyle = '#475569';
-    ctx.font = '700 22px Prompt, Tahoma, sans-serif';
-    ctx.fillText('รายละเอียดบันทึกการประชุม:', MARGIN, curY);
-
-    curY += 16;
-    ctx.strokeStyle = '#CBD5E1';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(MARGIN, curY);
-    ctx.lineTo(PAGE_W - MARGIN, curY);
-    ctx.stroke();
-
-    curY += 45;
-    ctx.fillStyle = '#0f172a';
-    ctx.font = '400 24px Prompt, Tahoma, sans-serif';
-    const noteLines = wrapThaiTextLines(ctx, liveNoteText, CONTENT_W);
-    const noteLineH = 42;
-
-    noteLines.forEach(line => {
-      if (curY < PAGE_H - MARGIN) {
-        ctx.fillText(line, MARGIN, curY);
-        curY += noteLineH;
-      }
+    // Apply inline style adjustments for printed content
+    const noteImgs = printContainer.querySelectorAll('img');
+    noteImgs.forEach(img => {
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.borderRadius = '8px';
+      img.style.margin = '8px 0';
+      img.style.display = 'block';
     });
 
-    const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    document.body.appendChild(printContainer);
 
-    let pdfBlob = null;
-    const jsPDFConstructor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
-
-    if (jsPDFConstructor) {
-      const pdfDoc = new jsPDFConstructor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      pdfDoc.addImage(imgDataUrl, 'JPEG', 0, 0, 210, 297);
-      pdfBlob = pdfDoc.output('blob');
-    } else if (typeof html2pdf !== 'undefined') {
-      const worker = html2pdf().set({
-        margin: 0,
-        filename: `Note_${user.nickname}_COMSAN.pdf`,
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      });
-      const dummyDiv = document.createElement('div');
-      const pdfDoc = await worker.from(dummyDiv).toPdf().get('pdf');
-      pdfDoc.addImage(imgDataUrl, 'JPEG', 0, 0, 210, 297);
-      pdfBlob = pdfDoc.output('blob');
+    // Wait for images inside container to finish loading
+    if (noteImgs.length > 0) {
+      await Promise.all(Array.from(noteImgs).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      }));
     }
 
-    if (pdfBlob) {
-      await triggerUniversalBlobDownload(pdfBlob, `Note_${user.nickname}_COMSAN.pdf`);
-      showToast('ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว!', 'success');
+    const filename = `Note_${user.nickname}_COMSAN.pdf`;
+
+    if (typeof html2pdf !== 'undefined') {
+      const opt = {
+        margin: [10, 10, 10, 10], // 10mm margins on all sides
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
+      };
+
+      const pdfBlob = await html2pdf().set(opt).from(printContainer).output('blob');
+      if (printContainer.parentNode) printContainer.parentNode.removeChild(printContainer);
+
+      if (pdfBlob && typeof triggerUniversalBlobDownload === 'function') {
+        await triggerUniversalBlobDownload(pdfBlob, filename);
+        showToast('ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว!', 'success');
+      } else if (pdfBlob) {
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว!', 'success');
+      }
+    } else {
+      if (printContainer.parentNode) printContainer.parentNode.removeChild(printContainer);
+      showToast('ไม่พบไลบรารีสร้าง PDF', 'error');
     }
   } catch (err) {
     console.error('PDF generation error:', err);

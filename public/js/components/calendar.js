@@ -30,6 +30,16 @@ const THAI_MONTHS_SHORT = [
 ];
 const THAI_DAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
+// Local Date Helper (ป้องกันบั๊ก UTC ข้ามวันตาม Timezone ประเทศไทย UTC+7)
+function getLocalTodayIso(d = new Date()) {
+  if (!(d instanceof Date) || isNaN(d.getTime())) d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+window.getLocalTodayIso = getLocalTodayIso;
+
 // Calendar Color Palette Registry
 const CALENDAR_COLOR_PALETTES = {
   indigo: { label: 'คราม (Indigo)', bg: 'bg-indigo-500/10 dark:bg-indigo-500/20', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-500/30', dot: 'bg-indigo-500', solid: 'bg-indigo-600', hex: '#6366f1' },
@@ -794,7 +804,7 @@ function renderMonthGridView(events, currentUser, isAdmin = false) {
     html += `<div class="min-h-[85px] sm:min-h-[105px] p-1.5 bg-muted/10 opacity-40"></div>`;
   }
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = getLocalTodayIso();
 
   // Day cells
   for (let day = 1; day <= totalDays; day++) {
@@ -941,25 +951,80 @@ function getEventDateBadgeInfo(evt) {
 
 function renderAgendaListView(events, currentUser, isAdmin = false) {
   const canManage = Boolean(isAdmin && isCalendarAdmin());
-  if (events.length === 0) {
-    return `
-      <div class="rounded-lg border border-border bg-card text-card-foreground shadow-sm shadow-card p-10 text-center space-y-3 mt-4">
-        <p class="text-sm text-muted-foreground">ไม่พบกำหนดการที่ตรงตามเงื่อนไขการค้นหา</p>
+  const current = window.calendarState.currentDate || new Date();
+  const year = current.getFullYear();
+  const month = current.getMonth();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const monthStartIso = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const monthEndIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(totalDays).padStart(2, '0')}`;
+
+  // Filter events that occur or overlap with this selected month
+  const monthEvents = events.filter(evt => {
+    const s = String(evt.startDate || '').slice(0, 10);
+    const e = String(evt.endDate || evt.startDate || '').slice(0, 10);
+    if (!s) return false;
+    const end = (e >= s) ? e : s;
+    return s <= monthEndIso && end >= monthStartIso;
+  });
+
+  const todayIso = getLocalTodayIso();
+
+  // Month navigation header (matching Choice & calendar grid design with วันนี้, <, >)
+  let html = `
+    <div class="space-y-4">
+      <div class="flex items-center justify-between px-1">
+        <div class="flex items-center gap-2">
+          <h4 class="font-extrabold text-base sm:text-lg text-foreground">
+            ${THAI_MONTHS[month]} ${year + 543}
+          </h4>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+            ${monthEvents.length} รายการ
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button type="button" onclick="navigateCalendarMonth(0)"
+            class="h-8 px-3 rounded-full border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold flex items-center justify-center transition shadow-2xs cursor-pointer active:scale-95" title="กลับไปเดือนปัจจุบัน">
+            วันนี้
+          </button>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="navigateCalendarMonth(-1)"
+              class="w-8 h-8 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนก่อนหน้า">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button type="button" onclick="navigateCalendarMonth(1)"
+              class="w-8 h-8 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center text-foreground transition shadow-2xs cursor-pointer active:scale-95" title="เดือนถัดไป">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+  `;
+
+  if (monthEvents.length === 0) {
+    html += `
+      <div class="rounded-2xl border border-border bg-card text-card-foreground shadow-sm shadow-card p-10 text-center space-y-3 mt-2">
+        <div class="w-12 h-12 rounded-2xl bg-muted/60 text-muted-foreground flex items-center justify-center mx-auto text-xl">
+          <i data-lucide="calendar-x" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-foreground">ไม่มีกำหนดการในเดือน ${THAI_MONTHS[month]} ${year + 543}</h4>
+          <p class="text-xs text-muted-foreground mt-0.5">คุณสามารถใช้ปุ่มลูกศรเพื่อเลือกดูเดือนอื่นๆ หรือเพิ่มกิจกรรมใหม่</p>
+        </div>
         ${canManage ? `
           <div class="pt-1">
-            <button type="button" onclick="openAddCalendarEventModal()" class="inline-flex items-center justify-center rounded-md text-xs font-semibold bg-primary text-primary-foreground h-9 px-4">
-              + เพิ่มกำหนดการแรก
+            <button type="button" onclick="openAddCalendarEventModal(null, '${monthStartIso}')" class="inline-flex items-center justify-center rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 cursor-pointer transition shadow-xs">
+              + เพิ่มกำหนดการในเดือนนี้
             </button>
           </div>
         ` : ''}
       </div>
-    `;
+    </div>`;
+    return html;
   }
 
-  const todayIso = new Date().toISOString().slice(0, 10);
-  let html = `<div class="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 mt-4">`;
+  html += `<div class="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-4 mt-2">`;
 
-  events.forEach(evt => {
+  monthEvents.forEach(evt => {
     const styles = getEventVisualStyles(evt);
     const catInfo = styles.catMeta || CALENDAR_CATEGORIES.EVENT;
 
@@ -1108,7 +1173,7 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
     `;
   });
 
-  html += `</div>`;
+  html += `</div></div>`;
   return html;
 }
 
@@ -1864,7 +1929,7 @@ function renderIcsPreviewList(events) {
     `;
   });
 
-  html += `</div>`;
+  html += `</div></div>`;
   container.innerHTML = html;
 
   if (confirmBtn) {
@@ -2155,23 +2220,20 @@ function renderTodayEventsBanner() {
   const banner = document.getElementById('userTodayEventBanner');
   if (!banner) return;
 
-  // 1. Get today's local date based on user's device (วันเดือนปีบนอุปกรณ์ของผู้ใช้งาน)
+  // 1. Get today's local date based on user's device (ป้องกัน UTC bug)
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const localTodayStr = `${year}-${month}-${day}`;
+  const localTodayStr = getLocalTodayIso(now);
 
-  // 2. Filter events occurring today
-  const allEvents = (window.appState && Array.isArray(window.appState.calendarEvents))
-    ? window.appState.calendarEvents
-    : [];
+  // 2. Filter events occurring today (both club and project events shown in main)
+  const allEvents = (typeof getAllCalendarEventsForMain === 'function')
+    ? getAllCalendarEventsForMain()
+    : ((window.appState && Array.isArray(window.appState.calendarEvents)) ? window.appState.calendarEvents : []);
 
   const todayEvents = allEvents.filter(evt => {
     if (!evt || !evt.startDate) return false;
     const start = String(evt.startDate).trim().slice(0, 10);
     const end = evt.endDate ? String(evt.endDate).trim().slice(0, 10) : start;
-    return localTodayStr >= start && localTodayStr <= end;
+    return localTodayStr >= start && localTodayStr <= (end >= start ? end : start);
   });
 
   // If no events match today, hide the banner completely
@@ -2197,7 +2259,8 @@ function renderTodayEventsBanner() {
   }
   const currentIdx = window._todayEventActiveIdx;
   const evt = todayEvents[currentIdx] || todayEvents[0];
-  const catInfo = CALENDAR_CATEGORIES[evt.category] || CALENDAR_CATEGORIES.EVENT;
+  const styles = getEventVisualStyles(evt);
+  const catInfo = styles.catMeta || CALENDAR_CATEGORIES.EVENT;
 
   let timeText = 'ตลอดทั้งวัน';
   if (!evt.isAllDay && evt.startTime) {
@@ -2222,10 +2285,16 @@ function renderTodayEventsBanner() {
           ${evt.title}
         </h4>
 
-        <!-- Details Row: Category, Time, Location -->
+        <!-- Details Row: Category, Project, Time, Location -->
         <div class="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
-          <span class="inline-flex items-center gap-0.5 font-semibold ${catInfo.text} shrink-0">
-            <i data-lucide="${catInfo.icon || 'star'}" class="w-2.5 h-2.5 inline-block"></i> ${catInfo.label}
+          ${evt.isProjectEvent ? `
+            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold ${styles.bg} ${styles.text} border ${styles.border} shrink-0 max-w-[130px] truncate" title="${evt.projectTitle || 'โครงการ'}">
+              <i data-lucide="folder-kanban" class="w-2.5 h-2.5 shrink-0"></i>
+              <span class="truncate">${evt.projectTitle || 'โครงการ'}</span>
+            </span>
+          ` : ''}
+          <span class="inline-flex items-center gap-0.5 font-semibold ${catInfo.text || styles.text} shrink-0">
+            <i data-lucide="${catInfo.icon || 'star'}" class="w-2.5 h-2.5 inline-block"></i> ${catInfo.label || 'กิจกรรม'}
           </span>
           ${evt.startTime ? `
             <span class="shrink-0 flex items-center gap-1">
