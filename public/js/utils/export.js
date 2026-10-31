@@ -82,12 +82,12 @@ async function generatePDFForUser(userId) {
     const printContainer = document.createElement('div');
     printContainer.id = 'pdfNoteExportContainer';
     printContainer.style.cssText = `
-      width: 750px;
+      width: 718px;
       margin: 0 auto;
       background-color: #ffffff;
       color: #0f172a;
       font-family: 'Prompt', Tahoma, -apple-system, sans-serif;
-      padding: 28px 32px;
+      padding: 24px 28px;
       box-sizing: border-box;
       line-height: 1.6;
     `;
@@ -139,7 +139,7 @@ async function generatePDFForUser(userId) {
 
       <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; font-family: 'Prompt', sans-serif;">
         <span>ระบบจัดการประชุมชมรมสันทนาการ (COMSAN Meeting)</span>
-        <span>ส่งออกเมื่อ: ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span>
+        <span style="white-space: nowrap; padding-right: 2px;">ส่งออกเมื่อ: ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span>
       </div>
     `;
 
