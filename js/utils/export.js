@@ -73,6 +73,8 @@ async function generatePDFForUser(userId) {
     showToast('กำลังสร้างไฟล์ PDF หลายหน้า...', 'info');
   }
 
+  let printContainer = null;
+
   try {
     if (document.fonts && document.fonts.ready) {
       await document.fonts.ready;
@@ -112,6 +114,9 @@ async function generatePDFForUser(userId) {
         el.style.clear = '';
         el.style.letterSpacing = 'normal';
         el.style.wordSpacing = 'normal';
+        if (el.tagName !== 'PRE' && el.tagName !== 'CODE') {
+          el.style.whiteSpace = 'normal';
+        }
         if (el.tagName !== 'IMG' && el.tagName !== 'TABLE' && el.tagName !== 'TR' && el.tagName !== 'TD' && el.tagName !== 'TH') {
           el.style.lineHeight = '2.0';
         }
@@ -119,13 +124,18 @@ async function generatePDFForUser(userId) {
       return div.innerHTML;
     }
 
-    // Helper: inject zero-width spaces (\u200B) between Thai words to allow html2canvas to measure line boxes correctly
+    // Helper: inject zero-width spaces (\u200B) between Thai words & normalize &nbsp; so html2canvas never collapses wrapped lines
     function injectZeroWidthSpaces(node) {
       if (node.nodeType === 3) {
+        let text = node.nodeValue || '';
+        if (!text.trim()) return;
+        text = text.replace(/\u00A0/g, ' ');
         if (typeof Intl !== 'undefined' && Intl.Segmenter) {
           const segmenter = new Intl.Segmenter('th', { granularity: 'word' });
-          const words = Array.from(segmenter.segment(node.nodeValue), s => s.segment);
+          const words = Array.from(segmenter.segment(text), s => s.segment);
           node.nodeValue = words.join('\u200B');
+        } else {
+          node.nodeValue = text.replace(/([ก-ฮะาำเแโใไๆฯ])(?=[เแโใไ])/g, '$1\u200B');
         }
       } else if (node.nodeType === 1) {
         if (node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
@@ -138,7 +148,7 @@ async function generatePDFForUser(userId) {
     const logoSrc = (typeof window !== 'undefined' && window.COMSAN_LOGO_BASE64) ? window.COMSAN_LOGO_BASE64 : 'comsan_logo.png';
 
     // Build print container for multi-page PDF (clean offscreen container, not appended to document body)
-    const printContainer = document.createElement('div');
+    printContainer = document.createElement('div');
     printContainer.id = 'pdfNoteExportContainer';
     printContainer.style.cssText = `
       width: 718px;
@@ -146,7 +156,7 @@ async function generatePDFForUser(userId) {
       background-color: #ffffff;
       color: #0f172a;
       font-family: ${selectedFont} !important;
-      padding: 24px 28px;
+      padding: 20px 24px;
       box-sizing: border-box;
       line-height: 2.0;
     `;
@@ -163,7 +173,7 @@ async function generatePDFForUser(userId) {
           word-spacing: normal !important;
         }
         #pdfNoteExportContainer p,
-        #pdfNoteExportContainer div:not(.note-page-boundary-guide),
+        #pdfNoteExportContainer div:not(.note-page-boundary-guide):not(.note-page-break-container),
         #pdfNoteExportContainer li {
           line-height: 2.0 !important;
           font-size: 13.5px !important;
@@ -174,9 +184,9 @@ async function generatePDFForUser(userId) {
         #pdfNoteExportContainer ul { list-style-type: disc !important; margin: 8px 0 8px 24px !important; padding-left: 10px !important; }
         #pdfNoteExportContainer ol { list-style-type: decimal !important; margin: 8px 0 8px 24px !important; padding-left: 10px !important; }
         #pdfNoteExportContainer li { margin: 3px 0 !important; line-height: 2.0 !important; }
-        #pdfNoteExportContainer h1 { font-size: 18px !important; font-weight: 700 !important; margin: 10px 0 6px 0 !important; color: #1e1b4b !important; line-height: 1.4 !important; }
-        #pdfNoteExportContainer h2 { font-size: 16px !important; font-weight: 700 !important; margin: 10px 0 5px 0 !important; color: #1e293b !important; line-height: 1.4 !important; }
-        #pdfNoteExportContainer h3 { font-size: 14.5px !important; font-weight: 600 !important; margin: 8px 0 4px 0 !important; color: #334155 !important; line-height: 1.4 !important; }
+        #pdfNoteExportContainer h1 { font-size: 18px !important; font-weight: 700 !important; margin: 10px 0 6px 0 !important; color: #1e1b4b !important; line-height: 1.45 !important; }
+        #pdfNoteExportContainer h2 { font-size: 16px !important; font-weight: 700 !important; margin: 10px 0 5px 0 !important; color: #1e293b !important; line-height: 1.45 !important; }
+        #pdfNoteExportContainer h3 { font-size: 14.5px !important; font-weight: 600 !important; margin: 8px 0 4px 0 !important; color: #334155 !important; line-height: 1.45 !important; }
         #pdfNoteExportContainer img { max-width: 100% !important; height: auto !important; border-radius: 8px !important; margin: 8px 0 !important; display: block !important; }
         #pdfNoteExportContainer table { border-collapse: collapse !important; width: 100% !important; }
         #pdfNoteExportContainer .note-keypoint-box {
@@ -190,22 +200,31 @@ async function generatePDFForUser(userId) {
           line-height: 1.8 !important;
         }
         .note-page-boundary-guide { display: none !important; }
+        .note-page-break-container {
+          height: 8px !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+          border: none !important;
+          box-shadow: none !important;
+          visibility: hidden !important;
+        }
         .html2pdf__page-break { page-break-before: always !important; break-before: page !important; height: 0 !important; margin: 0 !important; padding: 0 !important; border: none !important; }
       </style>
 
-      <!-- หัวกระดาษ: ด้านซ้ายเป็นโลโก้ชมรม, ตรงกลางเป็น วันที่ เดือน ปี ที่เขียน, ด้านขวาเป็น เขียนที่ (สัดส่วนกะทัดรัด ไม่ห่างเกินไป) -->
+      <!-- หัวกระดาษ: ด้านซ้ายเป็นโลโก้ชมรม, ตรงกลางเป็น วันที่ เดือน ปี ที่เขียน, ด้านขวาเป็น เขียนที่ (สมมาตร กะทัดรัด) -->
       <div style="border-bottom: 2px solid #1e1b4b; padding-bottom: 12px; margin-bottom: 18px;">
         <table style="width: 100%; border-collapse: collapse; border: none; margin: 0; padding: 0;">
           <tr>
-            <td style="width: 125px; vertical-align: middle; padding: 0;">
-              <img src="${logoSrc}" id="pdfDocLogoImg" alt="โลโก้ชมรม" style="height: 62px; width: auto; max-width: 115px; object-fit: contain; display: block;" onerror="this.onerror=null; this.src='comsan_logo.png';" />
+            <td style="width: 165px; vertical-align: middle; padding: 0;">
+              <img src="${logoSrc}" id="pdfDocLogoImg" alt="โลโก้ชมรม" style="height: 62px; width: auto; max-width: 145px; object-fit: contain; display: block;" onerror="this.onerror=null; this.src='comsan_logo.png';" />
             </td>
-            <td style="text-align: center; vertical-align: middle; padding: 0 12px;">
+            <td style="text-align: center; vertical-align: middle; padding: 0 8px;">
               <div style="font-size: 17.5px; font-weight: 800; color: #1e1b4b; line-height: 1.35;">บันทึกการประชุมชมรมสันทนาการ</div>
               <div style="font-size: 13px; font-weight: 600; color: #4338ca; margin-top: 4px; line-height: 1.4;">${meta.date}</div>
               ${m.title ? `<div style="font-size: 12.5px; color: #475569; margin-top: 3px; font-weight: 500; line-height: 1.4;">เรื่อง: <span style="color: #1e293b; font-weight: 600;">${m.title}</span></div>` : ''}
             </td>
-            <td style="width: 140px; text-align: right; vertical-align: middle; padding: 0; font-size: 12px; line-height: 1.45;">
+            <td style="width: 165px; text-align: right; vertical-align: middle; padding: 0; font-size: 12px; line-height: 1.45;">
               <div style="font-weight: 700; color: #1e293b;">เขียนที่</div>
               <div style="color: #4338ca; font-weight: 600; margin-top: 2px; word-break: break-word;">${meta.location}</div>
             </td>
@@ -273,24 +292,140 @@ async function generatePDFForUser(userId) {
     const filename = `Note_${safeNickname}_COMSAN.pdf`;
 
     if (typeof html2pdf !== 'undefined') {
+      const renderScale = 2;
       const opt = {
-        margin: [12, 12, 18, 12], // Top 12mm, Left 12mm, Bottom 18mm, Right 12mm
+        margin: [12, 12, 16, 12],
         filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
-          scale: 2,
+          scale: renderScale,
           useCORS: true,
-          letterRendering: false, // Prevents text overlapping in complex scripts!
+          letterRendering: false,
           logging: false,
+          backgroundColor: '#ffffff',
           scrollX: 0,
           scrollY: 0
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
       const worker = html2pdf().set(opt).from(printContainer);
-      const pdfBlob = await worker.output('blob');
+      const fullCanvas = await worker.toCanvas().get('canvas');
+
+      // Obtain a clean initialized A4 portrait jsPDF instance directly from html2pdf
+      const blankDiv = document.createElement('div');
+      blankDiv.style.cssText = 'width: 1px; height: 1px; background: #ffffff;';
+      const pdf = await html2pdf()
+        .set({ jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } })
+        .from(blankDiv)
+        .toPdf()
+        .get('pdf');
+
+      let pdfBlob = null;
+      if (fullCanvas && fullCanvas.width > 0 && fullCanvas.height > 0 && pdf && typeof pdf.addImage === 'function') {
+        const marginTop = 12;
+        const marginBottom = 16;
+        const marginLeft = 12;
+        const marginRight = 12;
+        const printableWidthMm = 210 - marginLeft - marginRight; // 186mm
+        const printableHeightMm = 297 - marginTop - marginBottom; // 269mm
+
+        const W = fullCanvas.width;
+        const H = fullCanvas.height;
+        const pxPerMm = W / printableWidthMm;
+        const maxSlicePx = Math.floor(printableHeightMm * pxPerMm);
+        const fullCtx = fullCanvas.getContext('2d');
+
+        function isRowBlankWhite(imgData, rowIdx, width) {
+          const d = imgData.data;
+          const base = rowIdx * width * 4;
+          for (let x = 0; x < width; x += 2) {
+            const idx = base + x * 4;
+            if (d[idx + 3] > 10 && (d[idx] < 248 || d[idx + 1] < 248 || d[idx + 2] < 248)) {
+              return false;
+            }
+          }
+          return true;
+        }
+
+        let currentY = 0;
+        let pageIndex = 0;
+
+        while (currentY < H) {
+          let remaining = H - currentY;
+          let sliceEnd = H;
+
+          if (remaining > maxSlicePx) {
+            const targetEnd = currentY + maxSlicePx;
+            const searchSpan = Math.min(340, Math.floor(maxSlicePx * 0.28));
+            const searchStart = Math.max(currentY + 160, targetEnd - searchSpan);
+            const stripHeight = targetEnd - searchStart + 1;
+            const stripData = fullCtx.getImageData(0, searchStart, W, stripHeight);
+
+            let foundCut = -1;
+            for (let relY = stripHeight - 3; relY >= 2; relY--) {
+              if (
+                isRowBlankWhite(stripData, relY - 2, W) &&
+                isRowBlankWhite(stripData, relY, W) &&
+                isRowBlankWhite(stripData, relY + 2, W)
+              ) {
+                foundCut = searchStart + relY;
+                break;
+              }
+            }
+            sliceEnd = foundCut > currentY ? foundCut : targetEnd;
+          } else {
+            // Check if the remaining tail is purely blank white padding so we don't emit an empty last page
+            if (pageIndex > 0 && remaining < 200) {
+              const tailData = fullCtx.getImageData(0, currentY, W, remaining);
+              let allWhite = true;
+              for (let r = 0; r < remaining; r += 2) {
+                if (!isRowBlankWhite(tailData, r, W)) {
+                  allWhite = false;
+                  break;
+                }
+              }
+              if (allWhite) break;
+            }
+          }
+
+          const sliceHeight = sliceEnd - currentY;
+          if (sliceHeight <= 0) break;
+
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = W;
+          pageCanvas.height = sliceHeight;
+          const pCtx = pageCanvas.getContext('2d');
+          pCtx.fillStyle = '#ffffff';
+          pCtx.fillRect(0, 0, W, sliceHeight);
+          pCtx.drawImage(fullCanvas, 0, currentY, W, sliceHeight, 0, 0, W, sliceHeight);
+
+          if (pageIndex > 0) {
+            pdf.addPage();
+          }
+          const sliceHeightMm = sliceHeight / pxPerMm;
+          const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.98);
+          pdf.addImage(pageImgData, 'JPEG', marginLeft, marginTop, printableWidthMm, sliceHeightMm);
+
+          pageIndex++;
+          currentY = sliceEnd;
+
+          // Trim excessive leading whitespace at top of next page (up to 28px) for crisp top alignment
+          if (currentY < H) {
+            const trimCheck = Math.min(28, H - currentY);
+            const topStrip = fullCtx.getImageData(0, currentY, W, trimCheck);
+            let skip = 0;
+            while (skip < trimCheck - 4 && isRowBlankWhite(topStrip, skip, W)) {
+              skip++;
+            }
+            if (skip > 4) currentY += (skip - 4);
+          }
+        }
+
+        pdfBlob = pdf.output('blob');
+      } else {
+        pdfBlob = await worker.output('blob');
+      }
 
       if (pdfBlob && typeof triggerUniversalBlobDownload === 'function') {
         await triggerUniversalBlobDownload(pdfBlob, filename);
