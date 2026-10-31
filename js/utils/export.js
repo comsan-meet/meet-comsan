@@ -120,8 +120,9 @@ async function generatePDFForUser(userId) {
     }
 
     const processedNoteHtml = sanitizeForPdf(noteHtml);
+    const logoSrc = (typeof window !== 'undefined' && window.COMSAN_LOGO_BASE64) ? window.COMSAN_LOGO_BASE64 : 'comsan_logo.png';
 
-    // Build print container for multi-page PDF
+    // Build print container for multi-page PDF (clean offscreen container, not appended to document body)
     const printContainer = document.createElement('div');
     printContainer.id = 'pdfNoteExportContainer';
     printContainer.style.cssText = `
@@ -133,11 +134,6 @@ async function generatePDFForUser(userId) {
       padding: 24px 28px;
       box-sizing: border-box;
       line-height: 1.85;
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: -99999;
-      pointer-events: none;
     `;
 
     // Modern Header Meta Box with unified font & strict line spacing to prevent overlaps
@@ -147,7 +143,6 @@ async function generatePDFForUser(userId) {
         #pdfNoteExportContainer * {
           box-sizing: border-box !important;
           font-family: ${selectedFont} !important;
-          position: static !important;
           float: none !important;
           letter-spacing: normal !important;
           word-spacing: normal !important;
@@ -183,11 +178,11 @@ async function generatePDFForUser(userId) {
         .html2pdf__page-break { page-break-before: always !important; break-before: page !important; height: 0 !important; margin: 0 !important; padding: 0 !important; border: none !important; }
       </style>
 
-      <!-- หัวกระดาษ: ด้านซ้ายเป็นโลโก้ชมรมขนาดใหญ่ (comsan (2).png), ตรงกลางเป็น วันที่ เดือน ปี ที่เขียน, ด้านขวาเป็น เขียนที่ -->
+      <!-- หัวกระดาษ: ด้านซ้ายเป็นโลโก้ชมรมขนาดใหญ่, ตรงกลางเป็น วันที่ เดือน ปี ที่เขียน, ด้านขวาเป็น เขียนที่ -->
       <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; margin-bottom: 18px; border-bottom: 2px solid #312e81;">
-        <!-- ด้านซ้าย: โลโก้ชมรม comsan (2).png (ขนาดใหญ่ชัดเจน) -->
+        <!-- ด้านซ้าย: โลโก้ชมรม (ขนาดใหญ่ชัดเจน พร้อม Fallback Base64) -->
         <div style="width: 190px; text-align: left; display: flex; align-items: center;">
-          <img src="Comsan (2).png" id="pdfDocLogoImg" alt="โลโก้ชมรม" style="height: 90px; width: auto; max-width: 185px; object-fit: contain; display: block;" onerror="this.onerror=null; this.src='Comsan (2).PNG';" />
+          <img src="${logoSrc}" id="pdfDocLogoImg" alt="โลโก้ชมรม" style="height: 90px; width: auto; max-width: 185px; object-fit: contain; display: block;" onerror="this.onerror=null; this.src='comsan_logo.png';" />
         </div>
 
         <!-- ตรงกลาง: วันที่ เดือน ปี ที่เขียน -->
@@ -226,7 +221,6 @@ async function generatePDFForUser(userId) {
     `;
 
     printContainer.innerHTML = headerHtml;
-    document.body.appendChild(printContainer);
 
     // Apply inline style adjustments for printed content
     const noteImgs = printContainer.querySelectorAll('img');
