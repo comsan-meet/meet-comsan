@@ -78,6 +78,21 @@ async function generatePDFForUser(userId) {
       await document.fonts.ready;
     }
 
+    const meta = (typeof getNoteDocMeta === 'function') ? getNoteDocMeta() : {
+      location: m.location || 'ห้องประชุมชมรมสันทนาการ',
+      date: `วันที่ ${new Date().getDate()} ${new Date().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}`
+    };
+
+    let selectedFont = "'Prompt', Tahoma, -apple-system, sans-serif";
+    try {
+      const saved = localStorage.getItem('comsan_note_font');
+      if (saved) selectedFont = saved;
+    } catch (e) {}
+
+    // Transform editor visual page-break into clean html2pdf pagebreak
+    const processedNoteHtml = String(noteHtml || '')
+      .replace(/<div class="note-page-break-container"[\s\S]*?<\/div>\s*<\/div>/gi, '<div class="html2pdf__page-break" style="page-break-before: always; break-before: page; height: 0; margin: 0; padding: 0; border: none;"></div>');
+
     // Build print container for multi-page PDF (clean normal flow container, without fixed positioning or negative z-index)
     const printContainer = document.createElement('div');
     printContainer.id = 'pdfNoteExportContainer';
@@ -86,60 +101,68 @@ async function generatePDFForUser(userId) {
       margin: 0 auto;
       background-color: #ffffff;
       color: #0f172a;
-      font-family: 'Prompt', Tahoma, -apple-system, sans-serif;
+      font-family: ${selectedFont};
       padding: 24px 28px;
       box-sizing: border-box;
-      line-height: 1.6;
+      line-height: 1.65;
     `;
 
     // Modern Header Meta Box with scoped CSS for formatted notes
     const headerHtml = `
       <style>
-        #pdfNoteExportContainer { background-color: #ffffff !important; color: #0f172a !important; font-family: 'Prompt', Tahoma, sans-serif; }
-        #pdfNoteExportContainer * { box-sizing: border-box; }
-        #pdfNoteExportContainer p { margin: 6px 0; }
+        #pdfNoteExportContainer { background-color: #ffffff !important; color: #0f172a !important; font-family: ${selectedFont}; }
+        #pdfNoteExportContainer * { box-sizing: border-box; position: static !important; float: none !important; }
+        #pdfNoteExportContainer p { margin: 6px 0; line-height: 1.65 !important; }
         #pdfNoteExportContainer ul { list-style-type: disc; margin: 8px 0 8px 24px; padding-left: 10px; }
         #pdfNoteExportContainer ol { list-style-type: decimal; margin: 8px 0 8px 24px; padding-left: 10px; }
-        #pdfNoteExportContainer li { margin: 3px 0; }
-        #pdfNoteExportContainer h1 { font-size: 18px; font-weight: 700; margin: 12px 0 6px 0; color: #1e1b4b; }
-        #pdfNoteExportContainer h2 { font-size: 16px; font-weight: 700; margin: 10px 0 5px 0; color: #1e293b; }
-        #pdfNoteExportContainer h3 { font-size: 14px; font-weight: 600; margin: 8px 0 4px 0; color: #334155; }
+        #pdfNoteExportContainer li { margin: 3px 0; line-height: 1.65 !important; }
+        #pdfNoteExportContainer h1 { font-size: 18px; font-weight: 700; margin: 14px 0 6px 0; color: #1e1b4b; }
+        #pdfNoteExportContainer h2 { font-size: 16px; font-weight: 700; margin: 12px 0 5px 0; color: #1e293b; }
+        #pdfNoteExportContainer h3 { font-size: 14px; font-weight: 600; margin: 10px 0 4px 0; color: #334155; }
         #pdfNoteExportContainer img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; display: block; }
         #pdfNoteExportContainer table { border-collapse: collapse; width: 100%; }
+        .html2pdf__page-break { page-break-before: always !important; break-before: page !important; height: 0 !important; margin: 0 !important; padding: 0 !important; }
       </style>
 
-      <div style="background: #eef2ff; border: 2px solid #4338ca; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(67, 56, 202, 0.2); padding-bottom: 8px;">
-          <h1 style="font-size: 18px; font-weight: 800; color: #312e81; margin: 0; font-family: 'Prompt', sans-serif;">บันทึกการประชุมชมรมสันทนาการ (COMSAN)</h1>
-          <span style="font-size: 11px; font-weight: 700; color: #4338ca; background: #ffffff; border: 1px solid rgba(67, 56, 202, 0.3); padding: 3px 10px; border-radius: 9999px;">เอกสารบันทึกส่วนบุคคล</span>
+      <!-- หัวกระดาษ: ด้านซ้ายเป็นโลโก้ชมรม (comsan (2).png), ตรงกลางเป็น วันที่ เดือน ปี ที่เขียน, ด้านขวาเป็น เขียนที่ -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; margin-bottom: 18px; border-bottom: 2px solid #312e81;">
+        <!-- ด้านซ้าย: โลโก้ชมรม comsan (2).png -->
+        <div style="width: 130px; text-align: left; display: flex; align-items: center;">
+          <img src="Comsan (2).PNG" id="pdfDocLogoImg" alt="โลโก้ชมรม" style="height: 56px; width: auto; max-width: 125px; object-fit: contain; display: block;" onerror="this.onerror=null; this.src='comsan (2).png';" />
         </div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px; font-family: 'Prompt', sans-serif;">
-          <tr>
-            <td style="width: 130px; font-weight: 700; color: #1e293b; padding: 3px 0;">หัวข้อการประชุม:</td>
-            <td style="color: #334155; padding: 3px 0; font-weight: 600;">${m.title || '-'}</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 700; color: #1e293b; padding: 3px 0;">สถานที่ / วันที่:</td>
-            <td style="color: #334155; padding: 3px 0;">${m.location || '-'} (${m.date || '-'})</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 700; color: #1e293b; padding: 3px 0;">ผู้จดบันทึก:</td>
-            <td style="color: #334155; padding: 3px 0; font-weight: 600;">${user.firstName} ${user.lastName} (${user.nickname || '-'}) — <span style="color: #4338ca;">ตำแหน่ง: ${user.position || '-'}</span></td>
-          </tr>
-        </table>
+
+        <!-- ตรงกลาง: วันที่ เดือน ปี ที่เขียน -->
+        <div style="flex: 1; text-align: center; padding: 0 10px;">
+          <div style="font-size: 15.5px; font-weight: 800; color: #1e1b4b; font-family: ${selectedFont};">บันทึกการประชุมชมรมสันทนาการ</div>
+          <div style="font-size: 13px; font-weight: 600; color: #4338ca; margin-top: 3px; font-family: ${selectedFont};">${meta.date}</div>
+          ${m.title ? `<div style="font-size: 11px; color: #64748b; margin-top: 2px; font-family: ${selectedFont};">เรื่อง: ${m.title}</div>` : ''}
+        </div>
+
+        <!-- ด้านขวา: เขียนที่ -->
+        <div style="width: 150px; text-align: right; font-size: 12px; color: #334155; font-family: ${selectedFont}; line-height: 1.35;">
+          <div style="font-weight: 700; color: #1e293b;">เขียนที่</div>
+          <div style="color: #4338ca; font-weight: 600; margin-top: 2px;">${meta.location}</div>
+        </div>
       </div>
 
-      <div style="margin-bottom: 14px; border-bottom: 2px solid #cbd5e1; padding-bottom: 6px;">
-        <h2 style="font-size: 14px; font-weight: 700; color: #334155; margin: 0; text-transform: uppercase; font-family: 'Prompt', sans-serif;">รายละเอียดบันทึกการประชุม</h2>
+      <div class="note-body-content" style="font-size: 13.5px; color: #1e293b; word-break: break-word; font-family: ${selectedFont};">
+        ${processedNoteHtml}
       </div>
 
-      <div class="note-body-content" style="font-size: 13.5px; color: #1e293b; word-break: break-word; font-family: 'Prompt', sans-serif;">
-        ${noteHtml}
-      </div>
-
-      <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; font-family: 'Prompt', sans-serif;">
-        <span>ระบบจัดการประชุมชมรมสันทนาการ (COMSAN Meeting)</span>
-        <span style="white-space: nowrap; padding-right: 2px;">ส่งออกเมื่อ: ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span>
+      <!-- ท้ายกระดาษ: ชื่อผู้จดบันทึก และตำแหน่งของผู้จดบันทึก -->
+      <div style="margin-top: 36px; padding-top: 14px; border-top: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; font-family: ${selectedFont};">
+        <div style="text-align: left; font-size: 10.5px; color: #94a3b8;">
+          <div>ระบบจัดการประชุมชมรมสันทนาการ (COMSAN Meeting)</div>
+          <div>พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="margin-bottom: 4px; font-size: 12px; color: #334155;">
+            ลงชื่อ <span style="font-weight: 700; color: #1e293b; text-decoration: underline;">${user.firstName} ${user.lastName} (${user.nickname || '-'})</span> ผู้จดบันทึก
+          </div>
+          <div style="font-size: 11.5px; color: #4338ca; font-weight: 600;">
+            ตำแหน่ง: ${user.position || 'สมาชิกชมรม'}
+          </div>
+        </div>
       </div>
     `;
 
@@ -148,6 +171,7 @@ async function generatePDFForUser(userId) {
     // Apply inline style adjustments for printed content
     const noteImgs = printContainer.querySelectorAll('img');
     noteImgs.forEach(img => {
+      if (img.id === 'pdfDocLogoImg') return;
       img.style.maxWidth = '100%';
       img.style.height = 'auto';
       img.style.borderRadius = '8px';
@@ -172,13 +196,13 @@ async function generatePDFForUser(userId) {
 
     if (typeof html2pdf !== 'undefined') {
       const opt = {
-        margin: [10, 10, 10, 10], // 10mm margins on all sides
+        margin: [12, 12, 18, 12], // Top 12mm, Left 12mm, Bottom 18mm, Right 12mm
         filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
           scale: 2,
           useCORS: true,
-          letterRendering: true,
+          letterRendering: false, // Prevents text overlapping in complex scripts!
           logging: false,
           scrollX: 0,
           scrollY: 0

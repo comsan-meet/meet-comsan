@@ -381,9 +381,118 @@ function loadUserNoteToEditor(noteContent) {
     } else {
       ed.innerHTML = content ? content.replace(/\n/g, '<br>') : '';
     }
+    try {
+      const savedFont = localStorage.getItem('comsan_note_font');
+      if (savedFont) {
+        ed.style.fontFamily = savedFont;
+        const fontSel = document.getElementById('noteFontFamilySelect');
+        if (fontSel) fontSel.value = savedFont;
+      }
+    } catch (e) {}
+  }
+  const pill = document.getElementById('noteMetaLocationPill');
+  if (pill && typeof getNoteDocMeta === 'function') {
+    pill.textContent = getNoteDocMeta().location;
   }
 }
 window.loadUserNoteToEditor = loadUserNoteToEditor;
+
+function applyNoteFontFamily(font) {
+  const ed = document.getElementById('userNoteEditor');
+  if (ed) {
+    ed.style.fontFamily = font;
+  }
+  try {
+    localStorage.setItem('comsan_note_font', font);
+  } catch (e) {}
+  document.execCommand('fontName', false, font);
+  if (ed) ed.focus();
+  saveUserNoteDraft();
+}
+window.applyNoteFontFamily = applyNoteFontFamily;
+
+function insertNotePageBreak() {
+  const breakHtml = `
+    <div class="note-page-break-container" contenteditable="false">
+      <div class="note-page-break-badge">
+        <i data-lucide="scissors" class="w-3.5 h-3.5 inline mr-1 text-primary"></i> ขึ้นหน้าใหม่ (Page Break)
+      </div>
+    </div>
+    <p><br></p>
+  `;
+  insertHtmlInNoteEditor(breakHtml);
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
+  }
+}
+window.insertNotePageBreak = insertNotePageBreak;
+
+function getNoteDocMeta() {
+  const state = window.appState || {};
+  const m = state.meeting || {};
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem('comsan_note_meta') || 'null');
+  } catch (e) {}
+
+  const defaultLocation = m.location || 'ห้องประชุมชมรมสันทนาการ';
+  const now = new Date();
+  const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+  const defaultDate = `วันที่ ${now.getDate()} ${months[now.getMonth()]} พ.ศ. ${now.getFullYear() + 543}`;
+
+  return {
+    location: (saved && saved.location) ? saved.location : defaultLocation,
+    date: (saved && saved.date) ? saved.date : defaultDate
+  };
+}
+window.getNoteDocMeta = getNoteDocMeta;
+
+function openNoteMetaModal() {
+  const meta = getNoteDocMeta();
+  const locInput = document.getElementById('noteDocMetaLocationInput');
+  const dateInput = document.getElementById('noteDocMetaDateInput');
+  const modal = document.getElementById('noteDocMetaModal');
+  if (locInput) locInput.value = meta.location;
+  if (dateInput) dateInput.value = meta.date;
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+}
+window.openNoteMetaModal = openNoteMetaModal;
+
+function closeNoteMetaModal() {
+  const modal = document.getElementById('noteDocMetaModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+window.closeNoteMetaModal = closeNoteMetaModal;
+
+function saveNoteDocMeta() {
+  const locInput = document.getElementById('noteDocMetaLocationInput');
+  const dateInput = document.getElementById('noteDocMetaDateInput');
+  const loc = locInput ? locInput.value.trim() : '';
+  const dt = dateInput ? dateInput.value.trim() : '';
+
+  const meta = {
+    location: loc || 'ห้องประชุมชมรมสันทนาการ',
+    date: dt || getNoteDocMeta().date
+  };
+  try {
+    localStorage.setItem('comsan_note_meta', JSON.stringify(meta));
+  } catch (e) {}
+
+  const pill = document.getElementById('noteMetaLocationPill');
+  if (pill) pill.textContent = meta.location;
+  closeNoteMetaModal();
+  if (typeof showToast === 'function') {
+    showToast('บันทึกข้อมูลหัวเอกสารเรียบร้อยแล้ว', 'success');
+  }
+}
+window.saveNoteDocMeta = saveNoteDocMeta;
 
 function formatNoteDoc(cmd, val = null) {
   document.execCommand(cmd, false, val);

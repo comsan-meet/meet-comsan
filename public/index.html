@@ -15,7 +15,7 @@
   <!-- Google Fonts: Poppins (Brand/Titles/Numbers) & Prompt (Thai/Body) matching comsan-choice.vercel.app -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Mitr:wght@300;400;500&family=Poppins:wght@400;500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
 
   <!-- Font Awesome Icons -->
     <!-- Lucide Icons & DiceBear Gaze Avatars (Comsan Choice Standard) -->
@@ -1117,6 +1117,41 @@ label svg, label i {
   pointer-events: none;
 }
 
+/* Document Sheets Page Break styling (Word / Docs Style) */
+.note-page-break-container {
+  margin: 28px -16px;
+  padding: 14px 0;
+  background: #f1f5f9;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  user-select: none;
+}
+.dark .note-page-break-container {
+  background: #09090b !important;
+  border-color: #27272a !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.note-page-break-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dark .note-page-break-badge {
+  background: #18181b !important;
+  border-color: #3f3f46 !important;
+  color: #a1a1aa !important;
+}
+
 </style>
 
   <!-- Modular CSS Architecture (Comsan Choice Design Tokens & Components) -->
@@ -1943,6 +1978,49 @@ label svg, label i {
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: NOTE DOCUMENT META (เขียนที่ / วันที่เอกสารบันทึก)         -->
+  <!-- ========================================================= -->
+  <div id="noteDocMetaModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4 select-none">
+    <div class="bg-card border border-border rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4 text-card-foreground">
+      <div class="flex items-center justify-between pb-3 border-b border-border">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <i data-lucide="file-signature" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-foreground">ข้อมูลหัวเอกสารบันทึก</h3>
+            <p class="text-xs text-muted-foreground">กำหนดสถานที่และวันที่สำหรับพิมพ์ลงหัวกระดาษ PDF</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeNoteMetaModal()" class="h-8 w-8 rounded-lg border border-border hover:bg-muted text-foreground flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3.5 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-foreground mb-1">📍 เขียนที่ (สถานที่):</label>
+          <input type="text" id="noteDocMetaLocationInput" class="w-full h-10 px-3 rounded-xl border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="เช่น ห้องประชุมชมรมสันทนาการ หรือ อาคารสันทนาการ" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-foreground mb-1">📅 วันที่ เดือน ปี ที่เขียน:</label>
+          <input type="text" id="noteDocMetaDateInput" class="w-full h-10 px-3 rounded-xl border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="เช่น วันที่ 31 ตุลาคม พ.ศ. 2569" />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-border">
+        <button type="button" onclick="closeNoteMetaModal()" class="px-3.5 py-2 rounded-xl border border-border text-xs font-medium hover:bg-muted transition cursor-pointer">
+          ยกเลิก
+        </button>
+        <button type="button" onclick="saveNoteDocMeta()" class="px-4 py-2 rounded-xl gradient-primary text-white text-xs font-semibold shadow-xs hover:opacity-95 transition cursor-pointer">
+          บันทึกข้อมูล
+        </button>
+      </div>
     </div>
   </div>
 
@@ -5366,6 +5444,16 @@ label svg, label i {
                 <!-- แถบเครื่องมือจัดการข้อความสไตล์ Word / Google Docs -->
                 <div class="px-3 py-2 border-b border-border bg-muted/30 flex flex-wrap items-center justify-between gap-2 select-none">
                   <div class="flex items-center gap-1 flex-wrap text-muted-foreground text-xs">
+                    <!-- แบบอักษร (Font Family) -->
+                    <select id="noteFontFamilySelect" onchange="applyNoteFontFamily(this.value)" title="เลือกแบบอักษร (Font)"
+                      class="h-7.5 px-2 rounded-lg border border-border bg-card text-foreground text-xs font-medium focus:outline-none cursor-pointer">
+                      <option value="'Prompt', sans-serif">Prompt (ค่าเริ่มต้น)</option>
+                      <option value="'Sarabun', sans-serif">Sarabun (ทางการ / สารบรรณ)</option>
+                      <option value="'Kanit', sans-serif">Kanit (โมเดิร์น)</option>
+                      <option value="'Mitr', sans-serif">Mitr (มิตร)</option>
+                      <option value="Tahoma, sans-serif">Tahoma</option>
+                    </select>
+
                     <!-- ขนาดอักษร / หัวข้อ -->
                     <select id="noteHeadingSelect" onchange="applyNoteHeading(this.value)"
                       class="h-7.5 px-2 rounded-lg border border-border bg-card text-foreground text-xs font-medium focus:outline-none cursor-pointer">
@@ -5452,6 +5540,20 @@ label svg, label i {
 
                     <div class="h-4 w-px bg-border/80 mx-0.5"></div>
 
+                    <!-- ปุ่มขึ้นหน้าใหม่ (Page Break) -->
+                    <button type="button" onclick="insertNotePageBreak()" title="แทรกตัวแบ่งหน้า (ขึ้นหน้าใหม่)"
+                      class="px-2 py-1 rounded-lg hover:bg-card hover:text-foreground text-[11px] font-semibold text-foreground transition cursor-pointer border border-border flex items-center gap-1">
+                      <i data-lucide="scissors" class="w-3.5 h-3.5 text-primary"></i>
+                      <span>ขึ้นหน้าใหม่</span>
+                    </button>
+
+                    <!-- ปุ่มแก้ไขหัวเอกสาร (เขียนที่ / วันที่) -->
+                    <button type="button" onclick="openNoteMetaModal()" title="แก้ไขข้อมูลหัวเอกสาร (เขียนที่ / วันที่)"
+                      class="px-2 py-1 rounded-lg hover:bg-card hover:text-foreground text-[11px] font-semibold text-primary transition cursor-pointer border border-border flex items-center gap-1.5">
+                      <i data-lucide="map-pin" class="w-3.5 h-3.5 text-primary"></i>
+                      <span>เขียนที่: <strong id="noteMetaLocationPill" class="font-normal text-muted-foreground truncate max-w-[110px] inline-block align-bottom">ห้องประชุมชมรมคมสัน</strong></span>
+                    </button>
+
                     <button type="button" onclick="insertNoteKeyPoint()" title="เน้นประเด็นสำคัญ"
                       class="px-2 py-1 rounded-lg hover:bg-card hover:text-foreground text-[11px] font-bold text-amber-600 dark:text-amber-400 transition cursor-pointer border border-transparent hover:border-border flex items-center gap-1">
                       <span>📌 ประเด็นสำคัญ</span>
@@ -5467,12 +5569,14 @@ label svg, label i {
                   </div>
                 </div>
 
-                <!-- กล่องข้อความ Rich-Text Editor -->
-                <div class="p-4 sm:p-5 bg-card">
-                  <div id="userNoteEditor" contenteditable="true" oninput="saveUserNoteDraft()"
-                    data-placeholder="พิมพ์ประเด็นสำคัญ หรือสรุปเนื้อหาการประชุมที่นี่ (รองรับตัวหนา ตัวเอียง ขีดเส้นใต้ สี ไฮไลท์ และแทรกรูปภาพ)..."
-                    class="w-full min-h-[220px] max-h-[500px] overflow-y-auto bg-transparent text-sm text-foreground focus:outline-none leading-relaxed"></div>
-                  <textarea id="userNoteTextarea" class="hidden" oninput="saveUserNoteDraft()"></textarea>
+                <!-- กล่องข้อความ Rich-Text Editor สไตล์เอกสารกระดาษ (Document Sheets) -->
+                <div class="p-3 sm:p-6 bg-muted/20 flex justify-center">
+                  <div class="w-full max-w-[760px] bg-card text-card-foreground rounded-xl border border-border shadow-md p-6 sm:p-10 min-h-[500px]">
+                    <div id="userNoteEditor" contenteditable="true" oninput="saveUserNoteDraft()"
+                      data-placeholder="พิมพ์ประเด็นสำคัญ หรือสรุปเนื้อหาการประชุมที่นี่ (รองรับตัวหนา ตัวเอียง ขีดเส้นใต้ สี ไฮไลท์ ขึ้นหน้าใหม่ และแทรกรูปภาพ)..."
+                      class="w-full min-h-[420px] focus:outline-none leading-relaxed text-sm"></div>
+                    <textarea id="userNoteTextarea" class="hidden" oninput="saveUserNoteDraft()"></textarea>
+                  </div>
                 </div>
               </div>
 
