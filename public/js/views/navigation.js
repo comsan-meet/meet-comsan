@@ -429,6 +429,10 @@ function updateDesktopHeader() {
       primaryBtn.dataset.action = '';
     }
   }
+
+  if (typeof updateHeaderRoleSwitcherVisibility === 'function') {
+    updateHeaderRoleSwitcherVisibility();
+  }
 }
 
 function toggleSidebarCreateMenu(e) {
@@ -637,6 +641,8 @@ function updateHeaderRoleSwitcherVisibility() {
   if (!switcher) return;
 
   const isAdminAuth = Boolean(window.isAdminAuthenticated);
+  document.body.classList.toggle('has-role-switcher-mobile', isAdminAuth);
+
   if (isAdminAuth) {
     const wasHidden = switcher.classList.contains('hidden');
     switcher.classList.remove('hidden');
@@ -645,7 +651,7 @@ function updateHeaderRoleSwitcherVisibility() {
       titleBox.classList.add('hidden', 'md:block');
     }
     if (mobileSpacer) {
-      mobileSpacer.className = 'hidden md:!hidden w-10 sm:w-11 shrink-0 pointer-events-none';
+      mobileSpacer.className = 'w-10 sm:w-11 shrink-0 pointer-events-none md:!hidden';
       mobileSpacer.classList.remove('hidden');
       mobileSpacer.classList.add('block');
     }

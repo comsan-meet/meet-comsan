@@ -397,35 +397,83 @@ function loadUserNoteToEditor(noteContent) {
 }
 window.loadUserNoteToEditor = loadUserNoteToEditor;
 
+function updateNotePageGuides() {
+  const ed = document.getElementById('userNoteEditor');
+  const overlay = document.getElementById('noteEditorPageGuides');
+  const badge = document.getElementById('notePageCounterBadge');
+  if (!ed) return;
+
+  const contentHeight = Math.max(ed.scrollHeight, ed.clientHeight);
+  // Standard A4 printable height at ~720px width is ~960px
+  const pageHeight = 960;
+  const totalPages = Math.max(1, Math.ceil(contentHeight / pageHeight));
+
+  if (badge) {
+    badge.innerHTML = `<i data-lucide="file-text" class="w-3.5 h-3.5 inline-block text-primary"></i> <span>ความยาวเอกสาร: ประมาณ <strong>${totalPages}</strong> หน้า (A4)</span>`;
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+  }
+
+  if (!overlay) return;
+  overlay.innerHTML = '';
+
+  // Draw visual page boundary separators matching Word/Docs sheet view
+  for (let p = 1; p < totalPages; p++) {
+    const topPos = p * pageHeight;
+    const divider = document.createElement('div');
+    divider.className = 'note-page-boundary-guide';
+    divider.style.cssText = `
+      position: absolute;
+      top: ${topPos}px;
+      left: 0;
+      right: 0;
+      height: 32px;
+      background: rgba(148, 163, 184, 0.14);
+      border-top: 1px dashed rgba(148, 163, 184, 0.5);
+      border-bottom: 1px dashed rgba(148, 163, 184, 0.5);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      pointer-events: none;
+      user-select: none;
+      z-index: 10;
+    `;
+    divider.innerHTML = `
+      <span style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">─── สิ้นสุดหน้า ${p} ───</span>
+      <span style="font-size: 10.5px; font-weight: 600; padding: 2px 10px; border-radius: 9999px; background: #ffffff; color: #4338ca; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">A4 แผ่นที่ ${p} • ขึ้นหน้าใหม่แผ่นที่ ${p + 1}</span>
+      <span style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">─── เริ่มต้นหน้า ${p + 1} ───</span>
+    `;
+    overlay.appendChild(divider);
+  }
+}
+window.updateNotePageGuides = updateNotePageGuides;
+
 function applyNoteFontFamily(font) {
   const ed = document.getElementById('userNoteEditor');
   if (ed) {
     ed.style.fontFamily = font;
+    // Strip rogue inline fonts & <font> tags from all descendants so entire note inherits selected font
+    ed.querySelectorAll('*').forEach(el => {
+      el.style.fontFamily = '';
+      el.removeAttribute('face');
+    });
+    ed.querySelectorAll('font').forEach(f => {
+      const parent = f.parentNode;
+      if (parent) {
+        while (f.firstChild) parent.insertBefore(f.firstChild, f);
+        parent.removeChild(f);
+      }
+    });
   }
   try {
     localStorage.setItem('comsan_note_font', font);
   } catch (e) {}
-  document.execCommand('fontName', false, font);
   if (ed) ed.focus();
   saveUserNoteDraft();
+  updateNotePageGuides();
 }
 window.applyNoteFontFamily = applyNoteFontFamily;
-
-function insertNotePageBreak() {
-  const breakHtml = `
-    <div class="note-page-break-container" contenteditable="false">
-      <div class="note-page-break-badge">
-        <i data-lucide="scissors" class="w-3.5 h-3.5 inline mr-1 text-primary"></i> ขึ้นหน้าใหม่ (Page Break)
-      </div>
-    </div>
-    <p><br></p>
-  `;
-  insertHtmlInNoteEditor(breakHtml);
-  if (typeof lucide !== 'undefined' && lucide.createIcons) {
-    lucide.createIcons();
-  }
-}
-window.insertNotePageBreak = insertNotePageBreak;
 
 function getNoteDocMeta() {
   const state = window.appState || {};
@@ -534,7 +582,23 @@ function applyNoteHighlightColor(color) {
 }
 window.applyNoteHighlightColor = applyNoteHighlightColor;
 
+let savedNoteSelectionRange = null;
+
+function saveCurrentNoteSelection() {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    const ed = document.getElementById('userNoteEditor');
+    const range = sel.getRangeAt(0);
+    if (ed && ed.contains(range.commonAncestorContainer)) {
+      savedNoteSelectionRange = range.cloneRange();
+      return;
+    }
+  }
+  savedNoteSelectionRange = null;
+}
+
 function triggerNoteImageUpload() {
+  saveCurrentNoteSelection();
   const input = document.getElementById('userNoteImageInput');
   if (input) input.click();
 }
@@ -550,7 +614,7 @@ function handleNoteImageSelected(event) {
   const reader = new FileReader();
   reader.onload = function(e) {
     const dataUrl = e.target.result;
-    const imgHtml = `<div style="margin: 10px 0;"><img src="${dataUrl}" alt="รูปภาพประกอบ" style="max-width:100%; border-radius:10px; max-height:450px; display:inline-block;" /></div><p><br></p>`;
+    const imgHtml = `<div style="margin: 12px 0; text-align: center;"><img src="${dataUrl}" alt="รูปภาพประกอบ" style="max-width:100%; border-radius:10px; max-height:450px; display:inline-block;" /></div><p><br></p>`;
     insertHtmlInNoteEditor(imgHtml);
   };
   reader.readAsDataURL(file);
@@ -562,10 +626,19 @@ function insertHtmlInNoteEditor(html) {
   const ed = document.getElementById('userNoteEditor');
   if (!ed) return;
   ed.focus();
+
+  let targetRange = savedNoteSelectionRange;
   const sel = window.getSelection();
-  if (sel.getRangeAt && sel.rangeCount) {
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
+
+  if (!targetRange && sel && sel.rangeCount > 0) {
+    const currentRange = sel.getRangeAt(0);
+    if (ed.contains(currentRange.commonAncestorContainer)) {
+      targetRange = currentRange;
+    }
+  }
+
+  if (targetRange && ed.contains(targetRange.commonAncestorContainer)) {
+    targetRange.deleteContents();
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     const frag = document.createDocumentFragment();
@@ -573,23 +646,28 @@ function insertHtmlInNoteEditor(html) {
     while ((node = tempDiv.firstChild)) {
       lastNode = frag.appendChild(node);
     }
-    range.insertNode(frag);
-    if (lastNode) {
-      range = range.cloneRange();
-      range.setStartAfter(lastNode);
-      range.collapse(true);
+    targetRange.insertNode(frag);
+    if (lastNode && sel) {
+      const newRange = document.createRange();
+      newRange.setStartAfter(lastNode);
+      newRange.collapse(true);
       sel.removeAllRanges();
-      sel.addRange(range);
+      sel.addRange(newRange);
     }
   } else {
-    ed.innerHTML += html;
+    ed.insertAdjacentHTML('beforeend', html);
   }
+
+  savedNoteSelectionRange = null;
   saveUserNoteDraft();
+  if (typeof updateNotePageGuides === 'function') {
+    updateNotePageGuides();
+  }
 }
 window.insertHtmlInNoteEditor = insertHtmlInNoteEditor;
 
 function insertNoteKeyPoint() {
-  insertHtmlInNoteEditor('<p style="padding: 6px 12px; background: rgba(245, 158, 11, 0.12); border-left: 4px solid #f59e0b; border-radius: 4px; margin: 8px 0; font-weight: 600;">📌 ประเด็นสำคัญ: </p><p><br></p>');
+  insertHtmlInNoteEditor('<p class="note-keypoint-box" style="padding: 8px 14px; background: rgba(245, 158, 11, 0.12); border-left: 4px solid #f59e0b; border-radius: 4px; margin: 10px 0; font-weight: 600; color: #b45309;">ประเด็นสำคัญ: </p><p><br></p>');
 }
 window.insertNoteKeyPoint = insertNoteKeyPoint;
 
@@ -598,24 +676,54 @@ function insertNotePrefix(prefix) {
 }
 window.insertNotePrefix = insertNotePrefix;
 
-// Clipboard paste listener to allow pasting screenshots directly into note
+// Clipboard paste listener to handle images and sanitize web-pasted HTML
 document.addEventListener('paste', function(e) {
   const ed = document.getElementById('userNoteEditor');
   if (!ed || !ed.contains(document.activeElement)) return;
   const items = (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData))?.items;
   if (!items) return;
+
+  // 1. Check for pasted image/screenshot file
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     if (item.kind === 'file' && item.type.startsWith('image/')) {
       const blob = item.getAsFile();
       const reader = new FileReader();
       reader.onload = function(event) {
-        insertHtmlInNoteEditor(`<div style="margin: 10px 0;"><img src="${event.target.result}" alt="รูปภาพวางจากคลิปบอร์ด" style="max-width:100%; border-radius:10px; max-height:450px; display:inline-block;" /></div><p><br></p>`);
+        insertHtmlInNoteEditor(`<div style="margin: 12px 0; text-align: center;"><img src="${event.target.result}" alt="รูปภาพวางจากคลิปบอร์ด" style="max-width:100%; border-radius:10px; max-height:450px; display:inline-block;" /></div><p><br></p>`);
       };
       reader.readAsDataURL(blob);
       e.preventDefault();
-      break;
+      return;
     }
+  }
+
+  // 2. Sanitize rich HTML pasted from websites/Word so rogue fonts and negative positions don't corrupt editor
+  const pastedHtml = (e.clipboardData || window.clipboardData)?.getData('text/html');
+  if (pastedHtml) {
+    e.preventDefault();
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = pastedHtml;
+    tempDiv.querySelectorAll('script, style, iframe').forEach(el => el.remove());
+    tempDiv.querySelectorAll('font').forEach(f => {
+      const p = f.parentNode;
+      if (p) {
+        while (f.firstChild) p.insertBefore(f.firstChild, f);
+        p.removeChild(f);
+      }
+    });
+    tempDiv.querySelectorAll('*').forEach(el => {
+      el.style.fontFamily = '';
+      el.style.position = '';
+      el.style.top = '';
+      el.style.bottom = '';
+      el.style.left = '';
+      el.style.right = '';
+      el.style.float = '';
+      el.style.lineHeight = '1.7';
+      el.removeAttribute('face');
+    });
+    insertHtmlInNoteEditor(tempDiv.innerHTML);
   }
 });
 
@@ -634,6 +742,9 @@ function saveUserNoteDraft() {
   if (statusEl) {
     const nowStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
     statusEl.textContent = `บันทึกอัตโนมัติแล้ว • ${nowStr} น.`;
+  }
+  if (typeof updateNotePageGuides === 'function') {
+    updateNotePageGuides();
   }
   clearTimeout(window.noteSyncTimeout);
   window.noteSyncTimeout = setTimeout(() => {

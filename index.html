@@ -887,6 +887,33 @@ button.gradient-primary.rounded-full {
   color: inherit;
 }
 
+/* Mobile Role Switcher Layout Rules */
+@media (max-width: 767px) {
+  body.has-role-switcher-mobile #desktopMainHeaderTitleBox {
+    display: none !important;
+  }
+  body.has-role-switcher-mobile #userHeaderSettingsBtn {
+    display: none !important;
+  }
+  body.has-role-switcher-mobile #desktopMainHeaderMobileLeftSpacer {
+    display: block !important;
+  }
+  body.has-role-switcher-mobile #desktopMainHeaderCenterBox {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    justify-content: center !important;
+  }
+}
+
+/* User Note Editor Page Sheet & Boundary Guide Styles */
+#userNoteEditorContainer {
+  position: relative;
+  background-color: var(--card, #ffffff);
+}
+.note-page-boundary-guide {
+  transition: all 0.15s ease;
+}
+
 /* Modals & Dialogs matching Choice Dialog */
 .modal-overlay {
   background-color: rgba(0, 0, 0, 0.65);
@@ -5540,13 +5567,6 @@ label svg, label i {
 
                     <div class="h-4 w-px bg-border/80 mx-0.5"></div>
 
-                    <!-- ปุ่มขึ้นหน้าใหม่ (Page Break) -->
-                    <button type="button" onclick="insertNotePageBreak()" title="แทรกตัวแบ่งหน้า (ขึ้นหน้าใหม่)"
-                      class="px-2 py-1 rounded-lg hover:bg-card hover:text-foreground text-[11px] font-semibold text-foreground transition cursor-pointer border border-border flex items-center gap-1">
-                      <i data-lucide="scissors" class="w-3.5 h-3.5 text-primary"></i>
-                      <span>ขึ้นหน้าใหม่</span>
-                    </button>
-
                     <!-- ปุ่มแก้ไขหัวเอกสาร (เขียนที่ / วันที่) -->
                     <button type="button" onclick="openNoteMetaModal()" title="แก้ไขข้อมูลหัวเอกสาร (เขียนที่ / วันที่)"
                       class="px-2 py-1 rounded-lg hover:bg-card hover:text-foreground text-[11px] font-semibold text-primary transition cursor-pointer border border-border flex items-center gap-1.5">
@@ -5555,8 +5575,9 @@ label svg, label i {
                     </button>
 
                     <button type="button" onclick="insertNoteKeyPoint()" title="เน้นประเด็นสำคัญ"
-                      class="px-2 py-1 rounded-lg hover:bg-card hover:text-foreground text-[11px] font-bold text-amber-600 dark:text-amber-400 transition cursor-pointer border border-transparent hover:border-border flex items-center gap-1">
-                      <span>📌 ประเด็นสำคัญ</span>
+                      class="px-2 py-1 rounded-lg hover:bg-card hover:text-foreground text-[11px] font-bold text-amber-600 dark:text-amber-400 transition cursor-pointer border border-transparent hover:border-border flex items-center gap-1.5">
+                      <i data-lucide="bookmark" class="w-3.5 h-3.5 text-amber-500"></i>
+                      <span>ประเด็นสำคัญ</span>
                     </button>
                   </div>
 
@@ -5570,10 +5591,24 @@ label svg, label i {
                 </div>
 
                 <!-- กล่องข้อความ Rich-Text Editor สไตล์เอกสารกระดาษ (Document Sheets) -->
-                <div class="p-3 sm:p-6 bg-muted/20 flex justify-center">
-                  <div class="w-full max-w-[760px] bg-card text-card-foreground rounded-xl border border-border shadow-md p-6 sm:p-10 min-h-[500px]">
+                <div class="p-3 sm:p-6 bg-muted/20 flex flex-col items-center">
+                  <!-- แถบแสดงจำนวนหน้า A4 อัตโนมัติ (Live Document Length Indicator) -->
+                  <div class="w-full max-w-[760px] flex items-center justify-between px-1 mb-2">
+                    <span id="notePageCounterBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5 shadow-2xs">
+                      <i data-lucide="file-text" class="w-3.5 h-3.5 inline-block text-primary"></i>
+                      <span>ความยาวเอกสาร: ประมาณ <strong>1</strong> หน้า (A4)</span>
+                    </span>
+                    <span class="text-[11px] text-muted-foreground hidden sm:inline">
+                      แสดงเส้นแบ่งหน้าอัตโนมัติตามขนาดจริง A4
+                    </span>
+                  </div>
+
+                  <div id="userNoteEditorContainer" class="relative w-full max-w-[760px] bg-card text-card-foreground rounded-xl border border-border shadow-md p-6 sm:p-10 min-h-[500px]">
+                    <!-- Overlay เส้นบอกระยะสิ้นสุดหน้า/ขึ้นหน้าใหม่อัตโนมัติ (Visual A4 Page Boundary Guides) -->
+                    <div id="noteEditorPageGuides" class="pointer-events-none absolute inset-x-0 top-0 bottom-0 select-none overflow-hidden z-10"></div>
+
                     <div id="userNoteEditor" contenteditable="true" oninput="saveUserNoteDraft()"
-                      data-placeholder="พิมพ์ประเด็นสำคัญ หรือสรุปเนื้อหาการประชุมที่นี่ (รองรับตัวหนา ตัวเอียง ขีดเส้นใต้ สี ไฮไลท์ ขึ้นหน้าใหม่ และแทรกรูปภาพ)..."
+                      data-placeholder="พิมพ์ประเด็นสำคัญ หรือสรุปเนื้อหาการประชุมที่นี่ (รองรับตัวหนา ตัวเอียง ขีดเส้นใต้ สี ไฮไลท์ และแทรกรูปภาพ)..."
                       class="w-full min-h-[420px] focus:outline-none leading-relaxed text-sm"></div>
                     <textarea id="userNoteTextarea" class="hidden" oninput="saveUserNoteDraft()"></textarea>
                   </div>
