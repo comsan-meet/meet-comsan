@@ -254,6 +254,12 @@ function updateMeetingTimersAndBanners() {
     }
   }
 
+  const adminNavSettingsLabel = document.getElementById('adminNavSettingsLabel');
+  if (adminNavSettingsLabel) {
+    adminNavSettingsLabel.textContent = isActivity ? 'ตั้งค่ากิจกรรม' : 'ตั้งค่าการประชุม';
+  }
+
+
   // Hero Card UI elements (Unified for Online & On-site)
   const onlineContainer = document.getElementById('userBannerOnlineContainer');
   const onlineBtn = document.getElementById('userBannerOnlineBtn');

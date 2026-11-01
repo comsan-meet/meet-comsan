@@ -115,6 +115,7 @@ let currentOnlinePlatform = 'GOOGLE_MEET';
 
 function setMeetingFormat(format) {
   currentMeetingFormat = (format === 'ONLINE') ? 'ONLINE' : ((format === 'ACTIVITY') ? 'ACTIVITY' : 'ONSITE');
+  const isAct = currentMeetingFormat === 'ACTIVITY';
   const btnOnsite = document.getElementById('btnFormatOnsite');
   const btnOnline = document.getElementById('btnFormatOnline');
   const btnActivity = document.getElementById('btnFormatActivity');
@@ -128,6 +129,69 @@ function setMeetingFormat(format) {
   const locationInput = document.getElementById('cfgMeetingLocation');
   const locationDetailLabel = document.getElementById('cfgMeetingLocationDetailLabel');
   const locationDetailInput = document.getElementById('cfgMeetingLocationDetail');
+
+  // Dynamic labels for กิจกรรม vs ประชุม
+  const secTitleText = document.getElementById('cfgSettingsSectionTitleText');
+  const secSub = document.getElementById('cfgSettingsSectionSub');
+  const formatLabel = document.getElementById('cfgFormatSectionLabel');
+  const formatSub = document.getElementById('cfgFormatSectionSub');
+  const startDateLabel = document.getElementById('cfgMeetingStartDateLabel');
+  const endDateLabel = document.getElementById('cfgMeetingEndDateLabel');
+  const checkinSummaryTitle = document.getElementById('cfgCheckinSummaryTitle');
+  const startTimeLabel = document.getElementById('cfgStartTimeLabel');
+  const endTimeLabel = document.getElementById('cfgEndTimeLabel');
+  const navSettingsLabel = document.getElementById('adminNavSettingsLabel');
+
+  const isStarted = window.appState?.meeting?.isStarted;
+  const isEnded = window.appState?.meeting?.isEnded;
+  const adminSetupBadge = document.getElementById('adminSetupStatusBadge');
+  const adminMeetingToggleLabel = document.getElementById('adminMeetingToggleLabel');
+
+  if (isAct) {
+    if (secTitleText) secTitleText.textContent = 'ตั้งค่าข้อมูลกิจกรรม';
+    if (secSub) secSub.textContent = 'กำหนดชื่อ สถานที่ วันที่ และกรอบเวลาของกิจกรรม';
+    if (formatLabel) formatLabel.innerHTML = 'รูปแบบกิจกรรม <span class="text-rose-500">*</span>';
+    if (formatSub) formatSub.textContent = 'เลือกวิธีการจัดกิจกรรมและการเช็คชื่อของสมาชิก';
+    if (startDateLabel) startDateLabel.innerHTML = 'วันที่เริ่มกิจกรรม <span class="text-rose-500">*</span>';
+    if (endDateLabel) endDateLabel.innerHTML = 'วันที่สิ้นสุดกิจกรรม <span class="text-[11px] text-muted-foreground font-normal">(กรณีกิจกรรมหลายวัน)</span>';
+    if (checkinSummaryTitle) checkinSummaryTitle.textContent = 'สถานะการเช็คชื่อเมื่อเปิดกิจกรรม';
+    if (startTimeLabel) startTimeLabel.textContent = 'เวลาเริ่มกิจกรรม';
+    if (endTimeLabel) endTimeLabel.textContent = 'เวลาเลิกกิจกรรม (End Time)';
+    if (navSettingsLabel) navSettingsLabel.textContent = 'ตั้งค่ากิจกรรม';
+
+    if (adminSetupBadge) {
+      if (!isStarted) adminSetupBadge.textContent = 'ยังไม่เริ่มกิจกรรม';
+      else if (isEnded) adminSetupBadge.textContent = 'จบกิจกรรมแล้ว';
+      else adminSetupBadge.textContent = 'กำลังดำเนินกิจกรรม';
+    }
+    if (adminMeetingToggleLabel) {
+      if (!isStarted) adminMeetingToggleLabel.textContent = 'เปิดกิจกรรม';
+      else if (isEnded) adminMeetingToggleLabel.textContent = 'จบกิจกรรมแล้ว';
+      else adminMeetingToggleLabel.textContent = 'กำลังจัดกิจกรรม (เปิดอยู่)';
+    }
+  } else {
+    if (secTitleText) secTitleText.textContent = 'ตั้งค่าข้อมูลการประชุม';
+    if (secSub) secSub.textContent = 'กำหนดหัวข้อ สถานที่ วันที่ และกรอบเวลาของการประชุม';
+    if (formatLabel) formatLabel.innerHTML = 'รูปแบบการประชุม <span class="text-rose-500">*</span>';
+    if (formatSub) formatSub.textContent = 'เลือกวิธีการจัดประชุมและการเช็คชื่อของสมาชิก';
+    if (startDateLabel) startDateLabel.innerHTML = 'วันที่เริ่มประชุม <span class="text-rose-500">*</span>';
+    if (endDateLabel) endDateLabel.innerHTML = 'วันที่สิ้นสุดประชุม <span class="text-[11px] text-muted-foreground font-normal">(กรณีประชุมหลายวัน)</span>';
+    if (checkinSummaryTitle) checkinSummaryTitle.textContent = 'สถานะการเช็คชื่อเมื่อเปิดประชุม';
+    if (startTimeLabel) startTimeLabel.textContent = 'เวลาเริ่มประชุม';
+    if (endTimeLabel) endTimeLabel.textContent = 'เวลาเลิกประชุม (End Time)';
+    if (navSettingsLabel) navSettingsLabel.textContent = 'ตั้งค่าการประชุม';
+
+    if (adminSetupBadge) {
+      if (!isStarted) adminSetupBadge.textContent = 'ยังไม่เริ่มประชุม';
+      else if (isEnded) adminSetupBadge.textContent = 'จบการประชุมแล้ว';
+      else adminSetupBadge.textContent = 'กำลังดำเนินการประชุม';
+    }
+    if (adminMeetingToggleLabel) {
+      if (!isStarted) adminMeetingToggleLabel.textContent = 'เปิดการประชุม';
+      else if (isEnded) adminMeetingToggleLabel.textContent = 'จบการประชุมแล้ว';
+      else adminMeetingToggleLabel.textContent = 'กำลังประชุม (เปิดอยู่)';
+    }
+  }
 
   const inactiveBtn = 'py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition bg-card border-border text-muted-foreground hover:text-foreground cursor-pointer';
   const activeBtn = 'py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-primary text-white shadow-xs border-primary cursor-pointer';
@@ -294,10 +358,13 @@ function startOfficialMeeting(e) {
 }
 
 async function resetMeetingToNotStarted() {
+  const isAct = currentMeetingFormat === 'ACTIVITY' || window.appState?.meeting?.format === 'ACTIVITY';
   const confirmed = typeof window.showConfirmDialog === 'function'
     ? await window.showConfirmDialog({
-        title: 'ยืนยันการรีเซ็ตสถานะการประชุม',
-        message: 'ต้องการตั้งค่าสถานะกลับเป็น "การประชุมยังไม่เริ่ม" หรือไม่? ระบบจะรีเซ็ตสถานะการเช็คชื่อของสมาชิกทั้งหมด',
+        title: isAct ? 'ยืนยันการรีเซ็ตสถานะกิจกรรม' : 'ยืนยันการรีเซ็ตสถานะการประชุม',
+        message: isAct
+          ? 'ต้องการตั้งค่าสถานะกลับเป็น "กิจกรรมยังไม่เริ่ม" หรือไม่? ระบบจะรีเซ็ตสถานะการเช็คชื่อของสมาชิกทั้งหมด'
+          : 'ต้องการตั้งค่าสถานะกลับเป็น "การประชุมยังไม่เริ่ม" หรือไม่? ระบบจะรีเซ็ตสถานะการเช็คชื่อของสมาชิกทั้งหมด',
         confirmText: 'ยืนยันรีเซ็ต',
         cancelText: 'ยกเลิก',
         isDanger: true,
@@ -318,7 +385,7 @@ async function resetMeetingToNotStarted() {
   const toggleSwitch = document.getElementById('adminMeetingToggleSwitch');
   if (toggleSwitch) toggleSwitch.checked = false;
   if (typeof window.renderAll === 'function') window.renderAll();
-  showToast('รีเซ็ตสถานะการประชุมเรียบร้อยแล้ว', 'info');
+  showToast(isAct ? 'รีเซ็ตสถานะกิจกรรมเรียบร้อยแล้ว' : 'รีเซ็ตสถานะการประชุมเรียบร้อยแล้ว', 'info');
 }
 
 async function endMeetingNow(skipConfirm = false) {
@@ -1867,7 +1934,260 @@ try {
   });
 }
 
+
+// =========================================================================
+// SELECT MEETING/ACTIVITY FROM CLUB CALENDAR CONTROLLER
+// =========================================================================
+window.selectCalendarEventFilter = 'ALL';
+
+function openSelectFromCalendarModal() {
+  const modal = document.getElementById('selectFromCalendarModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  const searchInput = document.getElementById('calendarEventSearchInput');
+  if (searchInput) searchInput.value = '';
+  window.selectCalendarEventFilter = 'ALL';
+  updateSelectCalendarFilterTabs();
+  renderSelectableCalendarEvents();
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    setTimeout(() => window.lucide.createIcons(), 50);
+  }
+}
+
+function closeSelectFromCalendarModal() {
+  const modal = document.getElementById('selectFromCalendarModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function setSelectCalendarFilter(filter) {
+  window.selectCalendarEventFilter = filter || 'ALL';
+  updateSelectCalendarFilterTabs();
+  renderSelectableCalendarEvents();
+}
+
+function updateSelectCalendarFilterTabs() {
+  const tabs = ['ALL', 'MEETING', 'EVENT', 'PROJECT'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`calPickTab_${t}`);
+    if (!btn) return;
+    const isActive = window.selectCalendarEventFilter === t;
+    btn.className = isActive
+      ? 'cal-pick-tab px-3 py-1 rounded-lg font-bold bg-primary text-primary-foreground shadow-2xs transition cursor-pointer'
+      : 'cal-pick-tab px-3 py-1 rounded-lg font-medium bg-muted/60 text-muted-foreground hover:text-foreground transition cursor-pointer';
+  });
+}
+
+function renderSelectableCalendarEvents() {
+  const container = document.getElementById('calendarEventsSelectList');
+  const countLabel = document.getElementById('calendarEventsCountLabel');
+  if (!container) return;
+
+  const events = (typeof window.getAllCalendarEventsForMain === 'function')
+    ? window.getAllCalendarEventsForMain()
+    : ((window.appState && Array.isArray(window.appState.calendarEvents)) ? window.appState.calendarEvents : []);
+
+  const searchInput = document.getElementById('calendarEventSearchInput');
+  const query = (searchInput?.value || '').trim().toLowerCase();
+  const filter = window.selectCalendarEventFilter || 'ALL';
+
+  let filtered = events.filter(evt => {
+    if (!evt || !evt.title) return false;
+    
+    // Filter by tab
+    if (filter === 'MEETING' && evt.category !== 'MEETING') return false;
+    if (filter === 'EVENT' && evt.category !== 'EVENT') return false;
+    if (filter === 'PROJECT' && !evt.isProjectEvent) return false;
+
+    // Filter by search query
+    if (query) {
+      const matchTitle = (evt.title || '').toLowerCase().includes(query);
+      const matchDesc = (evt.description || '').toLowerCase().includes(query);
+      const matchLoc = (evt.location || '').toLowerCase().includes(query);
+      const matchPrj = (evt.projectTitle || '').toLowerCase().includes(query);
+      if (!matchTitle && !matchDesc && !matchLoc && !matchPrj) return false;
+    }
+    return true;
+  });
+
+  if (countLabel) countLabel.textContent = `พบ ${filtered.length} รายการ`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="p-8 text-center text-xs text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border space-y-2">
+        <i data-lucide="calendar-x" class="w-8 h-8 text-muted-foreground/40 mx-auto block"></i>
+        <p class="font-semibold text-foreground">ไม่พบรายการในปฏิทินที่ตรงกับเงื่อนไข</p>
+        <p class="text-[11px] opacity-75">คุณสามารถเพิ่มกิจกรรมหรือการประชุมใหม่ได้ที่เมนูปฏิทินงาน</p>
+      </div>
+    `;
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+    return;
+  }
+
+  container.innerHTML = filtered.map(evt => {
+    const isMeeting = evt.category === 'MEETING';
+    const isEvent = evt.category === 'EVENT';
+    const catLabel = isEvent ? 'กิจกรรมชมรม' : (isMeeting ? 'การประชุม' : (evt.category || 'กำหนดการ'));
+    const catBadgeClass = isEvent
+      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+      : (isMeeting ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30' : 'bg-primary/10 text-primary border border-primary/20');
+    const catIcon = isEvent ? 'sparkles' : (isMeeting ? 'users' : 'calendar');
+
+    const dateFormatted = (evt.endDate && evt.endDate !== evt.startDate)
+      ? `${evt.startDate} ถึง ${evt.endDate}`
+      : (evt.startDate || '-');
+    const timeFormatted = (evt.startTime && evt.startTime !== '00:00')
+      ? `${evt.startTime} - ${evt.endTime || '19:00'} น.`
+      : 'ตลอดทั้งวัน';
+
+    const safeId = String(evt.id).replace(/'/g, "\\'");
+
+    return `
+      <div class="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/50 transition shadow-2xs space-y-2 group">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
+          <div class="min-w-0 space-y-1.5 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${catBadgeClass}">
+                <i data-lucide="${catIcon}" class="w-3 h-3"></i> ${catLabel}
+              </span>
+              ${evt.isProjectEvent ? `
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">
+                  <i data-lucide="folder-kanban" class="w-2.5 h-2.5"></i> ${evt.projectTitle || 'โครงการ'}
+                </span>
+              ` : ''}
+              <h4 class="font-bold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors">${evt.title}</h4>
+            </div>
+
+            <div class="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
+              <span class="inline-flex items-center gap-1">
+                <i data-lucide="calendar" class="w-3 h-3 text-muted-foreground"></i> ${dateFormatted}
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3 text-muted-foreground"></i> ${timeFormatted}
+              </span>
+              ${evt.location ? `
+                <span class="inline-flex items-center gap-1 text-foreground/80 font-medium truncate max-w-[260px]">
+                  <i data-lucide="map-pin" class="w-3 h-3 text-rose-500 shrink-0"></i> ${evt.location}
+                </span>
+              ` : ''}
+            </div>
+
+            ${evt.description && evt.description !== evt.title ? `
+              <p class="text-xs text-muted-foreground line-clamp-2 bg-muted/30 p-2 rounded-xl border border-border/50">
+                ${evt.description}
+              </p>
+            ` : ''}
+          </div>
+
+          <button type="button" onclick="applyCalendarEventToMeetingSetup('${safeId}')"
+            class="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-95 cursor-pointer self-end sm:self-center">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>เลือกใช้งาน</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+function applyCalendarEventToMeetingSetup(eventId) {
+  const events = (typeof window.getAllCalendarEventsForMain === 'function')
+    ? window.getAllCalendarEventsForMain()
+    : ((window.appState && Array.isArray(window.appState.calendarEvents)) ? window.appState.calendarEvents : []);
+
+  const evt = events.find(e => e.id === eventId);
+  if (!evt) {
+    if (typeof showToast === 'function') showToast('ไม่พบข้อมูลรายการในปฏิทิน', 'error');
+    return;
+  }
+
+  // 1. Title
+  const titleInput = document.getElementById('cfgMeetingTitle');
+  if (titleInput) titleInput.value = evt.title || '';
+
+  // 2. Dates
+  const dateInput = document.getElementById('cfgMeetingDate');
+  const endDateInput = document.getElementById('cfgMeetingEndDate');
+  if (dateInput && evt.startDate) dateInput.value = evt.startDate;
+  if (endDateInput) endDateInput.value = evt.endDate || evt.startDate || dateInput?.value || '';
+
+  // 3. Times
+  const startInput = document.getElementById('cfgStartTime');
+  const endInput = document.getElementById('cfgEndTime');
+  const lateInput = document.getElementById('cfgLateTime');
+  if (startInput && evt.startTime && evt.startTime !== '00:00') {
+    startInput.value = evt.startTime;
+    // Calculate 15 mins late cutoff
+    const parts = evt.startTime.split(':').map(Number);
+    if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1]) && lateInput) {
+      const total = parts[0] * 60 + parts[1] + 15;
+      const lh = String(Math.floor(total / 60) % 24).padStart(2, '0');
+      const lm = String(total % 60).padStart(2, '0');
+      lateInput.value = `${lh}:${lm}`;
+    }
+  }
+  if (endInput && evt.endTime && evt.endTime !== '00:00') {
+    endInput.value = evt.endTime;
+  }
+
+  // 4. Determine format & locations
+  const isEventCat = evt.category === 'EVENT';
+  const hasActivityWord = (evt.title || '').toLowerCase().includes('กิจกรรม') || (evt.title || '').toLowerCase().includes('activity');
+  const isOnlineHint = (evt.title || '').toLowerCase().includes('online') ||
+    (evt.title || '').includes('ออนไลน์') ||
+    (evt.location && (evt.location.startsWith('http') || evt.location.toLowerCase().includes('meet.google') || evt.location.toLowerCase().includes('zoom')));
+
+  if (isEventCat || hasActivityWord) {
+    setMeetingFormat('ACTIVITY');
+  } else if (isOnlineHint) {
+    setMeetingFormat('ONLINE');
+  } else if (currentMeetingFormat !== 'ACTIVITY') {
+    setMeetingFormat('ONSITE');
+  }
+
+  // 5. Populate location inputs
+  const locInput = document.getElementById('cfgMeetingLocation');
+  const locDetailInput = document.getElementById('cfgMeetingLocationDetail');
+  const onlineUrlInput = document.getElementById('cfgOnlineMeetingUrl');
+  const onlineDetailInput = document.getElementById('cfgOnlineMeetingDetail');
+
+  if (evt.location) {
+    if (evt.location.startsWith('http')) {
+      if (onlineUrlInput) onlineUrlInput.value = evt.location;
+      if (onlineDetailInput) onlineDetailInput.value = evt.description || '';
+    } else {
+      if (locInput) locInput.value = evt.location;
+      if (locDetailInput) locDetailInput.value = (evt.description && evt.description !== evt.title) ? evt.description : evt.location;
+    }
+  } else if (evt.description) {
+    if (locDetailInput && !locDetailInput.value) locDetailInput.value = evt.description;
+    if (onlineDetailInput && !onlineDetailInput.value) onlineDetailInput.value = evt.description;
+  }
+
+  closeSelectFromCalendarModal();
+
+  if (typeof showToast === 'function') {
+    showToast(`ดึงข้อมูล "${evt.title}" จากปฏิทินชมรมเรียบร้อยแล้ว`, 'success');
+  }
+}
+
 // Window attachments
+window.openSelectFromCalendarModal = openSelectFromCalendarModal;
+window.closeSelectFromCalendarModal = closeSelectFromCalendarModal;
+window.setSelectCalendarFilter = setSelectCalendarFilter;
+window.renderSelectableCalendarEvents = renderSelectableCalendarEvents;
+window.applyCalendarEventToMeetingSetup = applyCalendarEventToMeetingSetup;
 window.setMeetingFormat = setMeetingFormat;
 window.selectOnlinePlatform = selectOnlinePlatform;
 window.renderAdminOnlineMeetingQr = renderAdminOnlineMeetingQr;

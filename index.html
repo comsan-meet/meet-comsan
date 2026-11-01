@@ -4843,7 +4843,7 @@ label svg, label i {
           </a>
           <a onclick="switchAdminTab('SETTINGS')" id="aNav_SETTINGS" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="sliders" class="h-4 w-4 shrink-0 transition-colors"></i>
-            <span class="truncate">ตั้งค่าการประชุม</span>
+            <span id="adminNavSettingsLabel" class="truncate">ตั้งค่าการประชุม</span>
           </a>
           <a onclick="switchAdminTab('CHECKIN')" id="aNav_CHECKIN" class="sidebar-nav-btn flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
             <i data-lucide="qr-code" class="h-4 w-4 shrink-0 transition-colors"></i>
@@ -6171,10 +6171,10 @@ label svg, label i {
           <div class="max-w-4xl bg-card text-card-foreground border border-border rounded-2xl p-5 sm:p-6 shadow-sm space-y-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border gap-3">
               <div>
-                <h2 class="font-bold text-lg sm:text-xl flex items-center gap-2.5 text-primary">
-                  <i data-lucide="sliders" class=""></i> ตั้งค่าข้อมูลการประชุม
+                <h2 id="cfgSettingsSectionTitle" class="font-bold text-lg sm:text-xl flex items-center gap-2.5 text-primary">
+                  <i data-lucide="sliders" class=""></i> <span id="cfgSettingsSectionTitleText">ตั้งค่าข้อมูลการประชุม</span>
                 </h2>
-                <p class="text-xs text-muted-foreground mt-0.5">กำหนดหัวข้อ สถานที่ วันที่ และกรอบเวลาของการประชุม</p>
+                <p id="cfgSettingsSectionSub" class="text-xs text-muted-foreground mt-0.5">กำหนดหัวข้อ สถานที่ วันที่ และกรอบเวลาของการประชุม</p>
               </div>
               <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
                 <span id="adminSetupStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-200 dark:bg-slate-800 text-muted-foreground">ยังไม่เริ่มประชุม</span>
@@ -6198,8 +6198,8 @@ label svg, label i {
               <div class="p-3.5 sm:p-4 rounded-2xl bg-muted/40 border border-border space-y-3">
                 <div class="flex items-center justify-between">
                   <div>
-                    <label class="block text-xs font-bold text-foreground">รูปแบบการประชุม <span class="text-rose-500">*</span></label>
-                    <p class="text-[11px] text-muted-foreground">เลือกวิธีการจัดประชุมและการเช็คชื่อของสมาชิก</p>
+                    <label id="cfgFormatSectionLabel" class="block text-xs font-bold text-foreground">รูปแบบการประชุม <span class="text-rose-500">*</span></label>
+                    <p id="cfgFormatSectionSub" class="text-[11px] text-muted-foreground">เลือกวิธีการจัดประชุมและการเช็คชื่อของสมาชิก</p>
                   </div>
                   <span id="cfgCurrentFormatBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
                     ในสถานที่ (On-site)
@@ -6225,7 +6225,13 @@ label svg, label i {
               </div>
 
               <div>
-                <label id="cfgMeetingTitleLabel" class="block text-xs font-semibold text-muted-foreground mb-1.5">หัวข้อการประชุม / ชื่อกิจกรรม <span class="text-rose-500">*</span></label>
+                <div class="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                  <label id="cfgMeetingTitleLabel" class="block text-xs font-semibold text-muted-foreground">หัวข้อการประชุม / ชื่อกิจกรรม <span class="text-rose-500">*</span></label>
+                  <button type="button" onclick="openSelectFromCalendarModal()" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 transition cursor-pointer active:scale-95 shadow-2xs">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                    <span>เลือกจากปฏิทินชมรม</span>
+                  </button>
+                </div>
                 <input type="text" id="cfgMeetingTitle" placeholder="เช่น การประชุมชมรมคมสัน ครั้งที่ 1/2569"
                   class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-input text-sm text-foreground focus:outline-none focus:border-indigo-500 transition" />
               </div>
@@ -6314,19 +6320,19 @@ label svg, label i {
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-muted-foreground mb-1.5">วันที่เริ่มประชุม <span class="text-rose-500">*</span></label>
+                  <label id="cfgMeetingStartDateLabel" class="block text-xs font-semibold text-muted-foreground mb-1.5">วันที่เริ่มประชุม <span class="text-rose-500">*</span></label>
                   <input type="date" id="cfgMeetingDate"
                     class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-input text-sm font-bold text-foreground" />
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-muted-foreground mb-1.5">วันที่สิ้นสุดประชุม <span class="text-[11px] text-muted-foreground font-normal">(กรณีประชุมหลายวัน)</span></label>
+                  <label id="cfgMeetingEndDateLabel" class="block text-xs font-semibold text-muted-foreground mb-1.5">วันที่สิ้นสุดประชุม <span class="text-[11px] text-muted-foreground font-normal">(กรณีประชุมหลายวัน)</span></label>
                   <input type="date" id="cfgMeetingEndDate"
                     class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-input text-sm font-bold text-foreground" />
                 </div>
               </div>
 
               <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-border">
-                <span class="block text-xs font-semibold text-muted-foreground mb-0.5">สถานะการเช็คชื่อเมื่อเปิดประชุม</span>
+                <span id="cfgCheckinSummaryTitle" class="block text-xs font-semibold text-muted-foreground mb-0.5">สถานะการเช็คชื่อเมื่อเปิดประชุม</span>
                 <p id="cfgCheckinSummaryNote" class="text-xs text-muted-foreground">
                   On-site: ผู้ดูแลระบบสแกน QR Code ประจำตัวสมาชิก
                 </p>
@@ -6334,15 +6340,15 @@ label svg, label i {
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                 <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-border">
-                  <label class="block text-xs font-semibold text-slate-500 mb-1">เวลาเริ่มประชุม</label>
+                  <label id="cfgStartTimeLabel" class="block text-xs font-semibold text-slate-500 mb-1">เวลาเริ่มประชุม</label>
                   <input type="time" id="cfgStartTime" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-input text-sm font-bold text-foreground" />
                 </div>
                 <div class="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/30">
-                  <label class="block text-xs font-semibold text-amber-500 mb-1">เวลาตัดสาย (Late Cutoff)</label>
+                  <label id="cfgLateTimeLabel" class="block text-xs font-semibold text-amber-500 mb-1">เวลาตัดสาย (Late Cutoff)</label>
                   <input type="time" id="cfgLateTime" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-amber-500/40 text-sm font-bold text-foreground" />
                 </div>
                 <div class="p-3.5 rounded-2xl bg-rose-500/5 border border-rose-500/30">
-                  <label class="block text-xs font-semibold text-rose-500 mb-1">เวลาเลิกประชุม (End Time)</label>
+                  <label id="cfgEndTimeLabel" class="block text-xs font-semibold text-rose-500 mb-1">เวลาเลิกประชุม (End Time)</label>
                   <input type="time" id="cfgEndTime" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-rose-500/40 text-sm font-bold text-foreground" />
                 </div>
               </div>
@@ -7168,6 +7174,58 @@ label svg, label i {
   </div>
 
   <!-- ========================================================= -->
+  <!-- POP-UP MODAL: SELECT EVENT FROM CLUB CALENDAR             -->
+  <!-- ========================================================= -->
+  <div id="selectFromCalendarModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-[220] p-3 sm:p-4 select-none animate-fadeIn" onclick="if(event.target === this) closeSelectFromCalendarModal()">
+    <div class="bg-card border border-border rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl text-card-foreground space-y-4 max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-border/80">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-foreground">เลือกจากปฏิทินชมรม</h3>
+            <p class="text-xs text-muted-foreground mt-0.5">เลือกกำหนดการประชุมหรือกิจกรรมเพื่อนำข้อมูลมาใส่ในแบบฟอร์ม</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeSelectFromCalendarModal()" class="w-8 h-8 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Search & Filter bar -->
+      <div class="space-y-2">
+        <div class="relative flex items-center">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 text-muted-foreground pointer-events-none"></i>
+          <input type="text" id="calendarEventSearchInput" oninput="renderSelectableCalendarEvents()" placeholder="ค้นหากิจกรรม, การประชุม, สถานที่ หรือโครงการ..."
+            class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-input text-xs sm:text-sm text-foreground focus:outline-none focus:border-primary transition" />
+        </div>
+        <!-- Filter pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          <button type="button" onclick="setSelectCalendarFilter('ALL')" id="calPickTab_ALL" class="cal-pick-tab px-3 py-1 rounded-lg font-bold bg-primary text-primary-foreground shadow-2xs transition cursor-pointer">ทั้งหมด</button>
+          <button type="button" onclick="setSelectCalendarFilter('MEETING')" id="calPickTab_MEETING" class="cal-pick-tab px-3 py-1 rounded-lg font-medium bg-muted/60 text-muted-foreground hover:text-foreground transition cursor-pointer">การประชุม</button>
+          <button type="button" onclick="setSelectCalendarFilter('EVENT')" id="calPickTab_EVENT" class="cal-pick-tab px-3 py-1 rounded-lg font-medium bg-muted/60 text-muted-foreground hover:text-foreground transition cursor-pointer">กิจกรรมชมรม</button>
+          <button type="button" onclick="setSelectCalendarFilter('PROJECT')" id="calPickTab_PROJECT" class="cal-pick-tab px-3 py-1 rounded-lg font-medium bg-muted/60 text-muted-foreground hover:text-foreground transition cursor-pointer">โครงการ</button>
+        </div>
+      </div>
+
+      <!-- Events List Container (Scrollable) -->
+      <div id="calendarEventsSelectList" class="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[220px] max-h-[50vh]">
+        <!-- Populated via JS -->
+      </div>
+
+      <!-- Footer -->
+      <div class="pt-3 border-t border-border/80 flex items-center justify-between text-xs text-muted-foreground">
+        <span id="calendarEventsCountLabel">แสดง 0 รายการ</span>
+        <button type="button" onclick="closeSelectFromCalendarModal()" class="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-semibold transition cursor-pointer">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
   <!-- POP-UP MODAL: GLOBAL CONFIRMATION MODAL (ยืนยันการลบ/ดำเนินการ) -->
   <!-- ========================================================= -->
   <div id="globalConfirmModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden items-center justify-center z-[250] p-4 select-none animate-fadeIn" onclick="if(event.target === this) closeGlobalConfirmDialog(false)">
@@ -7410,28 +7468,28 @@ label svg, label i {
 <!-- ======================================================== -->
   <!-- MODULAR JAVASCRIPT ARCHITECTURE                          -->
   <!-- ======================================================== -->
-  <script src="js/services/actionReducer.js?v=20261102_02"></script>
-  <script src="js/supabaseConfig.js?v=20261102_02"></script>
-  <script src="js/services/supabaseAdapter.js?v=20261102_02"></script>
-  <script src="js/config.js?v=20261102_02"></script>
-  <script src="js/defaultProjects.js?v=20261102_02"></script>
-  <script src="js/state.js?v=20261102_02"></script>
-  <script src="js/utils/format.js?v=20261102_02"></script>
-  <script src="js/utils/ui.js?v=20261102_02"></script>
-  <script src="js/utils/logoAsset.js?v=20261102_02"></script>
-  <script src="js/utils/export.js?v=20261102_02"></script>
-  <script src="js/components/seatingChart.js?v=20261102_02"></script>
-  <script src="js/components/voting.js?v=20261102_02"></script>
-  <script src="js/components/chat.js?v=20261102_02"></script>
-  <script src="js/components/files.js?v=20261102_02"></script>
-  <script src="js/components/randomizer.js?v=20261102_02"></script>
-  <script src="js/components/stream.js?v=20261102_02"></script>
-  <script src="js/components/analyticsChart.js?v=20261102_02"></script>
-  <script src="js/components/calendar.js?v=20261102_02"></script>
-  <script src="js/components/projects.js?v=20261102_02"></script>
-  <script src="js/views/navigation.js?v=20261102_02"></script>
-  <script src="js/views/userView.js?v=20261102_02"></script>
-  <script src="js/views/adminView.js?v=20261102_02"></script>
-  <script src="js/app.js?v=20261102_02"></script>
+  <script src="js/services/actionReducer.js?v=20261102_03"></script>
+  <script src="js/supabaseConfig.js?v=20261102_03"></script>
+  <script src="js/services/supabaseAdapter.js?v=20261102_03"></script>
+  <script src="js/config.js?v=20261102_03"></script>
+  <script src="js/defaultProjects.js?v=20261102_03"></script>
+  <script src="js/state.js?v=20261102_03"></script>
+  <script src="js/utils/format.js?v=20261102_03"></script>
+  <script src="js/utils/ui.js?v=20261102_03"></script>
+  <script src="js/utils/logoAsset.js?v=20261102_03"></script>
+  <script src="js/utils/export.js?v=20261102_03"></script>
+  <script src="js/components/seatingChart.js?v=20261102_03"></script>
+  <script src="js/components/voting.js?v=20261102_03"></script>
+  <script src="js/components/chat.js?v=20261102_03"></script>
+  <script src="js/components/files.js?v=20261102_03"></script>
+  <script src="js/components/randomizer.js?v=20261102_03"></script>
+  <script src="js/components/stream.js?v=20261102_03"></script>
+  <script src="js/components/analyticsChart.js?v=20261102_03"></script>
+  <script src="js/components/calendar.js?v=20261102_03"></script>
+  <script src="js/components/projects.js?v=20261102_03"></script>
+  <script src="js/views/navigation.js?v=20261102_03"></script>
+  <script src="js/views/userView.js?v=20261102_03"></script>
+  <script src="js/views/adminView.js?v=20261102_03"></script>
+  <script src="js/app.js?v=20261102_03"></script>
 </body>
 </html>
