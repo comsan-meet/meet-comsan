@@ -12,7 +12,11 @@ async function downloadSharedFile(fileId) {
     f.dataUrl = await window.fetchFileContentFromCloud(fileId);
   }
 
-  if (!f.dataUrl) return showToast('ไม่พบข้อมูลเนื้อหาของไฟล์', 'error');
+  if (!f.dataUrl) {
+    showToast('ไม่พบข้อมูลเนื้อหาของไฟล์ใน Cloud กำลังเปิดหน้าต่างตรวจสอบ...', 'warning');
+    previewSharedFile(fileId);
+    return;
+  }
   try {
     triggerUniversalBlobDownload(dataURLToBlob(f.dataUrl), f.name);
     showToast(`กำลังดาวน์โหลด "${f.name}"...`, 'info');
@@ -121,21 +125,15 @@ function handleFileUpload(e, roleType) {
     }
   };
 
-  reader.onload = function (evt) {
-    setFileUploadProgress(roleType, {
-      visible: true,
-      percent: 92,
-      fileName: file.name,
-      status: 'กำลังบันทึกและส่งไฟล์เข้าสู่ห้องประชุม...'
-    });
-
+  reader.onload = async function (evt) {
+    const dataUrl = evt.target.result;
     const now = Date.now();
     const fileObj = {
       id: 'FILE-' + now,
       name: file.name,
       size: file.size,
       type: file.type || 'application/octet-stream',
-      dataUrl: evt.target.result,
+      dataUrl: dataUrl,
       hasContent: true,
       uploaderId,
       uploaderName,
@@ -145,9 +143,20 @@ function handleFileUpload(e, roleType) {
       pinnedAt: null
     };
 
-    // Save to cloud in dedicated row if cloud storage is configured
+    setFileUploadProgress(roleType, {
+      visible: true,
+      percent: 85,
+      fileName: file.name,
+      status: 'กำลังบันทึกเอกสารขึ้น Cloud Storage...'
+    });
+
+    // Save to cloud in dedicated row and IndexedDB cache
     if (fileObj.dataUrl && typeof window.saveFileContentToCloud === 'function') {
-      window.saveFileContentToCloud(fileObj).catch(() => {});
+      try {
+        await window.saveFileContentToCloud(fileObj);
+      } catch (err) {
+        console.warn('Cloud save warning:', err);
+      }
     }
 
     // Do NOT push directly to appState.files to prevent 2x duplication; ActionReducer handles it
@@ -421,15 +430,25 @@ async function previewSharedFile(fileId) {
   // If dataUrl is still missing after fetch attempt
   if (!f.dataUrl) {
     bodyEl.innerHTML = `
-      <div class="py-12 px-4 text-center space-y-3">
-        <div class="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-3xl mx-auto">
+      <div class="py-12 px-4 text-center space-y-4 max-w-md mx-auto">
+        <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
           <i data-lucide="alert-triangle" class="w-8 h-8"></i>
         </div>
-        <h4 class="text-base font-bold text-foreground">ไม่พบข้อมูลเนื้อหาของไฟล์</h4>
-        <p class="text-xs text-muted-foreground max-w-sm mx-auto">ไฟล์นี้อาจถูกอัปโหลดจากแหล่งภายนอก หรือข้อมูลเนื้อหาไม่สมบูรณ์</p>
-        <button type="button" onclick="previewSharedFile('${f.id}')" class="px-4 py-2 mt-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:opacity-90 transition">
-          ลองใหม่อีกครั้ง
-        </button>
+        <div>
+          <h4 class="text-base font-bold text-foreground">ไม่พบข้อมูลเนื้อหาของไฟล์ใน Cloud</h4>
+          <p class="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+            ไฟล์นี้ยังไม่มีข้อมูลใน Cloud หรืออาจปิดหน้าจอก่อนอัปโหลดเสร็จสมบูรณ์ สามารถเลือกไฟล์จากเครื่องเพื่อซิงค์ข้อมูลใหม่ได้ทันที
+          </p>
+        </div>
+        <input type="file" id="resyncFileInput_${f.id}" class="hidden" onchange="handleResyncFile(event, '${f.id}')">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+          <button type="button" onclick="previewSharedFile('${f.id}')" class="w-full sm:w-auto px-4 py-2.5 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> ลองโหลดใหม่อีกครั้ง
+          </button>
+          <button type="button" onclick="document.getElementById('resyncFileInput_${f.id}').click()" class="w-full sm:w-auto px-4 py-2.5 bg-primary text-primary-foreground hover:opacity-90 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> แนบไฟล์นี้จากเครื่องเพื่อซิงค์ใหม่
+          </button>
+        </div>
       </div>
     `;
     if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
@@ -768,6 +787,52 @@ function renderFileDropSection() {
   }
 }
 
+async function handleResyncFile(e, fileId) {
+  const file = e.target.files && e.target.files[0];
+  if (!file || !fileId) return;
+
+  const state = window.appState;
+  const f = (state?.files || []).find(item => item.id === fileId);
+  if (!f) return showToast('ไม่พบข้อมูลเอกสารในระบบ', 'error');
+
+  showToast(`กำลังอ่านและซิงค์ "${file.name}" ขึ้นระบบ...`, 'info');
+
+  const reader = new FileReader();
+  reader.onload = async function(evt) {
+    const dataUrl = evt.target.result;
+    f.dataUrl = dataUrl;
+    f.size = file.size;
+    f.hasContent = true;
+
+    // 1. Cache to IndexedDB
+    if (window.ComsanFileStore) {
+      try { await window.ComsanFileStore.save(f); } catch (err) {}
+    }
+
+    // 2. Save to Cloud
+    if (typeof window.saveFileContentToCloud === 'function') {
+      try {
+        await window.saveFileContentToCloud(f);
+      } catch (err) {
+        console.warn('Cloud save error:', err);
+      }
+    }
+
+    // 3. Save local and broadcast
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+    if (window.socket) {
+      window.socket.emit('file:upload', f);
+    }
+
+    showToast(`ซิงค์ข้อมูล "${f.name}" ขึ้นคลาวด์เรียบร้อยแล้ว!`, 'success');
+    previewSharedFile(fileId);
+  };
+  reader.onerror = function() {
+    showToast('เกิดข้อผิดพลาดในการอ่านไฟล์', 'error');
+  };
+  reader.readAsDataURL(file);
+}
+
 // Window attachments
 window.downloadSharedFile = downloadSharedFile;
 window.previewSharedFile = previewSharedFile;
@@ -782,3 +847,4 @@ window.togglePinSharedFile = togglePinSharedFile;
 window.deleteSharedFile = deleteSharedFile;
 window.renderFileDropSection = renderFileDropSection;
 window.getFileVisualInfo = getFileVisualInfo;
+window.handleResyncFile = handleResyncFile;

@@ -96,21 +96,28 @@ function handleUserLogin(e) {
     return;
   }
 
-  // 2. ตรวจสอบสมาชิกทั่วไป (ชื่อเล่น เช่น บอม, พลอย, ฟีฟ่า, แมทธิว, เจมส์ หรือรหัสประจำตัว)
+  // 2. ตรวจสอบสมาชิกทั่วไป (ชื่อเล่น, ชื่อ-นามสกุล, รหัสประจำตัว, หรือรหัสนักศึกษา)
   const users = state?.users || [];
-  let found = users.find(
-    u => (
-      (u.nickname && u.nickname.trim().toLowerCase() === nameInput) ||
-      (u.firstName && u.firstName.trim().toLowerCase() === nameInput) ||
-      (u.id && u.id.trim().toLowerCase() === nameInput) ||
-      (u.studentId && String(u.studentId).trim().toLowerCase() === nameInput)
-    )
-  );
+
+  const checkNameMatch = (u, input) => {
+    if (typeof window.isUserNameMatch === 'function') return window.isUserNameMatch(u, input);
+    return (u.nickname && u.nickname.trim().toLowerCase() === input) ||
+           (u.firstName && u.firstName.trim().toLowerCase() === input) ||
+           (u.id && u.id.trim().toLowerCase() === input);
+  };
+  const checkPassMatch = (u, pass) => {
+    if (typeof window.isUserPasswordMatch === 'function') return window.isUserPasswordMatch(u, pass);
+    const uPass = String(u.password || '').trim();
+    const sid = String(u.studentId || '').trim();
+    return Boolean((uPass && pass === uPass) || (sid && pass.toLowerCase() === sid.toLowerCase()));
+  };
+
+  let matchedCandidates = users.filter(u => checkNameMatch(u, nameInput));
 
   // หากเป็นชื่อสมาชิกตัวอย่าง บอม หรือ ฟีฟ่า แล้วยังไม่มีในฐานข้อมูล ให้สร้างสมาชิกนี้ทันที
-  if (!found && (nameInput === 'บอม' || nameInput === 'ฟีฟ่า' || nameInput === 'bomb' || nameInput === 'fifa')) {
+  if (!matchedCandidates.length && (nameInput === 'บอม' || nameInput === 'ฟีฟ่า' || nameInput === 'bomb' || nameInput === 'fifa')) {
     const isBomb = nameInput === 'บอม' || nameInput === 'bomb';
-    found = {
+    const demoUser = {
       id: isBomb ? 'COMSAN-BOMB' : 'COMSAN-FIFA',
       firstName: isBomb ? 'ธนกฤต' : 'ศุภกร',
       lastName: isBomb ? 'ยอดเยี่ยม' : 'มีสุข',
@@ -134,15 +141,16 @@ function handleUserLogin(e) {
     };
     if (state) {
       state.users = state.users || [];
-      state.users.push(found);
+      state.users.push(demoUser);
       if (typeof window.saveLocalState === 'function') window.saveLocalState();
     }
+    matchedCandidates = [demoUser];
   }
 
-  if (!found) {
+  if (!matchedCandidates.length) {
     const err = document.getElementById('userLoginError');
     if (err) {
-      err.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ กรุณาตรวจสอบชื่อเล่น หรือรหัสประจำตัว';
+      err.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ กรุณาตรวจสอบชื่อเล่น ชื่อ-นามสกุล หรือรหัสประจำตัว';
       err.classList.remove('hidden');
     }
     return;
@@ -158,18 +166,13 @@ function handleUserLogin(e) {
     return;
   }
 
-  // ตรวจสอบรหัสผ่านของสมาชิก (ต้องตรงกับรหัสผ่านที่ตั้งไว้ หรือรหัสนักศึกษาของตนเองเท่านั้น)
-  const userPass = String(found.password || '').trim();
-  const studentId = String(found.studentId || '').trim();
-  const isPassValid = Boolean(
-    (userPass && passInput === userPass) ||
-    (studentId && passInput.toLowerCase() === studentId.toLowerCase())
-  );
+  // ตรวจสอบรหัสผ่าน: ค้นหาผู้ใช้ในกลุ่ม candidates ที่รหัสผ่านตรงกัน (รองรับกรณีชื่อเล่นซ้ำกัน เช่น แก้ม, จีจี้)
+  const found = matchedCandidates.find(u => checkPassMatch(u, passInput));
 
-  if (!isPassValid) {
+  if (!found) {
     const err = document.getElementById('userLoginError');
     if (err) {
-      err.textContent = 'รหัสผ่านไม่ถูกต้อง';
+      err.textContent = 'รหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบรหัสผ่านอีกครั้ง';
       err.classList.remove('hidden');
     }
     return;

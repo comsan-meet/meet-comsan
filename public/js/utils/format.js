@@ -63,9 +63,113 @@ async function triggerUniversalBlobDownload(blob, filename) {
   }, 15000);
 }
 
-// Window attachments for backward compatibility
-window.escapeHtml = escapeHtml;
-window.formatFileSize = formatFileSize;
-window.dataURLToBlob = dataURLToBlob;
-window.isIOSDevice = isIOSDevice;
-window.triggerUniversalBlobDownload = triggerUniversalBlobDownload;
+/**
+ * Authentication and User Matching Utilities
+ */
+function normalizeThaiIdentifier(str) {
+  if (!str) return '';
+  return String(str)
+    .trim()
+    .toLowerCase()
+    .replace(/^(นาย|นางสาว|นาง|น\.ส\.|ด\.ช\.|ด\.ญ\.)\s*/gi, '')
+    .replace(/\s+/g, ' ');
+}
+
+function isUserPasswordMatch(user, passInput) {
+  if (!user || passInput === undefined || passInput === null) return false;
+  const pInput = String(passInput).trim();
+  if (!pInput) return false;
+  const pClean = pInput.replace(/[-\s]/g, '').toLowerCase();
+
+  const userPass = String(user.password || '').trim();
+  const userPassClean = userPass.replace(/[-\s]/g, '').toLowerCase();
+
+  const studentId = String(user.studentId || '').trim();
+  const studentIdClean = studentId.replace(/[-\s]/g, '').toLowerCase();
+
+  if (userPass && (pInput === userPass || pClean === userPassClean)) return true;
+  if (studentId && (pInput.toLowerCase() === studentId.toLowerCase() || pClean === studentIdClean)) return true;
+
+  return false;
+}
+
+function isUserNameMatch(user, nameInput) {
+  if (!user || !nameInput) return false;
+  const rawInput = String(nameInput).trim().toLowerCase();
+  const normInput = normalizeThaiIdentifier(nameInput);
+  const inputNoDash = rawInput.replace(/[-\s]/g, '');
+
+  // 1. Nickname (exact or normalized)
+  if (user.nickname) {
+    const nick = String(user.nickname).trim().toLowerCase();
+    const nickNorm = normalizeThaiIdentifier(user.nickname);
+    if (nick === rawInput || nickNorm === normInput || nick === normInput) return true;
+  }
+
+  // 2. First name
+  if (user.firstName) {
+    const fn = String(user.firstName).trim().toLowerCase();
+    const fnNorm = normalizeThaiIdentifier(user.firstName);
+    if (fn === rawInput || fnNorm === normInput || fn === normInput) return true;
+  }
+
+  // 3. Full name: firstName + lastName
+  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim().toLowerCase();
+  const fullNameNorm = normalizeThaiIdentifier(fullName);
+  if (fullName && (fullName === rawInput || fullNameNorm === normInput)) return true;
+
+  // 4. Nickname + First name combination (e.g. "แก้ม สุณิชา" or "สุณิชา แก้ม")
+  if (user.nickname && user.firstName) {
+    const n1 = `${user.nickname} ${user.firstName}`.toLowerCase();
+    const n2 = `${user.firstName} ${user.nickname}`.toLowerCase();
+    if (n1 === rawInput || n2 === rawInput || normalizeThaiIdentifier(n1) === normInput || normalizeThaiIdentifier(n2) === normInput) return true;
+  }
+
+  // 5. User ID (COMSAN-35, comsan-35, 35)
+  if (user.id) {
+    const uid = String(user.id).trim().toLowerCase();
+    if (uid === rawInput) return true;
+    const numPart = uid.replace(/[^0-9]/g, '');
+    if (numPart && (numPart === rawInput || `comsan-${rawInput}` === uid || `comsan-${rawInput.padStart(2, '0')}` === uid)) return true;
+  }
+
+  // 6. Student ID
+  if (user.studentId) {
+    const sid = String(user.studentId).trim().toLowerCase();
+    const sidClean = sid.replace(/[-\s]/g, '');
+    if (sid === rawInput || sidClean === inputNoDash) return true;
+  }
+
+  // 7. Password treated as Student ID if in numeric format
+  if (user.password && /^\d{8,12}/.test(user.password)) {
+    const passClean = String(user.password).replace(/[-\s]/g, '');
+    if (passClean === inputNoDash) return true;
+  }
+
+  return false;
+}
+
+// Window & Node attachments for backward compatibility and testing
+if (typeof window !== 'undefined') {
+  window.escapeHtml = escapeHtml;
+  window.formatFileSize = formatFileSize;
+  window.dataURLToBlob = dataURLToBlob;
+  window.isIOSDevice = isIOSDevice;
+  window.triggerUniversalBlobDownload = triggerUniversalBlobDownload;
+  window.normalizeThaiIdentifier = normalizeThaiIdentifier;
+  window.isUserPasswordMatch = isUserPasswordMatch;
+  window.isUserNameMatch = isUserNameMatch;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    escapeHtml,
+    formatFileSize,
+    dataURLToBlob,
+    isIOSDevice,
+    triggerUniversalBlobDownload,
+    normalizeThaiIdentifier,
+    isUserPasswordMatch,
+    isUserNameMatch
+  };
+}

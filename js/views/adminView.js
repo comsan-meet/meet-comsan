@@ -919,28 +919,33 @@ function handleExcelImport(e) {
     const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
     if (!rows.length) return;
-    const importedUsers = rows.map((r, idx) => ({
-      id: `COMSAN-${String(idx + 1).padStart(2, '0')}`,
-      firstName: String(r['ชื่อ'] || '').trim(),
-      lastName: String(r['นามสกุล'] || '').trim(),
-      nickname: String(r['ชื่อเล่น'] || '').trim(),
-      year: String(r['ชั้นปี'] || '').trim(),
-      major: String(r['สาขา'] || '').trim(),
-      position: String(r['ตำแหน่งในชมรม'] || 'สมาชิก').trim(),
-      password: String(r['รหัสผ่าน'] || r['รหัสผ่านการเข้าระบบ'] || '1234').trim(),
-      checkedIn: false,
-      checkInTimeStr: '-',
-      checkInTimestamp: null,
-      isLate: false,
-      isLeave: false,
-      leaveReason: '',
-      attendedMinutes: 0,
-      raiseHandCount: 0,
-      note: '',
-      noteSubmitted: false,
-      filePermission: 'NONE',
-      streamPermission: 'NONE'
-    }));
+    const importedUsers = rows.map((r, idx) => {
+      const studentId = String(r['รหัสนักศึกษา'] || r['รหัสประจำตัว'] || r['studentId'] || r['student_id'] || '').trim();
+      const rawPass = String(r['รหัสผ่าน'] || r['รหัสผ่านการเข้าระบบ'] || r['password'] || '1234').trim();
+      return {
+        id: `COMSAN-${String(idx + 1).padStart(2, '0')}`,
+        firstName: String(r['ชื่อ'] || '').trim(),
+        lastName: String(r['นามสกุล'] || '').trim(),
+        nickname: String(r['ชื่อเล่น'] || '').trim(),
+        year: String(r['ชั้นปี'] || '').trim(),
+        major: String(r['สาขา'] || '').trim(),
+        position: String(r['ตำแหน่งในชมรม'] || 'สมาชิก').trim(),
+        studentId: studentId || (rawPass.match(/^\d{8,12}/) ? rawPass : ''),
+        password: rawPass,
+        checkedIn: false,
+        checkInTimeStr: '-',
+        checkInTimestamp: null,
+        isLate: false,
+        isLeave: false,
+        leaveReason: '',
+        attendedMinutes: 0,
+        raiseHandCount: 0,
+        note: '',
+        noteSubmitted: false,
+        filePermission: 'NONE',
+        streamPermission: 'NONE'
+      };
+    });
     window.appState.users = importedUsers;
     window.selectedRolesForRandom = null;
     window.saveLocalState();

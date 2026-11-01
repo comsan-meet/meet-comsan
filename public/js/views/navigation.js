@@ -864,7 +864,7 @@ function closeUserLoginPopup() {
 
 function handleUserLoginFromPopup(e) {
   if (e && e.preventDefault) e.preventDefault();
-  const nameVal = (document.getElementById('popupUserLoginName')?.value || '').trim().toLowerCase();
+  const nameVal = (document.getElementById('popupUserLoginName')?.value || '').trim();
   const passVal = (document.getElementById('popupUserLoginPass')?.value || '').trim();
   const users = (window.appState && window.appState.users) || [];
   const err = document.getElementById('popupUserLoginError');
@@ -877,25 +877,35 @@ function handleUserLoginFromPopup(e) {
     return;
   }
 
-  const found = users.find(u => {
-    const nameMatch = (
-      (u.nickname && u.nickname.toLowerCase() === nameVal) ||
-      (u.firstName && u.firstName.toLowerCase() === nameVal) ||
-      (u.id && u.id.toLowerCase() === nameVal) ||
-      (u.studentId && String(u.studentId).toLowerCase() === nameVal)
-    );
-    if (!nameMatch) return false;
+  const checkNameMatch = (u, input) => {
+    if (typeof window.isUserNameMatch === 'function') return window.isUserNameMatch(u, input);
+    const low = input.toLowerCase();
+    return (u.nickname && u.nickname.toLowerCase() === low) ||
+           (u.firstName && u.firstName.toLowerCase() === low) ||
+           (u.id && u.id.toLowerCase() === low);
+  };
+  const checkPassMatch = (u, pass) => {
+    if (typeof window.isUserPasswordMatch === 'function') return window.isUserPasswordMatch(u, pass);
     const uPass = String(u.password || '').trim();
-    const uStdId = String(u.studentId || '').trim();
-    return Boolean(
-      (uPass && passVal === uPass) ||
-      (uStdId && passVal.toLowerCase() === uStdId.toLowerCase())
-    );
-  });
+    const sid = String(u.studentId || '').trim();
+    return Boolean((uPass && pass === uPass) || (sid && pass.toLowerCase() === sid.toLowerCase()));
+  };
+
+  const matchedCandidates = users.filter(u => checkNameMatch(u, nameVal));
+
+  if (!matchedCandidates.length) {
+    if (err) {
+      err.textContent = 'ไม่พบชื่อผู้ใช้งานนี้ กรุณาตรวจสอบชื่อเล่น ชื่อ-นามสกุล หรือรหัสประจำตัว';
+      err.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const found = matchedCandidates.find(u => checkPassMatch(u, passVal));
 
   if (!found) {
     if (err) {
-      err.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+      err.textContent = 'รหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบรหัสผ่านอีกครั้ง';
       err.classList.remove('hidden');
     }
     return;

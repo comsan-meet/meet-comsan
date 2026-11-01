@@ -682,20 +682,187 @@
 
   window.SupabaseSocketAdapter = SupabaseSocketAdapter;
 
+  // =========================================================================
+  // INDEXEDDB CLIENT-SIDE FILE CACHE (Zero Data Loss)
+  // =========================================================================
+  const ComsanFileStore = {
+    dbPromise: null,
+    getDB() {
+      if (!this.dbPromise) {
+        this.dbPromise = new Promise((resolve) => {
+          if (typeof indexedDB === 'undefined') return resolve(null);
+          try {
+            const req = indexedDB.open('ComsanMeetingFilesDB', 1);
+            req.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              if (!db.objectStoreNames.contains('files')) {
+                db.createObjectStore('files', { keyPath: 'id' });
+              }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+          } catch (e) {
+            resolve(null);
+          }
+        });
+      }
+      return this.dbPromise;
+    },
+    async save(fileObj) {
+      if (!fileObj || !fileObj.id || !fileObj.dataUrl) return false;
+      try {
+        const db = await this.getDB();
+        if (!db) return false;
+        return new Promise((resolve) => {
+          try {
+            const tx = db.transaction('files', 'readwrite');
+            const store = tx.objectStore('files');
+            store.put({
+              id: fileObj.id,
+              name: fileObj.name,
+              size: fileObj.size,
+              type: fileObj.type,
+              dataUrl: fileObj.dataUrl,
+              uploadedAt: fileObj.uploadedAt || Date.now()
+            });
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+            tx.onabort = () => resolve(false);
+          } catch (e) {
+            resolve(false);
+          }
+        });
+      } catch (e) {
+        return false;
+      }
+    },
+    async get(fileId) {
+      if (!fileId) return null;
+      try {
+        const db = await this.getDB();
+        if (!db) return null;
+        return new Promise((resolve) => {
+          try {
+            const tx = db.transaction('files', 'readonly');
+            const store = tx.objectStore('files');
+            const req = store.get(fileId);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+          } catch (e) {
+            resolve(null);
+          }
+        });
+      } catch (e) {
+        return null;
+      }
+    },
+    async delete(fileId) {
+      if (!fileId) return false;
+      try {
+        const db = await this.getDB();
+        if (!db) return false;
+        return new Promise((resolve) => {
+          try {
+            const tx = db.transaction('files', 'readwrite');
+            const store = tx.objectStore('files');
+            store.delete(fileId);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+            tx.onabort = () => resolve(false);
+          } catch (e) {
+            resolve(false);
+          }
+        });
+      } catch (e) {
+        return false;
+      }
+    }
+  };
+  window.ComsanFileStore = ComsanFileStore;
+
+  // =========================================================================
+  // SUPABASE ACCESS RESOLVER (Client + Direct REST API Fail-Safe)
+  // =========================================================================
+  async function resolveSupabaseAccess() {
+    let sb = (window.supabaseSocketAdapter && window.supabaseSocketAdapter.supabase)
+      || (window.socket && window.socket.supabase)
+      || (window.socket && window.socket.engine && window.socket.engine.supabase)
+      || null;
+
+    let creds = null;
+    if (typeof SupabaseConfigManager !== 'undefined') {
+      try {
+        creds = await SupabaseConfigManager.getCredentials();
+      } catch (e) {}
+    }
+    if (!creds || !creds.isConfigured) {
+      if (window.COMSAN_SUPABASE_CONFIG && window.COMSAN_SUPABASE_CONFIG.url) {
+        creds = window.COMSAN_SUPABASE_CONFIG;
+      }
+    }
+    if (!sb && creds && (creds.url || creds.supabaseUrl) && (creds.anonKey || creds.supabaseKey)) {
+      const url = creds.url || creds.supabaseUrl;
+      const anonKey = creds.anonKey || creds.supabaseKey;
+      if (window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+          sb = window.supabase.createClient(url, anonKey);
+        } catch (e) {}
+      }
+    }
+    return { sb, creds };
+  }
+
+  // =========================================================================
+  // SAVE FILE CONTENT TO CLOUD (Supabase Upsert + Direct REST POST Fallback)
+  // =========================================================================
   window.saveFileContentToCloud = async function(fileObj) {
     if (!fileObj || !fileObj.id || !fileObj.dataUrl) return false;
+
+    // 1. Cache in IndexedDB first
+    if (window.ComsanFileStore) {
+      try { await window.ComsanFileStore.save(fileObj); } catch (e) {}
+    }
+
     try {
-      let sb = (window.socket && window.socket.engine && window.socket.engine.supabase) ? window.socket.engine.supabase : null;
-      if (!sb && typeof SupabaseConfigManager !== 'undefined') {
-        const creds = await SupabaseConfigManager.getCredentials();
-        if (creds.isConfigured && window.supabase && typeof window.supabase.createClient === 'function') {
-          sb = window.supabase.createClient(creds.url, creds.anonKey);
+      const { sb, creds } = await resolveSupabaseAccess();
+
+      // Method 1: Supabase JS Client
+      if (sb) {
+        try {
+          const { error } = await sb
+            .from('comsan_meeting_state')
+            .upsert({
+              id: `file:${fileObj.id}`,
+              state: {
+                id: fileObj.id,
+                name: fileObj.name,
+                size: fileObj.size,
+                type: fileObj.type,
+                dataUrl: fileObj.dataUrl,
+                uploadedAt: fileObj.uploadedAt || Date.now()
+              },
+              updated_at: new Date().toISOString()
+            });
+          if (!error) return true;
+          console.warn('sb.upsert failed, falling back to direct REST fetch:', error);
+        } catch (sbErr) {
+          console.warn('sb.upsert exception, falling back to direct REST fetch:', sbErr);
         }
       }
-      if (sb) {
-        const { error } = await sb
-          .from('comsan_meeting_state')
-          .upsert({
+
+      // Method 2: Direct REST API fetch fail-safe
+      if (creds && (creds.url || creds.supabaseUrl)) {
+        const url = (creds.url || creds.supabaseUrl).replace(/\/$/, '');
+        const key = creds.anonKey || creds.supabaseKey;
+        const res = await fetch(`${url}/rest/v1/comsan_meeting_state`, {
+          method: 'POST',
+          headers: {
+            'apikey': key,
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
             id: `file:${fileObj.id}`,
             state: {
               id: fileObj.id,
@@ -706,8 +873,10 @@
               uploadedAt: fileObj.uploadedAt || Date.now()
             },
             updated_at: new Date().toISOString()
-          });
-        return !error;
+          })
+        });
+        if (res.ok) return true;
+        console.warn('Direct REST saveFileContentToCloud status:', res.status);
       }
     } catch (e) {
       console.warn('saveFileContentToCloud error:', e);
@@ -715,27 +884,43 @@
     return false;
   };
 
+  // =========================================================================
+  // DELETE FILE CONTENT FROM CLOUD
+  // =========================================================================
   window.deleteFileContentFromCloud = async function(fileId) {
     if (!fileId) return;
+    if (window.ComsanFileStore) {
+      try { await window.ComsanFileStore.delete(fileId); } catch (e) {}
+    }
     try {
-      let sb = (window.socket && window.socket.engine && window.socket.engine.supabase) ? window.socket.engine.supabase : null;
-      if (!sb && typeof SupabaseConfigManager !== 'undefined') {
-        const creds = await SupabaseConfigManager.getCredentials();
-        if (creds.isConfigured && window.supabase && typeof window.supabase.createClient === 'function') {
-          sb = window.supabase.createClient(creds.url, creds.anonKey);
-        }
-      }
+      const { sb, creds } = await resolveSupabaseAccess();
       if (sb) {
-        await sb
-          .from('comsan_meeting_state')
-          .delete()
-          .eq('id', `file:${fileId}`);
+        try {
+          await sb
+            .from('comsan_meeting_state')
+            .delete()
+            .eq('id', `file:${fileId}`);
+        } catch (e) {}
+      }
+      if (creds && (creds.url || creds.supabaseUrl)) {
+        const url = (creds.url || creds.supabaseUrl).replace(/\/$/, '');
+        const key = creds.anonKey || creds.supabaseKey;
+        await fetch(`${url}/rest/v1/comsan_meeting_state?id=eq.file%3A${encodeURIComponent(fileId)}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': key,
+            'Authorization': `Bearer ${key}`
+          }
+        }).catch(() => {});
       }
     } catch (e) {
       console.warn('deleteFileContentFromCloud error:', e);
     }
   };
 
+  // =========================================================================
+  // FETCH FILE CONTENT FROM CLOUD (IndexedDB Cache -> Dedicated Row -> REST Fallback)
+  // =========================================================================
   window.fetchFileContentFromCloud = async function(fileId) {
     if (!fileId) return null;
     try {
@@ -745,42 +930,93 @@
         if (memF && memF.dataUrl) return memF.dataUrl;
       }
 
-      let sb = (window.socket && window.socket.engine && window.socket.engine.supabase) ? window.socket.engine.supabase : null;
-      if (!sb && typeof SupabaseConfigManager !== 'undefined') {
-        const creds = await SupabaseConfigManager.getCredentials();
-        if (creds.isConfigured && window.supabase && typeof window.supabase.createClient === 'function') {
-          sb = window.supabase.createClient(creds.url, creds.anonKey);
+      // 2. Check IndexedDB local cache
+      if (window.ComsanFileStore) {
+        try {
+          const cached = await window.ComsanFileStore.get(fileId);
+          if (cached && cached.dataUrl) {
+            if (window.appState && Array.isArray(window.appState.files)) {
+              const localF = window.appState.files.find(item => item.id === fileId);
+              if (localF) {
+                localF.dataUrl = cached.dataUrl;
+                localF.hasContent = true;
+              }
+            }
+            // Auto re-persist to cloud in background if cloud row was missing
+            window.saveFileContentToCloud(cached).catch(() => {});
+            return cached.dataUrl;
+          }
+        } catch (e) {}
+      }
+
+      const { sb, creds } = await resolveSupabaseAccess();
+
+      // Method 1: Supabase JS client select
+      if (sb) {
+        try {
+          const { data: fileRow, error: fileErr } = await sb
+            .from('comsan_meeting_state')
+            .select('state')
+            .eq('id', `file:${fileId}`)
+            .maybeSingle();
+
+          if (!fileErr && fileRow && fileRow.state && fileRow.state.dataUrl) {
+            const dUrl = fileRow.state.dataUrl;
+            if (window.appState && Array.isArray(window.appState.files)) {
+              const localF = window.appState.files.find(item => item.id === fileId);
+              if (localF) {
+                localF.dataUrl = dUrl;
+                localF.hasContent = true;
+              }
+            }
+            if (window.ComsanFileStore) {
+              window.ComsanFileStore.save({ id: fileId, dataUrl: dUrl }).catch(() => {});
+            }
+            return dUrl;
+          }
+        } catch (sbErr) {
+          console.warn('sb.select exception, fallback to direct REST:', sbErr);
         }
       }
 
-      if (sb) {
-        // Query dedicated file row first (fast, reliable, independent)
-        const { data: fileRow, error: fileErr } = await sb
-          .from('comsan_meeting_state')
-          .select('state')
-          .eq('id', `file:${fileId}`)
-          .maybeSingle();
-
-        if (!fileErr && fileRow && fileRow.state && fileRow.state.dataUrl) {
-          const dUrl = fileRow.state.dataUrl;
-          if (window.appState && Array.isArray(window.appState.files)) {
-            const localF = window.appState.files.find(item => item.id === fileId);
-            if (localF) {
-              localF.dataUrl = dUrl;
-              localF.hasContent = true;
-            }
+      // Method 2: Direct REST fetch fail-safe
+      if (creds && (creds.url || creds.supabaseUrl)) {
+        const url = (creds.url || creds.supabaseUrl).replace(/\/$/, '');
+        const key = creds.anonKey || creds.supabaseKey;
+        const resp = await fetch(`${url}/rest/v1/comsan_meeting_state?id=eq.file%3A${encodeURIComponent(fileId)}&select=state`, {
+          headers: {
+            'apikey': key,
+            'Authorization': `Bearer ${key}`
           }
-          return dUrl;
+        });
+        if (resp.ok) {
+          const rows = await resp.json();
+          if (rows && rows[0] && rows[0].state && rows[0].state.dataUrl) {
+            const dUrl = rows[0].state.dataUrl;
+            if (window.appState && Array.isArray(window.appState.files)) {
+              const localF = window.appState.files.find(item => item.id === fileId);
+              if (localF) {
+                localF.dataUrl = dUrl;
+                localF.hasContent = true;
+              }
+            }
+            if (window.ComsanFileStore) {
+              window.ComsanFileStore.save({ id: fileId, dataUrl: dUrl }).catch(() => {});
+            }
+            return dUrl;
+          }
         }
+      }
 
-        // Fallback: check main state row 'current'
-        const { data: mainData, error: mainErr } = await sb
+      // Method 3: Fallback check main state row 'current'
+      if (sb) {
+        const { data: mainData } = await sb
           .from('comsan_meeting_state')
           .select('state')
           .eq('id', 'current')
           .maybeSingle();
 
-        if (!mainErr && mainData && mainData.state && Array.isArray(mainData.state.files)) {
+        if (mainData && mainData.state && Array.isArray(mainData.state.files)) {
           const remoteF = mainData.state.files.find(item => item.id === fileId);
           if (remoteF && remoteF.dataUrl) {
             const dUrl = remoteF.dataUrl;
@@ -800,4 +1036,5 @@
     }
     return null;
   };
+
 })();
