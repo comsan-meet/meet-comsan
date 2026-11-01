@@ -25,7 +25,7 @@ module.exports = function registerMeetingHandlers(io, socket) {
     resetAllUsersAttendance(state.users);
     state.raiseHandQueue = [];
 
-    const format = (info && info.format === 'ONLINE') ? 'ONLINE' : 'ONSITE';
+    const format = (info && info.format === 'ONLINE') ? 'ONLINE' : ((info && info.format === 'ACTIVITY') ? 'ACTIVITY' : 'ONSITE');
     state.meeting.format = format;
     state.meeting.title = (info && info.title) ? String(info.title).trim() : 'การประชุมชมรมสันทนาการ (COMSAN)';
     state.meeting.date = (info && info.date) ? info.date : todayISO;
@@ -52,6 +52,15 @@ module.exports = function registerMeetingHandlers(io, socket) {
       state.meeting.location = platformLabel && platformLabel !== 'ออนไลน์' ? `ออนไลน์ (${platformLabel})` : 'ออนไลน์';
       state.meeting.locationDetail = (info && info.locationDetail) ? String(info.locationDetail).trim() : state.meeting.location;
       // สร้าง Check-in Token ประจำการประชุมรอบนี้ เช่น CS-742918
+      const randomDigits = Math.floor(100000 + Math.random() * 900000);
+      state.meeting.checkinToken = `CS-${randomDigits}`;
+    } else if (format === 'ACTIVITY') {
+      state.meeting.format = 'ACTIVITY';
+      state.meeting.location = (info && info.location) ? String(info.location).trim() : 'สถานที่จัดกิจกรรม';
+      state.meeting.locationDetail = (info && info.locationDetail) ? String(info.locationDetail).trim() : state.meeting.location;
+      state.meeting.onlinePlatform = 'GOOGLE_MEET';
+      state.meeting.onlineUrl = '';
+      state.meeting.onlinePasscode = '';
       const randomDigits = Math.floor(100000 + Math.random() * 900000);
       state.meeting.checkinToken = `CS-${randomDigits}`;
     } else {
@@ -231,6 +240,13 @@ module.exports = function registerMeetingHandlers(io, socket) {
       if (state.lastMeetingSummary && state.lastMeetingSummary.id === updatedRecord.id) {
         state.lastMeetingSummary = updatedRecord;
       }
+      stateService.persistAndBroadcast();
+    }
+  });
+
+  socket.on('admin:updateMeetingFormat', (newFormat) => {
+    if (['ONSITE', 'ONLINE', 'ACTIVITY'].includes(newFormat)) {
+      state.meeting.format = newFormat;
       stateService.persistAndBroadcast();
     }
   });

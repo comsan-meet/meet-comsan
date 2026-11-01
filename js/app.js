@@ -82,7 +82,10 @@ function updateMeetingTimersAndBanners() {
   }
 
   const isMeetingActive = Boolean(m.isStarted && !m.isEnded);
-  const isActivity = m.format === 'ACTIVITY';
+  const currentFmt = (typeof window.currentMeetingFormat !== 'undefined' && !isMeetingActive)
+    ? window.currentMeetingFormat
+    : (m.format || 'ONSITE');
+  const isActivity = currentFmt === 'ACTIVITY';
   const lastHist = state.lastMeetingSummary || (Array.isArray(state.meetingHistory) && state.meetingHistory.length > 0 ? state.meetingHistory[0] : null);
   const isLastHistActivity = lastHist
     ? ((lastHist.format === 'ACTIVITY') || (lastHist.category === 'EVENT') || (typeof lastHist.title === 'string' && (lastHist.title.includes('กิจกรรม') || lastHist.title.toLowerCase().includes('activity'))))
@@ -717,11 +720,16 @@ function renderAll() {
     if (lateIn && document.activeElement !== lateIn) lateIn.value = m.lateTime || '17:15';
     if (endIn && document.activeElement !== endIn) endIn.value = m.endTime || '19:00';
 
-    if (m.format && typeof window.setMeetingFormat === 'function') {
+    const activeFormat = isMeetingActive
+      ? (m.format || 'ONSITE')
+      : (window.currentMeetingFormat || m.format || 'ONSITE');
+
+    if (typeof window.setMeetingFormat === 'function') {
       const activeEl = document.activeElement;
       const isEditingForm = activeEl && (activeEl === titleIn || activeEl === locIn || activeEl === locDetailIn || activeEl === onlineDetailIn);
-      if (!isEditingForm) {
-        window.setMeetingFormat(m.format);
+      if (!isEditingForm && window._lastRenderedMeetingFormat !== activeFormat) {
+        window._lastRenderedMeetingFormat = activeFormat;
+        window.setMeetingFormat(activeFormat);
       }
     }
 

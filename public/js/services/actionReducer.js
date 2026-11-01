@@ -295,6 +295,15 @@
         break;
       }
 
+      case 'admin:updateMeetingFormat': {
+        const newFormat = (payload === 'ONLINE') ? 'ONLINE' : ((payload === 'ACTIVITY') ? 'ACTIVITY' : 'ONSITE');
+        if (state.meeting) {
+          state.meeting.format = newFormat;
+        }
+        result = { ok: true, format: newFormat };
+        break;
+      }
+
       case 'admin:toggleShowSeats': {
         state.meeting.showSeatsToUsers = Boolean(payload);
         result = { ok: true };

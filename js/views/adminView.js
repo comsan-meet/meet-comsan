@@ -110,11 +110,36 @@ function handleAdminLogin(e) {
   }
 }
 
-let currentMeetingFormat = 'ONSITE';
+let currentMeetingFormat = (typeof window !== 'undefined' && window.appState?.meeting?.format === 'ONLINE')
+  ? 'ONLINE'
+  : ((typeof window !== 'undefined' && window.appState?.meeting?.format === 'ACTIVITY') ? 'ACTIVITY' : 'ONSITE');
+if (typeof window !== 'undefined') {
+  window.currentMeetingFormat = currentMeetingFormat;
+}
 let currentOnlinePlatform = 'GOOGLE_MEET';
 
 function setMeetingFormat(format) {
   currentMeetingFormat = (format === 'ONLINE') ? 'ONLINE' : ((format === 'ACTIVITY') ? 'ACTIVITY' : 'ONSITE');
+  if (typeof window !== 'undefined') {
+    window.currentMeetingFormat = currentMeetingFormat;
+    window._lastRenderedMeetingFormat = currentMeetingFormat;
+
+    if (window.appState && window.appState.meeting) {
+      const isMeetingActive = Boolean(window.appState.meeting.isStarted && !window.appState.meeting.isEnded);
+      if (!isMeetingActive) {
+        window.appState.meeting.format = currentMeetingFormat;
+        if (typeof window.saveLocalState === 'function') {
+          window.saveLocalState();
+        }
+        if (window.socket && typeof window.socket.emit === 'function') {
+          window.socket.emit('admin:updateMeetingFormat', currentMeetingFormat);
+        }
+        if (window.supabaseAdapter && typeof window.supabaseAdapter.persistState === 'function') {
+          window.supabaseAdapter.persistState(window.appState);
+        }
+      }
+    }
+  }
   const isAct = currentMeetingFormat === 'ACTIVITY';
   const btnOnsite = document.getElementById('btnFormatOnsite');
   const btnOnline = document.getElementById('btnFormatOnline');
