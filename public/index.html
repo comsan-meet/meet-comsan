@@ -6155,25 +6155,33 @@ label svg, label i {
                 <p class="text-xs text-muted-foreground">เลือกดูสรุปผลโหวตล่าสุด หรืออัตราการเข้าร่วมประชุม พร้อมปรับเปลี่ยนประเภทกราฟได้ตามต้องการ</p>
               </div>
 
-              <!-- Main Metric Tab: [ สรุปผลโหวต | อัตราการเข้าประชุม ] -->
+              <!-- Main Metric Tab: [ อัตราการเข้าประชุม | สรุปผลโหวต ] -->
               <div class="flex items-center bg-muted/60 p-1 rounded-xl border border-border/60 shrink-0 w-full sm:w-auto">
-                <button type="button" onclick="setAdminChartMetric('VOTE')" id="btnChartMetric_VOTE"
+                <button type="button" onclick="setAdminChartMetric('ATTENDANCE')" id="btnChartMetric_ATTENDANCE"
                   class="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20">
+                  <i data-lucide="users" class=""></i>
+                  <span id="btnChartMetricAttendanceLabel">อัตราการเข้าประชุม</span>
+                </button>
+                <button type="button" onclick="setAdminChartMetric('VOTE')" id="btnChartMetric_VOTE"
+                  class="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground">
                   <i data-lucide="vote" class=""></i>
                   <span>สรุปผลโหวต</span>
-                </button>
-                <button type="button" onclick="setAdminChartMetric('ATTENDANCE')" id="btnChartMetric_ATTENDANCE"
-                  class="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground">
-                  <i data-lucide="users" class=""></i>
-                  <span>อัตราการเข้าประชุม</span>
                 </button>
               </div>
             </div>
 
             <!-- Unified Controls Toolbar (เลือกญัตติ + ป้ายสถานะ + ประเภทกราฟ) -->
             <div id="adminChartMotionSelectWrapper" class="bg-muted/40 p-2.5 sm:p-3 rounded-xl border border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+              <!-- Left: Attendance Info (When Metric is ATTENDANCE) -->
+              <div id="adminChartAttendanceFilterBox" class="flex items-center gap-2 text-xs font-semibold text-muted-foreground w-full sm:w-auto min-w-0">
+                <span class="px-2.5 py-1 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5 font-bold shrink-0">
+                  <i data-lucide="users" class="text-xs"></i> <span id="adminChartAttendanceHeadingText">ข้อมูลภาพรวมการเข้าประชุม</span>
+                </span>
+                <span id="adminChartAttendanceUserCount" class="text-muted-foreground font-medium truncate">สมาชิกทั้งหมด 53 คน</span>
+              </div>
+
               <!-- Left: Motion Selector & Status Tag (When Metric is VOTE) -->
-              <div id="adminChartMotionFilterBox" class="flex items-center gap-2 w-full sm:w-auto min-w-0">
+              <div id="adminChartMotionFilterBox" class="hidden flex items-center gap-2 w-full sm:w-auto min-w-0">
                 <span class="text-xs font-bold text-foreground flex items-center gap-1.5 shrink-0">
                   <i data-lucide="filter" class="text-primary text-[11px]"></i>
                   <span>ญัตติ:</span>
@@ -6185,14 +6193,6 @@ label svg, label i {
                 <div id="adminChartMotionStatusBadge" class="shrink-0 flex items-center">
                   <!-- Status tag right next to motion select dropdown -->
                 </div>
-              </div>
-
-              <!-- Left: Attendance Info (When Metric is ATTENDANCE) -->
-              <div id="adminChartAttendanceFilterBox" class="hidden flex items-center gap-2 text-xs font-semibold text-muted-foreground w-full sm:w-auto min-w-0">
-                <span class="px-2.5 py-1 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center gap-1.5 font-bold shrink-0">
-                  <i data-lucide="users" class="text-xs"></i> ข้อมูลภาพรวมการเข้าประชุม
-                </span>
-                <span id="adminChartAttendanceUserCount" class="text-muted-foreground font-medium truncate">สมาชิกทั้งหมด 52 คน</span>
               </div>
 
               <!-- Right: Chart Type Selector [ โดนัท | พาย | แท่ง ] -->
@@ -7593,28 +7593,28 @@ label svg, label i {
 <!-- ======================================================== -->
   <!-- MODULAR JAVASCRIPT ARCHITECTURE                          -->
   <!-- ======================================================== -->
-  <script src="js/services/actionReducer.js?v=20261102_11"></script>
-  <script src="js/supabaseConfig.js?v=20261102_11"></script>
-  <script src="js/services/supabaseAdapter.js?v=20261102_11"></script>
-  <script src="js/config.js?v=20261102_11"></script>
-  <script src="js/defaultProjects.js?v=20261102_11"></script>
-  <script src="js/state.js?v=20261102_11"></script>
-  <script src="js/utils/format.js?v=20261102_11"></script>
-  <script src="js/utils/ui.js?v=20261102_11"></script>
-  <script src="js/utils/logoAsset.js?v=20261102_11"></script>
-  <script src="js/utils/export.js?v=20261102_11"></script>
-  <script src="js/components/seatingChart.js?v=20261102_11"></script>
-  <script src="js/components/voting.js?v=20261102_11"></script>
-  <script src="js/components/chat.js?v=20261102_11"></script>
-  <script src="js/components/files.js?v=20261102_11"></script>
-  <script src="js/components/randomizer.js?v=20261102_11"></script>
-  <script src="js/components/stream.js?v=20261102_11"></script>
-  <script src="js/components/analyticsChart.js?v=20261102_11"></script>
-  <script src="js/components/calendar.js?v=20261102_11"></script>
-  <script src="js/components/projects.js?v=20261102_11"></script>
-  <script src="js/views/navigation.js?v=20261102_11"></script>
-  <script src="js/views/userView.js?v=20261102_11"></script>
-  <script src="js/views/adminView.js?v=20261102_11"></script>
-  <script src="js/app.js?v=20261102_11"></script>
+  <script src="js/services/actionReducer.js?v=20261102_12"></script>
+  <script src="js/supabaseConfig.js?v=20261102_12"></script>
+  <script src="js/services/supabaseAdapter.js?v=20261102_12"></script>
+  <script src="js/config.js?v=20261102_12"></script>
+  <script src="js/defaultProjects.js?v=20261102_12"></script>
+  <script src="js/state.js?v=20261102_12"></script>
+  <script src="js/utils/format.js?v=20261102_12"></script>
+  <script src="js/utils/ui.js?v=20261102_12"></script>
+  <script src="js/utils/logoAsset.js?v=20261102_12"></script>
+  <script src="js/utils/export.js?v=20261102_12"></script>
+  <script src="js/components/seatingChart.js?v=20261102_12"></script>
+  <script src="js/components/voting.js?v=20261102_12"></script>
+  <script src="js/components/chat.js?v=20261102_12"></script>
+  <script src="js/components/files.js?v=20261102_12"></script>
+  <script src="js/components/randomizer.js?v=20261102_12"></script>
+  <script src="js/components/stream.js?v=20261102_12"></script>
+  <script src="js/components/analyticsChart.js?v=20261102_12"></script>
+  <script src="js/components/calendar.js?v=20261102_12"></script>
+  <script src="js/components/projects.js?v=20261102_12"></script>
+  <script src="js/views/navigation.js?v=20261102_12"></script>
+  <script src="js/views/userView.js?v=20261102_12"></script>
+  <script src="js/views/adminView.js?v=20261102_12"></script>
+  <script src="js/app.js?v=20261102_12"></script>
 </body>
 </html>

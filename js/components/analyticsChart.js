@@ -3,7 +3,8 @@
  * Supports: Vote Results & Attendance Rates in Doughnut, Pie, and Bar charts.
  */
 
-let adminChartMetric = 'VOTE'; // 'VOTE' | 'ATTENDANCE'
+let adminChartMetric = 'ATTENDANCE'; // 'ATTENDANCE' | 'VOTE'
+window.adminChartMetric = 'ATTENDANCE';
 let adminChartType = 'doughnut'; // 'doughnut' | 'pie' | 'bar'
 let adminChartSelectedMotionId = null;
 let adminChartInstance = null;
@@ -53,6 +54,15 @@ function updateChartControlButtons() {
 
   const motionBox = document.getElementById('adminChartMotionFilterBox');
   const attBox = document.getElementById('adminChartAttendanceFilterBox');
+  const isAct = window.appState?.meeting?.format === 'ACTIVITY';
+  const attBtnLabel = document.getElementById('btnChartMetricAttendanceLabel');
+  if (attBtnLabel) {
+    attBtnLabel.textContent = isAct ? 'อัตราการเข้าร่วมกิจกรรม' : 'อัตราการเข้าประชุม';
+  }
+  const attHeading = document.getElementById('adminChartAttendanceHeadingText');
+  if (attHeading) {
+    attHeading.textContent = isAct ? 'ข้อมูลภาพรวมการเข้าร่วมกิจกรรม' : 'ข้อมูลภาพรวมการเข้าประชุม';
+  }
   if (motionBox) motionBox.classList.toggle('hidden', adminChartMetric !== 'VOTE');
   if (attBox) {
     attBox.classList.toggle('hidden', adminChartMetric === 'VOTE');
@@ -214,10 +224,11 @@ function renderAdminAnalyticsChart() {
     const totalPresent = onTime + late;
     const presentPercent = totalUsers > 0 ? ((totalPresent / totalUsers) * 100).toFixed(1) : 0;
 
+    const isAct = state.meeting?.format === 'ACTIVITY';
     headerHTML = `
       <div>
-        <h4 class="text-xs font-bold text-foreground">อัตราการเข้าร่วมประชุม</h4>
-        <p class="text-[11px] text-muted-foreground">เข้าประชุมจริง ${totalPresent} จาก ${totalUsers} คน (${presentPercent}%)</p>
+        <h4 class="text-xs font-bold text-foreground">${isAct ? 'อัตราการเข้าร่วมกิจกรรม' : 'อัตราการเข้าร่วมประชุม'}</h4>
+        <p class="text-[11px] text-muted-foreground">${isAct ? 'เข้าร่วมจริง' : 'เข้าประชุมจริง'} ${totalPresent} จาก ${totalUsers} คน (${presentPercent}%)</p>
       </div>
       <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">${presentPercent}%</span>
     `;
