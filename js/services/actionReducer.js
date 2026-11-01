@@ -128,9 +128,9 @@
         resetAllUsersAttendance(state.users);
         state.raiseHandQueue = [];
 
-        const format = (info && info.format === 'ONLINE') ? 'ONLINE' : 'ONSITE';
+        const format = (info && info.format === 'ONLINE') ? 'ONLINE' : ((info && info.format === 'ACTIVITY') ? 'ACTIVITY' : 'ONSITE');
         state.meeting.format = format;
-        state.meeting.title = (info.title && String(info.title).trim()) ? String(info.title).trim() : 'การประชุมชมรมสันทนาการ (COMSAN)';
+        state.meeting.title = (info.title && String(info.title).trim()) ? String(info.title).trim() : (format === 'ACTIVITY' ? 'กิจกรรมชมรมสันทนาการ (COMSAN)' : 'การประชุมชมรมสันทนาการ (COMSAN)');
         state.meeting.date = info.date || todayISO;
         state.meeting.endDate = info.endDate || state.meeting.date;
         state.meeting.startTime = info.startTime || '17:00';
@@ -156,9 +156,18 @@
           state.meeting.locationDetail = '';
           const randomDigits = Math.floor(100000 + Math.random() * 900000);
           state.meeting.checkinToken = `CS-${randomDigits}`;
+        } else if (format === 'ACTIVITY') {
+          state.meeting.location = info.location ? String(info.location).trim() : 'สถานที่จัดกิจกรรมชมรม';
+          state.meeting.locationDetail = info.locationDetail ? String(info.locationDetail).trim() : state.meeting.location;
+          state.meeting.onlinePlatform = null;
+          state.meeting.onlineUrl = '';
+          state.meeting.onlinePasscode = '';
+          const randomDigits = Math.floor(100000 + Math.random() * 900000);
+          state.meeting.checkinToken = 'ACT-' + randomDigits;
         } else {
           state.meeting.format = 'ONSITE';
           state.meeting.location = info.location ? String(info.location).trim() : 'ห้องประชุมชมรมคมสัน';
+          state.meeting.locationDetail = info.locationDetail ? String(info.locationDetail).trim() : state.meeting.location;
           state.meeting.onlinePlatform = 'GOOGLE_MEET';
           state.meeting.onlineUrl = '';
           state.meeting.onlinePasscode = '';
@@ -173,9 +182,12 @@
         state.raiseHandQueue = [];
         state.motions.forEach(m => { m.isOpen = false; });
 
+        const isAct = format === 'ACTIVITY';
         notify('notify:event', {
           type: 'info',
-          text: `🚀 ผู้ดูแลระบบได้เริ่มการประชุมรอบใหม่แล้ว (${state.meeting.title})`
+          text: isAct
+            ? `✨ ผู้ดูแลระบบได้เริ่มกิจกรรมรอบใหม่แล้ว (${state.meeting.title})`
+            : `🚀 ผู้ดูแลระบบได้เริ่มการประชุมรอบใหม่แล้ว (${state.meeting.title})`
         });
         result = { ok: true };
         break;
@@ -272,9 +284,12 @@
         state.raiseHandQueue = [];
         state.meeting.checkinToken = null;
 
+        const isAct = summaryRecord.format === 'ACTIVITY';
         notify('notify:event', {
           type: 'warning',
-          text: '🏁 ผู้ดูแลระบบได้สั่งจบการประชุม และบันทึกประวัติสรุปการประชุมย้อนหลังเรียบร้อยแล้ว'
+          text: isAct
+            ? `🏁 ผู้ดูแลระบบได้จบกิจกรรม "${summaryRecord.title}" และบันทึกประวัติสรุปผลเรียบร้อยแล้ว`
+            : '🏁 ผู้ดูแลระบบได้สั่งจบการประชุม และบันทึกประวัติสรุปการประชุมย้อนหลังเรียบร้อยแล้ว'
         });
         result = { ok: true, summary: summaryRecord };
         break;

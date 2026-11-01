@@ -114,37 +114,65 @@ let currentMeetingFormat = 'ONSITE';
 let currentOnlinePlatform = 'GOOGLE_MEET';
 
 function setMeetingFormat(format) {
-  currentMeetingFormat = format === 'ONLINE' ? 'ONLINE' : 'ONSITE';
+  currentMeetingFormat = (format === 'ONLINE') ? 'ONLINE' : ((format === 'ACTIVITY') ? 'ACTIVITY' : 'ONSITE');
   const btnOnsite = document.getElementById('btnFormatOnsite');
   const btnOnline = document.getElementById('btnFormatOnline');
+  const btnActivity = document.getElementById('btnFormatActivity');
   const onsiteBox = document.getElementById('cfgMeetingLocationBox');
   const onlineBox = document.getElementById('cfgMeetingOnlineBox');
   const badge = document.getElementById('cfgCurrentFormatBadge');
   const note = document.getElementById('cfgCheckinSummaryNote');
+  const titleLabel = document.getElementById('cfgMeetingTitleLabel');
+  const titleInput = document.getElementById('cfgMeetingTitle');
+  const locationLabel = document.getElementById('cfgMeetingLocationLabel');
+  const locationInput = document.getElementById('cfgMeetingLocation');
+  const locationDetailLabel = document.getElementById('cfgMeetingLocationDetailLabel');
+  const locationDetailInput = document.getElementById('cfgMeetingLocationDetail');
+
+  const inactiveBtn = 'py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition bg-card border-border text-muted-foreground hover:text-foreground cursor-pointer';
+  const activeBtn = 'py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-primary text-white shadow-xs border-primary cursor-pointer';
+
+  if (btnOnsite) btnOnsite.className = inactiveBtn;
+  if (btnOnline) btnOnline.className = inactiveBtn;
+  if (btnActivity) btnActivity.className = inactiveBtn;
 
   if (currentMeetingFormat === 'ONLINE') {
-    if (btnOnline) {
-      btnOnline.className = 'py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-primary text-white shadow-xs border-primary';
-    }
-    if (btnOnsite) {
-      btnOnsite.className = 'py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition bg-card border-border text-muted-foreground hover:text-foreground';
-    }
+    if (btnOnline) btnOnline.className = activeBtn;
     if (onsiteBox) onsiteBox.classList.add('hidden');
     if (onlineBox) onlineBox.classList.remove('hidden');
     if (badge) {
       badge.textContent = 'ออนไลน์ (Online)';
-      badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+      badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30';
     }
     if (note) {
       note.textContent = 'Online: สมาชิกสแกน QR Code หรือกรอกรหัสเช็คชื่อของผู้ดูแลระบบ';
     }
+    if (titleLabel) titleLabel.innerHTML = 'หัวข้อการประชุม <span class="text-rose-500">*</span>';
+    if (titleInput && (!titleInput.value || titleInput.value.includes('กิจกรรม'))) {
+      titleInput.placeholder = 'เช่น การประชุมชมรมคมสัน ครั้งที่ 1/2569';
+    }
+  } else if (currentMeetingFormat === 'ACTIVITY') {
+    if (btnActivity) btnActivity.className = activeBtn;
+    if (onsiteBox) onsiteBox.classList.remove('hidden');
+    if (onlineBox) onlineBox.classList.add('hidden');
+    if (badge) {
+      badge.textContent = 'กิจกรรม (Activity)';
+      badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+    }
+    if (note) {
+      note.textContent = 'กิจกรรม (Activity): มีระบบเช็คชื่อสมาชิก สแกน QR Code รายชื่อ และนับสถิติเหมือน On-site ทุกประการ';
+    }
+    if (titleLabel) titleLabel.innerHTML = 'ชื่อกิจกรรมชมรม <span class="text-rose-500">*</span>';
+    if (titleInput && (!titleInput.value || titleInput.value.includes('การประชุม'))) {
+      titleInput.placeholder = 'เช่น กิจกรรมค่ายสานสัมพันธ์ คมสัน 2026 หรือ KKU Carnival';
+    }
+    if (locationLabel) locationLabel.innerHTML = 'สถานที่จัดกิจกรรม <span class="text-rose-500">*</span>';
+    if (locationInput) locationInput.placeholder = 'เช่น ลานกิจกรรมริมบึงสีฐาน หรือ อาคารพลศึกษา';
+    if (locationDetailLabel) locationDetailLabel.textContent = 'รายละเอียดสถานที่จัดกิจกรรม';
+    if (locationDetailInput) locationDetailInput.placeholder = 'เช่น บึงสีฐาน มหาวิทยาลัยขอนแก่น โซน B';
   } else {
-    if (btnOnsite) {
-      btnOnsite.className = 'py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-primary text-white shadow-xs border-primary';
-    }
-    if (btnOnline) {
-      btnOnline.className = 'py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition bg-card border-border text-muted-foreground hover:text-foreground';
-    }
+    // ONSITE
+    if (btnOnsite) btnOnsite.className = activeBtn;
     if (onsiteBox) onsiteBox.classList.remove('hidden');
     if (onlineBox) onlineBox.classList.add('hidden');
     if (badge) {
@@ -152,8 +180,16 @@ function setMeetingFormat(format) {
       badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20';
     }
     if (note) {
-      note.textContent = 'On-site: ผู้ดูแลระบบสแกน QR Code ประจำตัวสมาชิก';
+      note.textContent = 'On-site: ผู้ดูแลระบบสแกน QR Code ประจำตัวสมาชิก หรือเช็คชื่อตามรายชื่อ';
     }
+    if (titleLabel) titleLabel.innerHTML = 'หัวข้อการประชุม <span class="text-rose-500">*</span>';
+    if (titleInput && (!titleInput.value || titleInput.value.includes('กิจกรรม'))) {
+      titleInput.placeholder = 'เช่น การประชุมชมรมคมสัน ครั้งที่ 1/2569';
+    }
+    if (locationLabel) locationLabel.innerHTML = 'สถานที่ประชุม (ชื่อห้องประชุม) <span class="text-rose-500">*</span>';
+    if (locationInput) locationInput.placeholder = 'เช่น ห้องประชุม CP9127 หรือ ห้องประชุมสโมสรนักศึกษา';
+    if (locationDetailLabel) locationDetailLabel.textContent = 'รายละเอียดสถานที่ประชุม (สถานที่เต็ม)';
+    if (locationDetailInput) locationDetailInput.placeholder = 'เช่น ชั้น 9 อาคารปฏิบัติการรวมทางคอมพิวเตอร์และสารสนเทศ คณะวิศวกรรมศาสตร์';
   }
 }
 
@@ -197,7 +233,8 @@ function startOfficialMeeting(e) {
   const endTime = document.getElementById('cfgEndTime')?.value || '19:00';
 
   if (!title) {
-    showToast('กรุณากรอก "หัวข้อการประชุม" ก่อนเปิดการประชุม!', 'error');
+    const isAct = currentMeetingFormat === 'ACTIVITY';
+    showToast(isAct ? 'กรุณากรอก "ชื่อกิจกรรม" ก่อนเปิดกิจกรรม!' : 'กรุณากรอก "หัวข้อการประชุม" ก่อนเปิดการประชุม!', 'error');
     return false;
   }
 
@@ -228,7 +265,10 @@ function startOfficialMeeting(e) {
     const location = (document.getElementById('cfgMeetingLocation')?.value || '').trim();
     const locationDetail = (document.getElementById('cfgMeetingLocationDetail')?.value || '').trim();
     if (!location) {
-      showToast('กรุณากรอก "สถานที่ประชุม (ชื่อห้องประชุม)" ก่อนเปิดการประชุม!', 'error');
+      const msg = currentMeetingFormat === 'ACTIVITY'
+        ? 'กรุณากรอก "สถานที่จัดกิจกรรม" ก่อนเปิดกิจกรรม!'
+        : 'กรุณากรอก "สถานที่ประชุม (ชื่อห้องประชุม)" ก่อนเปิดการประชุม!';
+      showToast(msg, 'error');
       return false;
     }
     payload.location = location;
@@ -248,7 +288,8 @@ function startOfficialMeeting(e) {
   window.saveLocalState();
   window.socket.emit('admin:startMeeting', payload);
   if (typeof window.renderAll === 'function') window.renderAll();
-  showToast('เปิดการประชุมเรียบร้อยแล้ว', 'success');
+  const isAct = currentMeetingFormat === 'ACTIVITY';
+  showToast(isAct ? 'เปิดกิจกรรมชมรมเรียบร้อยแล้ว' : 'เปิดการประชุมเรียบร้อยแล้ว', 'success');
   return true;
 }
 
@@ -281,15 +322,16 @@ async function resetMeetingToNotStarted() {
 }
 
 async function endMeetingNow(skipConfirm = false) {
+  const isAct = window.appState?.meeting?.format === 'ACTIVITY';
   if (!skipConfirm) {
     const confirmed = typeof window.showConfirmDialog === 'function'
       ? await window.showConfirmDialog({
-          title: 'ยืนยันการจบการประชุม',
-          message: 'ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?',
-          confirmText: 'จบการประชุม',
+          title: isAct ? 'ยืนยันการจบกิจกรรม' : 'ยืนยันการจบการประชุม',
+          message: isAct ? 'ยืนยันการจบกิจกรรมและเปิดหน้าสรุปผลกิจกรรมหรือไม่?' : 'ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?',
+          confirmText: isAct ? 'จบกิจกรรม' : 'จบการประชุม',
           cancelText: 'ยกเลิก',
           isDanger: false,
-          icon: 'flag'
+          icon: isAct ? 'sparkles' : 'flag'
         })
       : false;
     if (!confirmed) return;
@@ -311,16 +353,17 @@ async function endMeetingNow(skipConfirm = false) {
   const leaveCount = (window.appState.users || []).filter(u => u.isLeave).length;
   const absentCount = (window.appState.users || []).filter(u => !u.checkedIn && !u.isLeave).length;
 
+  const defaultTitle = isAct ? 'กิจกรรมชมรมสันทนาการ' : 'การประชุมชมรมสันทนาการ';
   const summaryRecord = {
     id: 'MTG-' + endedAt,
-    title: window.appState.meeting.title || 'การประชุมชมรมสันทนาการ',
-    meetingTitle: window.appState.meeting.title || 'การประชุมชมรมสันทนาการ',
+    title: window.appState.meeting.title || defaultTitle,
+    meetingTitle: window.appState.meeting.title || defaultTitle,
     date: window.appState.meeting.date || new Date().toISOString().slice(0, 10),
     endDate: window.appState.meeting.endDate || window.appState.meeting.date || new Date().toISOString().slice(0, 10),
     meetingDate: window.appState.meeting.date || new Date().toISOString().slice(0, 10),
     meetingEndDate: window.appState.meeting.endDate || window.appState.meeting.date || new Date().toISOString().slice(0, 10),
     location: window.appState.meeting.location || '-',
-    format: window.appState.meeting.format || 'ONSITE',
+    format: window.appState.meeting.format || (isAct ? 'ACTIVITY' : 'ONSITE'),
     onlinePlatform: window.appState.meeting.onlinePlatform || null,
     onlineUrl: window.appState.meeting.onlineUrl || '',
     startTime: window.appState.meeting.startTime || '17:00',
@@ -368,13 +411,14 @@ async function endMeetingNow(skipConfirm = false) {
   window.saveLocalState();
   if (typeof window.switchAdminTab === 'function') window.switchAdminTab('SUMMARY');
   if (typeof window.renderAll === 'function') window.renderAll();
-  showToast('จบการประชุมเรียบร้อยแล้ว และบันทึกประวัติสรุปการประชุมสำเร็จ', 'info');
+  showToast(isAct ? 'จบกิจกรรมชมรมเรียบร้อยแล้ว และบันทึกประวัติสรุปผลสำเร็จ' : 'จบการประชุมเรียบร้อยแล้ว และบันทึกประวัติสรุปการประชุมสำเร็จ', 'info');
 }
 
 async function handleAdminMeetingToggle(isChecked) {
   const toggleSwitch = document.getElementById('adminMeetingToggleSwitch');
   const state = window.appState;
   const isMeetingActive = Boolean(state?.meeting?.isStarted && !state?.meeting?.isEnded);
+  const isAct = state?.meeting?.format === 'ACTIVITY';
 
   if (isChecked) {
     if (!isMeetingActive) {
@@ -387,12 +431,12 @@ async function handleAdminMeetingToggle(isChecked) {
     if (isMeetingActive) {
       const confirmed = typeof window.showConfirmDialog === 'function'
         ? await window.showConfirmDialog({
-            title: 'ยืนยันการจบการประชุม',
-            message: 'ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?',
-            confirmText: 'จบการประชุม',
+            title: isAct ? 'ยืนยันการจบกิจกรรม' : 'ยืนยันการจบการประชุม',
+            message: isAct ? 'ยืนยันการจบกิจกรรมและเปิดหน้าสรุปผลกิจกรรมหรือไม่?' : 'ยืนยันการจบการประชุมและเปิดหน้าสรุปผลการประชุมหรือไม่?',
+            confirmText: isAct ? 'จบกิจกรรม' : 'จบการประชุม',
             cancelText: 'ยกเลิก',
             isDanger: false,
-            icon: 'flag'
+            icon: isAct ? 'sparkles' : 'flag'
           })
         : false;
       if (confirmed) {
@@ -607,6 +651,7 @@ function renderMeetingHistoryList() {
   let liveCardHtml = '';
   if (isLive) {
     const isOnline = state.meeting.format === 'ONLINE';
+    const isActivity = state.meeting.format === 'ACTIVITY';
     const liveUsers = state.users || [];
     const liveTotal = liveUsers.length;
     const liveOnTime = liveUsers.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
@@ -618,21 +663,29 @@ function renderMeetingHistoryList() {
     liveCardHtml = `
       <div class="p-3.5 rounded-xl border transition-all ${
         isViewingLive
-          ? 'bg-rose-500/[0.08] border-rose-500/40 shadow-xs'
-          : 'bg-card border-border hover:border-rose-500/30'
+          ? (isActivity ? 'bg-amber-500/[0.08] border-amber-500/40 shadow-xs' : 'bg-rose-500/[0.08] border-rose-500/40 shadow-xs')
+          : 'bg-card border-border hover:border-amber-500/30'
       } flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5">
         <div class="min-w-0 space-y-1.5 flex-1">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse">
-              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> กำลังประชุมอยู่ (Live)
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+              isActivity
+                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+            } animate-pulse">
+              <span class="w-1.5 h-1.5 rounded-full ${isActivity ? 'bg-amber-500' : 'bg-rose-500'}"></span> ${isActivity ? 'กำลังจัดกิจกรรม (Live)' : 'กำลังประชุมอยู่ (Live)'}
             </span>
-            <span class="font-bold text-xs sm:text-sm text-foreground truncate">${state.meeting.title || 'การประชุมชมรม'}</span>
+            <span class="font-bold text-xs sm:text-sm text-foreground truncate">${state.meeting.title || (isActivity ? 'กิจกรรมชมรม' : 'การประชุมชมรม')}</span>
             ${isViewingLive ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground shrink-0">กำลังแสดงผล</span>` : ''}
             <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-              isOnline ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+              isActivity
+                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                : isOnline
+                ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
             }">
-              <i data-lucide="${isOnline ? 'globe' : 'map-pin'}" class="w-3 h-3"></i>
-              ${isOnline ? `ออนไลน์ (${state.meeting.onlinePlatform || 'Online'})` : `ออนไซต์ (${state.meeting.location || '-'})`}
+              <i data-lucide="${isActivity ? 'sparkles' : (isOnline ? 'globe' : 'map-pin')}" class="w-3 h-3"></i>
+              ${isActivity ? `กิจกรรม (${state.meeting.location || '-'})` : (isOnline ? `ออนไลน์ (${state.meeting.onlinePlatform || 'Online'})` : `ออนไซต์ (${state.meeting.location || '-'})`)}
             </span>
           </div>
           <div class="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
@@ -656,7 +709,7 @@ function renderMeetingHistoryList() {
           <button type="button" onclick="returnToCurrentMeetingSummary()"
             class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               isViewingLive
-                ? 'bg-rose-600 text-white shadow-2xs'
+                ? (isActivity ? 'bg-amber-600 text-white shadow-2xs' : 'bg-rose-600 text-white shadow-2xs')
                 : 'bg-muted hover:bg-muted/80 text-foreground'
             }">
             <i data-lucide="eye" class="w-3.5 h-3.5"></i> <span>${isViewingLive ? 'กำลังดูสด' : 'ดูสรุปผลสด'}</span>
@@ -673,6 +726,7 @@ function renderMeetingHistoryList() {
   const pastCardsHtml = history.map(rec => {
     const isSelected = window.selectedHistoryMeetingId === rec.id;
     const isOnline = rec.format === 'ONLINE';
+    const isActivity = rec.format === 'ACTIVITY';
     const st = rec.stats || { total: 0, onTime: 0, late: 0, leave: 0, absent: 0 };
     const dateFormatted = (rec.endDate && rec.endDate !== rec.date)
       ? `${rec.date} ถึง ${rec.endDate}`
@@ -688,13 +742,17 @@ function renderMeetingHistoryList() {
       } flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="min-w-0 space-y-1.5 flex-1">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="font-bold text-xs sm:text-sm text-foreground truncate">${rec.title || 'การประชุมชมรม'}</span>
+            <span class="font-bold text-xs sm:text-sm text-foreground truncate">${rec.title || (isActivity ? 'กิจกรรมชมรม' : 'การประชุมชมรม')}</span>
             ${isSelected ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground shrink-0">กำลังแสดงผล</span>` : ''}
             <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-              isOnline ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+              isActivity
+                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                : isOnline
+                ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
             }">
-              <i data-lucide="${isOnline ? 'globe' : 'map-pin'}" class="w-3 h-3"></i>
-              ${isOnline ? `ออนไลน์ (${rec.onlinePlatform || 'Online'})` : `ออนไซต์ (${rec.location || '-'})`}
+              <i data-lucide="${isActivity ? 'sparkles' : (isOnline ? 'globe' : 'map-pin')}" class="w-3 h-3"></i>
+              ${isActivity ? `กิจกรรม (${rec.location || '-'})` : (isOnline ? `ออนไลน์ (${rec.onlinePlatform || 'Online'})` : `ออนไซต์ (${rec.location || '-'})`)}
             </span>
           </div>
           <div class="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
@@ -980,6 +1038,7 @@ function renderSummarySection() {
   const dlBtnText = document.getElementById('summaryDownloadBtnText');
 
   if (histMeeting) {
+    const isAct = histMeeting.format === 'ACTIVITY';
     const histDateDisplay = (histMeeting.endDate && histMeeting.endDate !== histMeeting.date)
       ? `${histMeeting.date} ถึง ${histMeeting.endDate}`
       : (histMeeting.date || '-');
@@ -989,19 +1048,20 @@ function renderSummarySection() {
       headerInfo.textContent = `ประวัติย้อนหลัง: ${histMeeting.title} • วันที่: ${histDateDisplay} • กำหนดเลิก: ${histSchedTime} น. • ปิดจริง: ${histActualTime} น.`;
     }
     if (alertBanner) alertBanner.classList.remove('hidden');
-    if (viewTitle) viewTitle.textContent = histMeeting.title || 'การประชุมย้อนหลัง';
+    if (viewTitle) viewTitle.textContent = histMeeting.title || (isAct ? 'กิจกรรมย้อนหลัง' : 'การประชุมย้อนหลัง');
     if (viewDate) viewDate.textContent = `(วันที่: ${histDateDisplay} • กำหนดเลิก ${histSchedTime} น. • ปิดจริง ${histActualTime} น.)`;
     if (dlBtnText) dlBtnText.textContent = 'ดาวน์โหลด (.xlsx)';
   } else {
     if (headerInfo) {
       const isLive = Boolean(state.meeting && state.meeting.isStarted && !state.meeting.isEnded);
+      const isAct = (isLive ? state.meeting?.format : state.lastMeetingSummary?.format) === 'ACTIVITY';
       const isBefore = isLive && (typeof isMeetingBeforeScheduledTime === 'function' && isMeetingBeforeScheduledTime(state.meeting));
       headerInfo.textContent = isLive
         ? (isBefore
-            ? `การประชุมปัจจุบัน: ${state.meeting.title || 'ชมรมสันทนาการ'} (เปิดห้องล่วงหน้า - เริ่ม ${state.meeting.startTime || '07:00'} น.)`
-            : `การประชุมปัจจุบัน: ${state.meeting.title || 'ชมรมสันทนาการ'} (กำลังดำเนินการประชุม)`)
+            ? `${isAct ? 'กิจกรรมปัจจุบัน' : 'การประชุมปัจจุบัน'}: ${state.meeting.title || 'ชมรมสันทนาการ'} (เปิดล่วงหน้า - เริ่ม ${state.meeting.startTime || '07:00'} น.)`
+            : `${isAct ? 'กิจกรรมปัจจุบัน' : 'การประชุมปัจจุบัน'}: ${state.meeting.title || 'ชมรมสันทนาการ'} (${isAct ? 'กำลังจัดกิจกรรม' : 'กำลังดำเนินการประชุม'})`)
         : (state.lastMeetingSummary
-            ? `สรุปผลการประชุมล่าสุด: ${state.lastMeetingSummary.title || 'ชมรมสันทนาการ'} (เสร็จสิ้นแล้ว)`
+            ? `${isAct ? 'สรุปผลกิจกรรมล่าสุด' : 'สรุปผลการประชุมล่าสุด'}: ${state.lastMeetingSummary.title || 'ชมรมสันทนาการ'} (เสร็จสิ้นแล้ว)`
             : 'สามารถเปลี่ยนสถานะสมาชิก (ลา / ขาด / มาสาย / มาทัน) ได้โดยตรงก่อนส่งออกไฟล์ Excel');
     }
     if (alertBanner) alertBanner.classList.add('hidden');

@@ -220,7 +220,7 @@ async function generatePDFForUser(userId) {
               <img src="${logoSrc}" id="pdfDocLogoImg" alt="โลโก้ชมรม" style="height: 62px; width: auto; max-width: 145px; object-fit: contain; display: block;" onerror="this.onerror=null; this.src='comsan_logo.png';" />
             </td>
             <td style="text-align: center; vertical-align: middle; padding: 0 8px;">
-              <div style="font-size: 17.5px; font-weight: 800; color: #1e1b4b; line-height: 1.35;">บันทึกการประชุมชมรมสันทนาการ</div>
+              <div style="font-size: 17.5px; font-weight: 800; color: #1e1b4b; line-height: 1.35;">${m.format === 'ACTIVITY' ? 'บันทึกข้อสรุปกิจกรรมชมรมสันทนาการ' : 'บันทึกการประชุมชมรมสันทนาการ'}</div>
               <div style="font-size: 13px; font-weight: 600; color: #4338ca; margin-top: 4px; line-height: 1.4;">${meta.date}</div>
               ${m.title ? `<div style="font-size: 12.5px; color: #475569; margin-top: 3px; font-weight: 500; line-height: 1.4;">เรื่อง: <span style="color: #1e293b; font-weight: 600;">${m.title}</span></div>` : ''}
             </td>
@@ -252,7 +252,7 @@ async function generatePDFForUser(userId) {
       </div>
 
       <div style="padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8;">
-        <span style="white-space: nowrap;">ระบบจัดการประชุมชมรมสันทนาการ (COMSAN Meeting)</span>
+        <span style="white-space: nowrap;">${m.format === 'ACTIVITY' ? 'ระบบจัดกิจกรรมชมรมสันทนาการ (COMSAN Meeting & Activity)' : 'ระบบจัดการประชุมชมรมสันทนาการ (COMSAN Meeting)'}</span>
         <span style="white-space: nowrap;">พิมพ์เมื่อ: ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</span>
       </div>
     `;
@@ -519,13 +519,16 @@ function exportSummaryExcel(customMeetingRecord) {
       : (state.lastMeetingSummary.motions || []);
   }
 
-  const meetingTitle = m.title || m.meetingTitle || 'การประชุมชมรมสันทนาการ';
+  const isAct = m.format === 'ACTIVITY';
+  const meetingTitle = m.title || m.meetingTitle || (isAct ? 'กิจกรรมชมรมสันทนาการ' : 'การประชุมชมรมสันทนาการ');
   const meetingDate = (m.endDate && m.endDate !== m.date)
     ? `${m.date} ถึง ${m.endDate}`
     : (m.date || m.meetingDate || (new Date().toISOString().slice(0, 10)));
   const schedEnd = m.scheduledEndTime || m.endTime || '-';
   const actualEnd = m.actualEndTime || m.endedTimeStr || '-';
-  const meetingFormat = m.format === 'ONLINE' ? `ออนไลน์ (${m.onlinePlatform || 'Online'})` : `ออนไซต์ (${m.location || '-'})`;
+  const meetingFormat = isAct
+    ? `กิจกรรม (${m.location || '-'})`
+    : (m.format === 'ONLINE' ? `ออนไลน์ (${m.onlinePlatform || 'Online'})` : `ออนไซต์ (${m.location || '-'})`);
 
   const onTimeCount = users.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
   const lateCount = users.filter(u => u.checkedIn && u.isLate && !u.isLeave).length;
@@ -533,12 +536,12 @@ function exportSummaryExcel(customMeetingRecord) {
   const absentCount = users.filter(u => !u.checkedIn && !u.isLeave).length;
 
   const aoa = [
-    ['รายงานสรุปผลการประชุมชมรมสันทนาการ (COMSAN)'],
-    ['หัวข้อการประชุม', meetingTitle],
-    ['รูปแบบการประชุม / สถานที่', meetingFormat],
-    ['วัน เดือน ปี ที่ประชุม', meetingDate],
-    ['เวลากำหนดการประชุม', `เริ่ม ${m.startTime || '-'} น. ถึง ${schedEnd} น. (ตัดสาย: ${m.lateTime || '-'} น.)`],
-    ['เวลาปิดการประชุมจริง', actualEnd && actualEnd !== '-' ? `${actualEnd} น.` : '-'],
+    [isAct ? 'รายงานสรุปผลการจัดกิจกรรมชมรมสันทนาการ (COMSAN)' : 'รายงานสรุปผลการประชุมชมรมสันทนาการ (COMSAN)'],
+    [isAct ? 'ชื่อกิจกรรม' : 'หัวข้อการประชุม', meetingTitle],
+    [isAct ? 'รูปแบบ / สถานที่จัดกิจกรรม' : 'รูปแบบการประชุม / สถานที่', meetingFormat],
+    [isAct ? 'วัน เดือน ปี ที่จัดกิจกรรม' : 'วัน เดือน ปี ที่ประชุม', meetingDate],
+    [isAct ? 'เวลากำหนดการจัดกิจกรรม' : 'เวลากำหนดการประชุม', `เริ่ม ${m.startTime || '-'} น. ถึง ${schedEnd} น. (ตัดสาย: ${m.lateTime || '-'} น.)`],
+    [isAct ? 'เวลาปิดกิจกรรมจริง' : 'เวลาปิดการประชุมจริง', actualEnd && actualEnd !== '-' ? `${actualEnd} น.` : '-'],
     ['สรุปภาพรวมการเข้าร่วม', `ทั้งหมด ${users.length} คน | มาทัน ${onTimeCount} คน | มาสาย ${lateCount} คน | ลา ${leaveCount} คน | ขาด ${absentCount} คน`],
     [],
     ['สรุปผลคะแนนโหวตในแต่ละญัตติ']
@@ -558,7 +561,7 @@ function exportSummaryExcel(customMeetingRecord) {
       ]);
     });
   }
-  aoa.push([], ['รหัสสมาชิก', 'ชื่อ', 'นามสกุล', 'ชื่อเล่น', 'ชั้นปี', 'สาขา', 'ตำแหน่งในชมรม', 'สถานะ', 'เวลาเช็คชื่อ', 'เวลาเข้าประชุม (นาที)', 'จำนวนยกมือ', 'ประวัติการโหวต', 'โน้ต']);
+  aoa.push([], ['รหัสสมาชิก', 'ชื่อ', 'นามสกุล', 'ชื่อเล่น', 'ชั้นปี', 'สาขา', 'ตำแหน่งในชมรม', 'สถานะ', 'เวลาเช็คชื่อ', isAct ? 'เวลาเข้าร่วมกิจกรรม (นาที)' : 'เวลาเข้าประชุม (นาที)', 'จำนวนยกมือ', 'ประวัติการโหวต', 'โน้ต']);
   users.forEach(u => {
     const voteSummary = motions.map(mot => {
       const v = mot.votes ? mot.votes[u.id] : null;
@@ -568,16 +571,16 @@ function exportSummaryExcel(customMeetingRecord) {
       const foundOpt = opts.find(o => o.id === v);
       return `${mot.title}: ${foundOpt ? foundOpt.label : v}`;
     }).join(' | ');
-    const st = u.isLeave ? `ลา (${u.leaveReason || '-'})` : u.checkedIn ? (u.isLate ? 'มาสาย' : 'มาทันเวลา') : 'ขาดประชุม';
+    const st = u.isLeave ? `ลา (${u.leaveReason || '-'})` : u.checkedIn ? (u.isLate ? 'มาสาย' : 'มาทันเวลา') : (isAct ? 'ขาดกิจกรรม' : 'ขาดประชุม');
     aoa.push([u.id, u.firstName, u.lastName, u.nickname, u.year, u.major, u.position, st, u.checkInTimeStr, u.attendedMinutes || 0, u.raiseHandCount || 0, voteSummary || '-', u.note || '-']);
   });
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'สรุปผลการประชุม_COMSAN');
+  XLSX.utils.book_append_sheet(wb, ws, isAct ? 'สรุปผลกิจกรรม_COMSAN' : 'สรุปผลการประชุม_COMSAN');
   const safeTitle = String(meetingTitle).replace(/[/\\?%*:|"<>]/g, '_').slice(0, 30);
-  XLSX.writeFile(wb, `สรุปผลการประชุม_${safeTitle}_${meetingDate}.xlsx`);
+  XLSX.writeFile(wb, `${isAct ? 'สรุปผลกิจกรรม' : 'สรุปผลการประชุม'}_${safeTitle}_${meetingDate}.xlsx`);
   if (typeof showToast === 'function') {
-    showToast(`ดาวน์โหลดสรุปผลการประชุม (${meetingTitle}) เรียบร้อยแล้ว`, 'success');
+    showToast(`ดาวน์โหลด${isAct ? 'สรุปผลกิจกรรม' : 'สรุปผลการประชุม'} (${meetingTitle}) เรียบร้อยแล้ว`, 'success');
   }
 }
 

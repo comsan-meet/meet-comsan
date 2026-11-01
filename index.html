@@ -6205,44 +6205,49 @@ label svg, label i {
                     ในสถานที่ (On-site)
                   </span>
                 </div>
-                <div class="grid grid-cols-2 gap-2.5 max-w-md">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 max-w-xl">
                   <button type="button" onclick="setMeetingFormat('ONSITE')" id="btnFormatOnsite"
-                    class="py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-primary text-white shadow-xs border-primary">
-                    <i data-lucide="building" class=""></i>
+                    class="py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition bg-primary text-white shadow-xs border-primary cursor-pointer">
+                    <i data-lucide="building" class="w-4 h-4"></i>
                     <span>On-site (ในสถานที่)</span>
                   </button>
                   <button type="button" onclick="setMeetingFormat('ONLINE')" id="btnFormatOnline"
-                    class="py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition bg-card border-border text-muted-foreground hover:text-foreground">
-                    <i data-lucide="video" class=""></i>
+                    class="py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition bg-card border-border text-muted-foreground hover:text-foreground cursor-pointer">
+                    <i data-lucide="video" class="w-4 h-4"></i>
                     <span>Online (ออนไลน์)</span>
+                  </button>
+                  <button type="button" onclick="setMeetingFormat('ACTIVITY')" id="btnFormatActivity"
+                    class="py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition bg-card border-border text-muted-foreground hover:text-foreground cursor-pointer">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+                    <span>กิจกรรม (Activity)</span>
                   </button>
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-muted-foreground mb-1.5">หัวข้อการประชุม <span class="text-rose-500">*</span></label>
+                <label id="cfgMeetingTitleLabel" class="block text-xs font-semibold text-muted-foreground mb-1.5">หัวข้อการประชุม / ชื่อกิจกรรม <span class="text-rose-500">*</span></label>
                 <input type="text" id="cfgMeetingTitle" placeholder="เช่น การประชุมชมรมคมสัน ครั้งที่ 1/2569"
                   class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-input text-sm text-foreground focus:outline-none focus:border-indigo-500 transition" />
               </div>
 
-              <!-- Onsite Location Box: ชื่อห้องประชุม + รายละเอียดสถานที่เต็ม -->
+              <!-- Onsite & Activity Location Box: ชื่อห้องประชุม/สถานที่ + รายละเอียดสถานที่เต็ม -->
               <div id="cfgMeetingLocationBox" class="space-y-3">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label class="block text-xs font-semibold text-muted-foreground mb-1.5">
-                      สถานที่ประชุม (ชื่อห้องประชุม) <span class="text-rose-500">*</span>
+                    <label id="cfgMeetingLocationLabel" class="block text-xs font-semibold text-muted-foreground mb-1.5">
+                      สถานที่ประชุม / จัดกิจกรรม (ชื่อห้อง/สถานที่) <span class="text-rose-500">*</span>
                     </label>
-                    <input type="text" id="cfgMeetingLocation" placeholder="เช่น ห้องประชุม CP9127 หรือ ห้องประชุมสโมสรนักศึกษา"
+                    <input type="text" id="cfgMeetingLocation" placeholder="เช่น ห้องประชุม CP9127 หรือ ลานกิจกรรมริมบึงสีฐาน"
                       class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-input text-sm text-foreground focus:outline-none focus:border-indigo-500 transition" />
-                    <p class="text-[11px] text-muted-foreground mt-1">ชื่อห้องสั้นๆ ที่จะแสดงบนปุ่มด้านล่างแบนเนอร์</p>
+                    <p class="text-[11px] text-muted-foreground mt-1">ชื่อห้องหรือสถานที่สั้นๆ ที่จะแสดงบนปุ่มด้านล่างแบนเนอร์</p>
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold text-muted-foreground mb-1.5">
-                      รายละเอียดสถานที่ประชุม (สถานที่เต็ม)
+                    <label id="cfgMeetingLocationDetailLabel" class="block text-xs font-semibold text-muted-foreground mb-1.5">
+                      รายละเอียดสถานที่จัดงาน (สถานที่เต็ม)
                     </label>
                     <input type="text" id="cfgMeetingLocationDetail" placeholder="เช่น ชั้น 9 อาคารปฏิบัติการรวมทางคอมพิวเตอร์และสารสนเทศ คณะวิศวกรรมศาสตร์"
                       class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-input text-sm text-foreground focus:outline-none focus:border-indigo-500 transition" />
-                    <p class="text-[11px] text-muted-foreground mt-1">ข้อความสถานที่เต็มที่จะแสดงใต้หัวข้อการประชุม</p>
+                    <p class="text-[11px] text-muted-foreground mt-1">ข้อความสถานที่เต็มที่จะแสดงใต้หัวข้อการประชุมหรือกิจกรรม</p>
                   </div>
                 </div>
               </div>
@@ -7405,28 +7410,28 @@ label svg, label i {
 <!-- ======================================================== -->
   <!-- MODULAR JAVASCRIPT ARCHITECTURE                          -->
   <!-- ======================================================== -->
-  <script src="js/services/actionReducer.js?v=20261102_01"></script>
-  <script src="js/supabaseConfig.js?v=20261102_01"></script>
-  <script src="js/services/supabaseAdapter.js?v=20261102_01"></script>
-  <script src="js/config.js?v=20261102_01"></script>
-  <script src="js/defaultProjects.js?v=20261102_01"></script>
-  <script src="js/state.js?v=20261102_01"></script>
-  <script src="js/utils/format.js?v=20261102_01"></script>
-  <script src="js/utils/ui.js?v=20261102_01"></script>
-  <script src="js/utils/logoAsset.js?v=20261102_01"></script>
-  <script src="js/utils/export.js?v=20261102_01"></script>
-  <script src="js/components/seatingChart.js?v=20261102_01"></script>
-  <script src="js/components/voting.js?v=20261102_01"></script>
-  <script src="js/components/chat.js?v=20261102_01"></script>
-  <script src="js/components/files.js?v=20261102_01"></script>
-  <script src="js/components/randomizer.js?v=20261102_01"></script>
-  <script src="js/components/stream.js?v=20261102_01"></script>
-  <script src="js/components/analyticsChart.js?v=20261102_01"></script>
-  <script src="js/components/calendar.js?v=20261102_01"></script>
-  <script src="js/components/projects.js?v=20261102_01"></script>
-  <script src="js/views/navigation.js?v=20261102_01"></script>
-  <script src="js/views/userView.js?v=20261102_01"></script>
-  <script src="js/views/adminView.js?v=20261102_01"></script>
-  <script src="js/app.js?v=20261102_01"></script>
+  <script src="js/services/actionReducer.js?v=20261102_02"></script>
+  <script src="js/supabaseConfig.js?v=20261102_02"></script>
+  <script src="js/services/supabaseAdapter.js?v=20261102_02"></script>
+  <script src="js/config.js?v=20261102_02"></script>
+  <script src="js/defaultProjects.js?v=20261102_02"></script>
+  <script src="js/state.js?v=20261102_02"></script>
+  <script src="js/utils/format.js?v=20261102_02"></script>
+  <script src="js/utils/ui.js?v=20261102_02"></script>
+  <script src="js/utils/logoAsset.js?v=20261102_02"></script>
+  <script src="js/utils/export.js?v=20261102_02"></script>
+  <script src="js/components/seatingChart.js?v=20261102_02"></script>
+  <script src="js/components/voting.js?v=20261102_02"></script>
+  <script src="js/components/chat.js?v=20261102_02"></script>
+  <script src="js/components/files.js?v=20261102_02"></script>
+  <script src="js/components/randomizer.js?v=20261102_02"></script>
+  <script src="js/components/stream.js?v=20261102_02"></script>
+  <script src="js/components/analyticsChart.js?v=20261102_02"></script>
+  <script src="js/components/calendar.js?v=20261102_02"></script>
+  <script src="js/components/projects.js?v=20261102_02"></script>
+  <script src="js/views/navigation.js?v=20261102_02"></script>
+  <script src="js/views/userView.js?v=20261102_02"></script>
+  <script src="js/views/adminView.js?v=20261102_02"></script>
+  <script src="js/app.js?v=20261102_02"></script>
 </body>
 </html>
