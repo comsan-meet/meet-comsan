@@ -205,7 +205,7 @@ function setMeetingFormat(format) {
     if (onsiteBox) onsiteBox.classList.add('hidden');
     if (onlineBox) onlineBox.classList.remove('hidden');
     if (badge) {
-      badge.textContent = 'ออนไลน์ (Online)';
+      badge.textContent = 'Online';
       badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30';
     }
     if (note) {
@@ -220,11 +220,11 @@ function setMeetingFormat(format) {
     if (onsiteBox) onsiteBox.classList.remove('hidden');
     if (onlineBox) onlineBox.classList.add('hidden');
     if (badge) {
-      badge.textContent = 'กิจกรรม (Activity)';
+      badge.textContent = 'กิจกรรม';
       badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30';
     }
     if (note) {
-      note.textContent = 'กิจกรรม (Activity): มีระบบเช็คชื่อสมาชิก สแกน QR Code รายชื่อ และนับสถิติเหมือน On-site ทุกประการ';
+      note.textContent = 'กิจกรรม: มีระบบเช็คชื่อสมาชิก สแกน QR Code รายชื่อ และนับสถิติเหมือน On-site ทุกประการ';
     }
     if (titleLabel) titleLabel.innerHTML = 'ชื่อกิจกรรมชมรม <span class="text-rose-500">*</span>';
     if (titleInput && (!titleInput.value || titleInput.value.includes('การประชุม'))) {
@@ -240,7 +240,7 @@ function setMeetingFormat(format) {
     if (onsiteBox) onsiteBox.classList.remove('hidden');
     if (onlineBox) onlineBox.classList.add('hidden');
     if (badge) {
-      badge.textContent = 'ในสถานที่ (On-site)';
+      badge.textContent = 'On-site';
       badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20';
     }
     if (note) {
