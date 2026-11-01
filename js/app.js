@@ -83,6 +83,10 @@ function updateMeetingTimersAndBanners() {
 
   const isMeetingActive = Boolean(m.isStarted && !m.isEnded);
   const isActivity = m.format === 'ACTIVITY';
+  const lastHist = state.lastMeetingSummary || (Array.isArray(state.meetingHistory) && state.meetingHistory.length > 0 ? state.meetingHistory[0] : null);
+  const isLastHistActivity = lastHist
+    ? ((lastHist.format === 'ACTIVITY') || (lastHist.category === 'EVENT') || (typeof lastHist.title === 'string' && (lastHist.title.includes('กิจกรรม') || lastHist.title.toLowerCase().includes('activity'))))
+    : isActivity;
 
   if (!m.isStarted) {
     if (stateBadge) stateBadge.textContent = isActivity ? 'กิจกรรมยังไม่เริ่ม' : 'การประชุมยังไม่เริ่ม';
@@ -92,9 +96,15 @@ function updateMeetingTimersAndBanners() {
     if (voteElapsed) voteElapsed.textContent = 'ยังไม่เริ่ม';
     if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? 'ยังไม่เริ่มกิจกรรม' : 'ยังไม่เริ่มประชุม';
     if (adminNotStartedBanner) adminNotStartedBanner.classList.remove('hidden');
-    if (userBannerStatusPill) userBannerStatusPill.textContent = isActivity ? 'ยังไม่มีกิจกรรม' : 'ยังไม่มีการประชุม';
-    if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-slate-300';
-    if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300';
+    if (userBannerStatusPill) {
+      if (lastHist) {
+        userBannerStatusPill.textContent = isLastHistActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
+      } else {
+        userBannerStatusPill.textContent = isActivity ? 'ยังไม่มีกิจกรรม' : 'ยังไม่มีการประชุม';
+      }
+    }
+    if (heroDot) heroDot.className = lastHist ? 'w-2 h-2 rounded-full bg-rose-400' : 'w-2 h-2 rounded-full bg-slate-300';
+    if (heroStatusWrapper) heroStatusWrapper.className = lastHist ? 'inline-flex items-center gap-1.5 text-xs font-semibold text-rose-300' : 'inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300';
     if (raiseBannerBox) raiseBannerBox.className = 'bg-muted/40 border border-border rounded-2xl p-4 flex items-center justify-between gap-3';
     if (raiseBannerIcon) {
       if (typeof window.updateIcon === 'function') {
@@ -114,14 +124,17 @@ function updateMeetingTimersAndBanners() {
     }
     if (raiseBannerCounterWrap) raiseBannerCounterWrap.className = 'text-xs font-bold text-muted-foreground shrink-0';
   } else if (m.isEnded) {
-    if (stateBadge) stateBadge.textContent = isActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
+    const isEndedAct = lastHist ? isLastHistActivity : isActivity;
+    if (stateBadge) stateBadge.textContent = isEndedAct ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
     if (pulseDot) pulseDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
-    if (sbElapsed) sbElapsed.textContent = isActivity ? 'จบกิจกรรม' : 'จบการประชุม';
-    if (uElapsed) uElapsed.textContent = isActivity ? 'จบกิจกรรม' : 'จบการประชุม';
-    if (voteElapsed) voteElapsed.textContent = isActivity ? 'จบกิจกรรม' : 'จบการประชุม';
+    if (sbElapsed) sbElapsed.textContent = isEndedAct ? 'จบกิจกรรม' : 'จบการประชุม';
+    if (uElapsed) uElapsed.textContent = isEndedAct ? 'จบกิจกรรม' : 'จบการประชุม';
+    if (voteElapsed) voteElapsed.textContent = isEndedAct ? 'จบกิจกรรม' : 'จบการประชุม';
     if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
     if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
-    if (userBannerStatusPill) userBannerStatusPill.textContent = isActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
+    if (userBannerStatusPill) {
+      userBannerStatusPill.textContent = isEndedAct ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
+    }
     if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-rose-400';
     if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-rose-300';
     if (raiseBannerBox) raiseBannerBox.className = 'bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex items-center justify-between gap-3';
@@ -134,11 +147,11 @@ function updateMeetingTimersAndBanners() {
       }
     }
     if (raiseBannerStatusSub) {
-      raiseBannerStatusSub.textContent = isActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
+      raiseBannerStatusSub.textContent = isEndedAct ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
       raiseBannerStatusSub.className = 'text-[11px] font-bold text-rose-500';
     }
     if (raiseBannerAgenda) {
-      raiseBannerAgenda.textContent = m.title || (isActivity ? 'กิจกรรมเสร็จสิ้นแล้ว' : 'การประชุมเสร็จสิ้นแล้ว');
+      raiseBannerAgenda.textContent = (lastHist ? lastHist.title : m.title) || (isEndedAct ? 'กิจกรรมเสร็จสิ้นแล้ว' : 'การประชุมเสร็จสิ้นแล้ว');
       raiseBannerAgenda.className = 'text-xs sm:text-sm font-semibold text-foreground truncate';
     }
     if (raiseBannerCounterWrap) raiseBannerCounterWrap.className = 'text-xs font-bold text-rose-600 dark:text-rose-400 shrink-0';
@@ -452,14 +465,56 @@ function updateMeetingTimersAndBanners() {
     if (heroOnlineBadge) heroOnlineBadge.classList.add('hidden');
     const heroUserCheckinPill = document.getElementById('heroUserCheckinPill');
     if (heroUserCheckinPill) heroUserCheckinPill.classList.add('hidden');
-    const isLastActivity = (m.format === 'ACTIVITY') || (state.lastMeetingSummary?.format === 'ACTIVITY');
-    if (userBannerTitle) userBannerTitle.textContent = isLastActivity ? 'ยังไม่มีกิจกรรมในขณะนี้' : 'ยังไม่มีการประชุมในขณะนี้';
-    if (userBannerDateTime) userBannerDateTime.textContent = `${isLastActivity ? 'กิจกรรมล่าสุด' : 'การประชุมล่าสุด'}: ${m.title || '-'}`;
-    const dateDisplayInactive = (m.endDate && m.endDate !== m.date) ? `${m.date} ถึง ${m.endDate}` : (m.date || todayISO);
-    if (userBannerLocation) {
-      userBannerLocation.classList.remove('hidden');
-      userBannerLocation.textContent = `วันเวลาที่จัด: ${dateDisplayInactive} • ${m.startTime || '17:00'}–${m.endTime || '19:00'} น.`;
+
+    if (lastHist) {
+      if (userBannerStatusPill) {
+        userBannerStatusPill.textContent = isLastHistActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
+      }
+      if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-rose-400';
+      if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-rose-300';
+
+      if (userBannerTitle) {
+        userBannerTitle.textContent = isLastHistActivity ? 'ยังไม่มีกิจกรรมในขณะนี้' : 'ยังไม่มีการประชุมในขณะนี้';
+      }
+      if (userBannerDateTime) {
+        const histTitle = lastHist.title || lastHist.meetingTitle || '-';
+        userBannerDateTime.textContent = `${isLastHistActivity ? 'กิจกรรมล่าสุด' : 'การประชุมล่าสุด'}: ${histTitle}`;
+      }
+      if (userBannerLocation) {
+        userBannerLocation.classList.remove('hidden');
+        const histDateDisplay = (lastHist.endDate && lastHist.endDate !== lastHist.date)
+          ? `${lastHist.date} ถึง ${lastHist.endDate}`
+          : (lastHist.date || lastHist.meetingDate || todayISO);
+        let timeRange = '';
+        if (lastHist.startTime && lastHist.endTime) {
+          timeRange = ` • ${lastHist.startTime}–${lastHist.endTime} น.`;
+        } else if (lastHist.endedTimeStr) {
+          timeRange = ` • เสร็จสิ้น ${lastHist.endedTimeStr} น.`;
+        } else if (lastHist.startTime) {
+          timeRange = ` • เริ่ม ${lastHist.startTime} น.`;
+        }
+        userBannerLocation.textContent = `วันเวลาที่จัด: ${histDateDisplay}${timeRange}`;
+      }
+    } else {
+      // No meeting history in the system (or deleted by admin)
+      const isDraftAct = m.format === 'ACTIVITY';
+      if (userBannerStatusPill) {
+        userBannerStatusPill.textContent = isDraftAct ? 'ยังไม่มีกิจกรรม' : 'ยังไม่มีการประชุม';
+      }
+      if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-slate-300';
+      if (heroStatusWrapper) heroStatusWrapper.className = 'inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300';
+
+      if (userBannerTitle) {
+        userBannerTitle.textContent = isDraftAct ? 'ยังไม่มีกิจกรรมในขณะนี้' : 'ยังไม่มีการประชุมในขณะนี้';
+      }
+      if (userBannerDateTime) {
+        userBannerDateTime.textContent = isDraftAct ? 'ยังไม่มีประวัติกิจกรรมในระบบ' : 'ยังไม่มีประวัติการประชุมในระบบ';
+      }
+      if (userBannerLocation) {
+        userBannerLocation.classList.add('hidden');
+      }
     }
+
     if (onlineContainer) {
       onlineContainer.classList.add('hidden');
       onlineContainer.classList.remove('flex');
@@ -471,7 +526,10 @@ function updateMeetingTimersAndBanners() {
   }
 
   const openMot = (state.motions || []).find(mot => mot.isOpen);
-  const agendaLabel = openMot ? `ญัตติ: ${openMot.title}` : (m.title || 'การประชุมชมรมสันทนาการ (COMSAN)');
+  const defaultAgenda = isMeetingActive
+    ? (m.title || (isActivity ? 'กิจกรรมชมรมสันทนาการ (COMSAN)' : 'การประชุมชมรมสันทนาการ (COMSAN)'))
+    : (lastHist?.title || m.title || (isActivity ? 'กิจกรรมชมรมสันทนาการ (COMSAN)' : 'การประชุมชมรมสันทนาการ (COMSAN)'));
+  const agendaLabel = openMot ? `ญัตติ: ${openMot.title}` : defaultAgenda;
   if (homeBottomAgenda) homeBottomAgenda.textContent = agendaLabel;
 
   if (typeof updateUserActiveEventsBanner === 'function') {

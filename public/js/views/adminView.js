@@ -673,21 +673,46 @@ window.returnToCurrentMeetingSummary = returnToCurrentMeetingSummary;
 
 async function deleteHistoryMeeting(meetingId) {
   if (!meetingId) return;
+  const state = window.appState;
+  const matchHist = (state && Array.isArray(state.meetingHistory))
+    ? state.meetingHistory.find(m => m.id === meetingId)
+    : null;
+  const isAct = matchHist?.format === 'ACTIVITY';
+  const label = isAct ? 'ประวัติกิจกรรม' : 'ประวัติการประชุม';
+
   const confirmed = typeof window.showConfirmDialog === 'function'
     ? await window.showConfirmDialog({
-        title: 'ยืนยันการลบประวัติการประชุม',
-        message: 'คุณต้องการลบประวัติการประชุมนี้ออกจากระบบใช่หรือไม่? ข้อมูลสรุปและบันทึกจะไม่สามารถกู้คืนได้',
-        confirmText: 'ลบประวัติการประชุม',
+        title: `ยืนยันการลบ${label}`,
+        message: `คุณต้องการลบ${label}นี้ออกจากระบบใช่หรือไม่? ข้อมูลสรุปและบันทึกจะไม่สามารถกู้คืนได้`,
+        confirmText: `ลบ${label}`,
         isDanger: true,
         icon: 'trash-2'
       })
     : false;
   if (!confirmed) return;
+
   if (window.selectedHistoryMeetingId === meetingId) {
     window.selectedHistoryMeetingId = null;
   }
+
+  // Update local state immediately so UI updates without lag
+  if (state && Array.isArray(state.meetingHistory)) {
+    state.meetingHistory = state.meetingHistory.filter(m => m.id !== meetingId);
+    if (!state.lastMeetingSummary || state.lastMeetingSummary.id === meetingId) {
+      state.lastMeetingSummary = state.meetingHistory[0] || null;
+    }
+    if (state.meetingHistory.length === 0) {
+      state.lastMeetingSummary = null;
+      if (state.meeting && !state.meeting.isStarted) {
+        state.meeting.isEnded = false;
+      }
+    }
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+    if (typeof window.renderAll === 'function') window.renderAll();
+  }
+
   window.socket.emit('admin:deleteMeetingHistory', meetingId);
-  if (typeof showToast === 'function') showToast('ลบประวัติการประชุมเรียบร้อยแล้ว', 'info');
+  if (typeof showToast === 'function') showToast(`ลบ${label}เรียบร้อยแล้ว`, 'info');
 }
 window.deleteHistoryMeeting = deleteHistoryMeeting;
 

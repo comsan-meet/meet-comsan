@@ -199,14 +199,27 @@ module.exports = function registerMeetingHandlers(io, socket) {
 
   socket.on('admin:deleteMeetingHistory', (meetingId) => {
     if (!meetingId || !Array.isArray(state.meetingHistory)) return;
+    const match = state.meetingHistory.find(m => m.id === meetingId);
+    const isAct = match?.format === 'ACTIVITY';
     state.meetingHistory = state.meetingHistory.filter(m => m.id !== meetingId);
-    if (state.lastMeetingSummary && state.lastMeetingSummary.id === meetingId) {
+    if (!state.lastMeetingSummary || state.lastMeetingSummary.id === meetingId) {
       state.lastMeetingSummary = state.meetingHistory[0] || null;
+    } else {
+      const exists = state.meetingHistory.some(m => m.id === state.lastMeetingSummary.id);
+      if (!exists) {
+        state.lastMeetingSummary = state.meetingHistory[0] || null;
+      }
+    }
+    if (state.meetingHistory.length === 0) {
+      state.lastMeetingSummary = null;
+      if (state.meeting && !state.meeting.isStarted) {
+        state.meeting.isEnded = false;
+      }
     }
     stateService.persistAndBroadcast();
     io.emit('notify:event', {
       type: 'info',
-      text: '🗑️ ลบประวัติการประชุมออกจากระบบเรียบร้อยแล้ว'
+      text: isAct ? '🗑️ ลบประวัติกิจกรรมออกจากระบบเรียบร้อยแล้ว' : '🗑️ ลบประวัติการประชุมออกจากระบบเรียบร้อยแล้ว'
     });
   });
 

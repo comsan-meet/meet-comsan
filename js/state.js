@@ -292,7 +292,7 @@ function normalizeState(raw) {
       };
     })(),
     activeStream: raw.activeStream || null,
-    lastMeetingSummary: raw.lastMeetingSummary || null,
+    lastMeetingSummary: raw.lastMeetingSummary || (Array.isArray(raw.meetingHistory) && raw.meetingHistory.length > 0 ? raw.meetingHistory[0] : null) || null,
     meetingHistory: Array.isArray(raw.meetingHistory) ? raw.meetingHistory : [],
     calendarEvents: Array.isArray(raw.calendarEvents) ? raw.calendarEvents : (defaultState.calendarEvents || []),
     calendarCategories: (Array.isArray(raw.calendarCategories) && raw.calendarCategories.length > 0)
