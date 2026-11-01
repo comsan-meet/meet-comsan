@@ -30,6 +30,9 @@ function setParliamentMode(mode) {
 
 function buildSeatsLegendHTML(users, activeMotion, showRealtime) {
   const total = users.length;
+  if (!window.parliamentMode) {
+    window.parliamentMode = 'ATTENDANCE';
+  }
   if (window.parliamentMode === 'ATTENDANCE') {
     const presentOnTime = users.filter(u => u.checkedIn && !u.isLate && !u.isLeave).length;
     const presentLate = users.filter(u => u.checkedIn && u.isLate && !u.isLeave).length;

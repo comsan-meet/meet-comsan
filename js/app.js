@@ -693,6 +693,7 @@ function renderAll() {
     const state = window.appState;
     if (!state || !state.meeting) return;
     const m = state.meeting;
+    const isMeetingActive = Boolean(m.isStarted && !m.isEnded);
     const todayISO = (typeof window.getLocalDateString === 'function')
     ? window.getLocalDateString()
     : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
@@ -859,7 +860,7 @@ function renderAll() {
     }
 
     // Admin Check-in tab controls (Active vs Locked)
-    const isMeetingActive = Boolean(m.isStarted && !m.isEnded);
+    // (isMeetingActive declared at top of renderAll)
     const checkinLockedCard = document.getElementById('adminCheckinLockedCard');
     const checkinActiveContainer = document.getElementById('adminCheckinActiveContainer');
     const lockedTitle = document.getElementById('adminCheckinLockedTitle');
