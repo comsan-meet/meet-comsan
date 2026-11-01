@@ -948,7 +948,7 @@ async function adminChangeUserStatus(userId, newStatus) {
   if (!isEditingHistory && !isLive) {
     const isAct = state.meeting?.format === 'ACTIVITY';
     if (typeof window.showToast === 'function') {
-      window.showToast(isAct ? '🔒 กิจกรรมยังไม่เริ่ม กรุณากดเปิดกิจกรรมก่อนเช็คชื่อ' : '🔒 การประชุมยังไม่เริ่ม กรุณากดเปิดการประชุมก่อนเช็คชื่อ', 'warning');
+      window.showToast(isAct ? 'กิจกรรมยังไม่เริ่ม กรุณากดเปิดกิจกรรมก่อนเช็คชื่อ' : 'การประชุมยังไม่เริ่ม กรุณากดเปิดการประชุมก่อนเช็คชื่อ', 'warning');
     }
     return false;
   }

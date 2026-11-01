@@ -1212,6 +1212,7 @@ function showConfirmDialog({
       iconWrap.innerHTML = `<i data-lucide="${icon || (isDanger ? 'trash-2' : (isAlert ? 'info' : 'alert-circle'))}" class="h-5 w-5"></i>`;
     }
 
+    modal.style.zIndex = '900';
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 
@@ -1286,6 +1287,7 @@ function showPromptDialog({
       iconWrap.innerHTML = `<i data-lucide="${icon || 'edit-3'}" class="h-5 w-5"></i>`;
     }
 
+    modal.style.zIndex = '900';
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 

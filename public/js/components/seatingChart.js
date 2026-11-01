@@ -312,9 +312,19 @@ async function selectSeatAttendanceStatus(status) {
   const user = (state?.users || []).find(u => u.id === userId);
   const nick = user?.nickname || 'สมาชิก';
 
+  // If status is LEAVE, temporarily hide attendance modal so the prompt dialog is crystal clear
+  const seatModal = document.getElementById('adminSeatAttendanceModal');
+  if (status === 'LEAVE' && seatModal) {
+    seatModal.classList.add('opacity-0', 'pointer-events-none');
+  }
+
   const res = typeof window.adminChangeUserStatus === 'function'
     ? await window.adminChangeUserStatus(userId, status)
     : false;
+
+  if (seatModal) {
+    seatModal.classList.remove('opacity-0', 'pointer-events-none');
+  }
 
   // Only close and show success if adminChangeUserStatus actually succeeded (not cancelled on prompt)
   if (res !== false) {
