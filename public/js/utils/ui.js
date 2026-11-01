@@ -454,17 +454,9 @@ function toggleSeatingChartCollapse(target) {
       }
     }
   } else {
-    window.isAdminSeatingCollapsed = !window.isAdminSeatingCollapsed;
+    // Admin seating chart collapse removed - always visible
     const body = document.getElementById('adminSeatingCollapsibleBody');
-    const icon = document.getElementById('adminSeatingCollapseIcon');
-    if (body) body.classList.toggle('hidden', window.isAdminSeatingCollapsed);
-    if (icon) {
-      if (typeof window.updateIcon === 'function') {
-        window.updateIcon(icon, window.isAdminSeatingCollapsed ? 'chevron-down' : 'chevron-up', 'text-xs');
-      } else {
-        icon.setAttribute('data-lucide', window.isAdminSeatingCollapsed ? 'chevron-down' : 'chevron-up');
-      }
-    }
+    if (body) body.classList.remove('hidden');
   }
 }
 
