@@ -914,7 +914,19 @@ window.getSummaryUsers = getSummaryUsers;
 
 async function adminChangeUserStatus(userId, newStatus) {
   const state = window.appState;
-  if (!state) return;
+  if (!state) return false;
+
+  const isLive = Boolean(state.meeting && state.meeting.isStarted && !state.meeting.isEnded);
+  const isEditingHistory = Boolean(window.selectedHistoryMeetingId);
+
+  // If not editing past history and the live meeting/activity is not active, LOCK IT!
+  if (!isEditingHistory && !isLive) {
+    const isAct = state.meeting?.format === 'ACTIVITY';
+    if (typeof window.showToast === 'function') {
+      window.showToast(isAct ? '🔒 กิจกรรมยังไม่เริ่ม กรุณากดเปิดกิจกรรมก่อนเช็คชื่อ' : '🔒 การประชุมยังไม่เริ่ม กรุณากดเปิดการประชุมก่อนเช็คชื่อ', 'warning');
+    }
+    return false;
+  }
 
   if (window.selectedHistoryMeetingId && Array.isArray(state.meetingHistory)) {
     const hist = state.meetingHistory.find(m => m.id === window.selectedHistoryMeetingId);
@@ -922,17 +934,29 @@ async function adminChangeUserStatus(userId, newStatus) {
       const u = hist.users.find(usr => usr.id === userId);
       if (u) {
         let reason = u.leaveReason || '';
-        if (newStatus === 'LEAVE' && !reason) {
-          reason = typeof window.showPromptDialog === 'function'
+        if (newStatus === 'LEAVE') {
+          const isAct = hist?.format === 'ACTIVITY';
+          const inputReason = typeof window.showPromptDialog === 'function'
             ? await window.showPromptDialog({
-                title: 'ระบุเหตุผลการลาประชุม',
-                message: `ระบุเหตุผลการลาของ ${u.nickname}:`,
-                defaultValue: 'ลาป่วย / ติดภารกิจ',
+                title: isAct ? 'ระบุเหตุผลการลากิจกรรม' : 'ระบุเหตุผลการลาประชุม',
+                message: isAct ? `ระบุเหตุผลการลากิจกรรมของ ${u.nickname}:` : `ระบุเหตุผลการลาประชุมของ ${u.nickname}:`,
+                defaultValue: u.leaveReason || 'ลาป่วย / ติดภารกิจ',
                 placeholder: 'กรอกเหตุผลการลา...',
-                confirmText: 'บันทึก'
+                confirmText: 'บันทึกการลา',
+                cancelText: 'ยกเลิก'
               })
-            : 'ผู้ดูแลระบบอนุมัติลา';
-          if (!reason) reason = 'ผู้ดูแลระบบอนุมัติลา';
+            : (u.leaveReason || 'ผู้ดูแลระบบอนุมัติลา');
+          // If cancelled, closed, or null => ABORT!
+          if (inputReason === null || typeof inputReason === 'undefined') {
+            return false;
+          }
+          reason = String(inputReason).trim();
+          if (!reason) {
+            if (typeof window.showToast === 'function') {
+              window.showToast('กรุณาระบุเหตุผลการลา หรือกดยกเลิก', 'warning');
+            }
+            return false;
+          }
         }
         const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
         if (newStatus === 'LEAVE') {
@@ -954,7 +978,7 @@ async function adminChangeUserStatus(userId, newStatus) {
         window.saveLocalState();
         window.socket.emit('admin:updateMeetingHistory', hist);
         renderSummarySection();
-        return;
+        return true;
       }
     }
   }
@@ -963,20 +987,32 @@ async function adminChangeUserStatus(userId, newStatus) {
   const summaryUser = (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users))
     ? state.lastMeetingSummary.users.find(u => u.id === userId)
     : null;
-  if (!user && !summaryUser) return;
+  if (!user && !summaryUser) return false;
   const targetUser = user || summaryUser;
   let reason = targetUser.leaveReason || '';
-  if (newStatus === 'LEAVE' && !reason) {
-    reason = typeof window.showPromptDialog === 'function'
+  if (newStatus === 'LEAVE') {
+    const isAct = state.meeting?.format === 'ACTIVITY';
+    const inputReason = typeof window.showPromptDialog === 'function'
       ? await window.showPromptDialog({
-          title: 'ระบุเหตุผลการลาประชุม',
-          message: `ระบุเหตุผลการลาของ ${targetUser.nickname}:`,
-          defaultValue: 'ลาป่วย / ติดภารกิจ',
+          title: isAct ? 'ระบุเหตุผลการลากิจกรรม' : 'ระบุเหตุผลการลาประชุม',
+          message: isAct ? `ระบุเหตุผลการลากิจกรรมของ ${targetUser.nickname}:` : `ระบุเหตุผลการลาประชุมของ ${targetUser.nickname}:`,
+          defaultValue: targetUser.leaveReason || 'ลาป่วย / ติดภารกิจ',
           placeholder: 'กรอกเหตุผลการลา...',
-          confirmText: 'บันทึก'
+          confirmText: 'บันทึกการลา',
+          cancelText: 'ยกเลิก'
         })
-      : 'ผู้ดูแลระบบอนุมัติลา';
-    if (!reason) reason = 'ผู้ดูแลระบบอนุมัติลา';
+      : (targetUser.leaveReason || 'ผู้ดูแลระบบอนุมัติลา');
+    // If cancelled, closed, or null => ABORT!
+    if (inputReason === null || typeof inputReason === 'undefined') {
+      return false;
+    }
+    reason = String(inputReason).trim();
+    if (!reason) {
+      if (typeof window.showToast === 'function') {
+        window.showToast('กรุณาระบุเหตุผลการลา หรือกดยกเลิก', 'warning');
+      }
+      return false;
+    }
   }
   const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 

@@ -91,6 +91,18 @@ function populateSeatGrid(canvasEl, users, activeMotion, showRealtime, isAdminCl
 
     if (isAdminClickable) {
       seatEl.onclick = () => {
+        const state = window.appState;
+        const isLive = Boolean(state?.meeting?.isStarted && !state?.meeting?.isEnded);
+        if (!isLive) {
+          const isAct = state?.meeting?.format === 'ACTIVITY';
+          if (typeof window.showToast === 'function') {
+            window.showToast(isAct ? '🔒 กิจกรรมยังไม่เริ่ม กรุณากดเปิดกิจกรรมก่อนเช็คชื่อ' : '🔒 การประชุมยังไม่เริ่ม กรุณากดเปิดการประชุมก่อนเช็คชื่อ', 'warning');
+          }
+          if (typeof window.openMemberProfilePopup === 'function') {
+            window.openMemberProfilePopup(u.id);
+          }
+          return;
+        }
         if (typeof window.openAdminSeatAttendanceModal === 'function') {
           window.openAdminSeatAttendanceModal(u.id);
         } else if (typeof window.openMemberProfilePopup === 'function') {
@@ -119,6 +131,22 @@ function renderParliamentSeats() {
   const adminLegend = document.getElementById('parliamentLegend');
   const adminCanvas = document.getElementById('parliamentSeatsCanvas');
   if (adminLegend) adminLegend.innerHTML = legendHTML;
+
+  // Dynamic pill status for admin seating chart
+  const isMeetingActive = Boolean(state?.meeting?.isStarted && !state?.meeting?.isEnded);
+  const isAct = state?.meeting?.format === 'ACTIVITY';
+  const pillBox = document.getElementById('parliamentSeatsTitlePill');
+  const pillText = document.getElementById('parliamentSeatsTitlePillText');
+  if (pillBox && pillText) {
+    if (isMeetingActive) {
+      pillBox.className = 'w-auto max-w-sm mx-auto py-2 px-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs animate-pulse';
+      pillText.innerHTML = `<i data-lucide="user-check" class="w-3.5 h-3.5 inline mr-1"></i> สมาชิกทั้งหมด (คลิกที่ชื่อเพื่อเช็คชื่อ)`;
+    } else {
+      pillBox.className = 'w-auto max-w-sm mx-auto py-2 px-4 bg-muted/60 border border-border text-muted-foreground rounded-xl text-center text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs';
+      pillText.innerHTML = `<i data-lucide="lock" class="w-3.5 h-3.5 inline mr-1"></i> สมาชิกทั้งหมด (🔒 ต้องเปิด${isAct ? 'กิจกรรม' : 'การประชุม'}ก่อนเช็คชื่อ)`;
+    }
+  }
+
   populateSeatGrid(adminCanvas, users, activeMotion, showRealtime, true);
 
   const userHiddenNotice = document.getElementById('userSeatsHiddenNotice');
@@ -180,6 +208,19 @@ let currentAttendanceSelectedUserId = null;
 function openAdminSeatAttendanceModal(userId) {
   if (!userId) return;
   const state = window.appState;
+  const isLive = Boolean(state?.meeting?.isStarted && !state?.meeting?.isEnded);
+  const isAct = state?.meeting?.format === 'ACTIVITY';
+
+  if (!isLive) {
+    if (typeof window.showToast === 'function') {
+      window.showToast(isAct ? '🔒 กิจกรรมยังไม่เริ่ม กรุณากดเปิดกิจกรรมก่อนเช็คชื่อ' : '🔒 การประชุมยังไม่เริ่ม กรุณากดเปิดการประชุมก่อนเช็คชื่อ', 'warning');
+    }
+    if (typeof window.openMemberProfilePopup === 'function') {
+      window.openMemberProfilePopup(userId);
+    }
+    return;
+  }
+
   const user = (state?.users || []).find(u => u.id === userId);
   if (!user) return;
 
@@ -257,26 +298,39 @@ function closeAdminSeatAttendanceModal() {
 
 async function selectSeatAttendanceStatus(status) {
   if (!currentAttendanceSelectedUserId) return;
-  const userId = currentAttendanceSelectedUserId;
-  const user = (window.appState?.users || []).find(u => u.id === userId);
-  const nick = user?.nickname || 'สมาชิก';
+  const state = window.appState;
+  const isLive = Boolean(state?.meeting?.isStarted && !state?.meeting?.isEnded);
+  const isAct = state?.meeting?.format === 'ACTIVITY';
 
-  closeAdminSeatAttendanceModal();
-
-  if (typeof window.adminChangeUserStatus === 'function') {
-    await window.adminChangeUserStatus(userId, status);
+  if (!isLive) {
+    if (typeof window.showToast === 'function') {
+      window.showToast(isAct ? '🔒 กิจกรรมยังไม่เริ่ม ไม่สามารถเช็คชื่อได้' : '🔒 การประชุมยังไม่เริ่ม ไม่สามารถเช็คชื่อได้', 'warning');
+    }
+    closeAdminSeatAttendanceModal();
+    return;
   }
 
-  if (typeof window.showToast === 'function') {
-    const isAct = window.appState?.meeting?.format === 'ACTIVITY';
-    const statusLabels = {
-      ONTIME: isAct ? 'มาเข้าร่วมกิจกรรมทันเวลา' : 'มาเข้าประชุมทันเวลา',
-      LATE: isAct ? 'มาสาย (กิจกรรม)' : 'มาสาย (ประชุม)',
-      LEAVE: isAct ? 'แจ้งลากิจกรรม' : 'แจ้งลาประชุม',
-      ABSENT: 'ยังไม่มา / ขาด'
-    };
-    const toastType = status === 'ONTIME' ? 'success' : (status === 'ABSENT' ? 'info' : 'warning');
-    window.showToast(`เช็คชื่อ "${nick}" เป็น ${statusLabels[status] || status} เรียบร้อย`, toastType);
+  const userId = currentAttendanceSelectedUserId;
+  const user = (state?.users || []).find(u => u.id === userId);
+  const nick = user?.nickname || 'สมาชิก';
+
+  const res = typeof window.adminChangeUserStatus === 'function'
+    ? await window.adminChangeUserStatus(userId, status)
+    : false;
+
+  // Only close and show success if adminChangeUserStatus actually succeeded (not cancelled on prompt)
+  if (res !== false) {
+    closeAdminSeatAttendanceModal();
+    if (typeof window.showToast === 'function') {
+      const statusLabels = {
+        ONTIME: isAct ? 'มาเข้าร่วมกิจกรรมทันเวลา' : 'มาเข้าประชุมทันเวลา',
+        LATE: isAct ? 'มาสาย (กิจกรรม)' : 'มาสาย (ประชุม)',
+        LEAVE: isAct ? 'แจ้งลากิจกรรม' : 'แจ้งลาประชุม',
+        ABSENT: 'ยังไม่มา / ขาด'
+      };
+      const toastType = status === 'ONTIME' ? 'success' : (status === 'ABSENT' ? 'info' : 'warning');
+      window.showToast(`เช็คชื่อ "${nick}" เป็น ${statusLabels[status] || status} เรียบร้อย`, toastType);
+    }
   }
 }
 

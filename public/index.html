@@ -6282,9 +6282,8 @@ label svg, label i {
             <div id="adminSeatingCollapsibleBody" class="mt-5 space-y-5">
               <div id="parliamentLegend" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3"></div>
               <div class="w-full bg-slate-50 dark:bg-slate-950/80 rounded-2xl border border-border p-4 sm:p-6 space-y-6">
-                <div class="w-auto max-w-sm mx-auto py-2 px-4 bg-primary/10 border border-primary/20 rounded-xl text-center text-xs font-bold text-primary flex items-center justify-center gap-1.5 shadow-2xs">
-                  <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
-                  <span>สมาชิกชมรมทั้งหมด (คลิกที่ชื่อเพื่อเช็คชื่อ)</span>
+                <div id="parliamentSeatsTitlePill" class="w-auto max-w-sm mx-auto py-2 px-4 bg-muted/60 border border-border text-muted-foreground rounded-xl text-center text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs">
+                  <span id="parliamentSeatsTitlePillText"><i data-lucide="lock" class="w-3.5 h-3.5 inline mr-1"></i> สมาชิกทั้งหมด (🔒 ต้องเปิดการประชุมก่อนเช็คชื่อ)</span>
                 </div>
                 <div id="parliamentSeatsCanvas" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-3.5 justify-items-center max-w-4xl mx-auto"></div>
               </div>
@@ -7594,28 +7593,28 @@ label svg, label i {
 <!-- ======================================================== -->
   <!-- MODULAR JAVASCRIPT ARCHITECTURE                          -->
   <!-- ======================================================== -->
-  <script src="js/services/actionReducer.js?v=20261102_06"></script>
-  <script src="js/supabaseConfig.js?v=20261102_06"></script>
-  <script src="js/services/supabaseAdapter.js?v=20261102_06"></script>
-  <script src="js/config.js?v=20261102_06"></script>
-  <script src="js/defaultProjects.js?v=20261102_06"></script>
-  <script src="js/state.js?v=20261102_06"></script>
-  <script src="js/utils/format.js?v=20261102_06"></script>
-  <script src="js/utils/ui.js?v=20261102_06"></script>
-  <script src="js/utils/logoAsset.js?v=20261102_06"></script>
-  <script src="js/utils/export.js?v=20261102_06"></script>
-  <script src="js/components/seatingChart.js?v=20261102_06"></script>
-  <script src="js/components/voting.js?v=20261102_06"></script>
-  <script src="js/components/chat.js?v=20261102_06"></script>
-  <script src="js/components/files.js?v=20261102_06"></script>
-  <script src="js/components/randomizer.js?v=20261102_06"></script>
-  <script src="js/components/stream.js?v=20261102_06"></script>
-  <script src="js/components/analyticsChart.js?v=20261102_06"></script>
-  <script src="js/components/calendar.js?v=20261102_06"></script>
-  <script src="js/components/projects.js?v=20261102_06"></script>
-  <script src="js/views/navigation.js?v=20261102_06"></script>
-  <script src="js/views/userView.js?v=20261102_06"></script>
-  <script src="js/views/adminView.js?v=20261102_06"></script>
-  <script src="js/app.js?v=20261102_06"></script>
+  <script src="js/services/actionReducer.js?v=20261102_07"></script>
+  <script src="js/supabaseConfig.js?v=20261102_07"></script>
+  <script src="js/services/supabaseAdapter.js?v=20261102_07"></script>
+  <script src="js/config.js?v=20261102_07"></script>
+  <script src="js/defaultProjects.js?v=20261102_07"></script>
+  <script src="js/state.js?v=20261102_07"></script>
+  <script src="js/utils/format.js?v=20261102_07"></script>
+  <script src="js/utils/ui.js?v=20261102_07"></script>
+  <script src="js/utils/logoAsset.js?v=20261102_07"></script>
+  <script src="js/utils/export.js?v=20261102_07"></script>
+  <script src="js/components/seatingChart.js?v=20261102_07"></script>
+  <script src="js/components/voting.js?v=20261102_07"></script>
+  <script src="js/components/chat.js?v=20261102_07"></script>
+  <script src="js/components/files.js?v=20261102_07"></script>
+  <script src="js/components/randomizer.js?v=20261102_07"></script>
+  <script src="js/components/stream.js?v=20261102_07"></script>
+  <script src="js/components/analyticsChart.js?v=20261102_07"></script>
+  <script src="js/components/calendar.js?v=20261102_07"></script>
+  <script src="js/components/projects.js?v=20261102_07"></script>
+  <script src="js/views/navigation.js?v=20261102_07"></script>
+  <script src="js/views/userView.js?v=20261102_07"></script>
+  <script src="js/views/adminView.js?v=20261102_07"></script>
+  <script src="js/app.js?v=20261102_07"></script>
 </body>
 </html>
