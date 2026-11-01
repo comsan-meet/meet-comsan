@@ -1181,8 +1181,8 @@ function switchUserToolSubTab(subTab) {
     if (sec) sec.classList.toggle('hidden', st !== targetSub);
     if (btn) {
       btn.className = st === targetSub
-        ? 'shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap'
-        : 'shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap';
+        ? 'flex-1 min-w-max lg:min-w-0 lg:flex-initial lg:col-span-1 py-2.5 px-3 sm:px-3 lg:px-1.5 xl:px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 sm:gap-2 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap'
+        : 'flex-1 min-w-max lg:min-w-0 lg:flex-initial lg:col-span-1 py-2.5 px-3 sm:px-3 lg:px-1.5 xl:px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 sm:gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap';
       if (st === targetSub && typeof btn.scrollIntoView === 'function') {
         try { btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch (e) {}
       }

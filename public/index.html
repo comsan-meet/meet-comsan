@@ -5385,34 +5385,34 @@ label svg, label i {
               </div>
 
               <!-- SEGMENTED CONTROL PILL BAR (เอกสาร | แชร์หน้าจอ | สมุดจด | ปฏิทินงาน | สมาชิกชมรม | วงล้อสุ่ม - สวยงาม รองรับมือถือ ไอแพต และคอม) -->
-              <div class="bg-muted/60 p-1.5 rounded-2xl flex items-center gap-2 overflow-x-auto no-scrollbar xl:grid xl:grid-cols-7 border border-border/50 select-none scroll-smooth">
+              <div class="w-full bg-muted/60 p-1.5 rounded-2xl flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar lg:grid lg:grid-cols-7 border border-border/50 select-none scroll-smooth">
                 <button type="button" onclick="switchUserToolSubTab('FILES')" id="uToolBtn_FILES"
-                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap">
-                  <i data-lucide="file-text" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">เอกสาร</span>
+                  class="flex-1 min-w-max lg:min-w-0 lg:flex-initial lg:col-span-1 py-2.5 px-3 sm:px-3 lg:px-1.5 xl:px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 sm:gap-2 bg-card text-primary shadow-xs border border-primary/30 ring-1 ring-primary/20 cursor-pointer whitespace-nowrap">
+                  <i data-lucide="file-text" class="pointer-events-none h-4 w-4 shrink-0"></i> <span class="whitespace-nowrap pointer-events-none">เอกสาร</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('STREAM')" id="uToolBtn_STREAM"
-                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
-                  <i data-lucide="monitor" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">แชร์หน้าจอ</span>
+                  class="flex-1 min-w-max lg:min-w-0 lg:flex-initial lg:col-span-1 py-2.5 px-3 sm:px-3 lg:px-1.5 xl:px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 sm:gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  <i data-lucide="monitor" class="pointer-events-none h-4 w-4 shrink-0"></i> <span class="whitespace-nowrap pointer-events-none">แชร์หน้าจอ</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('NOTE')" id="uToolBtn_NOTE"
-                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
-                  <i data-lucide="square-pen" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">สมุดจด</span>
+                  class="flex-1 min-w-max lg:min-w-0 lg:flex-initial lg:col-span-1 py-2.5 px-3 sm:px-3 lg:px-1.5 xl:px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 sm:gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  <i data-lucide="square-pen" class="pointer-events-none h-4 w-4 shrink-0"></i> <span class="whitespace-nowrap pointer-events-none">สมุดจด</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('CALENDAR')" id="uToolBtn_CALENDAR"
-                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
-                  <i data-lucide="calendar-days" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">ปฏิทินงาน</span>
+                  class="flex-1 min-w-max lg:min-w-0 lg:flex-initial lg:col-span-1 py-2.5 px-3 sm:px-3 lg:px-1.5 xl:px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 sm:gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  <i data-lucide="calendar-days" class="pointer-events-none h-4 w-4 shrink-0"></i> <span class="whitespace-nowrap pointer-events-none">ปฏิทินงาน</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('PROJECTS')" id="uToolBtn_PROJECTS"
-                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
-                  <i data-lucide="folder-kanban" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">โครงการ</span>
+                  class="flex-1 min-w-max lg:min-w-0 lg:flex-initial lg:col-span-1 py-2.5 px-3 sm:px-3 lg:px-1.5 xl:px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 sm:gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  <i data-lucide="folder-kanban" class="pointer-events-none h-4 w-4 shrink-0"></i> <span class="whitespace-nowrap pointer-events-none">โครงการ</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('SEATS')" id="uToolBtn_SEATS"
-                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
-                  <i data-lucide="users" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">สมาชิกชมรม</span>
+                  class="flex-1 min-w-max lg:min-w-0 lg:flex-initial lg:col-span-1 py-2.5 px-3 sm:px-3 lg:px-1.5 xl:px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 sm:gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  <i data-lucide="users" class="pointer-events-none h-4 w-4 shrink-0"></i> <span class="whitespace-nowrap pointer-events-none">สมาชิกชมรม</span>
                 </button>
                 <button type="button" onclick="switchUserToolSubTab('RANDOM')" id="uToolBtn_RANDOM"
-                  class="shrink-0 xl:shrink xl:col-span-1 py-2.5 px-4 sm:px-3.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
-                  <i data-lucide="dices" class="pointer-events-none h-4 w-4"></i> <span class="whitespace-nowrap pointer-events-none">วงล้อสุ่ม</span>
+                  class="flex-1 min-w-max lg:min-w-0 lg:flex-initial lg:col-span-1 py-2.5 px-3 sm:px-3 lg:px-1.5 xl:px-3 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5 sm:gap-2 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 hover:border-border shadow-2xs cursor-pointer whitespace-nowrap">
+                  <i data-lucide="dices" class="pointer-events-none h-4 w-4 shrink-0"></i> <span class="whitespace-nowrap pointer-events-none">วงล้อสุ่ม</span>
                 </button>
               </div>
 
@@ -7587,28 +7587,28 @@ label svg, label i {
 <!-- ======================================================== -->
   <!-- MODULAR JAVASCRIPT ARCHITECTURE                          -->
   <!-- ======================================================== -->
-  <script src="js/services/actionReducer.js?v=20261102_13"></script>
-  <script src="js/supabaseConfig.js?v=20261102_13"></script>
-  <script src="js/services/supabaseAdapter.js?v=20261102_13"></script>
-  <script src="js/config.js?v=20261102_13"></script>
-  <script src="js/defaultProjects.js?v=20261102_13"></script>
-  <script src="js/state.js?v=20261102_13"></script>
-  <script src="js/utils/format.js?v=20261102_13"></script>
-  <script src="js/utils/ui.js?v=20261102_13"></script>
-  <script src="js/utils/logoAsset.js?v=20261102_13"></script>
-  <script src="js/utils/export.js?v=20261102_13"></script>
-  <script src="js/components/seatingChart.js?v=20261102_13"></script>
-  <script src="js/components/voting.js?v=20261102_13"></script>
-  <script src="js/components/chat.js?v=20261102_13"></script>
-  <script src="js/components/files.js?v=20261102_13"></script>
-  <script src="js/components/randomizer.js?v=20261102_13"></script>
-  <script src="js/components/stream.js?v=20261102_13"></script>
-  <script src="js/components/analyticsChart.js?v=20261102_13"></script>
-  <script src="js/components/calendar.js?v=20261102_13"></script>
-  <script src="js/components/projects.js?v=20261102_13"></script>
-  <script src="js/views/navigation.js?v=20261102_13"></script>
-  <script src="js/views/userView.js?v=20261102_13"></script>
-  <script src="js/views/adminView.js?v=20261102_13"></script>
-  <script src="js/app.js?v=20261102_13"></script>
+  <script src="js/services/actionReducer.js?v=20261102_14"></script>
+  <script src="js/supabaseConfig.js?v=20261102_14"></script>
+  <script src="js/services/supabaseAdapter.js?v=20261102_14"></script>
+  <script src="js/config.js?v=20261102_14"></script>
+  <script src="js/defaultProjects.js?v=20261102_14"></script>
+  <script src="js/state.js?v=20261102_14"></script>
+  <script src="js/utils/format.js?v=20261102_14"></script>
+  <script src="js/utils/ui.js?v=20261102_14"></script>
+  <script src="js/utils/logoAsset.js?v=20261102_14"></script>
+  <script src="js/utils/export.js?v=20261102_14"></script>
+  <script src="js/components/seatingChart.js?v=20261102_14"></script>
+  <script src="js/components/voting.js?v=20261102_14"></script>
+  <script src="js/components/chat.js?v=20261102_14"></script>
+  <script src="js/components/files.js?v=20261102_14"></script>
+  <script src="js/components/randomizer.js?v=20261102_14"></script>
+  <script src="js/components/stream.js?v=20261102_14"></script>
+  <script src="js/components/analyticsChart.js?v=20261102_14"></script>
+  <script src="js/components/calendar.js?v=20261102_14"></script>
+  <script src="js/components/projects.js?v=20261102_14"></script>
+  <script src="js/views/navigation.js?v=20261102_14"></script>
+  <script src="js/views/userView.js?v=20261102_14"></script>
+  <script src="js/views/adminView.js?v=20261102_14"></script>
+  <script src="js/app.js?v=20261102_14"></script>
 </body>
 </html>
