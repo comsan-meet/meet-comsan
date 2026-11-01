@@ -62,7 +62,7 @@ function populateSeatGrid(canvasEl, users, activeMotion, showRealtime, isAdminCl
     if (window.parliamentMode === 'ATTENDANCE') {
       if (u.isLeave) bgClass = 'bg-sky-500 text-white border-sky-300 shadow-sm';
       else if (u.checkedIn && !u.isLate) bgClass = 'bg-emerald-500 text-white border-emerald-200 shadow-sm';
-      else if (u.checkedIn && u.isLate) bgClass = 'bg-emerald-500 text-white ring-2 sm:ring-4 ring-amber-400 border-white shadow-sm';
+      else if (u.checkedIn && u.isLate) bgClass = 'bg-amber-500 text-slate-950 font-bold border-amber-300 shadow-sm ring-2 ring-amber-400';
     } else {
       const vote = activeMotion && activeMotion.votes ? activeMotion.votes[u.id] : null;
       if (vote) {
@@ -84,37 +84,17 @@ function populateSeatGrid(canvasEl, users, activeMotion, showRealtime, isAdminCl
     const myRing = isMySeat ? 'ring-4 ring-amber-400 scale-110' : '';
     const seatEl = document.createElement('div');
     seatEl.className = `seat-circle w-full max-w-[85px] sm:max-w-[100px] h-11 sm:h-12 px-2 rounded-2xl border flex flex-col items-center justify-center text-xs sm:text-sm font-semibold select-none shadow-2xs transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer hover:shadow-md ${bgClass} ${myRing}`;
-    seatEl.title = `ที่นั่ง #${idx + 1}: ${u.nickname} (${u.firstName}) - คลิกดูข้อมูล`;
+    seatEl.title = isAdminClickable
+      ? `คลิกเพื่อเช็คชื่อ: ${u.nickname} (${u.firstName})`
+      : `ที่นั่ง #${idx + 1}: ${u.nickname} (${u.firstName}) - คลิกดูข้อมูล`;
     seatEl.innerHTML = `<span class="truncate max-w-full text-center leading-tight tracking-tight">${u.nickname}</span>`;
 
     if (isAdminClickable) {
       seatEl.onclick = () => {
-        const state = window.appState;
-        if (!state || !state.meeting || !state.meeting.isStarted || state.meeting.isEnded) {
-          if (typeof window.openMemberProfilePopup === 'function') window.openMemberProfilePopup(u.id);
-          return;
-        }
-        if (!u.checkedIn) {
-          if (typeof window.showConfirmDialog === 'function') {
-            window.showConfirmDialog({
-              title: 'เช็คชื่อเข้าประชุม',
-              message: `ต้องการเช็คชื่อเข้าประชุมให้ "${u.nickname} (${u.firstName})" ทันทีหรือไม่?`,
-              confirmText: 'เช็คชื่อทันที',
-              cancelText: 'ยกเลิก',
-              isDanger: false,
-              icon: 'user-check'
-            }).then(confirmed => {
-              if (confirmed && typeof window.processUserCheckIn === 'function') {
-                window.processUserCheckIn(u.id);
-              }
-            });
-          } else if (typeof window.processUserCheckIn === 'function') {
-            window.processUserCheckIn(u.id);
-          }
-        } else {
-          if (typeof window.openMemberProfilePopup === 'function') {
-            window.openMemberProfilePopup(u.id);
-          }
+        if (typeof window.openAdminSeatAttendanceModal === 'function') {
+          window.openAdminSeatAttendanceModal(u.id);
+        } else if (typeof window.openMemberProfilePopup === 'function') {
+          window.openMemberProfilePopup(u.id);
         }
       };
     } else {
@@ -192,6 +172,122 @@ function renderHomeMembersRow() {
   }).join('');
 }
 
+// =========================================================================
+// ADMIN QUICK SEAT ATTENDANCE CONTROLLER
+// =========================================================================
+let currentAttendanceSelectedUserId = null;
+
+function openAdminSeatAttendanceModal(userId) {
+  if (!userId) return;
+  const state = window.appState;
+  const user = (state?.users || []).find(u => u.id === userId);
+  if (!user) return;
+
+  currentAttendanceSelectedUserId = userId;
+  const modal = document.getElementById('adminSeatAttendanceModal');
+  if (!modal) return;
+
+  // Avatar
+  const avEl = document.getElementById('asatAvatarContainer');
+  if (avEl) {
+    if (typeof window.getAvatarImageHtml === 'function') {
+      avEl.innerHTML = window.getAvatarImageHtml(user, 'w-12 h-12 rounded-full shadow-xs');
+    } else {
+      avEl.innerHTML = `<div class="w-12 h-12 rounded-full bg-primary/10 text-primary font-bold text-base flex items-center justify-center">${(user.nickname || user.firstName || 'U')[0]}</div>`;
+    }
+  }
+
+  // Member text details
+  const nickEl = document.getElementById('asatNickname');
+  const codeEl = document.getElementById('asatMemberCode');
+  const nameEl = document.getElementById('asatFullName');
+  const badgeEl = document.getElementById('asatStatusBadge');
+
+  if (nickEl) nickEl.textContent = user.nickname || user.firstName || user.id;
+  if (codeEl) codeEl.textContent = user.id;
+  if (nameEl) nameEl.textContent = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.position || 'สมาชิกชมรม';
+
+  // Active status indicator dots on buttons
+  const indOnTime = document.getElementById('asatActiveOnTimeIndicator');
+  const indLate = document.getElementById('asatActiveLateIndicator');
+  const indLeave = document.getElementById('asatActiveLeaveIndicator');
+  const indAbsent = document.getElementById('asatActiveAbsentIndicator');
+
+  if (indOnTime) indOnTime.classList.add('hidden');
+  if (indLate) indLate.classList.add('hidden');
+  if (indLeave) indLeave.classList.add('hidden');
+  if (indAbsent) indAbsent.classList.add('hidden');
+
+  if (badgeEl) {
+    if (user.isLeave) {
+      badgeEl.className = 'inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30';
+      badgeEl.innerHTML = `<i data-lucide="file-text" class="w-3 h-3"></i> แจ้งลา (${user.leaveReason || 'มีเหตุจำเป็น'})`;
+      if (indLeave) indLeave.classList.remove('hidden');
+    } else if (user.checkedIn && user.isLate) {
+      badgeEl.className = 'inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+      badgeEl.innerHTML = `<i data-lucide="clock" class="w-3 h-3"></i> มาสาย (${user.checkInTimeStr || '-'} น.)`;
+      if (indLate) indLate.classList.remove('hidden');
+    } else if (user.checkedIn) {
+      badgeEl.className = 'inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+      badgeEl.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3"></i> มาทันเวลา (${user.checkInTimeStr || '-'} น.)`;
+      if (indOnTime) indOnTime.classList.remove('hidden');
+    } else {
+      badgeEl.className = 'inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-muted-foreground border border-border';
+      badgeEl.innerHTML = `<i data-lucide="user-x" class="w-3 h-3"></i> ยังไม่มา / ขาด`;
+      if (indAbsent) indAbsent.classList.remove('hidden');
+    }
+  }
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    setTimeout(() => window.lucide.createIcons(), 50);
+  }
+}
+
+function closeAdminSeatAttendanceModal() {
+  const modal = document.getElementById('adminSeatAttendanceModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  currentAttendanceSelectedUserId = null;
+}
+
+async function selectSeatAttendanceStatus(status) {
+  if (!currentAttendanceSelectedUserId) return;
+  const userId = currentAttendanceSelectedUserId;
+  const user = (window.appState?.users || []).find(u => u.id === userId);
+  const nick = user?.nickname || 'สมาชิก';
+
+  closeAdminSeatAttendanceModal();
+
+  if (typeof window.adminChangeUserStatus === 'function') {
+    await window.adminChangeUserStatus(userId, status);
+  }
+
+  if (typeof window.showToast === 'function') {
+    const isAct = window.appState?.meeting?.format === 'ACTIVITY';
+    const statusLabels = {
+      ONTIME: isAct ? 'มาเข้าร่วมกิจกรรมทันเวลา' : 'มาเข้าประชุมทันเวลา',
+      LATE: isAct ? 'มาสาย (กิจกรรม)' : 'มาสาย (ประชุม)',
+      LEAVE: isAct ? 'แจ้งลากิจกรรม' : 'แจ้งลาประชุม',
+      ABSENT: 'ยังไม่มา / ขาด'
+    };
+    const toastType = status === 'ONTIME' ? 'success' : (status === 'ABSENT' ? 'info' : 'warning');
+    window.showToast(`เช็คชื่อ "${nick}" เป็น ${statusLabels[status] || status} เรียบร้อย`, toastType);
+  }
+}
+
+function viewProfileFromSeatAttendanceModal() {
+  const uid = currentAttendanceSelectedUserId;
+  closeAdminSeatAttendanceModal();
+  if (uid && typeof window.openMemberProfilePopup === 'function') {
+    window.openMemberProfilePopup(uid);
+  }
+}
+
 // Window attachments
 window.getMotionOptions = getMotionOptions;
 window.setParliamentMode = setParliamentMode;
@@ -199,3 +295,7 @@ window.buildSeatsLegendHTML = buildSeatsLegendHTML;
 window.populateSeatGrid = populateSeatGrid;
 window.renderParliamentSeats = renderParliamentSeats;
 window.renderHomeMembersRow = renderHomeMembersRow;
+window.openAdminSeatAttendanceModal = openAdminSeatAttendanceModal;
+window.closeAdminSeatAttendanceModal = closeAdminSeatAttendanceModal;
+window.selectSeatAttendanceStatus = selectSeatAttendanceStatus;
+window.viewProfileFromSeatAttendanceModal = viewProfileFromSeatAttendanceModal;
