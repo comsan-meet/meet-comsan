@@ -311,10 +311,11 @@
               full.state.projects = finalMerged;
               this.lastKnownProjects = finalMerged;
 
-              // If local had projects that remote DB was missing, heal remote DB immediately!
-              if (localProjects.length > incomingProjects.length) {
-                this.scheduleSaveToSupabase(window.appState, true);
-              }
+              // Preserve live attendance with safe merger (never overwrite active check-ins with stale data!)
+              const userMerger = typeof window.mergeUsersAttendanceSafely === 'function' ? window.mergeUsersAttendanceSafely : null;
+              const localUsers = (window.appState && Array.isArray(window.appState.users)) ? window.appState.users : [];
+              const incomingUsers = Array.isArray(full.state.users) ? full.state.users : [];
+              full.state.users = userMerger ? userMerger(localUsers, incomingUsers, full.state.meeting) : incomingUsers;
 
               if (typeof window.normalizeState === 'function') {
                 window.appState = window.normalizeState(full.state);
@@ -359,10 +360,11 @@
           data.state.projects = finalMerged;
           this.lastKnownProjects = finalMerged;
 
-          // If local had projects that remote DB was missing, heal remote DB immediately!
-          if (localProjects.length > incomingProjects.length) {
-            this.scheduleSaveToSupabase(window.appState, true);
-          }
+          // Preserve live attendance with safe merger (never overwrite active check-ins with stale data!)
+          const userMerger = typeof window.mergeUsersAttendanceSafely === 'function' ? window.mergeUsersAttendanceSafely : null;
+          const localUsers = (window.appState && Array.isArray(window.appState.users)) ? window.appState.users : [];
+          const incomingUsers = Array.isArray(data.state.users) ? data.state.users : [];
+          data.state.users = userMerger ? userMerger(localUsers, incomingUsers, data.state.meeting) : incomingUsers;
 
           if (typeof window.normalizeState === 'function') {
             window.appState = window.normalizeState(data.state);
@@ -593,10 +595,11 @@
           remoteState.projects = finalMerged;
           this.lastKnownProjects = finalMerged;
 
-          // If local had projects that remote DB was missing, heal remote DB immediately!
-          if (localProjects.length > incomingProjects.length) {
-            this.scheduleSaveToSupabase(window.appState, true);
-          }
+          // Preserve live attendance with safe merger (never overwrite active check-ins with stale data!)
+          const userMerger = typeof window.mergeUsersAttendanceSafely === 'function' ? window.mergeUsersAttendanceSafely : null;
+          const localUsers = (window.appState && Array.isArray(window.appState.users)) ? window.appState.users : [];
+          const incomingUsers = Array.isArray(remoteState.users) ? remoteState.users : [];
+          remoteState.users = userMerger ? userMerger(localUsers, incomingUsers, remoteState.meeting) : incomingUsers;
 
           if (typeof window.normalizeState === 'function') {
             window.appState = window.normalizeState(remoteState);
@@ -641,7 +644,8 @@
         let changed = false;
 
         (state.users || []).forEach(u => {
-          if (u.checkedIn && u.checkInTimestamp && !u.isLeave) {
+          if (u.checkedIn && !u.isLeave) {
+            if (!u.checkInTimestamp) u.checkInTimestamp = state.meeting.startedAtMs || nowMs;
             const baseTime = Math.max(u.checkInTimestamp, state.meeting.startedAtMs || u.checkInTimestamp);
             const mins = Math.max(1, Math.floor((nowMs - baseTime) / 60000));
             if (u.attendedMinutes !== mins) {

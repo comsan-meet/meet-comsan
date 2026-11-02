@@ -173,6 +173,63 @@ const defaultState = {
   versionNotes: null
 };
 
+function mergeUsersAttendanceSafely(localUsers, incomingUsers, meeting) {
+  if (!Array.isArray(incomingUsers) || incomingUsers.length === 0) return localUsers || [];
+  if (!Array.isArray(localUsers) || localUsers.length === 0) return incomingUsers;
+
+  const isLive = Boolean(meeting && meeting.isStarted && !meeting.isEnded);
+  const userMap = new Map();
+
+  incomingUsers.forEach(u => {
+    if (u && u.id) userMap.set(u.id, { ...u });
+  });
+
+  localUsers.forEach(localU => {
+    if (!localU || !localU.id) return;
+    const incomingU = userMap.get(localU.id);
+    if (!incomingU) {
+      userMap.set(localU.id, { ...localU });
+      return;
+    }
+
+    if (isLive) {
+      const localHasAttendance = Boolean(localU.checkedIn || localU.isLeave);
+      const incomingHasAttendance = Boolean(incomingU.checkedIn || incomingU.isLeave);
+
+      if (localHasAttendance && !incomingHasAttendance) {
+        incomingU.checkedIn = localU.checkedIn;
+        incomingU.isLate = localU.isLate;
+        incomingU.isLeave = localU.isLeave;
+        incomingU.leaveReason = localU.leaveReason || '';
+        incomingU.checkInTimeStr = localU.checkInTimeStr;
+        incomingU.checkInTimestamp = localU.checkInTimestamp;
+        incomingU.attendedMinutes = Math.max(localU.attendedMinutes || 0, incomingU.attendedMinutes || 0);
+        incomingU.attendanceUpdatedAt = localU.attendanceUpdatedAt || localU.checkInTimestamp || Date.now();
+      } else if (localHasAttendance && incomingHasAttendance) {
+        const localTime = localU.attendanceUpdatedAt || localU.checkInTimestamp || 0;
+        const incomingTime = incomingU.attendanceUpdatedAt || incomingU.checkInTimestamp || 0;
+
+        if (localTime > incomingTime) {
+          incomingU.checkedIn = localU.checkedIn;
+          incomingU.isLate = localU.isLate;
+          incomingU.isLeave = localU.isLeave;
+          incomingU.leaveReason = localU.leaveReason || '';
+          incomingU.checkInTimeStr = localU.checkInTimeStr;
+          incomingU.checkInTimestamp = localU.checkInTimestamp;
+          incomingU.attendanceUpdatedAt = localTime;
+        }
+        incomingU.attendedMinutes = Math.max(localU.attendedMinutes || 0, incomingU.attendedMinutes || 0);
+      }
+    } else {
+      if (localU.note && !incomingU.note) {
+        incomingU.note = localU.note;
+      }
+    }
+  });
+
+  return Array.from(userMap.values());
+}
+
 function normalizeState(raw) {
   if (!raw || typeof raw !== 'object') return JSON.parse(JSON.stringify(defaultState));
   const meeting = { ...defaultState.meeting, ...(raw.meeting || {}) };
@@ -181,7 +238,23 @@ function normalizeState(raw) {
     ? rawMotions.map(m => (m.isOpen ? { ...m, isOpen: false } : m))
     : rawMotions;
 
-  const rawUsers = (Array.isArray(raw.users) && raw.users.length > 0 ? raw.users : defaultState.users).map(u => ({
+  let existingUsers = [];
+  if (typeof window !== 'undefined' && window.appState && Array.isArray(window.appState.users) && window.appState.users.length > 0) {
+    existingUsers = window.appState.users;
+  } else if (typeof localStorage !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.users)) existingUsers = parsed.users;
+      }
+    } catch (e) {}
+  }
+
+  const baseUsers = Array.isArray(raw.users) && raw.users.length > 0 ? raw.users : defaultState.users;
+  const mergedUsers = mergeUsersAttendanceSafely(existingUsers, baseUsers, meeting);
+
+  const rawUsers = mergedUsers.map(u => ({
     isLeave: false,
     leaveReason: '',
     filePermission: 'NONE',
@@ -455,6 +528,7 @@ window.WHEEL_COLORS = WHEEL_COLORS;
 window.CUSTOM_PALETTE = CUSTOM_PALETTE;
 window.defaultState = defaultState;
 window.normalizeState = normalizeState;
+window.mergeUsersAttendanceSafely = mergeUsersAttendanceSafely;
 window.mergeProjectsSafely = function (localProjects, incomingProjects) {
   const sampleProjectIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
   let deletedProjectIds = new Set();

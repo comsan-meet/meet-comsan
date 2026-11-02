@@ -522,14 +522,17 @@
       }
 
       case 'admin:setAttendanceStatus': {
-        const { userId, status, reason } = payload || {};
+        const { userId, status, reason, attendanceUpdatedAt } = payload || {};
+        const updateTs = attendanceUpdatedAt || Date.now();
         const user = state.users.find(u => u.id === userId);
-        const summaryUser = (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users))
+        const isLive = Boolean(state.meeting && state.meeting.isStarted && !state.meeting.isEnded);
+        const summaryUser = (!isLive && state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users))
           ? state.lastMeetingSummary.users.find(u => u.id === userId)
           : null;
 
-        const targets = [user, summaryUser].filter(Boolean);
+        const targets = isLive ? [user].filter(Boolean) : [user, summaryUser].filter(Boolean);
         targets.forEach(tgt => {
+          tgt.attendanceUpdatedAt = updateTs;
           if (status === 'LEAVE') {
             tgt.isLeave = true;
             tgt.checkedIn = false;
@@ -547,40 +550,41 @@
             tgt.isLeave = false;
             tgt.checkedIn = true;
             tgt.isLate = false;
-            if (!tgt.checkInTimestamp) tgt.checkInTimestamp = Date.now();
+            if (!tgt.checkInTimestamp) tgt.checkInTimestamp = updateTs;
             if (['-', 'ลาประชุม', 'แจ้งลา'].includes(tgt.checkInTimeStr)) {
-              tgt.checkInTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+              tgt.checkInTimeStr = new Date(updateTs).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
             }
           } else if (status === 'LATE') {
             tgt.isLeave = false;
             tgt.checkedIn = true;
             tgt.isLate = true;
-            if (!tgt.checkInTimestamp) tgt.checkInTimestamp = Date.now();
+            if (!tgt.checkInTimestamp) tgt.checkInTimestamp = updateTs;
             if (['-', 'ลาประชุม', 'แจ้งลา'].includes(tgt.checkInTimeStr)) {
-              tgt.checkInTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+              tgt.checkInTimeStr = new Date(updateTs).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
             }
           }
         });
 
-        if (state.lastMeetingSummary) {
+        if (!isLive && state.lastMeetingSummary) {
           recalculateMeetingStats(state.lastMeetingSummary);
         }
 
-        if (Array.isArray(state.meetingHistory)) {
+        if (!isLive && Array.isArray(state.meetingHistory)) {
           state.meetingHistory.forEach(hist => {
             if (Array.isArray(hist.users)) {
               const hUser = hist.users.find(u => u.id === userId);
               if (hUser) {
+                hUser.attendanceUpdatedAt = updateTs;
                 if (status === 'LEAVE') {
                   hUser.isLeave = true; hUser.checkedIn = false; hUser.isLate = false; hUser.leaveReason = reason || 'ผู้ดูแลระบบบันทึกสถานะลา'; hUser.checkInTimeStr = 'ลาประชุม';
                 } else if (status === 'ABSENT') {
                   hUser.isLeave = false; hUser.checkedIn = false; hUser.isLate = false; hUser.leaveReason = ''; hUser.checkInTimeStr = '-'; hUser.attendedMinutes = 0;
                 } else if (status === 'ONTIME') {
                   hUser.isLeave = false; hUser.checkedIn = true; hUser.isLate = false;
-                  if (['-', 'ลาประชุม', 'แจ้งลา'].includes(hUser.checkInTimeStr)) hUser.checkInTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                  if (['-', 'ลาประชุม', 'แจ้งลา'].includes(hUser.checkInTimeStr)) hUser.checkInTimeStr = new Date(updateTs).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                 } else if (status === 'LATE') {
                   hUser.isLeave = false; hUser.checkedIn = true; hUser.isLate = true;
-                  if (['-', 'ลาประชุม', 'แจ้งลา'].includes(hUser.checkInTimeStr)) hUser.checkInTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                  if (['-', 'ลาประชุม', 'แจ้งลา'].includes(hUser.checkInTimeStr)) hUser.checkInTimeStr = new Date(updateTs).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                 }
                 recalculateMeetingStats(hist);
               }

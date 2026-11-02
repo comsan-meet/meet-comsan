@@ -579,11 +579,12 @@ function processUserCheckIn(identifier) {
   user.checkedIn = true;
   user.isLeave = false;
   user.checkInTimestamp = now.getTime();
+  user.attendanceUpdatedAt = now.getTime();
   user.checkInTimeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   user.isLate = late;
   user.attendedMinutes = 1;
 
-  if (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users)) {
+  if (!state.meeting?.isStarted && state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users)) {
     const sumUser = state.lastMeetingSummary.users.find(u => u.id === user.id);
     if (sumUser) {
       sumUser.checkedIn = true;
@@ -1009,7 +1010,7 @@ async function adminChangeUserStatus(userId, newStatus) {
   }
 
   const user = (state.users || []).find(u => u.id === userId);
-  const summaryUser = (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users))
+  const summaryUser = (!isLive && state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users))
     ? state.lastMeetingSummary.users.find(u => u.id === userId)
     : null;
   if (!user && !summaryUser) return false;
@@ -1039,9 +1040,12 @@ async function adminChangeUserStatus(userId, newStatus) {
       return false;
     }
   }
-  const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  const nowMs = Date.now();
+  const nowTimeStr = new Date(nowMs).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
-  [user, summaryUser].filter(Boolean).forEach(u => {
+  const targets = isLive ? [user].filter(Boolean) : [user, summaryUser].filter(Boolean);
+  targets.forEach(u => {
+    u.attendanceUpdatedAt = nowMs;
     if (newStatus === 'LEAVE') {
       u.isLeave = true;
       u.checkedIn = false;
@@ -1059,16 +1063,18 @@ async function adminChangeUserStatus(userId, newStatus) {
       u.isLeave = false;
       u.checkedIn = true;
       u.isLate = true;
+      if (!u.checkInTimestamp) u.checkInTimestamp = nowMs;
       if (['-', 'ลาประชุม', 'แจ้งลา'].includes(u.checkInTimeStr)) u.checkInTimeStr = nowTimeStr;
     } else if (newStatus === 'ONTIME') {
       u.isLeave = false;
       u.checkedIn = true;
       u.isLate = false;
+      if (!u.checkInTimestamp) u.checkInTimestamp = nowMs;
       if (['-', 'ลาประชุม', 'แจ้งลา'].includes(u.checkInTimeStr)) u.checkInTimeStr = nowTimeStr;
     }
   });
 
-  if (state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users)) {
+  if (!isLive && state.lastMeetingSummary && Array.isArray(state.lastMeetingSummary.users)) {
     const lUsers = state.lastMeetingSummary.users;
     state.lastMeetingSummary.stats = {
       total: lUsers.length,
@@ -1088,8 +1094,9 @@ async function adminChangeUserStatus(userId, newStatus) {
   }
 
   window.saveLocalState();
-  window.socket.emit('admin:setAttendanceStatus', { userId, status: newStatus, reason });
+  window.socket.emit('admin:setAttendanceStatus', { userId, status: newStatus, reason, attendanceUpdatedAt: nowMs });
   if (typeof window.renderAll === 'function') window.renderAll();
+  return true;
 }
 
 function removeQueueItem(queueId) {
