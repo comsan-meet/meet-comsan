@@ -1445,12 +1445,23 @@ function renderFileDropSection() {
   const openDriveFolderBtn = document.getElementById('btnAdminOpenGDriveFolder');
 
   if (gdriveBadge) {
+    const chainSvg = (window.getLucideSvg && typeof window.getLucideSvg === 'function')
+      ? window.getLucideSvg('link-2', 'w-3.5 h-3.5')
+      : '<i data-lucide="link-2" class="w-3.5 h-3.5"></i>';
+    const brokenChainSvg = (window.getLucideSvg && typeof window.getLucideSvg === 'function')
+      ? window.getLucideSvg('link-2-off', 'w-3.5 h-3.5')
+      : '<i data-lucide="link-2-off" class="w-3.5 h-3.5"></i>';
+
     if (isDriveConfigured) {
-      gdriveBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0 whitespace-nowrap';
-      gdriveBadge.textContent = 'เชื่อมต่อแล้ว';
+      gdriveBadge.className = 'w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-2xs transition';
+      gdriveBadge.title = 'เชื่อมต่อแล้ว';
+      gdriveBadge.setAttribute('aria-label', 'เชื่อมต่อแล้ว');
+      gdriveBadge.innerHTML = chainSvg;
     } else {
-      gdriveBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0 whitespace-nowrap';
-      gdriveBadge.textContent = 'ยังไม่ได้ตั้งค่า';
+      gdriveBadge.className = 'w-7 h-7 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0 shadow-2xs transition';
+      gdriveBadge.title = 'ยังไม่ได้ตั้งค่า';
+      gdriveBadge.setAttribute('aria-label', 'ยังไม่ได้ตั้งค่า');
+      gdriveBadge.innerHTML = brokenChainSvg;
     }
   }
 
