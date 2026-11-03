@@ -163,6 +163,11 @@ const defaultState = {
   meetingHistory: [],
   calendarEvents: [],
   projects: [],
+  googleDrive: {
+    scriptUrl: '',
+    folderId: '',
+    folderUrl: ''
+  },
   calendarCategories: [
     { key: 'EVENT', label: 'กิจกรรมชมรม', color: 'indigo', icon: 'star' },
     { key: 'MEETING', label: 'การประชุม', color: 'blue', icon: 'users' },
@@ -436,6 +441,11 @@ function normalizeState(raw) {
       ? raw.calendarCategories
       : (defaultState.calendarCategories || []),
     projects: uniqueProjects,
+    googleDrive: (raw && raw.googleDrive && typeof raw.googleDrive === 'object') ? {
+      scriptUrl: typeof raw.googleDrive.scriptUrl === 'string' ? raw.googleDrive.scriptUrl.trim() : '',
+      folderId: typeof raw.googleDrive.folderId === 'string' ? raw.googleDrive.folderId.trim() : '',
+      folderUrl: typeof raw.googleDrive.folderUrl === 'string' ? raw.googleDrive.folderUrl.trim() : ''
+    } : { scriptUrl: '', folderId: '', folderUrl: '' },
     systemVersion: raw.systemVersion || defaultState.systemVersion || '2.0.1',
     versionNotes: raw.versionNotes || defaultState.versionNotes || null
   };

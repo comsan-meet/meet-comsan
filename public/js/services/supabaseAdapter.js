@@ -504,6 +504,13 @@
               if (typeof window.saveLocalState === 'function') window.saveLocalState();
               if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
             }
+          } else if (evt === 'googleDrive:config' && payload) {
+            const state = window.appState;
+            if (state) {
+              state.googleDrive = payload;
+              if (typeof window.saveLocalState === 'function') window.saveLocalState();
+              if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
+            }
           } else if (evt === 'user:statusNote' && payload) {
             const state = window.appState;
             if (state && Array.isArray(state.users)) {
@@ -851,7 +858,11 @@
   // SAVE FILE CONTENT TO CLOUD (Supabase Upsert + Direct REST POST Fallback)
   // =========================================================================
   window.saveFileContentToCloud = async function(fileObj) {
-    if (!fileObj || !fileObj.id || !fileObj.dataUrl) return false;
+    if (!fileObj || !fileObj.id) return false;
+    // Google Drive files do not store binary data in Supabase!
+    if (fileObj.storageType === 'GOOGLE_DRIVE' || fileObj.driveUrl || fileObj.driveFileId || !fileObj.dataUrl) {
+      return true;
+    }
 
     // 1. Cache in IndexedDB first
     if (window.ComsanFileStore) {
@@ -959,9 +970,10 @@
   window.fetchFileContentFromCloud = async function(fileId) {
     if (!fileId) return null;
     try {
-      // 1. Check if local memory already has dataUrl
+      // 1. Check if local memory already has dataUrl or is Google Drive
       if (window.appState && Array.isArray(window.appState.files)) {
         const memF = window.appState.files.find(item => item.id === fileId);
+        if (memF && (memF.driveUrl || memF.driveFileId)) return null;
         if (memF && memF.dataUrl) return memF.dataUrl;
       }
 

@@ -928,7 +928,7 @@
 
       case 'file:upload': {
         const fileObj = payload;
-        if (!fileObj || !fileObj.name || (!fileObj.dataUrl && !fileObj.hasContent)) {
+        if (!fileObj || !fileObj.name || (!fileObj.dataUrl && !fileObj.hasContent && !fileObj.driveUrl && !fileObj.driveFileId)) {
           shouldPersist = false;
           break;
         }
@@ -938,8 +938,13 @@
           name: fileObj.name,
           size: fileObj.size || 0,
           type: fileObj.type || 'application/octet-stream',
+          storageType: fileObj.storageType || (fileObj.driveUrl || fileObj.driveFileId ? 'GOOGLE_DRIVE' : 'LOCAL'),
+          driveFileId: fileObj.driveFileId || null,
+          driveUrl: fileObj.driveUrl || null,
+          downloadUrl: fileObj.downloadUrl || null,
+          previewUrl: fileObj.previewUrl || null,
           dataUrl: fileObj.dataUrl || null,
-          hasContent: Boolean(fileObj.dataUrl || fileObj.hasContent),
+          hasContent: Boolean(fileObj.dataUrl || fileObj.hasContent || fileObj.driveUrl || fileObj.driveFileId),
           uploaderId: fileObj.uploaderId || 'ADMIN',
           uploaderName: fileObj.uploaderName || 'ADMIN',
           time: fileObj.time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
@@ -961,9 +966,21 @@
         notify('file:upload', item);
         notify('notify:event', {
           type: 'fileDrop',
-          text: `📎 ${item.uploaderName} ดรอปไฟล์ใหม่: "${item.name}"`
+          text: `📎 ${item.uploaderName} แนบเอกสารใหม่: "${item.name}"`
         });
         result = { ok: true, file: item };
+        break;
+      }
+
+      case 'admin:updateGoogleDriveConfig': {
+        const cfg = payload || {};
+        state.googleDrive = {
+          scriptUrl: (cfg.scriptUrl || '').trim(),
+          folderId: (cfg.folderId || '').trim(),
+          folderUrl: (cfg.folderUrl || '').trim()
+        };
+        notify('googleDrive:config', state.googleDrive);
+        result = { ok: true, googleDrive: state.googleDrive };
         break;
       }
 

@@ -30,15 +30,20 @@ module.exports = function registerFileHandlers(io, socket) {
   });
 
   socket.on('file:upload', (fileObj) => {
-    if (!fileObj || !fileObj.name || (!fileObj.dataUrl && !fileObj.hasContent)) return;
+    if (!fileObj || !fileObj.name || (!fileObj.dataUrl && !fileObj.hasContent && !fileObj.driveUrl && !fileObj.driveFileId)) return;
     const now = Date.now();
     const item = {
       id: fileObj.id || ('FILE-' + now),
       name: fileObj.name,
       size: fileObj.size || 0,
       type: fileObj.type || 'application/octet-stream',
+      storageType: fileObj.storageType || (fileObj.driveUrl || fileObj.driveFileId ? 'GOOGLE_DRIVE' : 'LOCAL'),
+      driveFileId: fileObj.driveFileId || null,
+      driveUrl: fileObj.driveUrl || null,
+      downloadUrl: fileObj.downloadUrl || null,
+      previewUrl: fileObj.previewUrl || null,
       dataUrl: fileObj.dataUrl || null,
-      hasContent: Boolean(fileObj.dataUrl || fileObj.hasContent),
+      hasContent: Boolean(fileObj.dataUrl || fileObj.hasContent || fileObj.driveUrl || fileObj.driveFileId),
       uploaderId: fileObj.uploaderId || 'ADMIN',
       uploaderName: fileObj.uploaderName || 'ADMIN',
       time: fileObj.time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
@@ -63,8 +68,19 @@ module.exports = function registerFileHandlers(io, socket) {
     io.emit('file:upload', item);
     io.emit('notify:event', {
       type: 'fileDrop',
-      text: `📎 ${item.uploaderName} ดรอปไฟล์ใหม่: "${item.name}"`
+      text: `📎 ${item.uploaderName} แนบเอกสารใหม่: "${item.name}"`
     });
+  });
+
+  socket.on('admin:updateGoogleDriveConfig', (cfg) => {
+    if (!cfg || typeof cfg !== 'object') return;
+    state.googleDrive = {
+      scriptUrl: (cfg.scriptUrl || '').trim(),
+      folderId: (cfg.folderId || '').trim(),
+      folderUrl: (cfg.folderUrl || '').trim()
+    };
+    stateService.persistAndBroadcast();
+    io.emit('googleDrive:config', state.googleDrive);
   });
 
   socket.on('admin:togglePinFile', (fileId) => {
