@@ -862,7 +862,13 @@ function renderAll() {
     // Meeting-dependent Feature Locks (Active vs Locked)
     // (isMeetingActive declared at top of renderAll)
     const isAct = m.format === 'ACTIVITY';
-    const term = isAct ? 'กิจกรรม' : 'การประชุม';
+    const actionNoun = isAct ? 'กิจกรรม' : 'การประชุม';
+    const btnLabel = `ไปที่หน้าเปิด${actionNoun}`;
+
+    // Dynamic button text for settings navigation
+    document.querySelectorAll('.admin-goto-settings-btn-text').forEach(el => {
+      el.textContent = btnLabel;
+    });
 
     // 1. Admin Check-in
     const checkinLockedCard = document.getElementById('adminCheckinLockedCard');
@@ -906,11 +912,11 @@ function renderAll() {
       if (checkinLockedCard) {
         checkinLockedCard.classList.remove('hidden');
         if (m.isEnded) {
-          if (lockedTitle) lockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบเช็คชื่อ`;
-          if (lockedDesc) lockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดส่วนการเช็คชื่อทั้งหมด หากต้องการเช็คชื่อใหม่ กรุณาเปิดการ${term}รอบใหม่ในการตั้งค่า`;
+          if (lockedTitle) lockedTitle.textContent = `${actionNoun}จบลงแล้ว — ปิดระบบเช็คชื่อ`;
+          if (lockedDesc) lockedDesc.textContent = `${actionNoun}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดส่วนการเช็คชื่อทั้งหมด หากต้องการเช็คชื่อใหม่ กรุณาเปิด${actionNoun}รอบใหม่ในการตั้งค่า`;
         } else {
-          if (lockedTitle) lockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถเช็คชื่อเข้า${term}ได้`;
-          if (lockedDesc) lockedDesc.textContent = `ส่วนของการเช็คชื่อทั้งแบบ On-site และแบบ Online ถูกระงับไว้ กรุณาเปิดการ${term}ก่อนจึงจะสามารถเช็คชื่อเข้า${term}ได้`;
+          if (lockedTitle) lockedTitle.textContent = `ต้องเปิด${actionNoun}ก่อนจึงจะสามารถเช็คชื่อเข้า${actionNoun}ได้`;
+          if (lockedDesc) lockedDesc.textContent = `ส่วนของการเช็คชื่อทั้งแบบ On-site และแบบ Online ถูกระงับไว้ กรุณาเปิด${actionNoun}ก่อนจึงจะสามารถเช็คชื่อเข้า${actionNoun}ได้`;
         }
       }
 
@@ -919,11 +925,11 @@ function renderAll() {
       if (votingLockedCard) {
         votingLockedCard.classList.remove('hidden');
         if (m.isEnded) {
-          if (votingLockedTitle) votingLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบการโหวต`;
-          if (votingLockedDesc) votingLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการเปิดญัตติและการโหวตทั้งหมด หากต้องการเปิดโหวตใหม่ กรุณาเปิดการ${term}รอบใหม่ในการตั้งค่า`;
+          if (votingLockedTitle) votingLockedTitle.textContent = `${actionNoun}จบลงแล้ว — ปิดระบบการโหวต`;
+          if (votingLockedDesc) votingLockedDesc.textContent = `${actionNoun}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการเปิดญัตติและการโหวตทั้งหมด หากต้องการเปิดโหวตใหม่ กรุณาเปิด${actionNoun}รอบใหม่ในการตั้งค่า`;
         } else {
-          if (votingLockedTitle) votingLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถเปิดการโหวตได้`;
-          if (votingLockedDesc) votingLockedDesc.textContent = `ระบบการสร้างและลงคะแนนโหวตญัตติจะเปิดใช้งานเมื่อเริ่มการ${term} กรุณาเปิดการ${term}ก่อนจึงจะสามารถดำเนินการได้`;
+          if (votingLockedTitle) votingLockedTitle.textContent = `ต้องเปิด${actionNoun}ก่อนจึงจะสามารถเปิดการโหวตได้`;
+          if (votingLockedDesc) votingLockedDesc.textContent = `ระบบการสร้างและลงคะแนนโหวตญัตติจะเปิดใช้งานเมื่อเริ่ม${actionNoun} กรุณาเปิด${actionNoun}ก่อนจึงจะสามารถดำเนินการได้`;
         }
       }
 
@@ -932,11 +938,11 @@ function renderAll() {
       if (queueLockedCard) {
         queueLockedCard.classList.remove('hidden');
         if (m.isEnded) {
-          if (queueLockedTitle) queueLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบคิวยกมือ`;
-          if (queueLockedDesc) queueLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการรับคิวยกมือพูดทั้งหมด หากต้องการใช้งาน กรุณาเปิดการ${term}รอบใหม่ในการตั้งค่า`;
+          if (queueLockedTitle) queueLockedTitle.textContent = `${actionNoun}จบลงแล้ว — ปิดระบบคิวยกมือ`;
+          if (queueLockedDesc) queueLockedDesc.textContent = `${actionNoun}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการรับคิวยกมือพูดทั้งหมด หากต้องการใช้งาน กรุณาเปิด${actionNoun}รอบใหม่ในการตั้งค่า`;
         } else {
-          if (queueLockedTitle) queueLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถจัดการคิวยกมือได้`;
-          if (queueLockedDesc) queueLockedDesc.textContent = `ระบบคิวผู้ขอยกมือพูดหรือซักถามจะเปิดใช้งานเมื่อเริ่มการ${term} กรุณาเปิดการ${term}ก่อนจึงจะสามารถดำเนินการได้`;
+          if (queueLockedTitle) queueLockedTitle.textContent = `ต้องเปิด${actionNoun}ก่อนจึงจะสามารถจัดการคิวยกมือได้`;
+          if (queueLockedDesc) queueLockedDesc.textContent = `ระบบคิวผู้ขอยกมือพูดหรือซักถามจะเปิดใช้งานเมื่อเริ่ม${actionNoun} กรุณาเปิด${actionNoun}ก่อนจึงจะสามารถดำเนินการได้`;
         }
       }
 
@@ -945,11 +951,11 @@ function renderAll() {
       if (streamLockedCard) {
         streamLockedCard.classList.remove('hidden');
         if (m.isEnded) {
-          if (streamLockedTitle) streamLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบถ่ายทอดสด`;
-          if (streamLockedDesc) streamLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการถ่ายทอดสดและการแชร์หน้าจอทั้งหมด หากต้องการใช้งาน กรุณาเปิดการ${term}รอบใหม่ในการตั้งค่า`;
+          if (streamLockedTitle) streamLockedTitle.textContent = `${actionNoun}จบลงแล้ว — ปิดระบบถ่ายทอดสด`;
+          if (streamLockedDesc) streamLockedDesc.textContent = `${actionNoun}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการถ่ายทอดสดและการแชร์หน้าจอทั้งหมด หากต้องการใช้งาน กรุณาเปิด${actionNoun}รอบใหม่ในการตั้งค่า`;
         } else {
-          if (streamLockedTitle) streamLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถถ่ายทอดสดได้`;
-          if (streamLockedDesc) streamLockedDesc.textContent = `ระบบเปิดกล้องและแชร์หน้าจอถ่ายทอดสดจะเปิดใช้งานเมื่อเริ่มการ${term} กรุณาเปิดการ${term}ก่อนจึงจะสามารถดำเนินการได้`;
+          if (streamLockedTitle) streamLockedTitle.textContent = `ต้องเปิด${actionNoun}ก่อนจึงจะสามารถถ่ายทอดสดได้`;
+          if (streamLockedDesc) streamLockedDesc.textContent = `ระบบเปิดกล้องและแชร์หน้าจอถ่ายทอดสดจะเปิดใช้งานเมื่อเริ่ม${actionNoun} กรุณาเปิด${actionNoun}ก่อนจึงจะสามารถดำเนินการได้`;
         }
       }
 
@@ -958,11 +964,11 @@ function renderAll() {
       if (userVoteLockedCard) {
         userVoteLockedCard.classList.remove('hidden');
         if (m.isEnded) {
-          if (userVoteLockedTitle) userVoteLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบลงมติ`;
-          if (userVoteLockedDesc) userVoteLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการลงมติในวาระทั้งหมด`;
+          if (userVoteLockedTitle) userVoteLockedTitle.textContent = `${actionNoun}จบลงแล้ว — ปิดระบบลงมติ`;
+          if (userVoteLockedDesc) userVoteLockedDesc.textContent = `${actionNoun}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการลงมติในวาระทั้งหมด`;
         } else {
-          if (userVoteLockedTitle) userVoteLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถลงมติได้`;
-          if (userVoteLockedDesc) userVoteLockedDesc.textContent = `ระบบการลงคะแนนโหวตญัตติจะเปิดให้ใช้งานเมื่อเริ่มการ${term} กรุณารอผู้ดูแลระบบเปิดการ${term}`;
+          if (userVoteLockedTitle) userVoteLockedTitle.textContent = `ต้องเปิด${actionNoun}ก่อนจึงจะสามารถลงมติได้`;
+          if (userVoteLockedDesc) userVoteLockedDesc.textContent = `ระบบการลงคะแนนโหวตญัตติจะเปิดให้ใช้งานเมื่อเริ่ม${actionNoun} กรุณารอผู้ดูแลระบบเปิด${actionNoun}`;
         }
       }
 
@@ -971,11 +977,11 @@ function renderAll() {
       if (userRaiseLockedCard) {
         userRaiseLockedCard.classList.remove('hidden');
         if (m.isEnded) {
-          if (userRaiseLockedTitle) userRaiseLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบยกมือขอพูด`;
-          if (userRaiseLockedDesc) userRaiseLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการส่งคำขอยกมือพูด`;
+          if (userRaiseLockedTitle) userRaiseLockedTitle.textContent = `${actionNoun}จบลงแล้ว — ปิดระบบยกมือขอพูด`;
+          if (userRaiseLockedDesc) userRaiseLockedDesc.textContent = `${actionNoun}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการส่งคำขอยกมือพูด`;
         } else {
-          if (userRaiseLockedTitle) userRaiseLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถยกมือขอพูดได้`;
-          if (userRaiseLockedDesc) userRaiseLockedDesc.textContent = `ระบบส่งคำขอยกมือซักถามจะเปิดให้ใช้งานเมื่อเริ่มการ${term} กรุณารอผู้ดูแลระบบเปิดการ${term}`;
+          if (userRaiseLockedTitle) userRaiseLockedTitle.textContent = `ต้องเปิด${actionNoun}ก่อนจึงจะสามารถยกมือขอพูดได้`;
+          if (userRaiseLockedDesc) userRaiseLockedDesc.textContent = `ระบบส่งคำขอยกมือซักถามจะเปิดให้ใช้งานเมื่อเริ่ม${actionNoun} กรุณารอผู้ดูแลระบบเปิด${actionNoun}`;
         }
       }
 

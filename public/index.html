@@ -6020,7 +6020,7 @@ label svg, label i {
           <!-- ===================================================== -->
           <section id="uTab_VOTE" class="hidden space-y-5">
             <!-- Option A: LOCKED CARD for User Vote -->
-            <div id="userVoteLockedCard" class="hidden bg-card text-card-foreground border border-amber-500/30 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col items-center text-center justify-center space-y-4 relative overflow-hidden bg-gradient-to-b from-amber-500/[0.04] to-transparent max-w-md mx-auto my-6">
+            <div id="userVoteLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
               <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
                 <i data-lucide="lock" class=""></i>
               </div>
@@ -6052,7 +6052,7 @@ label svg, label i {
           <!-- ===================================================== -->
           <section id="uTab_RAISE" class="hidden space-y-5">
             <!-- Option A: LOCKED CARD for User Raise -->
-            <div id="userRaiseLockedCard" class="hidden bg-card text-card-foreground border border-amber-500/30 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col items-center text-center justify-center space-y-4 relative overflow-hidden bg-gradient-to-b from-amber-500/[0.04] to-transparent max-w-md mx-auto my-6">
+            <div id="userRaiseLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
               <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
                 <i data-lucide="lock" class=""></i>
               </div>
@@ -6888,7 +6888,7 @@ label svg, label i {
         <section id="aTab_CHECKIN" class="hidden space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <!-- Left column (Option A: LOCKED WARNING CARD when meeting is not started or has ended) -->
-            <div id="adminCheckinLockedCard" class="lg:col-span-5 bg-card text-card-foreground border border-amber-500/30 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col items-center text-center justify-center space-y-4 relative overflow-hidden bg-gradient-to-b from-amber-500/[0.04] to-transparent">
+            <div id="adminCheckinLockedCard" class="lg:col-span-5 flex flex-col items-center text-center justify-center space-y-4 py-8 px-4 max-w-sm mx-auto">
               <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
                 <i data-lucide="lock" class=""></i>
               </div>
@@ -6902,7 +6902,7 @@ label svg, label i {
               </div>
               <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
                 <button type="button" onclick="switchAdminTab('SETTINGS')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:from-amber-700 active:to-orange-700 text-white font-bold text-xs sm:text-sm transition shadow-md shadow-amber-500/25 active:scale-95 flex items-center gap-2 cursor-pointer">
-                  <i data-lucide="play" class="text-xs"></i> <span>ไปที่หน้าเปิดการประชุม</span>
+                  <i data-lucide="play" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
                 </button>
               </div>
             </div>
@@ -7004,7 +7004,7 @@ label svg, label i {
         <!-- ADMIN TAB: VOTING (การโหวต) -->
         <section id="aTab_VOTING" class="hidden space-y-6">
           <!-- Option A: LOCKED CARD when meeting is not started or has ended -->
-          <div id="adminVotingLockedCard" class="hidden bg-card text-card-foreground border border-amber-500/30 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col items-center text-center justify-center space-y-4 relative overflow-hidden bg-gradient-to-b from-amber-500/[0.04] to-transparent max-w-2xl mx-auto my-6">
+          <div id="adminVotingLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
             <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
               <i data-lucide="lock" class=""></i>
             </div>
@@ -7018,7 +7018,7 @@ label svg, label i {
             </div>
             <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
               <button type="button" onclick="switchAdminTab('SETTINGS')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:from-amber-700 active:to-orange-700 text-white font-bold text-xs sm:text-sm transition shadow-md shadow-amber-500/25 active:scale-95 flex items-center gap-2 cursor-pointer">
-                <i data-lucide="play" class="text-xs"></i> <span>ไปที่หน้าเปิดการประชุม</span>
+                <i data-lucide="play" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
               </button>
             </div>
           </div>
@@ -7094,7 +7094,7 @@ label svg, label i {
         <!-- ADMIN TAB: QUEUE (คิวยกมือ) -->
         <section id="aTab_QUEUE" class="hidden space-y-6">
           <!-- Option A: LOCKED CARD when meeting is not started or has ended -->
-          <div id="adminQueueLockedCard" class="hidden bg-card text-card-foreground border border-amber-500/30 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col items-center text-center justify-center space-y-4 relative overflow-hidden bg-gradient-to-b from-amber-500/[0.04] to-transparent max-w-2xl mx-auto my-6">
+          <div id="adminQueueLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
             <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
               <i data-lucide="lock" class=""></i>
             </div>
@@ -7108,7 +7108,7 @@ label svg, label i {
             </div>
             <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
               <button type="button" onclick="switchAdminTab('SETTINGS')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:from-amber-700 active:to-orange-700 text-white font-bold text-xs sm:text-sm transition shadow-md shadow-amber-500/25 active:scale-95 flex items-center gap-2 cursor-pointer">
-                <i data-lucide="play" class="text-xs"></i> <span>ไปที่หน้าเปิดการประชุม</span>
+                <i data-lucide="play" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
               </button>
             </div>
           </div>
@@ -7219,7 +7219,7 @@ label svg, label i {
         <!-- ADMIN TAB 5: CAMERA & SCREEN SHARE APPROVAL -->
         <section id="aTab_STREAM" class="hidden space-y-6">
           <!-- Option A: LOCKED CARD when meeting is not started or has ended -->
-          <div id="adminStreamLockedCard" class="hidden bg-card text-card-foreground border border-amber-500/30 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col items-center text-center justify-center space-y-4 relative overflow-hidden bg-gradient-to-b from-amber-500/[0.04] to-transparent max-w-2xl mx-auto my-6">
+          <div id="adminStreamLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
             <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
               <i data-lucide="lock" class=""></i>
             </div>
@@ -7233,7 +7233,7 @@ label svg, label i {
             </div>
             <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
               <button type="button" onclick="switchAdminTab('SETTINGS')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:from-amber-700 active:to-orange-700 text-white font-bold text-xs sm:text-sm transition shadow-md shadow-amber-500/25 active:scale-95 flex items-center gap-2 cursor-pointer">
-                <i data-lucide="play" class="text-xs"></i> <span>ไปที่หน้าเปิดการประชุม</span>
+                <i data-lucide="play" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
               </button>
             </div>
           </div>
@@ -7944,6 +7944,6 @@ label svg, label i {
   <script src="js/views/navigation.js?v=20261104_08"></script>
   <script src="js/views/userView.js?v=20261104_08"></script>
   <script src="js/views/adminView.js?v=20261104_08"></script>
-  <script src="js/app.js?v=20261104_09"></script>
+  <script src="js/app.js?v=20261104_10"></script>
 </body>
 </html>
