@@ -6020,17 +6020,19 @@ label svg, label i {
           <!-- ===================================================== -->
           <section id="uTab_VOTE" class="hidden space-y-5">
             <!-- Option A: LOCKED CARD for User Vote -->
-            <div id="userVoteLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
-              <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
-                <i data-lucide="lock" class=""></i>
-              </div>
-              <div class="space-y-2 max-w-sm text-center">
-                <h3 id="userVoteLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
-                  ต้องเปิดการประชุมก่อนจึงจะสามารถลงมติได้
-                </h3>
-                <p id="userVoteLockedDesc" class="text-xs text-muted-foreground leading-relaxed">
-                  ระบบการลงคะแนนโหวตญัตติจะเปิดให้ใช้งานเมื่อเริ่มการประชุม กรุณารอผู้ดูแลระบบเปิดการประชุม
-                </p>
+            <div id="userVoteLockedCard" class="hidden flex-1 flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[58vh] py-6 px-4">
+              <div class="w-full max-w-lg bg-card text-card-foreground border border-border rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col items-center text-center justify-center space-y-5">
+                <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
+                  <i data-lucide="lock" class=""></i>
+                </div>
+                <div class="space-y-2 max-w-sm text-center">
+                  <h3 id="userVoteLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
+                    ต้องเปิดการประชุมก่อนจึงจะสามารถลงมติได้
+                  </h3>
+                  <p id="userVoteLockedDesc" class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    ระบบการลงคะแนนโหวตญัตติจะเปิดให้ใช้งานเมื่อเริ่มการประชุม กรุณารอผู้ดูแลระบบเปิดการประชุม
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -6052,17 +6054,19 @@ label svg, label i {
           <!-- ===================================================== -->
           <section id="uTab_RAISE" class="hidden space-y-5">
             <!-- Option A: LOCKED CARD for User Raise -->
-            <div id="userRaiseLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
-              <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
-                <i data-lucide="lock" class=""></i>
-              </div>
-              <div class="space-y-2 max-w-sm text-center">
-                <h3 id="userRaiseLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
-                  ต้องเปิดการประชุมก่อนจึงจะสามารถยกมือขอพูดได้
-                </h3>
-                <p id="userRaiseLockedDesc" class="text-xs text-muted-foreground leading-relaxed">
-                  ระบบการส่งคำขอยกมือซักถามจะเปิดให้ใช้งานเมื่อเริ่มการประชุม กรุณารอผู้ดูแลระบบเปิดการประชุม
-                </p>
+            <div id="userRaiseLockedCard" class="hidden flex-1 flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[58vh] py-6 px-4">
+              <div class="w-full max-w-lg bg-card text-card-foreground border border-border rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col items-center text-center justify-center space-y-5">
+                <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
+                  <i data-lucide="lock" class=""></i>
+                </div>
+                <div class="space-y-2 max-w-sm text-center">
+                  <h3 id="userRaiseLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
+                    ต้องเปิดการประชุมก่อนจึงจะสามารถยกมือขอพูดได้
+                  </h3>
+                  <p id="userRaiseLockedDesc" class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    ระบบการส่งคำขอยกมือซักถามจะเปิดให้ใช้งานเมื่อเริ่มการประชุม กรุณารอผู้ดูแลระบบเปิดการประชุม
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -6886,17 +6890,17 @@ label svg, label i {
 
         <!-- ADMIN TAB: CHECKIN (เช็คชื่อ) -->
         <section id="aTab_CHECKIN" class="hidden space-y-6">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- Left column (Option A: LOCKED WARNING CARD when meeting is not started or has ended) -->
-            <div id="adminCheckinLockedCard" class="lg:col-span-5 flex flex-col items-center text-center justify-center space-y-4 py-8 px-4 max-w-sm mx-auto">
+          <!-- Option A: LOCKED CARD when meeting is not started or has ended -->
+          <div id="adminCheckinLockedCard" class="hidden flex-1 flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[58vh] py-6 px-4">
+            <div class="w-full max-w-xl bg-card text-card-foreground border border-border rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col items-center text-center justify-center space-y-5">
               <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
                 <i data-lucide="lock" class=""></i>
               </div>
-              <div class="space-y-2 max-w-sm">
+              <div class="space-y-2 max-w-md">
                 <h3 id="adminCheckinLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
                   ต้องเปิดการประชุมก่อนจึงจะสามารถเช็คชื่อเข้าประชุมได้
                 </h3>
-                <p id="adminCheckinLockedDesc" class="text-xs text-muted-foreground leading-relaxed">
+                <p id="adminCheckinLockedDesc" class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   ส่วนของการเช็คชื่อทั้งแบบ On-site และแบบ Online ถูกระงับไว้ กรุณาเปิดการประชุมก่อนจึงจะสามารถเช็คชื่อเข้าประชุมได้
                 </p>
               </div>
@@ -6906,9 +6910,12 @@ label svg, label i {
                 </button>
               </div>
             </div>
+          </div>
 
-            <!-- Left column (Option B: ACTIVE CHECK-IN PANEL shown ONLY during active meeting) -->
-            <div id="adminCheckinActiveContainer" class="hidden lg:col-span-5 bg-card text-card-foreground border border-border rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
+          <!-- Option B: ACTIVE CHECK-IN VIEW shown ONLY during active meeting -->
+          <div id="adminCheckinActiveContainer" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left column: ACTIVE CHECK-IN PANEL -->
+            <div class="lg:col-span-5 bg-card text-card-foreground border border-border rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
               <!-- MODE 1: On-site Check-in (Admin scans member's QR) -->
               <div id="adminCheckinOnsitePanel" class="space-y-4">
                 <div>
@@ -7004,22 +7011,24 @@ label svg, label i {
         <!-- ADMIN TAB: VOTING (การโหวต) -->
         <section id="aTab_VOTING" class="hidden space-y-6">
           <!-- Option A: LOCKED CARD when meeting is not started or has ended -->
-          <div id="adminVotingLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
-            <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
-              <i data-lucide="lock" class=""></i>
-            </div>
-            <div class="space-y-2 max-w-md">
-              <h3 id="adminVotingLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
-                ต้องเปิดการประชุมก่อนจึงจะสามารถเปิดการโหวตได้
-              </h3>
-              <p id="adminVotingLockedDesc" class="text-xs text-muted-foreground leading-relaxed">
-                ระบบการสร้างและลงคะแนนโหวตญัตติจะเปิดใช้งานเมื่อเริ่มการประชุม กรุณาเปิดการประชุมก่อนจึงจะสามารถดำเนินการได้
-              </p>
-            </div>
-            <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
-              <button type="button" onclick="switchAdminTab('SETTINGS')" class="py-2.5 px-5 rounded-full text-xs sm:text-sm font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs active:scale-95">
-                <i data-lucide="external-link" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
-              </button>
+          <div id="adminVotingLockedCard" class="hidden flex-1 flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[58vh] py-6 px-4">
+            <div class="w-full max-w-xl bg-card text-card-foreground border border-border rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col items-center text-center justify-center space-y-5">
+              <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
+                <i data-lucide="lock" class=""></i>
+              </div>
+              <div class="space-y-2 max-w-md">
+                <h3 id="adminVotingLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
+                  ต้องเปิดการประชุมก่อนจึงจะสามารถเปิดการโหวตได้
+                </h3>
+                <p id="adminVotingLockedDesc" class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  ระบบการสร้างและลงคะแนนโหวตญัตติจะเปิดใช้งานเมื่อเริ่มการประชุม กรุณาเปิดการประชุมก่อนจึงจะสามารถดำเนินการได้
+                </p>
+              </div>
+              <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+                <button type="button" onclick="switchAdminTab('SETTINGS')" class="py-2.5 px-5 rounded-full text-xs sm:text-sm font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs active:scale-95">
+                  <i data-lucide="external-link" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -7094,22 +7103,24 @@ label svg, label i {
         <!-- ADMIN TAB: QUEUE (คิวยกมือ) -->
         <section id="aTab_QUEUE" class="hidden space-y-6">
           <!-- Option A: LOCKED CARD when meeting is not started or has ended -->
-          <div id="adminQueueLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
-            <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
-              <i data-lucide="lock" class=""></i>
-            </div>
-            <div class="space-y-2 max-w-md">
-              <h3 id="adminQueueLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
-                ต้องเปิดการประชุมก่อนจึงจะสามารถจัดการคิวยกมือได้
-              </h3>
-              <p id="adminQueueLockedDesc" class="text-xs text-muted-foreground leading-relaxed">
-                ระบบคิวผู้ขอยกมือพูดหรือซักถามจะเปิดใช้งานเมื่อเริ่มการประชุม กรุณาเปิดการประชุมก่อนจึงจะสามารถดำเนินการได้
-              </p>
-            </div>
-            <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
-              <button type="button" onclick="switchAdminTab('SETTINGS')" class="py-2.5 px-5 rounded-full text-xs sm:text-sm font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs active:scale-95">
-                <i data-lucide="external-link" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
-              </button>
+          <div id="adminQueueLockedCard" class="hidden flex-1 flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[58vh] py-6 px-4">
+            <div class="w-full max-w-xl bg-card text-card-foreground border border-border rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col items-center text-center justify-center space-y-5">
+              <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
+                <i data-lucide="lock" class=""></i>
+              </div>
+              <div class="space-y-2 max-w-md">
+                <h3 id="adminQueueLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
+                  ต้องเปิดการประชุมก่อนจึงจะสามารถจัดการคิวยกมือได้
+                </h3>
+                <p id="adminQueueLockedDesc" class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  ระบบคิวผู้ขอยกมือพูดหรือซักถามจะเปิดใช้งานเมื่อเริ่มการประชุม กรุณาเปิดการประชุมก่อนจึงจะสามารถดำเนินการได้
+                </p>
+              </div>
+              <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+                <button type="button" onclick="switchAdminTab('SETTINGS')" class="py-2.5 px-5 rounded-full text-xs sm:text-sm font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs active:scale-95">
+                  <i data-lucide="external-link" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -7219,22 +7230,24 @@ label svg, label i {
         <!-- ADMIN TAB 5: CAMERA & SCREEN SHARE APPROVAL -->
         <section id="aTab_STREAM" class="hidden space-y-6">
           <!-- Option A: LOCKED CARD when meeting is not started or has ended -->
-          <div id="adminStreamLockedCard" class="hidden flex-1 flex flex-col items-center justify-center text-center space-y-4 min-h-[55vh] sm:min-h-[62vh] py-12 px-4 max-w-md mx-auto">
-            <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
-              <i data-lucide="lock" class=""></i>
-            </div>
-            <div class="space-y-2 max-w-md">
-              <h3 id="adminStreamLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
-                ต้องเปิดการประชุมก่อนจึงจะสามารถถ่ายทอดสดได้
-              </h3>
-              <p id="adminStreamLockedDesc" class="text-xs text-muted-foreground leading-relaxed">
-                ระบบเปิดกล้องและแชร์หน้าจอถ่ายทอดสดจะเปิดใช้งานเมื่อเริ่มการประชุม กรุณาเปิดการประชุมก่อนจึงจะสามารถดำเนินการได้
-              </p>
-            </div>
-            <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
-              <button type="button" onclick="switchAdminTab('SETTINGS')" class="py-2.5 px-5 rounded-full text-xs sm:text-sm font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs active:scale-95">
-                <i data-lucide="external-link" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
-              </button>
+          <div id="adminStreamLockedCard" class="hidden flex-1 flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[58vh] py-6 px-4">
+            <div class="w-full max-w-xl bg-card text-card-foreground border border-border rounded-3xl p-8 sm:p-10 shadow-sm flex flex-col items-center text-center justify-center space-y-5">
+              <div class="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner border border-amber-500/25">
+                <i data-lucide="lock" class=""></i>
+              </div>
+              <div class="space-y-2 max-w-md">
+                <h3 id="adminStreamLockedTitle" class="text-base sm:text-lg font-bold text-foreground">
+                  ต้องเปิดการประชุมก่อนจึงจะสามารถถ่ายทอดสดได้
+                </h3>
+                <p id="adminStreamLockedDesc" class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  ระบบเปิดกล้องและแชร์หน้าจอถ่ายทอดสดจะเปิดใช้งานเมื่อเริ่มการประชุม กรุณาเปิดการประชุมก่อนจึงจะสามารถดำเนินการได้
+                </p>
+              </div>
+              <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+                <button type="button" onclick="switchAdminTab('SETTINGS')" class="py-2.5 px-5 rounded-full text-xs sm:text-sm font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs active:scale-95">
+                  <i data-lucide="external-link" class="w-4 h-4"></i> <span class="admin-goto-settings-btn-text">ไปที่หน้าเปิดการประชุม</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -7944,6 +7957,6 @@ label svg, label i {
   <script src="js/views/navigation.js?v=20261104_08"></script>
   <script src="js/views/userView.js?v=20261104_08"></script>
   <script src="js/views/adminView.js?v=20261104_08"></script>
-  <script src="js/app.js?v=20261104_11"></script>
+  <script src="js/app.js?v=20261104_12"></script>
 </body>
 </html>
