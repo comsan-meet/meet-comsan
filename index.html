@@ -1411,11 +1411,11 @@ label svg, label i {
   <!-- ========================================================= -->
   <!-- POP-UP MODAL 3.5: UNIVERSAL FILE PREVIEW MODAL              -->
   <!-- ========================================================= -->
-  <div id="filePreviewModal" onclick="closeFilePreview()" class="fixed inset-0 bg-background/85 backdrop-blur-md hidden items-center justify-center z-[9999] p-3 sm:p-6 cursor-pointer">
-    <div class="bg-card border border-border rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-card-foreground animate-in fade-in zoom-in-95 duration-200" onclick="event.stopPropagation()">
+  <div id="filePreviewModal" onclick="closeFilePreview()" class="fixed inset-0 bg-background/85 backdrop-blur-md hidden items-center justify-center z-[9999] p-2.5 sm:p-6 cursor-pointer">
+    <div class="bg-card border border-border rounded-3xl w-full max-w-5xl xl:max-w-6xl h-[88vh] max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-card-foreground animate-in fade-in zoom-in-95 duration-200" onclick="event.stopPropagation()">
       
       <!-- Modal Header -->
-      <div class="p-4 sm:p-5 border-b border-border flex items-center justify-between gap-3 bg-muted/20 shrink-0">
+      <div class="p-3.5 sm:p-4.5 border-b border-border flex items-center justify-between gap-3 bg-muted/20 shrink-0">
         <div class="flex items-center gap-3 min-w-0">
           <div id="filePreviewIconWrap" class="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-lg shrink-0">
             <i data-lucide="file" id="filePreviewIcon" class=""></i>
@@ -1434,7 +1434,7 @@ label svg, label i {
       </div>
 
       <!-- Modal Body (Dynamic Preview Content) -->
-      <div id="filePreviewBody" class="p-3 sm:p-5 overflow-y-auto flex-1 flex flex-col items-center justify-center min-h-[300px]">
+      <div id="filePreviewBody" class="p-0 overflow-hidden flex-1 flex flex-col w-full h-full min-h-0 relative bg-muted/10">
         <!-- Dynamic content injected by previewSharedFile() -->
       </div>
 
@@ -7845,7 +7845,7 @@ label svg, label i {
   <script src="js/components/seatingChart.js?v=20261104_02"></script>
   <script src="js/components/voting.js?v=20261104_02"></script>
   <script src="js/components/chat.js?v=20261104_02"></script>
-  <script src="js/components/files.js?v=20261104_06"></script>
+  <script src="js/components/files.js?v=20261104_07"></script>
   <script src="js/components/randomizer.js?v=20261104_02"></script>
   <script src="js/components/stream.js?v=20261104_02"></script>
   <script src="js/components/analyticsChart.js?v=20261104_03"></script>

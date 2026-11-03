@@ -1164,26 +1164,22 @@ async function previewSharedFile(fileId) {
 
   // 1. Google Drive Embed Preview (PDF, Docs, Sheets, Slides, Videos, Images)
   if (f.storageType === 'GOOGLE_DRIVE' || f.driveFileId || f.driveUrl) {
-    const embedUrl = f.previewUrl || (f.driveFileId ? 'https://drive.google.com/file/d/' + f.driveFileId + '/preview' : f.driveUrl);
-    const adminOpenBtn = isUserAdmin ? `
-      <a href="${f.driveUrl || embedUrl}" target="_blank" class="px-3 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-2xs" title="เปิดไฟล์ต้นฉบับ">
-        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-        <span>เปิดไฟล์</span>
-      </a>
-    ` : '';
+    let driveFileId = f.driveFileId;
+    if (!driveFileId && (f.driveUrl || f.url)) {
+      const match = (f.driveUrl || f.url).match(/\/d\/([a-zA-Z0-9_-]+)/) || (f.driveUrl || f.url).match(/id=([a-zA-Z0-9_-]+)/);
+      if (match) driveFileId = match[1];
+    }
+    const embedUrl = f.previewUrl || (driveFileId ? 'https://drive.google.com/file/d/' + driveFileId + '/preview' : (f.driveUrl || f.url));
 
     bodyEl.innerHTML = `
-      <div class="w-full flex-1 flex flex-col h-[65vh] rounded-2xl overflow-hidden border border-border bg-slate-900/50 relative">
-        <div class="p-2.5 bg-muted/60 border-b border-border flex items-center justify-between text-xs gap-2 shrink-0">
-          <div class="flex items-center gap-2 text-foreground font-semibold truncate">
-            <span class="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">${visual.label}</span>
-            <span class="truncate">${escapeFileHtml(f.name)}</span>
-          </div>
-          ${adminOpenBtn}
-        </div>
-        <div class="flex-1 w-full relative">
-          <iframe src="${embedUrl}" class="w-full h-full border-0 rounded-b-2xl bg-card" allow="autoplay"></iframe>
-        </div>
+      <div class="w-full h-full flex-1 relative bg-background overflow-hidden flex flex-col min-h-0">
+        <iframe
+          src="${embedUrl}"
+          class="w-full h-full flex-1 border-0 bg-background"
+          style="width: 100%; height: 100%; min-height: 100%; border: none;"
+          allow="autoplay"
+          loading="lazy">
+        </iframe>
       </div>
     `;
     if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
@@ -1238,21 +1234,21 @@ async function previewSharedFile(fileId) {
 
   if (isVideo) {
     bodyEl.innerHTML = `
-      <div class="w-full flex-1 flex flex-col items-center justify-center bg-black/95 rounded-2xl overflow-hidden p-1">
-        <video controls autoplay playsinline class="max-w-full max-h-[62vh] w-auto h-auto rounded-xl">
+      <div class="w-full h-full flex-1 flex flex-col items-center justify-center bg-black/95 p-3 overflow-hidden">
+        <video controls autoplay playsinline class="max-w-full max-h-[75vh] w-auto h-auto rounded-xl shadow-lg">
           <source src="${f.dataUrl}" type="${f.type || 'video/mp4'}">
         </video>
       </div>
     `;
   } else if (isImage) {
     bodyEl.innerHTML = `
-      <div class="w-full flex-1 flex items-center justify-center bg-black/90 dark:bg-black/60 rounded-2xl overflow-hidden p-2">
-        <img src="${f.dataUrl}" alt="${escapeFileHtml(f.name)}" class="max-w-full max-h-[65vh] object-contain rounded-xl shadow-lg select-none" />
+      <div class="w-full h-full flex-1 flex items-center justify-center bg-black/90 dark:bg-black/60 p-4 overflow-auto">
+        <img src="${f.dataUrl}" alt="${escapeFileHtml(f.name)}" class="max-w-full max-h-[75vh] object-contain rounded-xl shadow-lg select-none" />
       </div>
     `;
   } else if (isAudio) {
     bodyEl.innerHTML = `
-      <div class="w-full py-12 px-6 flex flex-col items-center justify-center text-center space-y-6 bg-muted/40 rounded-2xl border border-border/60">
+      <div class="w-full h-full flex-1 p-6 flex flex-col items-center justify-center text-center space-y-6 bg-muted/20">
         <div class="w-20 h-20 rounded-2xl bg-pink-500/15 text-pink-600 border border-pink-500/25 flex items-center justify-center text-4xl shadow-inner">
           <i data-lucide="music" class="w-10 h-10 animate-pulse"></i>
         </div>
@@ -1265,19 +1261,20 @@ async function previewSharedFile(fileId) {
     `;
   } else if (isPdf) {
     bodyEl.innerHTML = `
-      <div class="w-full h-[65vh] rounded-2xl overflow-hidden border border-border bg-card">
-        <iframe src="${f.dataUrl}" class="w-full h-full border-0 rounded-2xl" title="${escapeFileHtml(f.name)}"></iframe>
+      <div class="w-full h-full flex-1 relative bg-background overflow-hidden">
+        <iframe src="${f.dataUrl}" class="w-full h-full border-0" style="width: 100%; height: 100%; min-height: 100%;" title="${escapeFileHtml(f.name)}"></iframe>
       </div>
     `;
   } else {
     bodyEl.innerHTML = `
-      <div class="w-full py-12 px-6 flex flex-col items-center justify-center text-center space-y-4 bg-muted/30 rounded-2xl border border-border/60">
+      <div class="w-full h-full flex-1 p-6 flex flex-col items-center justify-center text-center space-y-4 bg-muted/20">
         <div class="w-20 h-20 rounded-2xl ${visual.colorClass} border flex items-center justify-center text-4xl shadow-sm">
           <i data-lucide="${visual.icon}"></i>
         </div>
         <div class="max-w-md space-y-1.5">
           <h4 class="text-base font-bold text-foreground">${escapeFileHtml(f.name)}</h4>
           <p class="text-xs text-muted-foreground">ไฟล์ประเภท ${visual.label} (${formatFileSize(f.size)})</p>
+          <p class="text-xs text-muted-foreground/80">ระบบไม่สามารถแสดงตัวอย่างไฟล์ชนิดนี้โดยตรงได้ กรุณาดาวน์โหลดไฟล์เพื่อเปิดใช้งาน</p>
         </div>
         <button type="button" onclick="downloadSharedFile('${f.id}')" class="px-5 py-2.5 rounded-xl gradient-primary text-white font-semibold text-xs flex items-center gap-2 hover:opacity-90 transition shadow-xs mt-2">
           <i data-lucide="download" class="w-4 h-4"></i> ดาวน์โหลดไฟล์นี้ทันที
