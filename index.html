@@ -1249,6 +1249,139 @@ label svg, label i {
       padding-right: 1.5rem !important;
     }
   }
+
+/* ========================================================
+   CUSTOM SELECT DROPDOWN (MODERN SHADCN-STYLE)
+   ======================================================== */
+.custom-select-wrapper {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  text-align: left;
+}
+.custom-select-wrapper.w-full {
+  display: block;
+  width: 100%;
+}
+.custom-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.625rem;
+  width: 100%;
+  min-width: 130px;
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  text-align: left;
+}
+.custom-select-trigger:hover {
+  background-color: hsl(var(--muted) / 0.6);
+  border-color: hsl(var(--border) / 0.85);
+}
+.custom-select-trigger:focus-visible,
+.custom-select-trigger.is-open {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+.custom-select-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.375rem;
+  min-width: 100%;
+  width: max-content;
+  max-width: 24rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  border-radius: 1rem;
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border));
+  padding: 0.375rem;
+  box-shadow: 0 14px 35px -4px rgba(0, 0, 0, 0.14), 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  z-index: 300;
+  transform-origin: top left;
+  animation: customSelectFadeIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.custom-select-menu.is-upward {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 0.375rem;
+  transform-origin: bottom left;
+}
+@keyframes customSelectFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.custom-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  color: hsl(var(--foreground));
+  user-select: none;
+  white-space: normal;
+}
+.custom-select-item:hover {
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+.custom-select-item.is-selected {
+  background-color: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+.custom-select-optgroup-label {
+  padding: 0.4rem 0.75rem 0.2rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.02em;
+}
+
+/* Fallback styling for any native select */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 0.9rem;
+  padding-right: 2rem !important;
+  cursor: pointer;
+}
+select option {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  padding: 0.5rem;
+  font-family: 'Prompt', sans-serif;
+}
+
 </style>
 </head>
 <body class="bg-background text-foreground min-h-screen flex flex-col font-sans transition-colors duration-200 antialiased selection:bg-primary/20 selection:text-primary">
@@ -7942,7 +8075,7 @@ label svg, label i {
   <script src="js/defaultProjects.js?v=20261104_08"></script>
   <script src="js/state.js?v=20261104_08"></script>
   <script src="js/utils/format.js?v=20261104_08"></script>
-  <script src="js/utils/ui.js?v=20261104_08"></script>
+  <script src="js/utils/ui.js?v=20261104_14"></script>
   <script src="js/utils/logoAsset.js?v=20261104_08"></script>
   <script src="js/utils/export.js?v=20261104_08"></script>
   <script src="js/components/seatingChart.js?v=20261104_08"></script>
@@ -7957,6 +8090,6 @@ label svg, label i {
   <script src="js/views/navigation.js?v=20261104_08"></script>
   <script src="js/views/userView.js?v=20261104_08"></script>
   <script src="js/views/adminView.js?v=20261104_08"></script>
-  <script src="js/app.js?v=20261104_13"></script>
+  <script src="js/app.js?v=20261104_14"></script>
 </body>
 </html>

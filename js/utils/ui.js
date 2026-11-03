@@ -1397,3 +1397,320 @@ window.submitGlobalPromptDialog = submitGlobalPromptDialog;
 window.closeGlobalPromptDialog = closeGlobalPromptDialog;
 
 
+
+
+// =========================================================================
+// UNIVERSAL CUSTOM SELECT DROPDOWN ENHANCER
+// Replaces native OS <select> dropdowns with modern, accessible, beautiful custom dropdowns.
+// =========================================================================
+(function() {
+  function enhanceSelect(select) {
+    if (!select || !(select instanceof HTMLElement)) return;
+    if (select.dataset.customSelectInit === 'true') return;
+    if (select.dataset.nativeSelect === 'true') return;
+
+    select.dataset.customSelectInit = 'true';
+
+    // Hide original select visually while keeping it in DOM & accessible
+    select.style.position = 'absolute';
+    select.style.width = '1px';
+    select.style.height = '1px';
+    select.style.padding = '0';
+    select.style.margin = '-1px';
+    select.style.overflow = 'hidden';
+    select.style.clip = 'rect(0, 0, 0, 0)';
+    select.style.whiteSpace = 'nowrap';
+    select.style.border = '0';
+    select.style.opacity = '0';
+    select.style.pointerEvents = 'none';
+
+    // Determine wrapper classes
+    const isFullWidth = select.classList.contains('w-full');
+    const isFlex1 = select.classList.contains('flex-1');
+    const wrapper = document.createElement('div');
+    wrapper.className = `custom-select-wrapper ${isFullWidth ? 'w-full' : ''} ${isFlex1 ? 'flex-1' : ''}`;
+    if (select.id) wrapper.dataset.forSelect = select.id;
+
+    // Trigger button
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'custom-select-trigger';
+    if (select.title) trigger.title = select.title;
+
+    // Retain specific height / padding classes if present
+    if (select.classList.contains('h-7.5')) trigger.classList.add('!h-[30px]');
+    if (select.classList.contains('h-8.5')) trigger.classList.add('!h-[34px]');
+    if (select.classList.contains('h-10')) trigger.classList.add('!h-[40px]');
+    if (select.classList.contains('py-1.5')) trigger.classList.add('!py-1.5');
+
+    // Label span
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'custom-select-label truncate';
+
+    // Chevron icon
+    const chevronIcon = document.createElement('i');
+    chevronIcon.setAttribute('data-lucide', 'chevron-down');
+    chevronIcon.className = 'custom-select-chevron w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 pointer-events-none';
+
+    trigger.appendChild(labelSpan);
+    trigger.appendChild(chevronIcon);
+
+    // Dropdown menu
+    const menu = document.createElement('div');
+    menu.className = 'custom-select-menu hidden';
+
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(menu);
+
+    // Insert wrapper in DOM right after select
+    if (select.parentNode) {
+      select.parentNode.insertBefore(wrapper, select.nextSibling);
+    }
+
+    // Function to populate / rebuild menu items
+    function rebuildMenu() {
+      menu.innerHTML = '';
+      let currentSelectedText = '';
+
+      Array.from(select.children).forEach((child) => {
+        if (child.tagName === 'OPTGROUP') {
+          const groupHeader = document.createElement('div');
+          groupHeader.className = 'custom-select-optgroup-label';
+          groupHeader.textContent = child.label || '';
+          menu.appendChild(groupHeader);
+
+          Array.from(child.children).forEach((opt) => {
+            appendOptionItem(opt);
+          });
+        } else if (child.tagName === 'OPTION') {
+          appendOptionItem(child);
+        }
+      });
+
+      function appendOptionItem(opt) {
+        const item = document.createElement('div');
+        const isSelected = opt.selected || opt.value === select.value;
+        if (isSelected) currentSelectedText = opt.textContent;
+
+        item.className = `custom-select-item ${isSelected ? 'is-selected' : ''}`;
+        item.dataset.value = opt.value;
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'truncate';
+        textSpan.textContent = opt.textContent;
+
+        const checkIcon = document.createElement('i');
+        checkIcon.setAttribute('data-lucide', 'check');
+        checkIcon.className = `w-3.5 h-3.5 text-primary shrink-0 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0'}`;
+
+        item.appendChild(textSpan);
+        item.appendChild(checkIcon);
+
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectOption(opt.value, opt.textContent);
+        });
+
+        menu.appendChild(item);
+      }
+
+      labelSpan.textContent = currentSelectedText || (select.options && select.options[0] ? select.options[0].textContent : '');
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons({ root: wrapper });
+      }
+    }
+
+    function selectOption(value, text) {
+      select.value = value;
+      labelSpan.textContent = text;
+
+      // Update is-selected on items
+      menu.querySelectorAll('.custom-select-item').forEach((it) => {
+        const selected = it.dataset.value === String(value);
+        it.classList.toggle('is-selected', selected);
+        const chk = it.querySelector('[data-lucide="check"], svg');
+        if (chk) {
+          if (selected) {
+            chk.classList.remove('opacity-0');
+            chk.classList.add('opacity-100');
+          } else {
+            chk.classList.add('opacity-0');
+            chk.classList.remove('opacity-100');
+          }
+        }
+      });
+
+      closeMenu();
+
+      // Trigger change and input events
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      select.dispatchEvent(new Event('input', { bubbles: true }));
+      if (typeof select.onchange === 'function') {
+        select.onchange.call(select, new Event('change'));
+      }
+    }
+
+    function openMenu() {
+      // Close other open menus
+      closeAllCustomSelects();
+
+      menu.classList.remove('hidden');
+      trigger.classList.add('is-open');
+      const chev = trigger.querySelector('[data-lucide="chevron-down"], svg');
+      if (chev) chev.classList.add('rotate-180');
+
+      // Check vertical boundary
+      const rect = trigger.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const spaceBelow = windowHeight - rect.bottom;
+      if (spaceBelow < 220 && rect.top > 220) {
+        menu.classList.add('is-upward');
+      } else {
+        menu.classList.remove('is-upward');
+      }
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons({ root: wrapper });
+      }
+    }
+
+    function closeMenu() {
+      menu.classList.add('hidden');
+      trigger.classList.remove('is-open');
+      const chev = trigger.querySelector('[data-lucide="chevron-down"], svg');
+      if (chev) chev.classList.remove('rotate-180');
+    }
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (menu.classList.contains('hidden')) {
+        openMenu();
+      } else {
+        closeMenu();
+      }
+    });
+
+    // Listen for external value changes on original select
+    select.addEventListener('change', () => {
+      const selectedOpt = select.options && select.options[select.selectedIndex];
+      if (selectedOpt) {
+        labelSpan.textContent = selectedOpt.textContent;
+        menu.querySelectorAll('.custom-select-item').forEach((it) => {
+          const selected = it.dataset.value === String(select.value);
+          it.classList.toggle('is-selected', selected);
+          const chk = it.querySelector('[data-lucide="check"], svg');
+          if (chk) {
+            if (selected) {
+              chk.classList.remove('opacity-0');
+              chk.classList.add('opacity-100');
+            } else {
+              chk.classList.add('opacity-0');
+              chk.classList.remove('opacity-100');
+            }
+          }
+        });
+      }
+    });
+
+    // MutationObserver to detect innerHTML / option changes on select
+    const optionObserver = new MutationObserver(() => {
+      rebuildMenu();
+    });
+    optionObserver.observe(select, { childList: true, subtree: true, characterData: true });
+
+    // Initial build
+    rebuildMenu();
+  }
+
+  function closeAllCustomSelects() {
+    document.querySelectorAll('.custom-select-menu:not(.hidden)').forEach((m) => {
+      m.classList.add('hidden');
+    });
+    document.querySelectorAll('.custom-select-trigger.is-open').forEach((t) => {
+      t.classList.remove('is-open');
+      const chev = t.querySelector('[data-lucide="chevron-down"], svg');
+      if (chev) chev.classList.remove('rotate-180');
+    });
+  }
+
+  function initAllCustomSelects(root = document) {
+    if (!root || typeof root.querySelectorAll !== 'function') root = document;
+    root.querySelectorAll('select').forEach((sel) => {
+      enhanceSelect(sel);
+    });
+  }
+
+  // Global listeners
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-select-wrapper')) {
+      closeAllCustomSelects();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeAllCustomSelects();
+    }
+  });
+
+  // Watch for newly inserted <select> elements anywhere in DOM
+  const domObserver = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      if (m.type === 'childList') {
+        for (const node of m.addedNodes) {
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.tagName === 'SELECT') {
+              enhanceSelect(node);
+            } else if (node.querySelectorAll) {
+              const sels = node.querySelectorAll('select');
+              if (sels.length > 0) {
+                sels.forEach(enhanceSelect);
+              }
+            }
+          }
+        }
+        for (const node of m.removedNodes) {
+          if (node.nodeType === 1) {
+            if (node.tagName === 'SELECT') {
+              const wrapper = node.nextElementSibling;
+              if (wrapper && wrapper.classList.contains('custom-select-wrapper')) {
+                wrapper.remove();
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Start observing
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initAllCustomSelects();
+      if (document.body) {
+        domObserver.observe(document.body, { childList: true, subtree: true });
+      }
+    });
+  } else {
+    initAllCustomSelects();
+    if (document.body) {
+      domObserver.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+
+  window.initAllCustomSelects = initAllCustomSelects;
+  window.closeAllCustomSelects = closeAllCustomSelects;
+  window.enhanceSelect = enhanceSelect;
+
+  // Also hook into window.refreshIcons
+  const oldRefreshIcons = window.refreshIcons;
+  window.refreshIcons = function() {
+    if (typeof oldRefreshIcons === 'function') {
+      try { oldRefreshIcons(); } catch(e) {}
+    } else if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+    initAllCustomSelects();
+  };
+})();
+
