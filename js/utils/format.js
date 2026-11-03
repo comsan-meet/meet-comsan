@@ -1,3 +1,25 @@
+function formatMeetingDateThai(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return '-';
+  const trimmed = dateStr.trim();
+  if (trimmed.includes('พ.ย.') || trimmed.includes('ม.ค.') || trimmed.includes('ก.พ.') || trimmed.includes('มี.ค.') || trimmed.includes('เม.ย.') || trimmed.includes('พ.ค.') || trimmed.includes('มิ.ย.') || trimmed.includes('ก.ค.') || trimmed.includes('ส.ค.') || trimmed.includes('ก.ย.') || trimmed.includes('ต.ค.') || trimmed.includes('ธ.ค.')) {
+    return trimmed;
+  }
+  try {
+    const parts = trimmed.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      const thaiYear = y < 2500 ? y + 543 : y;
+      if (!isNaN(d) && months[m]) {
+        return `${d} ${months[m]} ${thaiYear}`;
+      }
+    }
+  } catch (e) {}
+  return trimmed;
+}
+
 /**
  * COMSAN Meeting System - Format & Helper Utilities
  */
@@ -159,6 +181,7 @@ if (typeof window !== 'undefined') {
   window.normalizeThaiIdentifier = normalizeThaiIdentifier;
   window.isUserPasswordMatch = isUserPasswordMatch;
   window.isUserNameMatch = isUserNameMatch;
+  window.formatMeetingDateThai = formatMeetingDateThai;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -170,6 +193,7 @@ if (typeof module !== 'undefined' && module.exports) {
     triggerUniversalBlobDownload,
     normalizeThaiIdentifier,
     isUserPasswordMatch,
-    isUserNameMatch
+    isUserNameMatch,
+    formatMeetingDateThai
   };
 }

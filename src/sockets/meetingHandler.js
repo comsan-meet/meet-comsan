@@ -13,6 +13,7 @@ function resetAllUsersAttendance(users) {
     u.raiseHandCount = 0;
     u.note = '';
     u.noteSubmitted = false;
+    u.attendanceUpdatedAt = null;
   });
 }
 

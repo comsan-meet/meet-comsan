@@ -308,6 +308,7 @@ function resetAllUsersAttendance(users) {
     u.raiseHandCount = 0;
     u.note = '';
     u.noteSubmitted = false;
+    u.attendanceUpdatedAt = null;
   });
 }
 
@@ -846,9 +847,11 @@ function renderMeetingHistoryList() {
     const isOnline = rec.format === 'ONLINE';
     const isActivity = rec.format === 'ACTIVITY';
     const st = rec.stats || { total: 0, onTime: 0, late: 0, leave: 0, absent: 0 };
+    const startThai = (typeof formatMeetingDateThai === 'function') ? formatMeetingDateThai(rec.date) : (rec.date || '-');
+    const endThai = rec.endDate ? ((typeof formatMeetingDateThai === 'function') ? formatMeetingDateThai(rec.endDate) : rec.endDate) : startThai;
     const dateFormatted = (rec.endDate && rec.endDate !== rec.date)
-      ? `${rec.date} ถึง ${rec.endDate}`
-      : (rec.endedDateStr || rec.date || '-');
+      ? `${startThai} ถึง ${endThai}`
+      : (startThai !== '-' ? startThai : (rec.endedDateStr || '-'));
     const schedTime = rec.scheduledEndTime || rec.endTime || '-';
     const actualTime = rec.actualEndTime || rec.endedTimeStr || '-';
 

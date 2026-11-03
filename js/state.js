@@ -178,6 +178,7 @@ function mergeUsersAttendanceSafely(localUsers, incomingUsers, meeting) {
   if (!Array.isArray(localUsers) || localUsers.length === 0) return incomingUsers;
 
   const isLive = Boolean(meeting && meeting.isStarted && !meeting.isEnded);
+  const meetingStartMs = Number(meeting?.startedAtMs || 0);
   const userMap = new Map();
 
   incomingUsers.forEach(u => {
@@ -193,8 +194,16 @@ function mergeUsersAttendanceSafely(localUsers, incomingUsers, meeting) {
     }
 
     if (isLive) {
-      const localHasAttendance = Boolean(localU.checkedIn || localU.isLeave);
-      const incomingHasAttendance = Boolean(incomingU.checkedIn || incomingU.isLeave);
+      const localTime = Number(localU.attendanceUpdatedAt || localU.checkInTimestamp || 0);
+      const incomingTime = Number(incomingU.attendanceUpdatedAt || incomingU.checkInTimestamp || 0);
+
+      // Attendance ONLY belongs to the current meeting if it occurred DURING this meeting!
+      // If a check-in occurred before the current meeting started, it is from a previous meeting and MUST NOT bleed into the new one!
+      const isLocalFromCurrentMeeting = meetingStartMs > 0 ? (localTime >= meetingStartMs - 60000) : true;
+      const isIncomingFromCurrentMeeting = meetingStartMs > 0 ? (incomingTime >= meetingStartMs - 60000) : true;
+
+      const localHasAttendance = Boolean(localU.checkedIn || localU.isLeave) && isLocalFromCurrentMeeting;
+      const incomingHasAttendance = Boolean(incomingU.checkedIn || incomingU.isLeave) && isIncomingFromCurrentMeeting;
 
       if (localHasAttendance && !incomingHasAttendance) {
         incomingU.checkedIn = localU.checkedIn;
@@ -206,9 +215,6 @@ function mergeUsersAttendanceSafely(localUsers, incomingUsers, meeting) {
         incomingU.attendedMinutes = Math.max(localU.attendedMinutes || 0, incomingU.attendedMinutes || 0);
         incomingU.attendanceUpdatedAt = localU.attendanceUpdatedAt || localU.checkInTimestamp || Date.now();
       } else if (localHasAttendance && incomingHasAttendance) {
-        const localTime = localU.attendanceUpdatedAt || localU.checkInTimestamp || 0;
-        const incomingTime = incomingU.attendanceUpdatedAt || incomingU.checkInTimestamp || 0;
-
         if (localTime > incomingTime) {
           incomingU.checkedIn = localU.checkedIn;
           incomingU.isLate = localU.isLate;
@@ -219,6 +225,15 @@ function mergeUsersAttendanceSafely(localUsers, incomingUsers, meeting) {
           incomingU.attendanceUpdatedAt = localTime;
         }
         incomingU.attendedMinutes = Math.max(localU.attendedMinutes || 0, incomingU.attendedMinutes || 0);
+      } else if (!incomingHasAttendance && !localHasAttendance) {
+        // Neither has attendance for current meeting -> clean state!
+        incomingU.checkedIn = false;
+        incomingU.isLate = false;
+        incomingU.isLeave = false;
+        incomingU.leaveReason = '';
+        incomingU.checkInTimeStr = '-';
+        incomingU.checkInTimestamp = null;
+        incomingU.attendedMinutes = 0;
       }
     } else {
       if (localU.note && !incomingU.note) {
@@ -230,23 +245,72 @@ function mergeUsersAttendanceSafely(localUsers, incomingUsers, meeting) {
   return Array.from(userMap.values());
 }
 
+function mergeMeetingHistorySafely(localHistory, incomingHistory) {
+  const map = new Map();
+  (incomingHistory || []).forEach(h => {
+    if (h && h.id) map.set(h.id, { ...h });
+  });
+  (localHistory || []).forEach(h => {
+    if (h && h.id) {
+      if (!map.has(h.id)) {
+        map.set(h.id, { ...h });
+      } else {
+        const inc = map.get(h.id);
+        const incTime = Number(inc.endedAtMs || 0);
+        const locTime = Number(h.endedAtMs || 0);
+        if (locTime >= incTime) {
+          map.set(h.id, { ...inc, ...h });
+        }
+      }
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    const tA = Number(a.endedAtMs || (a.date ? new Date(a.date).getTime() : 0));
+    const tB = Number(b.endedAtMs || (b.date ? new Date(b.date).getTime() : 0));
+    return tB - tA;
+  });
+}
+
 function normalizeState(raw) {
   if (!raw || typeof raw !== 'object') return JSON.parse(JSON.stringify(defaultState));
-  const meeting = { ...defaultState.meeting, ...(raw.meeting || {}) };
+
+  // Safe meeting merge: if this meeting session was ended anywhere, it is ended!
+  let localMeeting = (typeof window !== 'undefined' && window.appState && window.appState.meeting)
+    ? window.appState.meeting
+    : null;
+  if (!localMeeting && typeof localStorage !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) localMeeting = JSON.parse(saved).meeting;
+    } catch (e) {}
+  }
+
+  const rawMeeting = raw.meeting || {};
+  const meeting = { ...defaultState.meeting, ...rawMeeting };
+
+  // If local and incoming have the same startedAtMs, and either was ended, it MUST remain ended!
+  if (localMeeting && localMeeting.startedAtMs && meeting.startedAtMs && localMeeting.startedAtMs === meeting.startedAtMs) {
+    if (localMeeting.isEnded) {
+      meeting.isEnded = true;
+    }
+  }
   const rawMotions = Array.isArray(raw.motions) ? raw.motions : [];
   const motions = meeting.isEnded
     ? rawMotions.map(m => (m.isOpen ? { ...m, isOpen: false } : m))
     : rawMotions;
 
   let existingUsers = [];
-  if (typeof window !== 'undefined' && window.appState && Array.isArray(window.appState.users) && window.appState.users.length > 0) {
-    existingUsers = window.appState.users;
+  let existingHistory = [];
+  if (typeof window !== 'undefined' && window.appState) {
+    if (Array.isArray(window.appState.users)) existingUsers = window.appState.users;
+    if (Array.isArray(window.appState.meetingHistory)) existingHistory = window.appState.meetingHistory;
   } else if (typeof localStorage !== 'undefined') {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed.users)) existingUsers = parsed.users;
+        if (Array.isArray(parsed.meetingHistory)) existingHistory = parsed.meetingHistory;
       }
     } catch (e) {}
   }
@@ -366,7 +430,7 @@ function normalizeState(raw) {
     })(),
     activeStream: raw.activeStream || null,
     lastMeetingSummary: raw.lastMeetingSummary || (Array.isArray(raw.meetingHistory) && raw.meetingHistory.length > 0 ? raw.meetingHistory[0] : null) || null,
-    meetingHistory: Array.isArray(raw.meetingHistory) ? raw.meetingHistory : [],
+    meetingHistory: mergeMeetingHistorySafely(existingHistory, Array.isArray(raw.meetingHistory) ? raw.meetingHistory : []),
     calendarEvents: Array.isArray(raw.calendarEvents) ? raw.calendarEvents : (defaultState.calendarEvents || []),
     calendarCategories: (Array.isArray(raw.calendarCategories) && raw.calendarCategories.length > 0)
       ? raw.calendarCategories
@@ -529,6 +593,7 @@ window.CUSTOM_PALETTE = CUSTOM_PALETTE;
 window.defaultState = defaultState;
 window.normalizeState = normalizeState;
 window.mergeUsersAttendanceSafely = mergeUsersAttendanceSafely;
+window.mergeMeetingHistorySafely = mergeMeetingHistorySafely;
 window.mergeProjectsSafely = function (localProjects, incomingProjects) {
   const sampleProjectIds = new Set(['PRJ-2569-01', 'PRJ-2568-02', 'PRJ-2569-03']);
   let deletedProjectIds = new Set();

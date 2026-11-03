@@ -258,6 +258,16 @@
         // 4. Start active background state sync polling (every 1.5s - guarantees auto-updates without refresh)
         this.startPolling();
 
+        // 5. Visibility listener: immediately refresh state when user switches back to this tab
+        if (typeof document !== 'undefined' && !this._hasVisibilityListener) {
+          this._hasVisibilityListener = true;
+          document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.supabase) {
+              this.pollRemoteState();
+            }
+          });
+        }
+
         this.updateCloudStatusBadge(true, 'เชื่อมต่อ Supabase สำเร็จ');
         return true;
       } catch (err) {
@@ -317,6 +327,12 @@
               const incomingUsers = Array.isArray(full.state.users) ? full.state.users : [];
               full.state.users = userMerger ? userMerger(localUsers, incomingUsers, full.state.meeting) : incomingUsers;
 
+              // Preserve meeting history safely
+              const histMerger = typeof window.mergeMeetingHistorySafely === 'function' ? window.mergeMeetingHistorySafely : null;
+              const localHist = (window.appState && Array.isArray(window.appState.meetingHistory)) ? window.appState.meetingHistory : [];
+              const incomingHist = Array.isArray(full.state.meetingHistory) ? full.state.meetingHistory : [];
+              full.state.meetingHistory = histMerger ? histMerger(localHist, incomingHist) : incomingHist;
+
               if (typeof window.normalizeState === 'function') {
                 window.appState = window.normalizeState(full.state);
               } else {
@@ -365,6 +381,12 @@
           const localUsers = (window.appState && Array.isArray(window.appState.users)) ? window.appState.users : [];
           const incomingUsers = Array.isArray(data.state.users) ? data.state.users : [];
           data.state.users = userMerger ? userMerger(localUsers, incomingUsers, data.state.meeting) : incomingUsers;
+
+              // Preserve meeting history safely
+              const histMerger = typeof window.mergeMeetingHistorySafely === 'function' ? window.mergeMeetingHistorySafely : null;
+              const localHist = (window.appState && Array.isArray(window.appState.meetingHistory)) ? window.appState.meetingHistory : [];
+              const incomingHist = Array.isArray(data.state.meetingHistory) ? data.state.meetingHistory : [];
+              data.state.meetingHistory = histMerger ? histMerger(localHist, incomingHist) : incomingHist;
 
           if (typeof window.normalizeState === 'function') {
             window.appState = window.normalizeState(data.state);
@@ -601,6 +623,12 @@
           const incomingUsers = Array.isArray(remoteState.users) ? remoteState.users : [];
           remoteState.users = userMerger ? userMerger(localUsers, incomingUsers, remoteState.meeting) : incomingUsers;
 
+              // Preserve meeting history safely
+              const histMerger = typeof window.mergeMeetingHistorySafely === 'function' ? window.mergeMeetingHistorySafely : null;
+              const localHist = (window.appState && Array.isArray(window.appState.meetingHistory)) ? window.appState.meetingHistory : [];
+              const incomingHist = Array.isArray(remoteState.meetingHistory) ? remoteState.meetingHistory : [];
+              remoteState.meetingHistory = histMerger ? histMerger(localHist, incomingHist) : incomingHist;
+
           if (typeof window.normalizeState === 'function') {
             window.appState = window.normalizeState(remoteState);
           } else {
@@ -630,6 +658,9 @@
       this.attendanceTimer = setInterval(() => {
         const state = window.appState;
         if (!state || !state.meeting || !state.meeting.isStarted || state.meeting.isEnded) return;
+
+        // CRITICAL GUARD: Do not run timer or push state if tab is hidden in background
+        if (typeof document !== 'undefined' && document.hidden) return;
 
         // If meeting is before scheduled start time (early check-in), do not increment minutes yet!
         if (typeof isMeetingBeforeScheduledTime === 'function' && isMeetingBeforeScheduledTime(state.meeting)) {
