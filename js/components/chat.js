@@ -17,11 +17,11 @@ window.stagedAdminChatMedia = null; // { url, type: 'image' | 'video', name }
 
 // Default sample feelings/notes so the Instagram Notes row looks lively out of the box
 const DEFAULT_MEMBER_NOTES = {
-  'COMSAN-02': 'พร้อมโหวตแล้ว ✨',
-  'COMSAN-03': 'สู้ๆ ทุกคน 🔥',
-  'COMSAN-04': 'มีไอเดียใหม่ 💡',
-  'COMSAN-05': 'กำลังอ่านวาระ 📄',
-  'COMSAN-06': 'ตื่นเต้นจัง 🎉'
+  'COMSAN-02': 'พร้อมโหวตแล้ว',
+  'COMSAN-03': 'สู้ๆ ทุกคน',
+  'COMSAN-04': 'มีไอเดียใหม่',
+  'COMSAN-05': 'กำลังอ่านวาระ',
+  'COMSAN-06': 'ตื่นเต้นจัง'
 };
 
 function getMemberStatusNote(userObj) {
@@ -117,7 +117,7 @@ function clearAllIgConversations() {
   window.unreadChatPartners = {};
   renderFloatingChat(false);
   if (typeof showToast === 'function') {
-    showToast('เคลียร์รายการห้องแชทในหน้าข้อความใหม่เรียบร้อยแล้ว ✨', 'success');
+    showToast('เคลียร์รายการห้องแชทในหน้าข้อความใหม่เรียบร้อยแล้ว', 'success');
   }
 }
 
@@ -410,7 +410,7 @@ function saveMyIgNote() {
     renderIgInboxList();
   }
   if (typeof showToast === 'function') {
-    showToast(noteText ? 'อัปเดตโน้ตความรู้สึกของคุณแล้ว ✨' : 'ลบโน้ตความรู้สึกแล้ว', 'success');
+    showToast(noteText ? 'อัปเดตโน้ตความรู้สึกของคุณแล้ว' : 'ลบโน้ตความรู้สึกแล้ว', 'success');
   }
 }
 
@@ -474,7 +474,7 @@ function renderIgInboxList() {
       title: 'ผู้ดำเนินการประชุม (ADMIN)',
       subtitleRole: 'ผู้ดูแลระบบ',
       searchText: 'ผู้ดำเนินการ แอดมิน admin เลขา ประธาน',
-      note: 'พร้อมช่วยเหลือสมาชิก 🛠️',
+      note: 'พร้อมช่วยเหลือสมาชิก',
       isOnline: true,
       lastMsg: lastAdminMsg,
       lastTimestamp: lastAdminMsg ? (Number(lastAdminMsg.timestamp) || Number(lastAdminMsg.id) || 1) : 0,
@@ -588,9 +588,9 @@ function renderIgInboxList() {
       const isMe = lastMsg.senderId === userId;
       const prefix = isMe ? 'คุณ: ' : (item.id === 'ALL' ? `${(lastMsg.sender || '').split(' ')[0]}: ` : '');
       if (lastMsg.mediaType === 'image') {
-        previewText = `${prefix}📷 ส่งรูปภาพ${lastMsg.text ? ' • ' + lastMsg.text : ''}`;
+        previewText = `${prefix}ส่งรูปภาพ${lastMsg.text ? ' • ' + lastMsg.text : ''}`;
       } else if (lastMsg.mediaType === 'video') {
-        previewText = `${prefix}🎬 ส่งวิดีโอ${lastMsg.text ? ' • ' + lastMsg.text : ''}`;
+        previewText = `${prefix}ส่งวิดีโอ${lastMsg.text ? ' • ' + lastMsg.text : ''}`;
       } else {
         previewText = `${prefix}${lastMsg.text || ''}`;
       }
@@ -710,7 +710,7 @@ function renderAdminChatContactsList() {
     : members.map(u => `
         <button type="button" onclick="selectAdminChatRoom('${u.id}')"
           class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition ${window.adminSelectedChatPartner === u.id ? 'bg-indigo-600 text-white' : 'bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700'}">
-          <span>👤 ${escapeHtmlSafe(u.nickname)} (${escapeHtmlSafe(u.firstName)})</span>
+          <span>${escapeHtmlSafe(u.nickname)} (${escapeHtmlSafe(u.firstName)})</span>
           <span class="text-[10px] opacity-75">${escapeHtmlSafe(u.position)}</span>
         </button>
       `).join('');
@@ -838,7 +838,7 @@ function renderStagedChatMediaPreview() {
   bar.classList.remove('hidden');
 
   if (badge) {
-    badge.innerHTML = type === 'video' ? '🎬 วิดีโอ' : '📷 รูปภาพ';
+    badge.innerHTML = type === 'video' ? 'วิดีโอ' : 'รูปภาพ';
   }
   if (nameEl) {
     nameEl.textContent = name;
@@ -1131,7 +1131,7 @@ function renderFloatingChat(forceScroll = false) {
       }
       titleEl.textContent = tUser ? `${tUser.nickname} (${tUser.firstName})` : 'แชตส่วนตัว';
       subEl.textContent = note
-        ? `💭 "${note}" • ${statusText}`
+        ? `"${note}" • ${statusText}`
         : `${statusText} • ${tUser ? (tUser.position || 'สมาชิก') : 'สนทนา 1-on-1'}`;
     }
   }
@@ -1306,7 +1306,7 @@ function renderAdminIgNotesRow() {
       <!-- Floating Thought Bubble -->
       <div class="absolute top-0 z-10 flex flex-col items-center pointer-events-none">
         <div class="px-2 py-0.5 rounded-2xl bg-card border border-border shadow-xs text-[10px] leading-tight font-bold text-primary max-w-[80px] truncate text-center group-hover:scale-105 transition">
-          ประกาศ 📢
+          ประกาศ
         </div>
         <div class="w-2 h-2 rounded-full bg-card border border-border -mt-1"></div>
         <div class="w-1 h-1 rounded-full bg-card border border-border mt-0.5"></div>
@@ -1447,9 +1447,9 @@ function renderAdminIgInboxList() {
       const isMe = lastMsg.senderId === 'ADMIN';
       const prefix = isMe ? 'คุณ: ' : (it.id === 'ALL' ? `${(lastMsg.sender || '').split(' ')[0]}: ` : '');
       if (lastMsg.mediaType === 'image') {
-        previewText = `${prefix}📷 ส่งรูปภาพ${lastMsg.text ? ' • ' + lastMsg.text : ''}`;
+        previewText = `${prefix}ส่งรูปภาพ${lastMsg.text ? ' • ' + lastMsg.text : ''}`;
       } else if (lastMsg.mediaType === 'video') {
-        previewText = `${prefix}🎬 ส่งวิดีโอ${lastMsg.text ? ' • ' + lastMsg.text : ''}`;
+        previewText = `${prefix}ส่งวิดีโอ${lastMsg.text ? ' • ' + lastMsg.text : ''}`;
       } else {
         previewText = `${prefix}${lastMsg.text || ''}`;
       }
@@ -1597,7 +1597,7 @@ function renderAdminChatSection(forceScroll = false) {
     if (titleEl) titleEl.textContent = tUser ? `${tUser.nickname} (${tUser.firstName})` : 'แชตส่วนตัว';
     if (subEl) {
       subEl.textContent = note
-        ? `💭 "${note}" • ${statusText}`
+        ? `"${note}" • ${statusText}`
         : `${statusText} • ${tUser ? (tUser.position || 'สมาชิก') : 'สมาชิก'}`;
     }
   }
@@ -1720,7 +1720,7 @@ function renderAdminStagedChatMediaPreview() {
   const { url, type, name } = window.stagedAdminChatMedia;
   bar.classList.remove('hidden');
 
-  if (badge) badge.innerHTML = type === 'video' ? '🎬 วิดีโอ' : '📷 รูปภาพ';
+  if (badge) badge.innerHTML = type === 'video' ? 'วิดีโอ' : 'รูปภาพ';
   if (nameEl) nameEl.textContent = name;
 
   if (type === 'video') {
@@ -1829,7 +1829,7 @@ function clearAllAdminIgConversations() {
 
   renderAdminIgInboxList();
   if (typeof showToast === 'function') {
-    showToast('เคลียร์รายการห้องแชทในหน้าข้อความใหม่เรียบร้อยแล้ว ✨', 'success');
+    showToast('เคลียร์รายการห้องแชทในหน้าข้อความใหม่เรียบร้อยแล้ว', 'success');
   }
 }
 

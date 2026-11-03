@@ -833,13 +833,13 @@ async function testGoogleDriveConnectionFromModal() {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
     if (data && data.ok) {
-      if (typeof showToast === 'function') showToast('✅ เชื่อมต่อ Google Apps Script สำเร็จและพร้อมใช้งาน!', 'success');
+      if (typeof showToast === 'function') showToast('เชื่อมต่อ Google Apps Script สำเร็จและพร้อมใช้งาน!', 'success');
     } else {
       throw new Error((data && data.message) || 'คำขอไม่สำเร็จ');
     }
   } catch (err) {
     if (typeof showToast === 'function') {
-      showToast('⚠️ ไม่สามารถเชื่อมต่อกับสคริปต์ได้: ตรวจสอบว่าเลือก "ทุกคน (Anyone)" ในการ Deploy', 'error');
+      showToast('ไม่สามารถเชื่อมต่อกับสคริปต์ได้: ตรวจสอบว่าเลือก "ทุกคน (Anyone)" ในการ Deploy', 'error');
     }
   }
 }
@@ -875,7 +875,7 @@ function togglePinSharedFile(fileId) {
     window.socket.emit('admin:togglePinFile', { fileId, isPinned: targetPinned });
   }
   renderFileDropSection();
-  showToast(targetPinned ? '📌 ปักหมุดเอกสาร "' + file.name + '" ไว้บนสุดแล้ว' : 'เลิกปักหมุดเอกสาร "' + file.name + '" แล้ว', 'info');
+  showToast(targetPinned ? 'ปักหมุดเอกสาร "' + file.name + '" ไว้บนสุดแล้ว' : 'เลิกปักหมุดเอกสาร "' + file.name + '" แล้ว', 'info');
 }
 
 async function deleteFileFromGoogleDrive(fileId) {

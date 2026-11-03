@@ -123,14 +123,14 @@ function updateAdminChartMeetingDropdown(state, activeMeeting) {
     const isAct = state.meeting.format === 'ACTIVITY';
     const isSel = (currentSel === 'LIVE' || currentSel === 'LATEST') ? 'selected' : '';
     const safeTitle = escapeHtmlSafeText(state.meeting.title || (isAct ? 'กิจกรรม' : 'การประชุม'));
-    html += `<option value="LIVE" ${isSel}>🔴 กำลังดำเนินอยู่: ${safeTitle}</option>`;
+    html += `<option value="LIVE" ${isSel}>กำลังดำเนินอยู่: ${safeTitle}</option>`;
   } else if (state.lastMeetingSummary) {
     const isAct = state.lastMeetingSummary.format === 'ACTIVITY';
     const isSel = (currentSel === 'LATEST' || currentSel === state.lastMeetingSummary.id) ? 'selected' : '';
     const safeTitle = escapeHtmlSafeText(state.lastMeetingSummary.title || (isAct ? 'กิจกรรมล่าสุด' : 'การประชุมล่าสุด'));
-    html += `<option value="LATEST" ${isSel}>📌 ล่าสุด: ${safeTitle}</option>`;
+    html += `<option value="LATEST" ${isSel}>ล่าสุด: ${safeTitle}</option>`;
   } else {
-    html += `<option value="LATEST" selected>📌 ข้อมูลปัจจุบัน</option>`;
+    html += `<option value="LATEST" selected>ข้อมูลปัจจุบัน</option>`;
   }
 
   // History list
@@ -142,7 +142,7 @@ function updateAdminChartMeetingDropdown(state, activeMeeting) {
       const endThai = rec.endDate ? ((typeof window.formatMeetingDateThai === 'function') ? window.formatMeetingDateThai(rec.endDate) : rec.endDate) : startThai;
       const dateFormatted = (rec.endDate && rec.endDate !== rec.date) ? `${startThai} - ${endThai}` : startThai;
       const isSel = (currentSel === rec.id && currentSel !== 'LATEST') ? 'selected' : '';
-      const icon = isAct ? '🎯' : '👥';
+      const icon = isAct ? '[กิจกรรม]' : '[การประชุม]';
       const safeTitle = escapeHtmlSafeText(rec.title || 'การประชุม');
       html += `<option value="${rec.id}" ${isSel}>${icon} ${safeTitle} (${dateFormatted})</option>`;
     });
@@ -261,7 +261,7 @@ function renderAdminAnalyticsChart() {
       if (motionSelect) {
         motionSelect.innerHTML = motions.map(m => {
           const isSel = m.id === adminChartSelectedMotionId ? 'selected' : '';
-          const indicator = m.isOpen ? '🟢 ' : '';
+          const indicator = m.isOpen ? '[เปิดโหวต] ' : '';
           return `<option value="${m.id}" ${isSel}>${indicator}${escapeHtmlSafeText(m.title)}</option>`;
         }).join('');
       }

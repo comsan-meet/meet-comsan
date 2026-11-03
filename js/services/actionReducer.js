@@ -187,8 +187,8 @@
         notify('notify:event', {
           type: 'info',
           text: isAct
-            ? `✨ ผู้ดูแลระบบได้เริ่มกิจกรรมรอบใหม่แล้ว (${state.meeting.title})`
-            : `🚀 ผู้ดูแลระบบได้เริ่มการประชุมรอบใหม่แล้ว (${state.meeting.title})`
+            ? `ผู้ดูแลระบบได้เริ่มกิจกรรมรอบใหม่แล้ว (${state.meeting.title})`
+            : `ผู้ดูแลระบบได้เริ่มการประชุมรอบใหม่แล้ว (${state.meeting.title})`
         });
         result = { ok: true };
         break;
@@ -204,7 +204,7 @@
         state.motions.forEach(m => { m.isOpen = false; });
         notify('notify:event', {
           type: 'warning',
-          text: '🔄 ผู้ดูแลระบบได้รีเซ็ตสถานะการประชุมกลับเป็นค่าเริ่มต้น'
+          text: 'ผู้ดูแลระบบได้รีเซ็ตสถานะการประชุมกลับเป็นค่าเริ่มต้น'
         });
         result = { ok: true };
         break;
@@ -289,8 +289,8 @@
         notify('notify:event', {
           type: 'warning',
           text: isAct
-            ? `🏁 ผู้ดูแลระบบได้จบกิจกรรม "${summaryRecord.title}" และบันทึกประวัติสรุปผลเรียบร้อยแล้ว`
-            : '🏁 ผู้ดูแลระบบได้สั่งจบการประชุม และบันทึกประวัติสรุปการประชุมย้อนหลังเรียบร้อยแล้ว'
+            ? `ผู้ดูแลระบบได้จบกิจกรรม "${summaryRecord.title}" และบันทึกประวัติสรุปผลเรียบร้อยแล้ว`
+            : 'ผู้ดูแลระบบได้สั่งจบการประชุม และบันทึกประวัติสรุปการประชุมย้อนหลังเรียบร้อยแล้ว'
         });
         result = { ok: true, summary: summaryRecord };
         break;
@@ -333,7 +333,7 @@
         }
         notify('notify:event', {
           type: 'info',
-          text: isAct ? '🗑️ ลบประวัติกิจกรรมออกจากระบบเรียบร้อยแล้ว' : '🗑️ ลบประวัติการประชุมออกจากระบบเรียบร้อยแล้ว'
+          text: isAct ? 'ลบประวัติกิจกรรมออกจากระบบเรียบร้อยแล้ว' : 'ลบประวัติการประชุมออกจากระบบเรียบร้อยแล้ว'
         });
         result = { ok: true };
         break;
@@ -492,7 +492,7 @@
 
         notify('notify:event', {
           type: 'success',
-          text: `✅ ${user.nickname} (${user.firstName}) สแกนเช็คชื่อเข้าประชุมออนไลน์แล้ว (${late ? 'มาสาย' : 'ทันเวลา'})`
+          text: `${user.nickname} (${user.firstName}) สแกนเช็คชื่อเข้าประชุมออนไลน์แล้ว (${late ? 'มาสาย' : 'ทันเวลา'})`
         });
 
         result = {
@@ -515,7 +515,7 @@
           notify('notify:event', {
             type: 'info',
             targetRole: 'ADMIN',
-            text: `📋 ${user.nickname} (${user.firstName}) แจ้งลาประชุม: ${user.leaveReason}`
+            text: `${user.nickname} (${user.firstName}) แจ้งลาประชุม: ${user.leaveReason}`
           });
         }
         result = { ok: true };
@@ -684,7 +684,7 @@
         if (!state.meeting || !state.meeting.isStarted || state.meeting.isEnded) {
           notify('notify:event', {
             type: 'warning',
-            text: '⚠️ กรุณาเปิดการประชุมก่อน จึงจะสามารถสร้างและเปิดญัตติได้'
+            text: 'กรุณาเปิดการประชุมก่อน จึงจะสามารถสร้างและเปิดญัตติได้'
           });
           shouldPersist = false;
           result = { ok: false, error: 'Meeting not started or ended' };
@@ -715,7 +715,7 @@
         }
         notify('notify:event', {
           type: 'motion',
-          text: `🗳️ เปิดญัตติโหวตใหม่${newMotion.isSecret ? ' (โหวตลับ)' : ''}: "${newMotion.title}"`
+          text: `เปิดญัตติโหวตใหม่${newMotion.isSecret ? ' (โหวตลับ)' : ''}: "${newMotion.title}"`
         });
         result = { ok: true, motion: newMotion };
         break;
@@ -738,7 +738,7 @@
           if (nextState && (!state.meeting || !state.meeting.isStarted || state.meeting.isEnded)) {
             notify('notify:event', {
               type: 'warning',
-              text: '⚠️ กรุณาเปิดการประชุมก่อน จึงจะสามารถเปิดรับคะแนนโหวตญัตติได้'
+              text: 'กรุณาเปิดการประชุมก่อน จึงจะสามารถเปิดรับคะแนนโหวตญัตติได้'
             });
             shouldPersist = false;
             result = { ok: false, error: 'Meeting not started or ended' };
@@ -903,7 +903,7 @@
           notify('notify:event', {
             type: 'fileReq',
             targetRole: 'ADMIN',
-            text: `📁 ${user.nickname} ส่งคำขออนุญาตดรอปไฟล์`
+            text: `${user.nickname} ส่งคำขออนุญาตดรอปไฟล์`
           });
         }
         result = { ok: true, userId, status: 'PENDING' };
@@ -919,7 +919,7 @@
           notify('notify:event', {
             type: status === 'APPROVED' ? 'success' : 'warning',
             targetUserId: user.id,
-            text: status === 'APPROVED' ? '✅ ADMIN อนุมัติให้คุณดรอปไฟล์ได้แล้ว!' : '⚠️ สิทธิ์การดรอปไฟล์ถูกยกเลิก'
+            text: status === 'APPROVED' ? 'ADMIN อนุมัติให้คุณดรอปไฟล์ได้แล้ว!' : 'สิทธิ์การดรอปไฟล์ถูกยกเลิก'
           });
         }
         result = { ok: true, userId, status: user ? user.filePermission : 'NONE' };
@@ -966,7 +966,7 @@
         notify('file:upload', item);
         notify('notify:event', {
           type: 'fileDrop',
-          text: `📎 ${item.uploaderName} แนบเอกสารใหม่: "${item.name}"`
+          text: `${item.uploaderName} แนบเอกสารใหม่: "${item.name}"`
         });
         result = { ok: true, file: item };
         break;
@@ -995,7 +995,7 @@
           if (file.isPinned) {
             notify('notify:event', {
               type: 'info',
-              text: `📌 ผู้ดูแลระบบได้ปักหมุดเอกสาร: "${file.name}" ไว้ด้านบนสุด`
+              text: `ผู้ดูแลระบบได้ปักหมุดเอกสาร: "${file.name}" ไว้ด้านบนสุด`
             });
           }
         }
@@ -1019,7 +1019,7 @@
           notify('notify:event', {
             type: 'info',
             targetRole: 'ADMIN',
-            text: `🎥 ${user.nickname} (${user.firstName}) ขออนุญาตเปิดกล้อง/แชร์หน้าจอ`
+            text: `${user.nickname} (${user.firstName}) ขออนุญาตเปิดกล้อง/แชร์หน้าจอ`
           });
         }
         result = { ok: true, userId, status: 'PENDING' };
@@ -1043,8 +1043,8 @@
             type: status === 'APPROVED' ? 'success' : 'warning',
             targetUserId: user.id,
             text: status === 'APPROVED'
-              ? '✅ ADMIN อนุมัติให้คุณเปิดกล้องและแชร์หน้าจอได้แล้ว!'
-              : '⚠️ สิทธิ์การเปิดกล้อง/แชร์หน้าจอถูกยกเลิก'
+              ? 'ADMIN อนุมัติให้คุณเปิดกล้องและแชร์หน้าจอได้แล้ว!'
+              : 'สิทธิ์การเปิดกล้อง/แชร์หน้าจอถูกยกเลิก'
           });
         }
         result = { ok: true, userId, status: user ? user.streamPermission : 'NONE' };

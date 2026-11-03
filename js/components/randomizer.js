@@ -325,7 +325,7 @@ function playRandomizerPopupAnimation(payload) {
   }
 
   if (mode === 'WHEEL') {
-    if (titleEl) titleEl.textContent = '🎡 กำลังหมุนวงล้อสุ่ม...';
+    if (titleEl) titleEl.textContent = 'กำลังหมุนวงล้อสุ่ม...';
     if (wheelBox) wheelBox.classList.remove('hidden');
     const sliceAngle = (Math.PI * 2) / n;
     const targetRotation = (Math.PI * 2 * 7) - (winnerIdx * sliceAngle + sliceAngle / 2);
@@ -342,7 +342,7 @@ function playRandomizerPopupAnimation(payload) {
     }
     requestAnimationFrame(animateWheel);
   } else if (mode === 'CARD' || mode === 'GIFT') {
-    if (titleEl) titleEl.textContent = '🎁 กำลังเปิดกล่องสุ่มของขวัญ...';
+    if (titleEl) titleEl.textContent = 'กำลังเปิดกล่องสุ่มของขวัญ...';
     if (giftBox) {
       giftBox.classList.remove('hidden');
       giftBox.classList.add('flex');
@@ -383,7 +383,7 @@ function playRandomizerPopupAnimation(payload) {
     const lidTimer = setTimeout(() => {
       clearInterval(wobbleInterval);
       if (giftContainer) giftContainer.style.transform = 'rotate(0deg) translateY(0)';
-      if (titleEl) titleEl.textContent = '✨ กล่องของขวัญเปิดแล้ว!';
+      if (titleEl) titleEl.textContent = 'กล่องของขวัญเปิดแล้ว!';
 
       if (giftLid) {
         giftLid.style.transform = 'translateY(-65px) rotate(-16deg)';
@@ -418,7 +418,7 @@ function playRandomizerPopupAnimation(payload) {
 
   } else {
     // SLOT MODE
-    if (titleEl) titleEl.textContent = '🎰 กำลังหมุนสล็อตสุ่มชื่อ...';
+    if (titleEl) titleEl.textContent = 'กำลังหมุนสล็อตสุ่มชื่อ...';
     if (slotBox) slotBox.classList.remove('hidden');
     const stepInterval = setInterval(() => {
       if (slotText) slotText.textContent = items[Math.floor(Math.random() * n)].label;
@@ -442,7 +442,7 @@ function finishRandomSpin(winnerLabel) {
   const title = document.getElementById('popupRandomTitle');
   const winner = document.getElementById('popupWinnerName');
   const banner = document.getElementById('popupWinnerBanner');
-  if (title) title.textContent = '✨ การสุ่มเสร็จสิ้น!';
+  if (title) title.textContent = 'การสุ่มเสร็จสิ้น!';
   if (winner) winner.textContent = winnerLabel;
   if (banner) banner.classList.remove('hidden');
   if (typeof window.renderAll === 'function') window.renderAll();

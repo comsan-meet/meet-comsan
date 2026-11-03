@@ -20,10 +20,10 @@ initializeSockets(io);
 server.listen(config.PORT, '0.0.0.0', () => {
   const ips = getLocalIpAddresses();
   console.log('====================================================');
-  console.log('🎭 ระบบการประชุมชมรมคมสัน (COMSAN SERVER V6 Modular)');
-  console.log(`💻 เข้าใช้งานบนคอมพิวเตอร์ (ADMIN/HOST): http://localhost:${config.PORT}`);
+  console.log('ระบบการประชุมชมรมคมสัน (COMSAN SERVER V6 Modular)');
+  console.log(`เข้าใช้งานบนคอมพิวเตอร์ (ADMIN/HOST): http://localhost:${config.PORT}`);
   ips.forEach(ip => {
-    console.log(`📱 เข้าใช้งานบนมือถือสมาชิก (Wi-Fi): http://${ip}:${config.PORT}`);
+    console.log(`เข้าใช้งานบนมือถือสมาชิก (Wi-Fi): http://${ip}:${config.PORT}`);
   });
   console.log('====================================================');
 });

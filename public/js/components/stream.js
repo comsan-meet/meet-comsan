@@ -53,12 +53,12 @@ async function populateCameraDeviceOptions() {
 
     const currentVal = selectEl.value || window.selectedCameraDeviceId;
     let html = `
-      <option value="user">📱 กล้องหน้า (Front Camera)</option>
-      <option value="environment">📷 กล้องหลัง (Back Camera)</option>
+      <option value="user">กล้องหน้า (Front Camera)</option>
+      <option value="environment">กล้องหลัง (Back Camera)</option>
     `;
     videoDevices.forEach((d, idx) => {
       if (d.deviceId) {
-        html += `<option value="${d.deviceId}">💻 ${d.label || `กล้องตัวที่ ${idx + 1}`}</option>`;
+        html += `<option value="${d.deviceId}">${d.label || `กล้องตัวที่ ${idx + 1}`}</option>`;
       }
     });
     selectEl.innerHTML = html;
@@ -362,7 +362,7 @@ function renderStreamSection() {
             <div class="min-w-0">
               <span class="font-bold text-foreground truncate block">${u.nickname || u.firstName || 'สมาชิก'}</span>
               <span class="block text-[10px] truncate ${st === 'PENDING' ? 'text-amber-600 dark:text-amber-400 font-bold' : st === 'APPROVED' ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground'}">
-                ${st === 'PENDING' ? '🔔 ขอสิทธิ์แชร์หน้าจอ/กล้อง!' : st === 'APPROVED' ? '🎥 กำลังได้รับสิทธิ์' : 'ลำดับปกติ'}
+                ${st === 'PENDING' ? 'ขอสิทธิ์แชร์หน้าจอ/กล้อง!' : st === 'APPROVED' ? 'กำลังได้รับสิทธิ์' : 'ลำดับปกติ'}
               </span>
             </div>
           </div>

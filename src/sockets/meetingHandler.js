@@ -88,7 +88,7 @@ module.exports = function registerMeetingHandlers(io, socket) {
     const locationText = format === 'ONLINE' ? state.meeting.location : `ณ ${state.meeting.location}`;
     io.emit('notify:event', {
       type: 'success',
-      text: `🟢 เปิดการประชุม: "${state.meeting.title}" ${locationText}`
+      text: `เปิดการประชุม: "${state.meeting.title}" ${locationText}`
     });
   });
 
@@ -203,7 +203,7 @@ module.exports = function registerMeetingHandlers(io, socket) {
     stateService.persistAndBroadcast();
     io.emit('notify:event', {
       type: 'warning',
-      text: '🏁 ผู้ดูแลระบบได้สั่งจบการประชุม และบันทึกประวัติสรุปการประชุมย้อนหลังเรียบร้อยแล้ว'
+      text: 'ผู้ดูแลระบบได้สั่งจบการประชุม และบันทึกประวัติสรุปการประชุมย้อนหลังเรียบร้อยแล้ว'
     });
   });
 
@@ -229,7 +229,7 @@ module.exports = function registerMeetingHandlers(io, socket) {
     stateService.persistAndBroadcast();
     io.emit('notify:event', {
       type: 'info',
-      text: isAct ? '🗑️ ลบประวัติกิจกรรมออกจากระบบเรียบร้อยแล้ว' : '🗑️ ลบประวัติการประชุมออกจากระบบเรียบร้อยแล้ว'
+      text: isAct ? 'ลบประวัติกิจกรรมออกจากระบบเรียบร้อยแล้ว' : 'ลบประวัติการประชุมออกจากระบบเรียบร้อยแล้ว'
     });
   });
 
@@ -292,7 +292,7 @@ module.exports = function registerMeetingHandlers(io, socket) {
     if (callback) callback({ ok: true, version: cleanVersion, versionNotes: state.versionNotes });
     io.emit('notify:event', {
       type: 'info',
-      text: `🚀 ระบบได้รับการอัปเดตข้อมูลเป็นเวอร์ชัน ${cleanVersion}`
+      text: `ระบบได้รับการอัปเดตข้อมูลเป็นเวอร์ชัน ${cleanVersion}`
     });
   });
 };

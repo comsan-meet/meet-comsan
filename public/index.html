@@ -1332,7 +1332,7 @@ label svg, label i {
           </div>
           <!-- Sparkles -->
           <div class="flex items-center gap-1.5 mt-1 text-amber-500 font-bold text-xs animate-bounce">
-            <span>✨</span><span>🎉</span><span>✨</span>
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
           </div>
         </div>
 
@@ -1360,7 +1360,7 @@ label svg, label i {
 
       <!-- Winner Banner -->
       <div id="popupWinnerBanner" class="hidden p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-        <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase">🎉 ผู้โชคดี / ผลการสุ่มที่ได้คือ</p>
+        <p class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase">ผู้โชคดี / ผลการสุ่มที่ได้คือ</p>
         <p id="popupWinnerName" class="text-2xl font-bold text-foreground mt-1">-</p>
       </div>
 
@@ -2067,7 +2067,7 @@ label svg, label i {
       <div class="flex items-start justify-between gap-3">
         <div class="flex items-center gap-3">
           <div class="w-11 h-11 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center text-xl shrink-0 shadow-xs">
-            🎓
+            <i data-lucide="graduation-cap" class="w-6 h-6"></i>
           </div>
           <div>
             <div class="flex items-center gap-2">
@@ -2113,7 +2113,7 @@ label svg, label i {
         <i data-lucide="alert-circle" class="text-base text-amber-500 shrink-0 mt-0.5"></i>
         <div id="degreeRejectText" class="space-y-0.5">
           <strong class="font-bold">ระบบ AI ปฏิเสธคำร้อง!</strong>
-          <p class="text-[11px] leading-relaxed">ตรวจสอบฐานข้อมูลแล้ว พบว่าคุณยังไม่สำเร็จการศึกษาปริญญาตรี กรุณากลับไปตั้งใจเรียนและช่วยงานชมรมคมสันต่อไปครับ 🤣</p>
+          <p class="text-[11px] leading-relaxed">ตรวจสอบฐานข้อมูลแล้ว พบว่าคุณยังไม่สำเร็จการศึกษาปริญญาตรี กรุณากลับไปตั้งใจเรียนและช่วยงานชมรมคมสันต่อไปครับ</p>
         </div>
       </div>
 
@@ -2126,7 +2126,7 @@ label svg, label i {
 
         <button type="button" onclick="closeEasterEggModal()"
           class="w-full py-2.5 rounded-xl bg-muted/70 hover:bg-muted text-foreground font-semibold text-xs transition active:scale-98">
-          ยอมแพ้ อยู่ช่วยงานชมรมคมสันต่อก็ได้ 😭
+          ยอมแพ้ อยู่ช่วยงานชมรมคมสันต่อก็ได้
         </button>
       </div>
 
@@ -2155,12 +2155,12 @@ label svg, label i {
 
       <div class="space-y-3.5 text-sm">
         <div>
-          <label class="block text-xs font-semibold text-foreground mb-1">📍 เขียนที่ (สถานที่):</label>
+          <label class="block text-xs font-semibold text-foreground mb-1">เขียนที่ (สถานที่):</label>
           <input type="text" id="noteDocMetaLocationInput" class="w-full h-10 px-3 rounded-xl border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="เช่น ห้องประชุมชมรมสันทนาการ หรือ อาคารสันทนาการ" />
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-foreground mb-1">📅 วันที่ เดือน ปี ที่เขียน:</label>
+          <label class="block text-xs font-semibold text-foreground mb-1">วันที่ เดือน ปี ที่เขียน:</label>
           <input type="text" id="noteDocMetaDateInput" class="w-full h-10 px-3 rounded-xl border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/40" placeholder="เช่น วันที่ 31 ตุลาคม พ.ศ. 2569" />
         </div>
       </div>
@@ -2689,7 +2689,7 @@ label svg, label i {
             </button>
           </div>
           <p class="text-[11px] text-muted-foreground">กำหนดรายชื่อและหน้าที่ของสมาชิกแต่ละคนที่รับผิดชอบในกิจกรรมนี้ สามารถเลือกจากบุคคลในโครงการหรือสมาชิกชมรมได้</p>
-          <div id="calProjectAssigneeNotice" class="hidden text-[11px] text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-1.5 rounded-xl border border-indigo-500/20 font-medium">✨ สามารถเลือกผู้รับผิดชอบและหน้าที่จากโครงการนี้ได้</div>
+          <div id="calProjectAssigneeNotice" class="hidden text-[11px] text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-1.5 rounded-xl border border-indigo-500/20 font-medium">สามารถเลือกผู้รับผิดชอบและหน้าที่จากโครงการนี้ได้</div>
           <div id="calAssigneesContainer" class="space-y-2"></div>
           <datalist id="calAssigneeNameList"></datalist>
           <datalist id="calAssigneeRoleList"></datalist>
@@ -2898,17 +2898,17 @@ label svg, label i {
             <div>
               <label class="block text-[11px] font-bold text-muted-foreground mb-1">ไอคอน</label>
               <select id="newCatIcon" class="w-full px-2.5 py-2 rounded-xl bg-card border border-border text-xs text-foreground outline-none">
-                <option value="star">★ ดาว (Star)</option>
-                <option value="users">👥 ประชุม/กลุ่ม (Users)</option>
-                <option value="clock">⏰ กำหนดส่ง (Clock)</option>
-                <option value="laptop">💻 อบรม/งาน (Laptop)</option>
-                <option value="flag">🚩 เป้าหมาย (Flag)</option>
-                <option value="music">🎵 การแสดง (Music)</option>
-                <option value="heart">❤️ สันทนาการ (Heart)</option>
-                <option value="bookmark">🔖 เอกสาร (Bookmark)</option>
-                <option value="calendar">📅 ปฏิทิน (Calendar)</option>
-                <option value="trophy">🏆 การแข่งขัน (Trophy)</option>
-                <option value="map-pin">📍 สถานที่ (Map-pin)</option>
+                <option value="star">ดาว (Star)</option>
+                <option value="users">ประชุม/กลุ่ม (Users)</option>
+                <option value="clock">กำหนดส่ง (Clock)</option>
+                <option value="laptop">อบรม/งาน (Laptop)</option>
+                <option value="flag">เป้าหมาย (Flag)</option>
+                <option value="music">การแสดง (Music)</option>
+                <option value="heart">สันทนาการ (Heart)</option>
+                <option value="bookmark">เอกสาร (Bookmark)</option>
+                <option value="calendar">ปฏิทิน (Calendar)</option>
+                <option value="trophy">การแข่งขัน (Trophy)</option>
+                <option value="map-pin">สถานที่ (Map-pin)</option>
               </select>
             </div>
           </div>
@@ -4726,7 +4726,7 @@ label svg, label i {
                   </div>
                   <div class="min-w-0 space-y-0.5">
                     <div class="flex items-center gap-1.5">
-                      <span id="chatMediaPreviewTypeBadge" class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">📷 รูปภาพ</span>
+                      <span id="chatMediaPreviewTypeBadge" class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">รูปภาพ</span>
                       <button type="button" onclick="previewStagedMediaFullscreen()" class="text-[11px] text-primary hover:underline font-semibold">
                         <i data-lucide="maximize-2" class="text-[10px]"></i> ดูขนาดเต็ม
                       </button>
@@ -4757,12 +4757,7 @@ label svg, label i {
                 <div class="flex-1 min-w-0 overflow-hidden flex items-center bg-muted/70 hover:bg-muted/90 focus-within:bg-card border border-border/60 focus-within:border-primary/60 rounded-full px-3 py-1.5 gap-1.5 transition shadow-inner">
                   <input type="text" id="floatingChatInput" placeholder="ส่งข้อความ..." autocomplete="off"
                     class="flex-1 w-full min-w-0 bg-transparent text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
-                  <button type="button" onclick="insertChatEmoji('❤️')" class="text-rose-500 hover:scale-125 transition shrink-0 px-0.5 text-sm" title="ส่งหัวใจ">
-                    ❤️
-                  </button>
-                  <button type="button" onclick="insertChatEmoji('🔥')" class="text-amber-500 hover:scale-125 transition shrink-0 px-0.5 text-sm" title="ส่งไฟ">
-                    🔥
-                  </button>
+                  
                 </div>
 
                 <!-- Send Button (Instagram Arrow Style) -->
@@ -4821,12 +4816,12 @@ label svg, label i {
 
                 <!-- Quick Mood Chips -->
                 <div class="flex flex-wrap items-center justify-center gap-1.5 pt-1">
-                  <button type="button" onclick="setQuickIgNote('พร้อมลุยประชุม! 🔥')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">🔥 พร้อมลุยประชุม!</button>
-                  <button type="button" onclick="setQuickIgNote('ตั้งใจฟังสุดๆ ✨')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">✨ ตั้งใจฟังสุดๆ</button>
-                  <button type="button" onclick="setQuickIgNote('มีไอเดียใหม่ 💡')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">💡 มีไอเดียใหม่</button>
-                  <button type="button" onclick="setQuickIgNote('เติมพลังแป๊บ ☕')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">☕ เติมพลังแป๊บ</button>
-                  <button type="button" onclick="setQuickIgNote('รักชมรมคมสัน ❤️')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">❤️ รักชมรมคมสัน</button>
-                  <button type="button" onclick="setQuickIgNote('ตื่นเต้นจัง 🎉')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">🎉 ตื่นเต้นจัง</button>
+                  <button type="button" onclick="setQuickIgNote('พร้อมลุยประชุม!')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">พร้อมลุยประชุม!</button>
+                  <button type="button" onclick="setQuickIgNote('ตั้งใจฟังสุดๆ')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">ตั้งใจฟังสุดๆ</button>
+                  <button type="button" onclick="setQuickIgNote('มีไอเดียใหม่')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">มีไอเดียใหม่</button>
+                  <button type="button" onclick="setQuickIgNote('เติมพลังแป๊บ')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">เติมพลังแป๊บ</button>
+                  <button type="button" onclick="setQuickIgNote('รักชมรมคมสัน')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">รักชมรมคมสัน</button>
+                  <button type="button" onclick="setQuickIgNote('ตื่นเต้นจัง')" class="px-2.5 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary text-[11px] font-medium transition">ตื่นเต้นจัง</button>
                 </div>
 
                 <!-- Action Buttons -->
@@ -4980,7 +4975,7 @@ label svg, label i {
                 </div>
                 <div class="min-w-0 space-y-0.5">
                   <div class="flex items-center gap-1.5">
-                    <span id="adminChatMediaPreviewTypeBadge" class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">📷 รูปภาพ</span>
+                    <span id="adminChatMediaPreviewTypeBadge" class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">รูปภาพ</span>
                     <button type="button" onclick="previewAdminStagedMediaFullscreen()" class="text-[11px] text-primary hover:underline font-semibold">
                       <i data-lucide="maximize-2" class="text-[10px]"></i> ดูขนาดเต็ม
                     </button>
@@ -5697,8 +5692,8 @@ label svg, label i {
                     <label class="block text-[11px] font-bold text-muted-foreground mb-1">เลือกกล้อง</label>
                     <select id="streamCameraSelect" onchange="handleStreamSettingsChange('CAMERA_DEVICE')"
                       class="w-full px-3 py-2 rounded-xl bg-card text-card-foreground border border-border text-xs font-semibold">
-                      <option value="user">📱 กล้องหน้า (Front)</option>
-                      <option value="environment">📷 กล้องหลัง (Back)</option>
+                      <option value="user">กล้องหน้า (Front)</option>
+                      <option value="environment">กล้องหลัง (Back)</option>
                     </select>
                   </div>
                   <div>
@@ -7829,28 +7824,28 @@ label svg, label i {
 <!-- ======================================================== -->
   <!-- MODULAR JAVASCRIPT ARCHITECTURE                          -->
   <!-- ======================================================== -->
-  <script src="js/services/actionReducer.js?v=20261104_02"></script>
-  <script src="js/supabaseConfig.js?v=20261104_02"></script>
-  <script src="js/services/supabaseAdapter.js?v=20261104_02"></script>
-  <script src="js/config.js?v=20261104_02"></script>
-  <script src="js/defaultProjects.js?v=20261104_02"></script>
-  <script src="js/state.js?v=20261104_02"></script>
-  <script src="js/utils/format.js?v=20261104_02"></script>
-  <script src="js/utils/ui.js?v=20261104_02"></script>
-  <script src="js/utils/logoAsset.js?v=20261104_02"></script>
-  <script src="js/utils/export.js?v=20261104_02"></script>
-  <script src="js/components/seatingChart.js?v=20261104_02"></script>
-  <script src="js/components/voting.js?v=20261104_02"></script>
-  <script src="js/components/chat.js?v=20261104_02"></script>
-  <script src="js/components/files.js?v=20261104_07"></script>
-  <script src="js/components/randomizer.js?v=20261104_02"></script>
-  <script src="js/components/stream.js?v=20261104_02"></script>
-  <script src="js/components/analyticsChart.js?v=20261104_03"></script>
-  <script src="js/components/calendar.js?v=20261104_02"></script>
-  <script src="js/components/projects.js?v=20261104_02"></script>
-  <script src="js/views/navigation.js?v=20261104_02"></script>
-  <script src="js/views/userView.js?v=20261104_02"></script>
-  <script src="js/views/adminView.js?v=20261104_02"></script>
-  <script src="js/app.js?v=20261104_02"></script>
+  <script src="js/services/actionReducer.js?v=20261104_08"></script>
+  <script src="js/supabaseConfig.js?v=20261104_08"></script>
+  <script src="js/services/supabaseAdapter.js?v=20261104_08"></script>
+  <script src="js/config.js?v=20261104_08"></script>
+  <script src="js/defaultProjects.js?v=20261104_08"></script>
+  <script src="js/state.js?v=20261104_08"></script>
+  <script src="js/utils/format.js?v=20261104_08"></script>
+  <script src="js/utils/ui.js?v=20261104_08"></script>
+  <script src="js/utils/logoAsset.js?v=20261104_08"></script>
+  <script src="js/utils/export.js?v=20261104_08"></script>
+  <script src="js/components/seatingChart.js?v=20261104_08"></script>
+  <script src="js/components/voting.js?v=20261104_08"></script>
+  <script src="js/components/chat.js?v=20261104_08"></script>
+  <script src="js/components/files.js?v=20261104_08"></script>
+  <script src="js/components/randomizer.js?v=20261104_08"></script>
+  <script src="js/components/stream.js?v=20261104_08"></script>
+  <script src="js/components/analyticsChart.js?v=20261104_08"></script>
+  <script src="js/components/calendar.js?v=20261104_08"></script>
+  <script src="js/components/projects.js?v=20261104_08"></script>
+  <script src="js/views/navigation.js?v=20261104_08"></script>
+  <script src="js/views/userView.js?v=20261104_08"></script>
+  <script src="js/views/adminView.js?v=20261104_08"></script>
+  <script src="js/app.js?v=20261104_08"></script>
 </body>
 </html>

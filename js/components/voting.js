@@ -194,11 +194,11 @@ function renderVotingCardsSafe() {
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold text-primary">วาระการประชุม • ญัตติที่ ${String(motNumber).padStart(2, '0')} ${mot.isSecret ? '(โหวตลับ)' : ''}</span>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-medium ${isClosed ? 'bg-muted text-muted-foreground border border-border' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'}">
-              ${isClosed ? '🔒 ปิดการโหวตแล้ว' : '● เปิดให้ลงมติ'}
+              ${isClosed ? 'ปิดการโหวตแล้ว' : 'เปิดให้ลงมติ'}
             </span>
           </div>
           <h4 class="text-lg sm:text-xl font-bold text-foreground leading-snug">${mot.title}</h4>
-          ${savedVote ? `<div class="pt-2 border-t border-border flex items-center justify-between text-xs"><span class="text-muted-foreground">สถานะการลงมติของคุณ</span><strong class="text-emerald-600 dark:text-emerald-400 font-medium">✔ บันทึกคะแนนแล้ว (${selectedOptObj ? selectedOptObj.label : savedVote})</strong></div>` : ''}
+          ${savedVote ? `<div class="pt-2 border-t border-border flex items-center justify-between text-xs"><span class="text-muted-foreground">สถานะการลงมติของคุณ</span><strong class="text-emerald-600 dark:text-emerald-400 font-medium">บันทึกคะแนนแล้ว (${selectedOptObj ? selectedOptObj.label : savedVote})</strong></div>` : ''}
         </div>
 
         <div class="space-y-2.5">
@@ -540,7 +540,7 @@ function updateRaiseHandUserUI() {
 
       if (isMyTurn) {
         statusPill.className = 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-bold';
-        statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> ถึงคิวพูดของคุณแล้ว! 🎉';
+        statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> ถึงคิวพูดของคุณแล้ว!';
         outerCircle.className = 'w-full h-full rounded-full bg-emerald-500/20 border-8 border-emerald-500/30 flex items-center justify-center text-5xl text-emerald-600 dark:text-emerald-400 animate-pulse transition-all';
         mainTitle.textContent = 'ถึงคิวพูดของคุณแล้ว!';
         subDesc.textContent = 'ผู้ดำเนินการเรียกชื่อคุณแล้ว คุณสามารถกล่าวเปิดไมค์หรือซักถามได้ทันที';

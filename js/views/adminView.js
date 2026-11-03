@@ -1882,7 +1882,7 @@ async function testDbConnection() {
 
   if (resultBox) {
     resultBox.className = 'p-3.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-xs text-indigo-700 dark:text-indigo-300 font-medium flex items-start gap-2.5';
-    resultBox.innerHTML = '<span>⏳ กำลังส่งคำขอทดสอบการเชื่อมต่อไปยังฐานข้อมูล...</span>';
+    resultBox.innerHTML = '<span>กำลังส่งคำขอทดสอบการเชื่อมต่อไปยังฐานข้อมูล...</span>';
     resultBox.classList.remove('hidden');
   }
 
@@ -1927,7 +1927,7 @@ async function testDbConnection() {
       if (resultBox) {
         resultBox.className = 'p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300 font-medium flex items-start gap-2.5';
         resultBox.innerHTML = `<div>
-          <b class="text-emerald-600 dark:text-emerald-400">✓ ${data.message || 'เชื่อมต่อสำเร็จ!'}</b>
+          <b class="text-emerald-600 dark:text-emerald-400">${data.message || 'เชื่อมต่อสำเร็จ!'}</b>
           <div class="mt-1 text-[11px] opacity-90 space-y-0.5">
             <div>• Database: <span class="font-mono font-bold">${data.data?.database || dbname}</span></div>
             <div>• Host: <span class="font-mono">${data.data?.host || host}:${data.data?.port || port}</span></div>
@@ -1949,9 +1949,9 @@ async function testDbConnection() {
       if (resultBox) {
         resultBox.className = 'p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-300 font-medium flex items-start gap-2.5';
         resultBox.innerHTML = `<div>
-          <b class="text-rose-600 dark:text-rose-400">✕ การเชื่อมต่อล้มเหลว</b>
+          <b class="text-rose-600 dark:text-rose-400">การเชื่อมต่อล้มเหลว</b>
           <p class="mt-1 text-[11px]">${errMsg}</p>
-          <p class="mt-1.5 text-[11px] opacity-80">💡 ตรวจสอบว่าได้อัปโหลดไฟล์ <code class="font-mono bg-rose-500/20 px-1 rounded">config.php</code> และ <code class="font-mono bg-rose-500/20 px-1 rounded">api/test_db.php</code> ไปยัง Hosting หรือ XAMPP หรือยัง</p>
+          <p class="mt-1.5 text-[11px] opacity-80">ตรวจสอบว่าได้อัปโหลดไฟล์ <code class="font-mono bg-rose-500/20 px-1 rounded">config.php</code> และ <code class="font-mono bg-rose-500/20 px-1 rounded">api/test_db.php</code> ไปยัง Hosting หรือ XAMPP หรือยัง</p>
         </div>`;
       }
       if (typeof window.showToast === 'function') {
@@ -1963,7 +1963,7 @@ async function testDbConnection() {
     if (resultBox) {
       resultBox.className = 'p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-300 font-medium flex items-start gap-2.5';
       resultBox.innerHTML = `<div>
-        <b class="text-rose-600 dark:text-rose-400">✕ ข้อผิดพลาดในการเชื่อมต่อ</b>
+        <b class="text-rose-600 dark:text-rose-400">ข้อผิดพลาดในการเชื่อมต่อ</b>
         <p class="mt-1 text-[11px]">${err.message || 'Network Error'}</p>
       </div>`;
     }

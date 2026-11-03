@@ -1112,7 +1112,7 @@ function renderAgendaListView(events, currentUser, isAdmin = false) {
             </div>
             ${isMeAssigned ? `
               <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                ★ งานของคุณ
+                งานของคุณ
               </span>
             ` : ''}
           </div>
@@ -1516,7 +1516,7 @@ function openAddCalendarEventModal(eventIdToEdit = null, defaultDate = null, pro
   const noticeEl = document.getElementById('calProjectAssigneeNotice');
   if (noticeEl) {
     if (targetProjectId && stakeholderData.stakeholders && stakeholderData.stakeholders.length > 0) {
-      noticeEl.textContent = `✨ สามารถเลือกผู้รับผิดชอบ (${stakeholderData.stakeholders.length} คน) และหน้าที่จากโครงการนี้ได้`;
+      noticeEl.textContent = `สามารถเลือกผู้รับผิดชอบ (${stakeholderData.stakeholders.length} คน) และหน้าที่จากโครงการนี้ได้`;
       noticeEl.classList.remove('hidden');
     } else {
       noticeEl.classList.add('hidden');
@@ -1921,7 +1921,7 @@ function renderIcsPreviewList(events) {
           </div>
           ${Array.isArray(evt.assignees) && evt.assignees.length > 0 ? `
             <div class="mt-1 flex flex-wrap gap-1">
-              ${evt.assignees.map(a => `<span class="px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-600 text-[10px] font-medium">👤 ${a.name} (${a.role})</span>`).join('')}
+              ${evt.assignees.map(a => `<span class="px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-600 text-[10px] font-medium">${a.name} (${a.role})</span>`).join('')}
             </div>
           ` : ''}
         </div>

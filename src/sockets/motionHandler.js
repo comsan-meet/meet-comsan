@@ -8,7 +8,7 @@ module.exports = function registerMotionHandlers(io, socket) {
     if (!state.meeting || !state.meeting.isStarted || state.meeting.isEnded) {
       socket.emit('notify:event', {
         type: 'warning',
-        text: '⚠️ กรุณาเปิดการประชุมก่อน จึงจะสามารถสร้างและเปิดญัตติได้'
+        text: 'กรุณาเปิดการประชุมก่อน จึงจะสามารถสร้างและเปิดญัตติได้'
       });
       return;
     }
@@ -32,7 +32,7 @@ module.exports = function registerMotionHandlers(io, socket) {
     stateService.persistAndBroadcast();
     io.emit('notify:event', {
       type: 'motion',
-      text: `🗳️ เปิดญัตติโหวตใหม่${newMotion.isSecret ? ' (โหวตลับ)' : ''}: "${newMotion.title}"`
+      text: `เปิดญัตติโหวตใหม่${newMotion.isSecret ? ' (โหวตลับ)' : ''}: "${newMotion.title}"`
     });
   });
 
@@ -51,7 +51,7 @@ module.exports = function registerMotionHandlers(io, socket) {
       if (nextState && (!state.meeting || !state.meeting.isStarted || state.meeting.isEnded)) {
         socket.emit('notify:event', {
           type: 'warning',
-          text: '⚠️ กรุณาเปิดการประชุมก่อน จึงจะสามารถเปิดรับคะแนนโหวตญัตติได้'
+          text: 'กรุณาเปิดการประชุมก่อน จึงจะสามารถเปิดรับคะแนนโหวตญัตติได้'
         });
         return; // Don't allow re-opening votes if meeting is not started or ended
       }

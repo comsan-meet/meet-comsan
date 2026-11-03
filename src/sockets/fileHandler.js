@@ -12,7 +12,7 @@ module.exports = function registerFileHandlers(io, socket) {
     io.emit('notify:event', {
       type: 'fileReq',
       targetRole: 'ADMIN',
-      text: `📁 ${user.nickname} ส่งคำขออนุญาตดรอปไฟล์`
+      text: `${user.nickname} ส่งคำขออนุญาตดรอปไฟล์`
     });
   });
 
@@ -25,7 +25,7 @@ module.exports = function registerFileHandlers(io, socket) {
     io.emit('notify:event', {
       type: status === 'APPROVED' ? 'success' : 'warning',
       targetUserId: user.id,
-      text: status === 'APPROVED' ? '✅ ADMIN อนุมัติให้คุณดรอปไฟล์ได้แล้ว!' : '⚠️ สิทธิ์การดรอปไฟล์ถูกยกเลิก'
+      text: status === 'APPROVED' ? 'ADMIN อนุมัติให้คุณดรอปไฟล์ได้แล้ว!' : 'สิทธิ์การดรอปไฟล์ถูกยกเลิก'
     });
   });
 
@@ -68,7 +68,7 @@ module.exports = function registerFileHandlers(io, socket) {
     io.emit('file:upload', item);
     io.emit('notify:event', {
       type: 'fileDrop',
-      text: `📎 ${item.uploaderName} แนบเอกสารใหม่: "${item.name}"`
+      text: `${item.uploaderName} แนบเอกสารใหม่: "${item.name}"`
     });
   });
 
@@ -92,7 +92,7 @@ module.exports = function registerFileHandlers(io, socket) {
     if (file.isPinned) {
       io.emit('notify:event', {
         type: 'info',
-        text: `📌 ผู้ดูแลระบบได้ปักหมุดเอกสาร: "${file.name}" ไว้ด้านบนสุด`
+        text: `ผู้ดูแลระบบได้ปักหมุดเอกสาร: "${file.name}" ไว้ด้านบนสุด`
       });
     }
   });

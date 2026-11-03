@@ -5210,7 +5210,7 @@
                 </label>
                 ${item.avatar ? `
                   <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${item.avatar.startsWith('data:image') ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20' : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'}">
-                    ${item.avatar.startsWith('data:image') ? '✓ รูปอัปโหลด / ครอบตัดแล้ว' : (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? `✓ รูปจาก Google Drive${item.driveFileName ? ` (${escapeHtml(item.driveFileName)})` : ''}` : '✓ ลิงก์รูปกำหนดเอง'}
+                    ${item.avatar.startsWith('data:image') ? 'รูปอัปโหลด / ครอบตัดแล้ว' : (item.avatar.includes('googleusercontent') || item.avatar.includes('drive.google')) ? `รูปจาก Google Drive${item.driveFileName ? ` (${escapeHtml(item.driveFileName)})` : ''}` : 'ลิงก์รูปกำหนดเอง'}
                   </span>
                 ` : `
                   <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
@@ -5947,7 +5947,7 @@
     if (statusEl) {
       if (avatar) {
         statusEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
-        statusEl.textContent = '✓ มีรูปโปรไฟล์กำหนดเอง';
+        statusEl.textContent = 'มีรูปโปรไฟล์กำหนดเอง';
       } else {
         statusEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
         statusEl.textContent = 'รูปเริ่มต้น (DiceBear)';

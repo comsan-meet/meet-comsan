@@ -759,7 +759,7 @@ function renderAll() {
     if (state.randomizer && state.randomizer.lastWinner) {
       const lw = state.randomizer.lastWinner;
       const uRandText = document.getElementById('userRandomLastWinnerText');
-      if (uRandText) uRandText.textContent = `🎉 ${lw.winnerLabel} (${lw.time})`;
+      if (uRandText) uRandText.textContent = `${lw.winnerLabel} (${lw.time})`;
     }
     const rawHist = (state.randomizer && Array.isArray(state.randomizer.history)) ? state.randomizer.history : [];
     const seenHist = new Set();
@@ -773,7 +773,7 @@ function renderAll() {
     if (state.randomizer) state.randomizer.history = cleanHist;
 
     const historyHTML = cleanHist.length > 0
-      ? cleanHist.map((h, idx) => `<div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between"><span class="font-bold"><span class="text-indigo-600 mr-1">#${idx + 1}</span> 🎉 ${h.winnerLabel}</span><span class="text-[11px] text-slate-400">${h.time}</span></div>`).join('')
+      ? cleanHist.map((h, idx) => `<div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between"><span class="font-bold"><span class="text-indigo-600 mr-1">#${idx + 1}</span> ${h.winnerLabel}</span><span class="text-[11px] text-slate-400">${h.time}</span></div>`).join('')
       : `<p class="text-slate-400 text-center py-4">ยังไม่มีประวัติการสุ่มในรอบนี้</p>`;
     const adminRandList = document.getElementById('adminRandomHistoryList');
     const userRandList = document.getElementById('userRandomHistoryList');
@@ -1031,7 +1031,7 @@ function renderAll() {
             statusBadge.className = 'px-2.5 py-0.5 text-[10px] rounded-full bg-sky-500/20 text-sky-600 font-bold';
           }
           if (heroCheckPill) {
-            heroCheckPill.textContent = '📋 แจ้งลาประชุม';
+            heroCheckPill.textContent = 'แจ้งลาประชุม';
             heroCheckPill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-400/25 text-sky-200';
           }
           if (pCard) pCard.className = 'bg-sky-500/10 border border-sky-500/30 rounded-[24px] p-4 flex items-center gap-3.5';
@@ -1208,9 +1208,9 @@ function setupSocketListeners() {
         popup.classList.remove('hidden');
         popup.classList.add('flex');
       }
-      showToast(`✋ ${alertData.nickname || 'สมาชิก'} ส่งคำขอยกมือขอพูด`, 'warning');
+      showToast(`${alertData.nickname || 'สมาชิก'} ส่งคำขอยกมือขอพูด`, 'warning');
     } else if (window.currentUserId && alertData.userId !== window.currentUserId) {
-      showToast(`✋ ${alertData.nickname || 'สมาชิก'} ส่งคำขอยกมือขอพูด`, 'warning');
+      showToast(`${alertData.nickname || 'สมาชิก'} ส่งคำขอยกมือขอพูด`, 'warning');
     }
   });
 
@@ -1256,7 +1256,7 @@ function setupSocketListeners() {
     if (myViewerId && msg.senderId !== myViewerId && (msg.target === 'ALL' || msg.target === myViewerId)) {
       playNotificationSound('chat');
       const textPreview = msg.text ? `"${msg.text}"` : (msg.mediaType ? '[รูปภาพแนบ]' : '');
-      showToast(`💬 ${msg.sender}: ${textPreview}`, 'info');
+      showToast(`${msg.sender}: ${textPreview}`, 'info');
       if (isAdminMode && window.activeAdminTab !== 'CHAT') {
         const b = document.getElementById('aBadge_CHAT');
         if (b) b.classList.remove('hidden');

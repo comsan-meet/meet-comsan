@@ -32,7 +32,7 @@ module.exports = function registerStreamHandlers(io, socket) {
     io.emit('notify:event', {
       type: 'info',
       targetRole: 'ADMIN',
-      text: `🎥 ${user.nickname} (${user.firstName}) ขออนุญาตเปิดกล้อง/แชร์หน้าจอ`
+      text: `${user.nickname} (${user.firstName}) ขออนุญาตเปิดกล้อง/แชร์หน้าจอ`
     });
   });
 
@@ -53,8 +53,8 @@ module.exports = function registerStreamHandlers(io, socket) {
       type: status === 'APPROVED' ? 'success' : 'warning',
       targetUserId: user.id,
       text: status === 'APPROVED'
-        ? '✅ ADMIN อนุมัติให้คุณเปิดกล้องและแชร์หน้าจอได้แล้ว!'
-        : '⚠️ สิทธิ์การเปิดกล้อง/แชร์หน้าจอถูกยกเลิก'
+        ? 'ADMIN อนุมัติให้คุณเปิดกล้องและแชร์หน้าจอได้แล้ว!'
+        : 'สิทธิ์การเปิดกล้อง/แชร์หน้าจอถูกยกเลิก'
     });
   });
 

@@ -302,15 +302,15 @@ function openMemberProfilePopup(userId) {
   // Attendance status
   if (checkinStatusEl) {
     if (user.isLeave) {
-      checkinStatusEl.textContent = '📋 แจ้งลาประชุม';
+      checkinStatusEl.textContent = 'แจ้งลาประชุม';
       checkinStatusEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400';
     } else if (user.checkedIn) {
-      checkinStatusEl.textContent = user.isLate ? '⚠️ มาสาย' : '✔ มาทันเวลา';
+      checkinStatusEl.textContent = user.isLate ? 'มาสาย' : 'มาทันเวลา';
       checkinStatusEl.className = user.isLate 
         ? 'px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400'
         : 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
     } else {
-      checkinStatusEl.textContent = '❌ ยังไม่เช็คชื่อ';
+      checkinStatusEl.textContent = 'ยังไม่เช็คชื่อ';
       checkinStatusEl.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-muted-foreground';
     }
   }
@@ -602,7 +602,7 @@ function openEasterEggModal() {
     if (typeof playNotificationSound === 'function') {
       playNotificationSound('win');
     }
-    showToast('🎉 ปลดล็อคระบบลับ: คำร้องขอลาออกจากชมรม!', 'warning');
+    showToast('ปลดล็อคระบบลับ: คำร้องขอลาออกจากชมรม!', 'warning');
   }
 }
 
@@ -661,18 +661,18 @@ function handleFakeResignClick() {
     rejectAlert.classList.remove('hidden');
     if (hasFile) {
       rejectText.innerHTML = `
-        <strong class="font-bold">❌ AI ตรวจสอบไฟล์ "${fileInput.files[0].name}" ไม่ผ่าน!</strong>
-        <p class="text-[11px] leading-relaxed">ตรวจพบว่ายังไม่จบปริญญาตรีจริง หรือเกรดยังไม่ออกครบตามหลักสูตร! สรุปคือ <strong>"ไม่อนุมัติให้ออก"</strong> กรุณาอยู่ช่วยงานชมรมคมสันต่อไปจนกว่าจะรับปริญญาครับ 🎓😈</p>
+        <strong class="font-bold">AI ตรวจสอบไฟล์ "${fileInput.files[0].name}" ไม่ผ่าน!</strong>
+        <p class="text-[11px] leading-relaxed">ตรวจพบว่ายังไม่จบปริญญาตรีจริง หรือเกรดยังไม่ออกครบตามหลักสูตร! สรุปคือ <strong>"ไม่อนุมัติให้ออก"</strong> กรุณาอยู่ช่วยงานชมรมคมสันต่อไปจนกว่าจะรับปริญญาครับ</p>
       `;
     } else {
       rejectText.innerHTML = `
-        <strong class="font-bold">❌ ระบบระงับคำร้องทันที!</strong>
-        <p class="text-[11px] leading-relaxed">คุณยังไม่ได้แนบใบปริญญาบัตรระดับปริญญาตรี! และต่อให้แนบมา AI ก็ไม่อนุมัติให้ออกอยู่ดีครับ อยู่ซ้อมสันทนาการช่วยชมรมต่อไปนะจ๊ะ 🤣</p>
+        <strong class="font-bold">ระบบระงับคำร้องทันที!</strong>
+        <p class="text-[11px] leading-relaxed">คุณยังไม่ได้แนบใบปริญญาบัตรระดับปริญญาตรี! และต่อให้แนบมา AI ก็ไม่อนุมัติให้ออกอยู่ดีครับ อยู่ซ้อมสันทนาการช่วยชมรมต่อไปนะจ๊ะ</p>
       `;
     }
   }
 
-  showToast('🚫 ระบบปฏิเสธ: ไม่อนุญาตให้ลาออกจากชมรมคมสัน!', 'error');
+  showToast('ระบบปฏิเสธ: ไม่อนุญาตให้ลาออกจากชมรมคมสัน!', 'error');
 }
 
 // =========================================================================

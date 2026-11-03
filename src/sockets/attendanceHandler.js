@@ -128,7 +128,7 @@ module.exports = function registerAttendanceHandlers(io, socket) {
     io.emit('notify:event', {
       type: 'info',
       targetRole: 'ADMIN',
-      text: `📋 ${user.nickname} (${user.firstName}) แจ้งลาประชุม: ${user.leaveReason}`
+      text: `${user.nickname} (${user.firstName}) แจ้งลาประชุม: ${user.leaveReason}`
     });
   });
 
@@ -289,7 +289,7 @@ module.exports = function registerAttendanceHandlers(io, socket) {
 
     io.emit('notify:event', {
       type: 'success',
-      text: `✅ ${user.nickname} (${user.firstName}) สแกนเช็คชื่อเข้าประชุมแล้ว (${late ? 'มาสาย' : 'ทันเวลา'})`
+      text: `${user.nickname} (${user.firstName}) สแกนเช็คชื่อเข้าประชุมแล้ว (${late ? 'มาสาย' : 'ทันเวลา'})`
     });
   });
 };
