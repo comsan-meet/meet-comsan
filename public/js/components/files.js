@@ -1449,21 +1449,24 @@ function renderFileDropSection() {
 
   if (gdriveBadge) {
     if (isDriveConfigured) {
-      gdriveBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+      gdriveBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0 whitespace-nowrap';
       gdriveBadge.textContent = 'เชื่อมต่อแล้ว';
     } else {
-      gdriveBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+      gdriveBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0 whitespace-nowrap';
       gdriveBadge.textContent = 'ยังไม่ได้ตั้งค่า';
     }
   }
 
   if (gdriveMeta) {
     if (driveConfig.folderId) {
-      gdriveMeta.textContent = 'โฟลเดอร์ปลายทาง: ' + (driveConfig.folderId.length > 25 ? driveConfig.folderId.slice(0, 25) + '...' : driveConfig.folderId);
+      gdriveMeta.textContent = 'โฟลเดอร์: ' + (driveConfig.folderId.length > 25 ? driveConfig.folderId.slice(0, 25) + '...' : driveConfig.folderId);
+      gdriveMeta.title = driveConfig.folderId;
     } else if (isDriveConfigured) {
-      gdriveMeta.textContent = 'บันทึกเข้า My Drive หลัก (สามารถระบุโฟลเดอร์ได้ในการตั้งค่า)';
+      gdriveMeta.textContent = 'บันทึกเข้า My Drive หลัก (ระบุโฟลเดอร์ได้ในการตั้งค่า)';
+      gdriveMeta.title = 'บันทึกเข้า My Drive หลัก';
     } else {
-      gdriveMeta.textContent = 'จัดเก็บไฟล์เข้า Google Drive (ฟรี ไม่จำกัดพื้นที่ ไม่กินฐานข้อมูล)';
+      gdriveMeta.textContent = 'จัดเก็บเอกสารเข้า Google Drive (ฟรี ไม่จำกัดพื้นที่)';
+      gdriveMeta.title = 'จัดเก็บเอกสารเข้า Google Drive (ฟรี ไม่จำกัดพื้นที่)';
     }
   }
 

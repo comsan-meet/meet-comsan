@@ -7175,27 +7175,32 @@ label svg, label i {
           <!-- Left Column: Upload & Member Permissions -->
           <div class="lg:col-span-5 space-y-5 sm:space-y-6">
             <!-- Box 0: Google Drive Storage Status Bar -->
-            <div id="adminGDriveStatusBar" class="p-3.5 rounded-2xl bg-gradient-to-r from-blue-500/[0.07] via-indigo-500/[0.05] to-emerald-500/[0.07] border border-blue-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                  <i data-lucide="hard-drive" class="w-4 h-4"></i>
-                </div>
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-foreground">ระบบจัดเก็บ: Google Drive</span>
-                    <span id="gdriveStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border">ตรวจสอบสถานะ...</span>
+            <div id="adminGDriveStatusBar" class="bg-card text-card-foreground border border-border/80 rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3 transition">
+              <!-- Top Row: Icon, Service Info, and Status Badge -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm shrink-0 border border-blue-500/20">
+                    <i data-lucide="hard-drive" class="w-4 h-4"></i>
                   </div>
-                  <p id="gdriveFolderMetaText" class="text-[11px] text-muted-foreground truncate">จัดเก็บเอกสารเข้า Google Drive (ฟรี ไม่จำกัดพื้นที่ ไม่กินฐานข้อมูล)</p>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <h4 class="font-bold text-xs sm:text-sm text-foreground truncate">ระบบจัดเก็บ Google Drive</h4>
+                    </div>
+                    <p id="gdriveFolderMetaText" class="text-[11px] text-muted-foreground truncate" title="จัดเก็บเอกสารเข้า Google Drive (ฟรี ไม่จำกัดพื้นที่)">จัดเก็บเอกสารเข้า Google Drive (ฟรี ไม่จำกัดพื้นที่)</p>
+                  </div>
                 </div>
+                <span id="gdriveStatusBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground border border-border shrink-0 whitespace-nowrap">ตรวจสอบสถานะ...</span>
               </div>
-              <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                <button type="button" id="btnAdminOpenGDriveFolder" onclick="openMeetingGoogleDriveFolder()" class="hidden px-2.5 py-1.5 rounded-xl bg-card border border-border hover:border-primary/40 text-foreground text-xs font-semibold items-center gap-1.5 transition cursor-pointer">
-                  <i data-lucide="folder-open" class="w-3.5 h-3.5 text-amber-500"></i>
-                  <span>โฟลเดอร์ Drive</span>
+
+              <!-- Bottom Row: Action Buttons Bar -->
+              <div class="flex items-center gap-2 pt-2 border-t border-border/50">
+                <button type="button" id="btnAdminOpenGDriveFolder" onclick="openMeetingGoogleDriveFolder()" class="hidden flex-1 h-8 px-2.5 rounded-xl bg-muted/60 hover:bg-muted border border-border hover:border-amber-500/40 text-foreground text-xs font-semibold items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer truncate" title="เปิดโฟลเดอร์ Google Drive ในแท็บใหม่">
+                  <i data-lucide="folder-open" class="w-3.5 h-3.5 text-amber-500 shrink-0"></i>
+                  <span class="truncate">โฟลเดอร์ Drive</span>
                 </button>
-                <button type="button" onclick="openGoogleDriveSetupModal()" class="px-2.5 py-1.5 rounded-xl bg-card border border-border hover:border-primary/40 text-foreground text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer" title="ตั้งค่าเชื่อมต่อ Google Drive">
-                  <i data-lucide="settings-2" class="w-3.5 h-3.5 text-primary"></i>
-                  <span>ตั้งค่า Drive</span>
+                <button type="button" onclick="openGoogleDriveSetupModal()" class="flex-1 h-8 px-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/25 hover:border-blue-500/40 text-blue-600 dark:text-blue-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer truncate" title="ตั้งค่าเชื่อมต่อ Google Drive">
+                  <i data-lucide="settings-2" class="w-3.5 h-3.5 shrink-0"></i>
+                  <span class="truncate">ตั้งค่า Drive</span>
                 </button>
               </div>
             </div>
@@ -7834,7 +7839,7 @@ label svg, label i {
   <script src="js/components/seatingChart.js?v=20261104_02"></script>
   <script src="js/components/voting.js?v=20261104_02"></script>
   <script src="js/components/chat.js?v=20261104_02"></script>
-  <script src="js/components/files.js?v=20261104_02"></script>
+  <script src="js/components/files.js?v=20261104_03"></script>
   <script src="js/components/randomizer.js?v=20261104_02"></script>
   <script src="js/components/stream.js?v=20261104_02"></script>
   <script src="js/components/analyticsChart.js?v=20261104_02"></script>
