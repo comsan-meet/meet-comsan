@@ -954,7 +954,7 @@
     const code = `function doGet(e) {
   var folderId = e.parameter.folderId;
   if (!folderId && e.parameter.url) {
-    var match = e.parameter.url.match(/folders\\/([a-zA-Z0-9_-]+)/);
+    var match = e.parameter.url.match(new RegExp('folders/([a-zA-Z0-9_-]+)'));
     if (match) folderId = match[1];
   }
   if (!folderId) {

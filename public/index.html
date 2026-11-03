@@ -4337,7 +4337,7 @@ label svg, label i {
               <pre class="p-3 text-slate-100 font-mono text-[11px] overflow-x-auto max-h-48 leading-relaxed select-all block w-full whitespace-pre" id="gasScriptCodeBlock">function doGet(e) {
   var folderId = e.parameter.folderId;
   if (!folderId && e.parameter.url) {
-    var match = e.parameter.url.match(/folders\/([a-zA-Z0-9_-]+)/);
+    var match = e.parameter.url.match(new RegExp('folders/([a-zA-Z0-9_-]+)'));
     if (match) folderId = match[1];
   }
   if (!folderId) {
