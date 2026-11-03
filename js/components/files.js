@@ -845,6 +845,10 @@ async function testGoogleDriveConnectionFromModal() {
 }
 
 function openMeetingGoogleDriveFolder() {
+  if (window.currentRole !== 'ADMIN' || !window.isAdminAuthenticated) {
+    if (typeof showToast === 'function') showToast('เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถเปิดไดรฟ์ได้', 'warning');
+    return;
+  }
   const config = getGoogleDriveConfig();
   if (config.folderUrl) {
     window.open(config.folderUrl, '_blank');
@@ -1133,20 +1137,22 @@ async function previewSharedFile(fileId) {
     dlBtn.onclick = () => downloadSharedFile(f.id);
   }
 
-  // เพิ่ม/อัปเดตปุ่มเปิดใน Google Drive ด้านบน
+  // เพิ่ม/อัปเดตปุ่มเปิดไฟล์ด้านบน (เฉพาะ ADMIN เท่านั้นที่จะเปิดไฟล์บนไดรฟ์ได้)
+  const isUserAdmin = (window.currentRole === 'ADMIN' && window.isAdminAuthenticated);
   let driveBtn = document.getElementById('filePreviewOpenDriveBtn');
-  if (f.driveUrl || f.driveFileId) {
+  if (isUserAdmin && (f.driveUrl || f.driveFileId)) {
     const targetUrl = f.driveUrl || ('https://drive.google.com/file/d/' + f.driveFileId + '/view');
     if (!driveBtn && dlBtn && dlBtn.parentElement) {
       driveBtn = document.createElement('a');
       driveBtn.id = 'filePreviewOpenDriveBtn';
       driveBtn.target = '_blank';
       driveBtn.className = 'px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs shrink-0 cursor-pointer';
-      driveBtn.innerHTML = '<i data-lucide="external-link" class="w-3.5 h-3.5"></i> <span>เปิดใน Drive</span>';
+      driveBtn.innerHTML = '<i data-lucide="external-link" class="w-3.5 h-3.5"></i> <span>เปิดไฟล์</span>';
       dlBtn.parentElement.insertBefore(driveBtn, dlBtn);
     }
     if (driveBtn) {
       driveBtn.href = targetUrl;
+      driveBtn.innerHTML = '<i data-lucide="external-link" class="w-3.5 h-3.5"></i> <span>เปิดไฟล์</span>';
       driveBtn.classList.remove('hidden');
     }
   } else if (driveBtn) {
@@ -1159,6 +1165,13 @@ async function previewSharedFile(fileId) {
   // 1. Google Drive Embed Preview (PDF, Docs, Sheets, Slides, Videos, Images)
   if (f.storageType === 'GOOGLE_DRIVE' || f.driveFileId || f.driveUrl) {
     const embedUrl = f.previewUrl || (f.driveFileId ? 'https://drive.google.com/file/d/' + f.driveFileId + '/preview' : f.driveUrl);
+    const adminOpenBtn = isUserAdmin ? `
+      <a href="${f.driveUrl || embedUrl}" target="_blank" class="px-3 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-2xs" title="เปิดไฟล์ต้นฉบับ">
+        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+        <span>เปิดไฟล์</span>
+      </a>
+    ` : '';
+
     bodyEl.innerHTML = `
       <div class="w-full flex-1 flex flex-col h-[65vh] rounded-2xl overflow-hidden border border-border bg-slate-900/50 relative">
         <div class="p-2.5 bg-muted/60 border-b border-border flex items-center justify-between text-xs gap-2 shrink-0">
@@ -1166,10 +1179,7 @@ async function previewSharedFile(fileId) {
             <span class="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">${visual.label}</span>
             <span class="truncate">${escapeFileHtml(f.name)}</span>
           </div>
-          <a href="${f.driveUrl || embedUrl}" target="_blank" class="px-3 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-2xs">
-            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-            <span>เปิดหน้าต่างใหม่</span>
-          </a>
+          ${adminOpenBtn}
         </div>
         <div class="flex-1 w-full relative">
           <iframe src="${embedUrl}" class="w-full h-full border-0 rounded-b-2xl bg-card" allow="autoplay"></iframe>
@@ -1335,12 +1345,10 @@ function buildCards(files, isAdmin) {
       ? 'border-amber-500/50 bg-amber-500/[0.04] ring-1 ring-amber-500/20 hover:border-amber-500/70'
       : 'border-border bg-card hover:border-primary/40';
 
-    const driveBadge = isDrive
-      ? '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0"><i data-lucide="hard-drive" class="w-2.5 h-2.5"></i> Drive</span>'
-      : '';
+    const driveBadge = '';
 
-    const openDriveLinkBtn = (isDrive && f.driveUrl)
-      ? '<a href="' + f.driveUrl + '" target="_blank" onclick="event.stopPropagation()" title="เปิดใน Google Drive" class="h-8 sm:w-9 sm:h-9 px-2 sm:px-0 rounded-xl border border-border bg-muted/40 sm:bg-card hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/30 text-muted-foreground flex items-center justify-center gap-1 transition shadow-2xs cursor-pointer"><i data-lucide="external-link" class="w-3.5 h-3.5"></i><span class="sm:hidden text-[11px] font-semibold">Drive</span></a>'
+    const openDriveLinkBtn = (isAdmin && isDrive && f.driveUrl)
+      ? '<a href="' + f.driveUrl + '" target="_blank" onclick="event.stopPropagation()" title="เปิดไฟล์ต้นฉบับ" class="h-8 sm:w-9 sm:h-9 px-2 sm:px-0 rounded-xl border border-border bg-muted/40 sm:bg-card hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/30 text-muted-foreground flex items-center justify-center gap-1 transition shadow-2xs cursor-pointer"><i data-lucide="external-link" class="w-3.5 h-3.5"></i><span class="sm:hidden text-[11px] font-semibold">เปิด</span></a>'
       : '';
 
     if (isAdmin) {
@@ -1445,7 +1453,6 @@ function renderFileDropSection() {
   const gdriveBadge = document.getElementById('gdriveStatusBadge');
   const gdriveMeta = document.getElementById('gdriveFolderMetaText');
   const openDriveFolderBtn = document.getElementById('btnAdminOpenGDriveFolder');
-  const userOpenDriveFolderBtn = document.getElementById('btnUserOpenGDriveFolder');
 
   if (gdriveBadge) {
     if (isDriveConfigured) {
@@ -1480,15 +1487,7 @@ function renderFileDropSection() {
     }
   }
 
-  if (userOpenDriveFolderBtn) {
-    if (driveConfig.folderId || driveConfig.folderUrl) {
-      userOpenDriveFolderBtn.classList.remove('hidden');
-      userOpenDriveFolderBtn.classList.add('flex');
-    } else {
-      userOpenDriveFolderBtn.classList.add('hidden');
-      userOpenDriveFolderBtn.classList.remove('flex');
-    }
-  }
+
 
   // User Dropzone & Permissions
   if (window.currentUserId) {
