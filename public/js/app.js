@@ -859,34 +859,149 @@ function renderAll() {
         `).join('');
     }
 
-    // Admin Check-in tab controls (Active vs Locked)
+    // Meeting-dependent Feature Locks (Active vs Locked)
     // (isMeetingActive declared at top of renderAll)
+    const isAct = m.format === 'ACTIVITY';
+    const term = isAct ? 'กิจกรรม' : 'การประชุม';
+
+    // 1. Admin Check-in
     const checkinLockedCard = document.getElementById('adminCheckinLockedCard');
     const checkinActiveContainer = document.getElementById('adminCheckinActiveContainer');
     const lockedTitle = document.getElementById('adminCheckinLockedTitle');
     const lockedDesc = document.getElementById('adminCheckinLockedDesc');
 
+    // 2. Admin Voting
+    const votingLockedCard = document.getElementById('adminVotingLockedCard');
+    const votingActiveContainer = document.getElementById('adminVotingActiveContainer');
+    const votingLockedTitle = document.getElementById('adminVotingLockedTitle');
+    const votingLockedDesc = document.getElementById('adminVotingLockedDesc');
+
+    // 3. Admin Queue
+    const queueLockedCard = document.getElementById('adminQueueLockedCard');
+    const queueActiveContainer = document.getElementById('adminQueueActiveContainer');
+    const queueLockedTitle = document.getElementById('adminQueueLockedTitle');
+    const queueLockedDesc = document.getElementById('adminQueueLockedDesc');
+
+    // 4. Admin Stream
+    const streamLockedCard = document.getElementById('adminStreamLockedCard');
+    const streamActiveContainer = document.getElementById('adminStreamActiveContainer');
+    const streamLockedTitle = document.getElementById('adminStreamLockedTitle');
+    const streamLockedDesc = document.getElementById('adminStreamLockedDesc');
+
+    // 5. User Vote
+    const userVoteLockedCard = document.getElementById('userVoteLockedCard');
+    const userVoteActiveContainer = document.getElementById('userVoteActiveContainer');
+    const userVoteLockedTitle = document.getElementById('userVoteLockedTitle');
+    const userVoteLockedDesc = document.getElementById('userVoteLockedDesc');
+
+    // 6. User Raise Hand
+    const userRaiseLockedCard = document.getElementById('userRaiseLockedCard');
+    const userRaiseActiveContainer = document.getElementById('userRaiseActiveContainer');
+    const userRaiseLockedTitle = document.getElementById('userRaiseLockedTitle');
+    const userRaiseLockedDesc = document.getElementById('userRaiseLockedDesc');
+
     if (!isMeetingActive) {
-      // HIDE ALL CHECK-IN TOOLS (ON-SITE & ONLINE) COMPLETELY
+      // --- 1. CHECKIN ---
       if (checkinActiveContainer) checkinActiveContainer.classList.add('hidden');
       if (checkinLockedCard) {
         checkinLockedCard.classList.remove('hidden');
         if (m.isEnded) {
-          if (lockedTitle) lockedTitle.textContent = 'การประชุมจบลงแล้ว — ปิดระบบเช็คชื่อ';
-          if (lockedDesc) lockedDesc.textContent = 'การประชุมรอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดส่วนการเช็คชื่อทั้งหมด หากต้องการเช็คชื่อใหม่ กรุณาเปิดการประชุมรอบใหม่ในการตั้งค่า';
+          if (lockedTitle) lockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบเช็คชื่อ`;
+          if (lockedDesc) lockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดส่วนการเช็คชื่อทั้งหมด หากต้องการเช็คชื่อใหม่ กรุณาเปิดการ${term}รอบใหม่ในการตั้งค่า`;
         } else {
-          if (lockedTitle) lockedTitle.textContent = 'ต้องเปิดการประชุมก่อนจึงจะสามารถเช็คชื่อเข้าประชุมได้';
-          if (lockedDesc) lockedDesc.textContent = 'ส่วนของการเช็คชื่อทั้งแบบ On-site และแบบ Online ถูกระงับไว้ กรุณาเปิดการประชุมก่อนจึงจะสามารถเช็คชื่อเข้าประชุมได้';
+          if (lockedTitle) lockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถเช็คชื่อเข้า${term}ได้`;
+          if (lockedDesc) lockedDesc.textContent = `ส่วนของการเช็คชื่อทั้งแบบ On-site และแบบ Online ถูกระงับไว้ กรุณาเปิดการ${term}ก่อนจึงจะสามารถเช็คชื่อเข้า${term}ได้`;
         }
       }
+
+      // --- 2. VOTING ---
+      if (votingActiveContainer) votingActiveContainer.classList.add('hidden');
+      if (votingLockedCard) {
+        votingLockedCard.classList.remove('hidden');
+        if (m.isEnded) {
+          if (votingLockedTitle) votingLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบการโหวต`;
+          if (votingLockedDesc) votingLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการเปิดญัตติและการโหวตทั้งหมด หากต้องการเปิดโหวตใหม่ กรุณาเปิดการ${term}รอบใหม่ในการตั้งค่า`;
+        } else {
+          if (votingLockedTitle) votingLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถเปิดการโหวตได้`;
+          if (votingLockedDesc) votingLockedDesc.textContent = `ระบบการสร้างและลงคะแนนโหวตญัตติจะเปิดใช้งานเมื่อเริ่มการ${term} กรุณาเปิดการ${term}ก่อนจึงจะสามารถดำเนินการได้`;
+        }
+      }
+
+      // --- 3. QUEUE ---
+      if (queueActiveContainer) queueActiveContainer.classList.add('hidden');
+      if (queueLockedCard) {
+        queueLockedCard.classList.remove('hidden');
+        if (m.isEnded) {
+          if (queueLockedTitle) queueLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบคิวยกมือ`;
+          if (queueLockedDesc) queueLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการรับคิวยกมือพูดทั้งหมด หากต้องการใช้งาน กรุณาเปิดการ${term}รอบใหม่ในการตั้งค่า`;
+        } else {
+          if (queueLockedTitle) queueLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถจัดการคิวยกมือได้`;
+          if (queueLockedDesc) queueLockedDesc.textContent = `ระบบคิวผู้ขอยกมือพูดหรือซักถามจะเปิดใช้งานเมื่อเริ่มการ${term} กรุณาเปิดการ${term}ก่อนจึงจะสามารถดำเนินการได้`;
+        }
+      }
+
+      // --- 4. STREAM ---
+      if (streamActiveContainer) streamActiveContainer.classList.add('hidden');
+      if (streamLockedCard) {
+        streamLockedCard.classList.remove('hidden');
+        if (m.isEnded) {
+          if (streamLockedTitle) streamLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบถ่ายทอดสด`;
+          if (streamLockedDesc) streamLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการถ่ายทอดสดและการแชร์หน้าจอทั้งหมด หากต้องการใช้งาน กรุณาเปิดการ${term}รอบใหม่ในการตั้งค่า`;
+        } else {
+          if (streamLockedTitle) streamLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถถ่ายทอดสดได้`;
+          if (streamLockedDesc) streamLockedDesc.textContent = `ระบบเปิดกล้องและแชร์หน้าจอถ่ายทอดสดจะเปิดใช้งานเมื่อเริ่มการ${term} กรุณาเปิดการ${term}ก่อนจึงจะสามารถดำเนินการได้`;
+        }
+      }
+
+      // --- 5. USER VOTE ---
+      if (userVoteActiveContainer) userVoteActiveContainer.classList.add('hidden');
+      if (userVoteLockedCard) {
+        userVoteLockedCard.classList.remove('hidden');
+        if (m.isEnded) {
+          if (userVoteLockedTitle) userVoteLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบลงมติ`;
+          if (userVoteLockedDesc) userVoteLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการลงมติในวาระทั้งหมด`;
+        } else {
+          if (userVoteLockedTitle) userVoteLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถลงมติได้`;
+          if (userVoteLockedDesc) userVoteLockedDesc.textContent = `ระบบการลงคะแนนโหวตญัตติจะเปิดให้ใช้งานเมื่อเริ่มการ${term} กรุณารอผู้ดูแลระบบเปิดการ${term}`;
+        }
+      }
+
+      // --- 6. USER RAISE ---
+      if (userRaiseActiveContainer) userRaiseActiveContainer.classList.add('hidden');
+      if (userRaiseLockedCard) {
+        userRaiseLockedCard.classList.remove('hidden');
+        if (m.isEnded) {
+          if (userRaiseLockedTitle) userRaiseLockedTitle.textContent = `การ${term}จบลงแล้ว — ปิดระบบยกมือขอพูด`;
+          if (userRaiseLockedDesc) userRaiseLockedDesc.textContent = `การ${term}รอบนี้สิ้นสุดลงแล้ว ระบบจึงปิดการส่งคำขอยกมือพูด`;
+        } else {
+          if (userRaiseLockedTitle) userRaiseLockedTitle.textContent = `ต้องเปิดการ${term}ก่อนจึงจะสามารถยกมือขอพูดได้`;
+          if (userRaiseLockedDesc) userRaiseLockedDesc.textContent = `ระบบส่งคำขอยกมือซักถามจะเปิดให้ใช้งานเมื่อเริ่มการ${term} กรุณารอผู้ดูแลระบบเปิดการ${term}`;
+        }
+      }
+
       // Stop scanner if running
       if (window.isScannerRunning && typeof window.toggleCameraScanner === 'function') {
         window.toggleCameraScanner();
       }
     } else {
-      // MEETING IS ACTIVE -> SHOW CHECK-IN TOOLS
+      // MEETING IS ACTIVE -> SHOW ALL ACTIVE CONTAINERS & HIDE ALL LOCKED CARDS
       if (checkinLockedCard) checkinLockedCard.classList.add('hidden');
       if (checkinActiveContainer) checkinActiveContainer.classList.remove('hidden');
+
+      if (votingLockedCard) votingLockedCard.classList.add('hidden');
+      if (votingActiveContainer) votingActiveContainer.classList.remove('hidden');
+
+      if (queueLockedCard) queueLockedCard.classList.add('hidden');
+      if (queueActiveContainer) queueActiveContainer.classList.remove('hidden');
+
+      if (streamLockedCard) streamLockedCard.classList.add('hidden');
+      if (streamActiveContainer) streamActiveContainer.classList.remove('hidden');
+
+      if (userVoteLockedCard) userVoteLockedCard.classList.add('hidden');
+      if (userVoteActiveContainer) userVoteActiveContainer.classList.remove('hidden');
+
+      if (userRaiseLockedCard) userRaiseLockedCard.classList.add('hidden');
+      if (userRaiseActiveContainer) userRaiseActiveContainer.classList.remove('hidden');
 
       const adminOnsitePanel = document.getElementById('adminCheckinOnsitePanel');
       const adminOnlinePanel = document.getElementById('adminCheckinOnlinePanel');
