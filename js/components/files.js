@@ -9,10 +9,10 @@
 const UNIFIED_GAS_SCRIPT = `/**
  * COMSAN Meeting System - Unified Google Drive Bridge
  * สคริปต์เชื่อมต่อ Google Drive สำหรับจัดเก็บไฟล์เอกสารการประชุมและรูปภาพโครงการ
- * รองรับทั้งการอัปโหลดไฟล์ (POST) และการสแกนอ่านรูปภาพ/ไฟล์ในโฟลเดอร์ (GET)
+ * รองรับ: 1) อัปโหลดไฟล์ (POST) 2) ลบไฟล์/ย้ายลงถังขยะ (POST/GET) 3) สแกนอ่านรูปภาพในโฟลเดอร์ (GET)
  */
 
-// 1. รับการอัปโหลดไฟล์เข้าสู่ Google Drive (POST)
+// 1. รับการอัปโหลดไฟล์ และคำสั่งลบไฟล์ (POST)
 function doPost(e) {
   try {
     var data = {};
@@ -26,6 +26,46 @@ function doPost(e) {
       data = e.parameter;
     }
 
+    var action = (data && data.action) || '';
+
+    // ==========================================
+    // คำสั่งลบไฟล์ใน Google Drive (ย้ายลงถังขยะ)
+    // ==========================================
+    if (action === 'delete') {
+      var fileIdToDelete = data.fileId;
+      if (!fileIdToDelete && data.url) {
+        var matchId = data.url.match(new RegExp('folders/([a-zA-Z0-9_-]+)')) || data.url.match(new RegExp('/d/([a-zA-Z0-9_-]+)'));
+        if (matchId) fileIdToDelete = matchId[1];
+      }
+      if (!fileIdToDelete) {
+        return ContentService.createTextOutput(JSON.stringify({
+          ok: false,
+          status: 'error',
+          message: 'Missing fileId for deletion'
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      try {
+        var targetFile = DriveApp.getFileById(fileIdToDelete);
+        targetFile.setTrashed(true);
+        return ContentService.createTextOutput(JSON.stringify({
+          ok: true,
+          status: 'success',
+          action: 'delete',
+          fileId: fileIdToDelete,
+          message: 'File moved to Google Drive trash successfully'
+        })).setMimeType(ContentService.MimeType.JSON);
+      } catch (delErr) {
+        return ContentService.createTextOutput(JSON.stringify({
+          ok: false,
+          status: 'error',
+          message: delErr.toString()
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+    // ==========================================
+    // คำสั่งอัปโหลดไฟล์ใหม่เข้าสู่ Google Drive
+    // ==========================================
     var fileName = data.name || ('document_' + new Date().getTime());
     var mimeType = data.type || 'application/octet-stream';
     var folderId = data.folderId;
@@ -94,7 +134,7 @@ function doPost(e) {
   }
 }
 
-// 2. รับการเรียกดูข้อมูล / ทดสอบเชื่อมต่อ / สแกนโฟลเดอร์ (GET)
+// 2. รับการเรียกดูข้อมูล / ทดสอบเชื่อมต่อ / สแกนโฟลเดอร์ / ลบไฟล์ (GET)
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || '';
 
@@ -105,6 +145,29 @@ function doGet(e) {
       status: 'success',
       message: 'Comsan Google Drive Bridge is active and ready!'
     })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // คำสั่งลบไฟล์ทาง GET fallback
+  if (action === 'delete') {
+    var fileId = e && e.parameter && e.parameter.fileId;
+    if (fileId) {
+      try {
+        var f = DriveApp.getFileById(fileId);
+        f.setTrashed(true);
+        return ContentService.createTextOutput(JSON.stringify({
+          ok: true,
+          status: 'success',
+          action: 'delete',
+          fileId: fileId
+        })).setMimeType(ContentService.MimeType.JSON);
+      } catch (err) {
+        return ContentService.createTextOutput(JSON.stringify({
+          ok: false,
+          status: 'error',
+          message: err.toString()
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
   }
 
   var folderId = e && e.parameter && e.parameter.folderId;
@@ -811,29 +874,101 @@ function togglePinSharedFile(fileId) {
   showToast(targetPinned ? '📌 ปักหมุดเอกสาร "' + file.name + '" ไว้บนสุดแล้ว' : 'เลิกปักหมุดเอกสาร "' + file.name + '" แล้ว', 'info');
 }
 
+async function deleteFileFromGoogleDrive(fileId) {
+  if (!fileId) return false;
+  const config = getGoogleDriveConfig();
+  if (!config.scriptUrl) return false;
+
+  try {
+    const payload = {
+      action: 'delete',
+      fileId: fileId
+    };
+
+    const response = await fetch(config.scriptUrl, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return Boolean(data && data.ok);
+    }
+  } catch (err) {
+    console.warn('Google Drive delete error (attempting GET fallback):', err);
+    try {
+      const getUrl = config.scriptUrl + (config.scriptUrl.includes('?') ? '&' : '?') + 'action=delete&fileId=' + encodeURIComponent(fileId);
+      const getResp = await fetch(getUrl, { mode: 'cors' });
+      if (getResp.ok) {
+        const getData = await getResp.json();
+        return Boolean(getData && getData.ok);
+      }
+    } catch (getErr) {
+      console.warn('Google Drive delete fallback error:', getErr);
+    }
+  }
+  return false;
+}
+
 async function deleteSharedFile(fileId) {
   const f = (window.appState?.files || []).find(item => item.id === fileId);
   const name = f ? f.name : 'เอกสารนี้';
+  const isDrive = Boolean(f && (f.storageType === 'GOOGLE_DRIVE' || f.driveFileId || f.driveUrl));
+  const targetDriveId = f ? (f.driveFileId || extractDriveFileId(f.driveUrl)) : '';
+
+  const confirmMsg = isDrive
+    ? 'คุณต้องการลบเอกสาร "' + name + '" ออกจากห้องประชุม และย้ายไฟล์ลงถังขยะใน Google Drive หรือไม่?'
+    : 'คุณต้องการลบเอกสาร "' + name + '" ออกจากห้องประชุมหรือไม่?';
+
   const confirmed = typeof window.showConfirmDialog === 'function'
     ? await window.showConfirmDialog({
         title: 'ยืนยันการลบเอกสาร',
-        message: 'คุณต้องการลบเอกสาร "' + name + '" ออกจากห้องประชุมหรือไม่?',
-        confirmText: 'ลบเอกสาร',
+        message: confirmMsg,
+        confirmText: isDrive ? 'ลบเอกสารและไฟล์ใน Drive' : 'ลบเอกสาร',
         isDanger: true,
         icon: 'trash-2'
       })
     : false;
   if (!confirmed) return;
-  window.appState.files = (window.appState.files || []).filter(f => f.id !== fileId);
+
+  // 1. ลบ/ย้ายไฟล์ลงถังขยะใน Google Drive
+  if (targetDriveId) {
+    if (typeof showToast === 'function') {
+      showToast('กำลังลบไฟล์ "' + name + '" ออกจาก Google Drive...', 'info');
+    }
+    deleteFileFromGoogleDrive(targetDriveId).then(success => {
+      if (success) {
+        console.log('Successfully trashed file in Google Drive:', targetDriveId);
+      }
+    }).catch(err => {
+      console.warn('Failed to trash file in Google Drive:', err);
+    });
+  }
+
+  // 2. นำออกจากรายการเอกสารในห้องประชุม
+  window.appState.files = (window.appState.files || []).filter(item => item.id !== fileId);
   window.saveLocalState();
+
+  // 3. ลบข้อมูลจาก Cloud Cache เดิม (ถ้ามี)
   if (typeof window.deleteFileContentFromCloud === 'function') {
     window.deleteFileContentFromCloud(fileId).catch(() => {});
   }
+
+  // 4. กระจายคำสั่งลบให้ทุกอุปกรณ์
   if (window.socket) {
     window.socket.emit('file:delete', fileId);
+  } else if (window.ActionReducer) {
+    window.ActionReducer.dispatch(window.appState, { type: 'file:delete', payload: fileId });
   }
+
   renderFileDropSection();
-  showToast('ลบเอกสาร "' + name + '" เรียบร้อยแล้ว', 'info');
+  if (typeof showToast === 'function') {
+    showToast(isDrive ? 'ลบเอกสาร "' + name + '" และย้ายลงถังขยะ Google Drive แล้ว' : 'ลบเอกสาร "' + name + '" เรียบร้อยแล้ว', 'info');
+  }
 }
 
 function formatFileUploadStamp(f) {
@@ -1472,6 +1607,7 @@ window.adminSetFilePermission = adminSetFilePermission;
 window.formatFileUploadStamp = formatFileUploadStamp;
 window.handleFileUpload = handleFileUpload;
 window.togglePinSharedFile = togglePinSharedFile;
+window.deleteFileFromGoogleDrive = deleteFileFromGoogleDrive;
 window.deleteSharedFile = deleteSharedFile;
 window.renderFileDropSection = renderFileDropSection;
 window.getFileVisualInfo = getFileVisualInfo;
