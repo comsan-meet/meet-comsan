@@ -1345,8 +1345,6 @@ function buildCards(files, isAdmin) {
       ? 'border-amber-500/50 bg-amber-500/[0.04] ring-1 ring-amber-500/20 hover:border-amber-500/70'
       : 'border-border bg-card hover:border-primary/40';
 
-    const driveBadge = '';
-
     const openDriveLinkBtn = (isAdmin && isDrive && f.driveUrl)
       ? '<a href="' + f.driveUrl + '" target="_blank" onclick="event.stopPropagation()" title="เปิดไฟล์ต้นฉบับ" class="h-8 sm:w-9 sm:h-9 px-2 sm:px-0 rounded-xl border border-border bg-muted/40 sm:bg-card hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/30 text-muted-foreground flex items-center justify-center gap-1 transition shadow-2xs cursor-pointer"><i data-lucide="external-link" class="w-3.5 h-3.5"></i><span class="sm:hidden text-[11px] font-semibold">เปิด</span></a>'
       : '';
@@ -1360,13 +1358,9 @@ function buildCards(files, isAdmin) {
             ${isPinned ? '<span class="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-amber-500 text-white text-[8px] sm:text-[9px] flex items-center justify-center shadow-sm ring-2 ring-card" title="ปักหมุดไว้บนสุด"><i data-lucide="pin" class="w-2.5 h-2.5 sm:w-3 sm:h-3"></i></span>' : ''}
           </div>
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
-              ${isPinned ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0"><i data-lucide="pin" class="w-2.5 h-2.5 sm:w-3 sm:h-3"></i> ปักหมุด</span>' : ''}
-              ${driveBadge}
-              <p class="text-xs sm:text-sm font-bold text-foreground truncate group-hover/file:text-primary transition-colors" title="${escapeFileHtml(f.name)}">
-                ${escapeFileHtml(f.name)}
-              </p>
-            </div>
+            <p class="text-xs sm:text-sm font-bold text-foreground truncate group-hover/file:text-primary transition-colors" title="${escapeFileHtml(f.name)}">
+              ${escapeFileHtml(f.name)}
+            </p>
             <p class="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">
               <span class="font-semibold text-foreground/80">${formatFileSize(f.size)}</span> • โดย ${escapeFileHtml(f.uploaderName || '')} • <span class="text-emerald-600 dark:text-emerald-400 font-medium">${formatFileUploadStamp(f)}</span>
             </p>
@@ -1408,13 +1402,9 @@ function buildCards(files, isAdmin) {
           ${isPinned ? '<span class="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-amber-500 text-white text-[8px] sm:text-[9px] flex items-center justify-center shadow-sm ring-2 ring-card" title="ปักหมุดไว้บนสุด"><i data-lucide="pin" class="w-2.5 h-2.5 sm:w-3 sm:h-3"></i></span>' : ''}
         </div>
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
-            ${isPinned ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0"><i data-lucide="pin" class="w-2.5 h-2.5 sm:w-3 sm:h-3"></i> ปักหมุด</span>' : ''}
-            ${driveBadge}
-            <p class="text-xs sm:text-sm font-semibold text-foreground truncate group-hover/file:text-primary transition-colors" title="${escapeFileHtml(f.name)}">
-              ${escapeFileHtml(f.name)}
-            </p>
-          </div>
+          <p class="text-xs sm:text-sm font-semibold text-foreground truncate group-hover/file:text-primary transition-colors" title="${escapeFileHtml(f.name)}">
+            ${escapeFileHtml(f.name)}
+          </p>
           <p class="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">${formatFileSize(f.size)} • โดย ${escapeFileHtml(f.uploaderName || '')} • <span class="text-emerald-600 dark:text-emerald-400 font-medium">${formatFileUploadStamp(f)}</span></p>
         </div>
       </div>
