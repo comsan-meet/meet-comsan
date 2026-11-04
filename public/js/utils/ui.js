@@ -1425,10 +1425,25 @@ window.closeGlobalPromptDialog = closeGlobalPromptDialog;
     select.style.pointerEvents = 'none';
 
     // Determine wrapper classes
-    const isFullWidth = select.classList.contains('w-full');
-    const isFlex1 = select.classList.contains('flex-1');
     const wrapper = document.createElement('div');
-    wrapper.className = `custom-select-wrapper ${isFullWidth ? 'w-full' : ''} ${isFlex1 ? 'flex-1' : ''}`;
+    wrapper.className = 'custom-select-wrapper';
+
+    // Copy sizing and responsive width classes
+    select.classList.forEach((cls) => {
+      if (
+        cls === 'w-full' ||
+        cls === 'flex-1' ||
+        cls.startsWith('w-') ||
+        cls.startsWith('max-w-') ||
+        cls.startsWith('min-w-') ||
+        cls.startsWith('sm:max-w-') ||
+        cls.startsWith('md:max-w-') ||
+        cls.startsWith('lg:max-w-') ||
+        cls.startsWith('xl:max-w-')
+      ) {
+        wrapper.classList.add(cls);
+      }
+    });
     if (select.id) wrapper.dataset.forSelect = select.id;
 
     // Trigger button
@@ -1437,15 +1452,17 @@ window.closeGlobalPromptDialog = closeGlobalPromptDialog;
     trigger.className = 'custom-select-trigger';
     if (select.title) trigger.title = select.title;
 
-    // Retain specific height / padding classes if present
-    if (select.classList.contains('h-7.5')) trigger.classList.add('!h-[30px]');
-    if (select.classList.contains('h-8.5')) trigger.classList.add('!h-[34px]');
-    if (select.classList.contains('h-10')) trigger.classList.add('!h-[40px]');
+    // Retain specific height / padding / radius classes if present
+    if (select.classList.contains('h-7.5')) trigger.classList.add('!h-[30px]', '!py-0');
+    if (select.classList.contains('h-8.5')) trigger.classList.add('!h-[34px]', '!py-0');
+    if (select.classList.contains('h-10')) trigger.classList.add('!h-[40px]', '!py-0');
     if (select.classList.contains('py-1.5')) trigger.classList.add('!py-1.5');
+    if (select.classList.contains('rounded-lg')) trigger.classList.add('!rounded-lg');
+    if (select.classList.contains('rounded-full')) trigger.classList.add('!rounded-full');
 
     // Label span
     const labelSpan = document.createElement('span');
-    labelSpan.className = 'custom-select-label truncate';
+    labelSpan.className = 'custom-select-label truncate min-w-0 flex-1 text-left';
 
     // Chevron icon
     const chevronIcon = document.createElement('i');
@@ -1494,9 +1511,10 @@ window.closeGlobalPromptDialog = closeGlobalPromptDialog;
 
         item.className = `custom-select-item ${isSelected ? 'is-selected' : ''}`;
         item.dataset.value = opt.value;
+        item.title = opt.textContent ? opt.textContent.trim() : '';
 
         const textSpan = document.createElement('span');
-        textSpan.className = 'truncate';
+        textSpan.className = 'truncate min-w-0 flex-1';
         textSpan.textContent = opt.textContent;
 
         const checkIcon = document.createElement('i');
