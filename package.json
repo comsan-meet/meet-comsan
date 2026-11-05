@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "push": "git add -A && git commit -m \"Update files\" && git push origin main"
   },
   "dependencies": {
     "express": "^5.3.0",
