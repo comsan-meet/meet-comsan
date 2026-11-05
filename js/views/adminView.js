@@ -377,6 +377,9 @@ function startOfficialMeeting(e) {
   window.appState.raiseHandQueue = [];
   window.saveLocalState();
   window.socket.emit('admin:startMeeting', payload);
+  if (typeof window.persistFullStateToCloud === 'function') {
+    window.persistFullStateToCloud(true);
+  }
   if (typeof window.renderAll === 'function') window.renderAll();
   const isAct = currentMeetingFormat === 'ACTIVITY';
   showToast(isAct ? 'เปิดกิจกรรมชมรมเรียบร้อยแล้ว' : 'เปิดการประชุมเรียบร้อยแล้ว', 'success');
@@ -408,6 +411,9 @@ async function resetMeetingToNotStarted() {
   window.appState.raiseHandQueue = [];
   window.saveLocalState();
   window.socket.emit('admin:resetMeetingStatus');
+  if (typeof window.persistFullStateToCloud === 'function') {
+    window.persistFullStateToCloud(true);
+  }
   const toggleSwitch = document.getElementById('adminMeetingToggleSwitch');
   if (toggleSwitch) toggleSwitch.checked = false;
   if (typeof window.renderAll === 'function') window.renderAll();
@@ -502,6 +508,9 @@ async function endMeetingNow(skipConfirm = false) {
   window.appState.meeting.checkinToken = null;
 
   window.saveLocalState();
+  if (typeof window.persistFullStateToCloud === 'function') {
+    window.persistFullStateToCloud(true);
+  }
   if (typeof window.switchAdminTab === 'function') window.switchAdminTab('SUMMARY');
   if (typeof window.renderAll === 'function') window.renderAll();
   showToast(isAct ? 'จบกิจกรรมชมรมเรียบร้อยแล้ว และบันทึกประวัติสรุปผลสำเร็จ' : 'จบการประชุมเรียบร้อยแล้ว และบันทึกประวัติสรุปการประชุมสำเร็จ', 'info');

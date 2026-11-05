@@ -344,10 +344,20 @@ window.socket = new UnifiedSocketHub(activeEngine);
 
 // Guaranteed Cloud Persistence for Projects
 window.persistProjectsToCloud = async function(immediate = true) {
-  try {
-    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+  if (typeof window.persistFullStateToCloud === 'function') {
+    return window.persistFullStateToCloud(immediate);
+  }
+};
 
-    // 1. Supabase adapter scheduleSave
+// Guaranteed Cloud Persistence for Full State (Meeting, Users, Attendance, History, Projects)
+window.persistFullStateToCloud = async function(immediate = true) {
+  try {
+    if (typeof window.saveLocalState === 'function' && !window._insidePersistCloud) {
+      window._insidePersistCloud = true;
+      try { window.saveLocalState(); } finally { window._insidePersistCloud = false; }
+    }
+
+    // 1. Supabase adapter scheduleSave & realtime broadcast
     const sb = (window.supabaseSocketAdapter)
       ? window.supabaseSocketAdapter
       : ((window.socket && window.socket.engine && typeof window.socket.engine.scheduleSaveToSupabase === 'function')
@@ -359,9 +369,12 @@ window.persistProjectsToCloud = async function(immediate = true) {
         sb.lastKnownProjects = window.appState.projects;
       }
       sb.scheduleSaveToSupabase(window.appState, immediate);
+      if (typeof sb.broadcastEvent === 'function') {
+        sb.broadcastEvent('state:update', window.appState);
+      }
     }
 
-    // 2. Direct REST API fail-safe push to Supabase
+    // 2. Direct REST API fail-safe push to Supabase (bypasses any WebSocket delay or bridge failure)
     const cfg = window.COMSAN_SUPABASE_CONFIG;
     if (cfg && cfg.url && cfg.anonKey && window.appState) {
       const stateToPush = (sb && typeof sb.prepareStateForBroadcast === 'function')
@@ -386,7 +399,7 @@ window.persistProjectsToCloud = async function(immediate = true) {
       }).catch(err => console.warn('Direct cloud persist warning:', err));
     }
   } catch (e) {
-    console.warn('persistProjectsToCloud error:', e);
+    console.warn('persistFullStateToCloud error:', e);
   }
 };
 
