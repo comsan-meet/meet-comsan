@@ -716,7 +716,9 @@ function renderAll() {
     if (onlineDetailIn && document.activeElement !== onlineDetailIn) onlineDetailIn.value = m.locationDetail || '';
     const endDateIn = document.getElementById('cfgMeetingEndDate');
     if (dateIn && document.activeElement !== dateIn) dateIn.value = m.date || todayISO;
-    if (endDateIn && document.activeElement !== endDateIn) endDateIn.value = m.endDate || m.date || todayISO;
+    if (endDateIn && document.activeElement !== endDateIn) {
+      endDateIn.value = m.endDate || m.date || (dateIn ? dateIn.value : '') || todayISO;
+    }
     if (startIn && document.activeElement !== startIn) startIn.value = m.startTime || '17:00';
     if (lateIn && document.activeElement !== lateIn) lateIn.value = m.lateTime || '17:15';
     if (endIn && document.activeElement !== endIn) endIn.value = m.endTime || '19:00';
@@ -1674,12 +1676,53 @@ window.addEventListener('DOMContentLoaded', () => {
   const dateInEl = document.getElementById('cfgMeetingDate');
   const endDateInEl = document.getElementById('cfgMeetingEndDate');
   if (dateInEl && endDateInEl) {
-    dateInEl.addEventListener('change', () => {
-      if (!endDateInEl.value || endDateInEl.value < dateInEl.value) {
+    let userHasManuallyChangedEndDate = false;
+
+    endDateInEl.addEventListener('input', () => {
+      userHasManuallyChangedEndDate = Boolean(endDateInEl.value && endDateInEl.value !== dateInEl.value);
+      if (dateInEl.value && endDateInEl.value && endDateInEl.value < dateInEl.value) {
         endDateInEl.value = dateInEl.value;
       }
+      if (window.appState && window.appState.meeting) {
+        window.appState.meeting.endDate = endDateInEl.value;
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+      }
     });
+
+    const syncStartDateToMeeting = () => {
+      const newStartDate = dateInEl.value;
+      // Default to same-day meeting unless user manually entered a valid later end date
+      if (!userHasManuallyChangedEndDate || !endDateInEl.value || endDateInEl.value < newStartDate) {
+        endDateInEl.value = newStartDate;
+      }
+      if (window.appState && window.appState.meeting) {
+        window.appState.meeting.date = newStartDate;
+        window.appState.meeting.endDate = endDateInEl.value;
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+      }
+    };
+
+    dateInEl.addEventListener('input', syncStartDateToMeeting);
+    dateInEl.addEventListener('change', syncStartDateToMeeting);
   }
+
+  // Auto-sync other meeting config form inputs into appState
+  ['cfgMeetingTitle', 'cfgMeetingLocation', 'cfgMeetingLocationDetail', 'cfgOnlineMeetingDetail', 'cfgStartTime', 'cfgLateTime', 'cfgEndTime'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        if (!window.appState || !window.appState.meeting) return;
+        const m = window.appState.meeting;
+        if (id === 'cfgMeetingTitle') m.title = el.value;
+        else if (id === 'cfgMeetingLocation') m.location = el.value;
+        else if (id === 'cfgMeetingLocationDetail' || id === 'cfgOnlineMeetingDetail') m.locationDetail = el.value;
+        else if (id === 'cfgStartTime') m.startTime = el.value;
+        else if (id === 'cfgLateTime') m.lateTime = el.value;
+        else if (id === 'cfgEndTime') m.endTime = el.value;
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+      });
+    }
+  });
 
   renderAll();
   setInterval(updateMeetingTimersAndBanners, 1000);

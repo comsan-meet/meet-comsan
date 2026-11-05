@@ -300,6 +300,9 @@ function normalizeState(raw) {
 
   const rawMeeting = raw.meeting || {};
   const meeting = { ...defaultState.meeting, ...rawMeeting };
+  if (!rawMeeting.endDate && meeting.date) {
+    meeting.endDate = meeting.date;
+  }
 
   // If local and incoming have the same startedAtMs, and either was ended, it MUST remain ended!
   if (localMeeting && localMeeting.startedAtMs && meeting.startedAtMs && localMeeting.startedAtMs === meeting.startedAtMs) {
