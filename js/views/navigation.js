@@ -130,31 +130,10 @@ function updateSidebarVisibility() {
   const isUserLogged = Boolean(window.isUserAuthenticated) && Boolean(window.currentUserId);
   const isAuthenticated = isAdminLogged || isUserLogged;
 
-  // 1. Not authenticated -> show Auth page
+  // 1. Not authenticated -> redirect to dedicated /auth page
   if (!isAuthenticated) {
-    if (authScreen) authScreen.classList.remove('hidden');
-    if (appLayout) {
-      appLayout.classList.add('hidden');
-      appLayout.classList.remove('flex');
-    }
-    if (sidebar) {
-      sidebar.classList.add('hidden', '-translate-x-full');
-      sidebar.classList.remove('flex', 'translate-x-0', 'mobile-drawer-open', 'sidebar-collapsed');
-    }
-    if (mobileBottomNav) {
-      mobileBottomNav.classList.add('hidden');
-      mobileBottomNav.classList.remove('flex');
-    }
-    if (mobileHeader) {
-      mobileHeader.classList.add('hidden');
-      mobileHeader.classList.remove('flex');
-    }
-    if (desktopHeader) {
-      desktopHeader.classList.add('hidden');
-      desktopHeader.classList.remove('flex');
-    }
-    if (backdrop) backdrop.classList.add('hidden');
-    updateChatFloatingButtons();
+    const searchParams = window.location.search || '';
+    window.location.replace('/auth' + searchParams);
     return;
   }
 
@@ -814,7 +793,13 @@ function logoutAdminFromSettings() {
   }
 
   if (window.currentRole === 'ADMIN') {
-    if (typeof switchRoleView === 'function') switchRoleView('USER');
+    const hasUser = Boolean(window.isUserAuthenticated && window.currentUserId);
+    if (hasUser && typeof switchRoleView === 'function') {
+      switchRoleView('USER');
+    } else {
+      window.location.replace('/auth');
+      return;
+    }
   }
 
   updateSettingsAdminCardState();
@@ -956,6 +941,14 @@ function switchRoleView(role, force) {
   if (typeof window.setSessionRole === 'function') {
     window.setSessionRole(role);
   }
+  try {
+    if (typeof window.history !== 'undefined' && window.history.replaceState) {
+      const targetPath = role === 'ADMIN' ? '/admin' : '/';
+      if (window.location.pathname !== targetPath) {
+        window.history.replaceState(null, '', targetPath + (window.location.search || '') + (window.location.hash || ''));
+      }
+    }
+  } catch (e) {}
 
   // 1. Immediately trigger the GPU glider animation (0ms latency!)
   updateRoleSwitcherPill(role, false);

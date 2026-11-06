@@ -1654,6 +1654,17 @@ window.handleGoToStream = handleGoToStream;
 
 // App initialization
 window.addEventListener('DOMContentLoaded', () => {
+  // Support direct /admin route navigation
+  const currentPath = window.location.pathname;
+  if (currentPath === '/admin') {
+    if (window.isAdminAuthenticated) {
+      window.currentRole = 'ADMIN';
+    } else {
+      window.location.replace('/auth?redirect=/admin');
+      return;
+    }
+  }
+
   ensureDummyCheckinSpan();
   initTheme();
   setupSocketListeners();
