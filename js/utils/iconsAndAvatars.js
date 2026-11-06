@@ -360,24 +360,39 @@
   }
 
   // =============================================================================
-  // 5. AUTOMATIC MUTATION OBSERVER FOR DYNAMICALLY INSERTED ICONS
+  // 5. AUTOMATIC MUTATION OBSERVER FOR DYNAMICALLY INSERTED ICONS (SCOPED & DEBOUNCED)
   // =============================================================================
-  let renderScheduled = false;
+  let renderScheduledTimer = null;
+  const pendingRoots = new Set();
 
-  function scheduleIconRender() {
-    if (renderScheduled) return;
-    renderScheduled = true;
-    requestAnimationFrame(() => {
-      renderScheduled = false;
-      renderLucideIcons(document.body);
-    });
+  function scheduleIconRender(targetNode) {
+    if (targetNode && targetNode.nodeType === 1) {
+      pendingRoots.add(targetNode);
+    }
+    if (renderScheduledTimer) return;
+    renderScheduledTimer = setTimeout(() => {
+      renderScheduledTimer = null;
+      if (pendingRoots.size > 0) {
+        pendingRoots.forEach(root => {
+          if (root && root.isConnected) {
+            renderLucideIcons(root);
+          }
+        });
+        pendingRoots.clear();
+      } else {
+        const hasUnrendered = document.querySelector('[data-lucide]:not(svg), [class*="fa-"]');
+        if (hasUnrendered) {
+          renderLucideIcons(document.body);
+        }
+      }
+    }, 60);
   }
 
   function initObserver() {
     if (!window.MutationObserver || !document.body) return;
 
     const observer = new MutationObserver((mutations) => {
-      let needsRender = false;
+      let foundNode = null;
       for (const mutation of mutations) {
         if (mutation.type === 'childList') {
           for (const node of mutation.addedNodes) {
@@ -387,17 +402,17 @@
                 node.className?.includes?.('fa-') ||
                 node.querySelector?.('[data-lucide]:not(svg), [class*="fa-"]')
               ) {
-                needsRender = true;
+                foundNode = node;
                 break;
               }
             }
           }
         }
-        if (needsRender) break;
+        if (foundNode) break;
       }
 
-      if (needsRender) {
-        scheduleIconRender();
+      if (foundNode) {
+        scheduleIconRender(foundNode);
       }
     });
 
@@ -411,6 +426,21 @@
   // 6. INITIALIZATION & GLOBAL EXPOSURE
   // =============================================================================
   function init() {
+    // Smart Scoped Lucide Wrapper
+    if (window.lucide && typeof window.lucide.createIcons === 'function' && !window.lucide._isScopedWrapper) {
+      const origCreateIcons = window.lucide.createIcons;
+      window.lucide.createIcons = function(options = {}) {
+        if (!options.root) {
+          const activeContainer = (window.currentRole === 'ADMIN')
+            ? document.getElementById(`aTab_${window.activeAdminTab || 'DASHBOARD'}`)
+            : document.getElementById(`uTab_${window.activeUserTab || 'HOME'}`);
+          options.root = activeContainer || document.body;
+        }
+        return origCreateIcons.call(this, options);
+      };
+      window.lucide._isScopedWrapper = true;
+    }
+
     renderLucideIcons(document);
     initObserver();
   }

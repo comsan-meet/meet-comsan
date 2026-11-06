@@ -27,19 +27,21 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NjAgOTYwIiB3aWR0aD0iOTYwIiBoZWlnaHQ9Ijk2MCI+CiAgPCEtLSBPdXRlciBSb3VuZGVkIFNxdWlyY2xlIEZyYW1lIC0tPgogIDxyZWN0IHdpZHRoPSI5NjAiIGhlaWdodD0iOTYwIiByeD0iMjIwIiByeT0iMjIwIiBmaWxsPSIjNjk2MWZiIi8+CiAgPCEtLSBJbm5lciBXaGl0ZSBTcXVpcmNsZSBDYXJkIC0tPgogIDxyZWN0IHg9Ijc4IiB5PSI3OCIgd2lkdGg9IjgwNCIgaGVpZ2h0PSI4MDQiIHJ4PSIxNTAiIHJ5PSIxNTAiIGZpbGw9IiNmZmZmZmYiLz4KICAKICA8IS0tIFRlYWwgRmlndXJlcyAoIzBmZDhiZSkgLS0+CiAgPGcgZmlsbD0iIzBmZDhiZSI+CiAgICA8IS0tIENlbnRlciBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjQ4MCIgY3k9IjM2MiIgcj0iODciIC8+CiAgICA8IS0tIExlZnQgUGVyc29uIEhlYWQgLS0+CiAgICA8Y2lyY2xlIGN4PSIyNDYiIGN5PSI0MzUiIHI9Ijg3IiAvPgogICAgPCEtLSBSaWdodCBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjcxNCIgY3k9IjQzNSIgcj0iODciIC8+CiAgICAKICAgIDwhLS0gQ2VudGVyIFBlcnNvbiBCb2R5IChDbG9zZWQgYXJjaCB3aXRoIGJvdHRvbSBiYXIpIC0tPgogICAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNIDM1MCA3MTAgViA1ODIgQyAzNTAgNTEwIDQwOCA0NjcgNDgwIDQ2NyBDIDU1MiA0NjcgNjEwIDUxMCA2MTAgNTgyIFYgNzEwIEggMzUwIFogTSAzODcgNjc0IEggNTczIFYgNTgyIEMgNTczIDUzMSA1MzEgNTAzIDQ4MCA1MDMgQyA0MjkgNTAzIDM4NyA1MzEgMzg3IDU4MiBWIDY3NCBaIiAvPgogIDwvZz4KICAKICA8IS0tIExlZnQgYW5kIFJpZ2h0IFNob3VsZGVycyAtLT4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwZmQ4YmUiIHN0cm9rZS13aWR0aD0iMzciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNIDE1NiA3MTAgViA2NTAgQyAxNTYgNjEyIDE5NSA1ODIgMzI4IDU4MiIgLz4KICAgIDxwYXRoIGQ9Ik0gODA0IDcxMCBWIDY1MCBDIDgwNCA2MTIgNzY1IDU4MiA2MzIgNTgyIiAvPgogIDwvZz4KPC9zdmc+" />
 
 
-  <!-- Google Fonts: Poppins (Brand/Titles/Numbers) & Prompt (Thai/Body) matching comsan-choice.vercel.app -->
+  <!-- Google Fonts: Poppins (Brand/Titles/Numbers) & Prompt (Thai/Body) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Mitr:wght@300;400;500&family=Poppins:wght@400;500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
 
-  <!-- Font Awesome Icons -->
-    <!-- Lucide Icons & DiceBear Gaze Avatars (Comsan Choice Standard) -->
-  <script src="js/lucide.min.js"></script>
-  <script src="js/utils/iconsAndAvatars.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Font Awesome Icons (Non-blocking) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" /></noscript>
 
-  <!-- External CDN Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Lucide Icons & DiceBear Gaze Avatars (Deferred for instant HTML render) -->
+  <script defer src="js/lucide.min.js"></script>
+  <script defer src="js/utils/iconsAndAvatars.js"></script>
+
+  <!-- External CDN Libraries (Deferred for non-blocking page load) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="socket.io/socket.io.js" onerror="console.info('Socket.io server not detected; running in Supabase Realtime mode');"></script>
   <script defer src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>

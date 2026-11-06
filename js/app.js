@@ -76,11 +76,6 @@ function updateMeetingTimersAndBanners() {
   const raiseBannerStatusSub = document.getElementById('raiseBannerStatusSub');
   const raiseBannerCounterWrap = document.getElementById('raiseBannerCounterWrapper');
 
-  // Top Header Branding & Greeting (Desktop Main Header)
-  if (typeof window.updateDesktopHeader === 'function') {
-    window.updateDesktopHeader();
-  }
-
   const isMeetingActive = Boolean(m.isStarted && !m.isEnded);
   const currentFmt = (typeof window.currentMeetingFormat !== 'undefined' && !isMeetingActive)
     ? window.currentMeetingFormat
@@ -774,26 +769,49 @@ function renderAll() {
     });
     if (state.randomizer) state.randomizer.history = cleanHist;
 
+    const isAdmin = window.currentRole === 'ADMIN';
+    const aTab = window.activeAdminTab || 'DASHBOARD';
+    const uTab = window.activeUserTab || 'HOME';
+    const uSub = window.activeUserToolSubTab || 'FILES';
+
     const historyHTML = cleanHist.length > 0
       ? cleanHist.map((h, idx) => `<div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between"><span class="font-bold"><span class="text-indigo-600 mr-1">#${idx + 1}</span> ${h.winnerLabel}</span><span class="text-[11px] text-slate-400">${h.time}</span></div>`).join('')
       : `<p class="text-slate-400 text-center py-4">ยังไม่มีประวัติการสุ่มในรอบนี้</p>`;
     const adminRandList = document.getElementById('adminRandomHistoryList');
     const userRandList = document.getElementById('userRandomHistoryList');
-    if (adminRandList) adminRandList.innerHTML = historyHTML;
-    if (userRandList) userRandList.innerHTML = historyHTML;
+    if (adminRandList && (aTab === 'RANDOM' || aTab === 'DASHBOARD')) adminRandList.innerHTML = historyHTML;
+    if (userRandList && (uSub === 'RANDOM' || uTab === 'HOME')) userRandList.innerHTML = historyHTML;
 
-    // Component renders
-    if (typeof window.renderParliamentSeats === 'function') window.renderParliamentSeats();
-    if (typeof window.renderUserProfile === 'function') window.renderUserProfile();
+    // Component renders (Optimized: Scoped to active tabs only to avoid main-thread freeze)
+    if (typeof window.renderUserProfile === 'function' && !isAdmin && uTab === 'PROFILE') {
+      window.renderUserProfile();
+    }
     if (typeof window.renderFloatingChat === 'function') window.renderFloatingChat(false);
-    if (typeof window.renderAdminChatSection === 'function') window.renderAdminChatSection(false);
-    if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
-    if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
-    if (typeof window.renderSummarySection === 'function') window.renderSummarySection();
-    if (typeof window.updateRaiseHandUserUI === 'function') window.updateRaiseHandUserUI();
+    if (typeof window.renderAdminChatSection === 'function' && isAdmin && aTab === 'CHAT') {
+      window.renderAdminChatSection(false);
+    }
+    if (typeof window.renderParliamentSeats === 'function' && ((isAdmin && aTab === 'DASHBOARD') || (!isAdmin && uTab === 'HOME' && uSub === 'SEATS'))) {
+      window.renderParliamentSeats();
+    }
+    if (typeof window.renderFileDropSection === 'function' && ((isAdmin && aTab === 'FILES') || (!isAdmin && uTab === 'HOME' && uSub === 'FILES'))) {
+      window.renderFileDropSection();
+    }
+    if (typeof window.renderStreamSection === 'function' && ((isAdmin && aTab === 'STREAM') || (!isAdmin && uTab === 'HOME' && uSub === 'STREAM'))) {
+      window.renderStreamSection();
+    }
+    if (typeof window.renderSummarySection === 'function' && isAdmin && aTab === 'SUMMARY') {
+      window.renderSummarySection();
+    }
+    if (typeof window.updateRaiseHandUserUI === 'function' && !isAdmin && uTab === 'RAISE') {
+      window.updateRaiseHandUserUI();
+    }
     if (typeof window.checkOpenMotionsPopup === 'function') window.checkOpenMotionsPopup();
-    if (typeof window.renderAdminAnalyticsChart === 'function' && window.currentRole === 'ADMIN') window.renderAdminAnalyticsChart();
-    if (typeof window.renderTodayEventsBanner === 'function') window.renderTodayEventsBanner();
+    if (typeof window.renderAdminAnalyticsChart === 'function' && isAdmin && aTab === 'DASHBOARD') {
+      window.renderAdminAnalyticsChart();
+    }
+    if (typeof window.renderTodayEventsBanner === 'function' && !isAdmin && uTab === 'HOME') {
+      window.renderTodayEventsBanner();
+    }
 
     const isMeetingActiveForMotions = Boolean(m.isStarted && !m.isEnded);
     const motionMeetingWarn = document.getElementById('motionMeetingStatusWarning');
@@ -801,9 +819,9 @@ function renderAll() {
       motionMeetingWarn.classList.toggle('hidden', isMeetingActiveForMotions);
     }
 
-    // Admin motions list
+    // Admin motions list (Scoped to VOTING / DASHBOARD tab)
     const adminMotionsEl = document.getElementById('adminMotionsList');
-    if (adminMotionsEl) {
+    if (adminMotionsEl && (aTab === 'VOTING' || aTab === 'DASHBOARD')) {
       const rawMotions = state.motions || [];
       const sortedAdminMotions = [...rawMotions].sort((a, b) => {
         if (a.isOpen && !b.isOpen) return -1;
@@ -837,11 +855,11 @@ function renderAll() {
           }).join('');
     }
 
-    // Admin Raise Hand Queue List
+    // Admin Raise Hand Queue List (Scoped to QUEUE / DASHBOARD tab)
     const queueCountEl = document.getElementById('queueCount');
     const queueListEl = document.getElementById('raiseHandQueueList');
     if (queueCountEl) queueCountEl.textContent = (state.raiseHandQueue || []).length;
-    if (queueListEl) {
+    if (queueListEl && (aTab === 'QUEUE' || aTab === 'DASHBOARD')) {
       queueListEl.innerHTML = (state.raiseHandQueue || []).length === 0
         ? `<p class="text-xs text-muted-foreground text-center py-12"><i data-lucide="hand" class="w-8 h-8 mb-2 mx-auto text-muted-foreground/40 block"></i>ขณะนี้ยังไม่มีผู้ยกมือในคิว</p>`
         : (state.raiseHandQueue || []).map((q, i) => `
