@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "framework": null,
-  "buildCommand": null,
-  "outputDirectory": ".",
   "cleanUrls": true,
   "headers": [
     {
@@ -18,12 +15,6 @@
       ]
     },
     {
-      "source": "/(.*\\.(png|jpg|jpeg|svg|ico|webp))",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=604800, immutable" }
-      ]
-    },
-    {
       "source": "/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
@@ -33,6 +24,7 @@
   "rewrites": [
     { "source": "/auth", "destination": "/auth.html" },
     { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/dashboard", "destination": "/index.html" },
     { "source": "/setconference", "destination": "/index.html" },
     { "source": "/settings", "destination": "/index.html" },
     { "source": "/random", "destination": "/index.html" },
@@ -49,11 +41,10 @@
     { "source": "/summary", "destination": "/index.html" },
     { "source": "/members", "destination": "/index.html" },
     { "source": "/database", "destination": "/index.html" },
-    { "source": "/dashboard", "destination": "/index.html" },
     { "source": "/chat", "destination": "/index.html" },
     { "source": "/profile", "destination": "/index.html" },
     { "source": "/home", "destination": "/index.html" },
     { "source": "/seats", "destination": "/index.html" },
-    { "source": "/((?!api/|css/|js/|socket.io/|.*\\..*).*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
