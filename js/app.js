@@ -60,7 +60,6 @@ function updateMeetingTimersAndBanners() {
   const uElapsed = document.getElementById('timerMeetingElapsed');
   const voteElapsed = document.getElementById('voteElapsedTimerText');
   const adminSetupBadge = document.getElementById('adminSetupStatusBadge');
-  const adminNotStartedBanner = document.getElementById('adminNotStartedBanner');
 
   const userBannerStatusPill = document.getElementById('userBannerStatusPill');
   const heroDot = document.getElementById('heroStatusDot');
@@ -93,7 +92,6 @@ function updateMeetingTimersAndBanners() {
     if (uElapsed) uElapsed.textContent = 'ยังไม่เริ่ม';
     if (voteElapsed) voteElapsed.textContent = 'ยังไม่เริ่ม';
     if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? 'ยังไม่เริ่มกิจกรรม' : 'ยังไม่เริ่มประชุม';
-    if (adminNotStartedBanner) adminNotStartedBanner.classList.remove('hidden');
     if (userBannerStatusPill) {
       if (lastHist) {
         userBannerStatusPill.textContent = isLastHistActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
@@ -129,7 +127,6 @@ function updateMeetingTimersAndBanners() {
     if (uElapsed) uElapsed.textContent = isEndedAct ? 'จบกิจกรรม' : 'จบการประชุม';
     if (voteElapsed) voteElapsed.textContent = isEndedAct ? 'จบกิจกรรม' : 'จบการประชุม';
     if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
-    if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
     if (userBannerStatusPill) {
       userBannerStatusPill.textContent = isEndedAct ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
     }
@@ -166,7 +163,6 @@ function updateMeetingTimersAndBanners() {
       if (uElapsed) uElapsed.textContent = `รอเริ่ม (${startDisplayTime} น.)`;
       if (voteElapsed) voteElapsed.textContent = `รอเริ่ม (${startDisplayTime} น.)`;
       if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? `เปิดเช็คชื่อล่วงหน้า (เริ่ม ${startDisplayTime} น.)` : `เปิดห้องล่วงหน้า (เริ่ม ${startDisplayTime} น.)`;
-      if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
       if (userBannerStatusPill) userBannerStatusPill.textContent = isActivity ? `ยังไม่ถึงเวลากิจกรรม (เริ่ม ${startDisplayTime} น.)` : `ยังไม่ถึงเวลาประชุม (เริ่ม ${startDisplayTime} น.)`;
       if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
       if (heroStatusWrapper) {
@@ -180,7 +176,6 @@ function updateMeetingTimersAndBanners() {
       if (uElapsed) uElapsed.textContent = `${elapsedMin} นาที`;
       if (voteElapsed) voteElapsed.textContent = `${elapsedMin} นาที`;
       if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? 'กำลังดำเนินกิจกรรม' : 'กำลังดำเนินการประชุม';
-      if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
       if (userBannerStatusPill) userBannerStatusPill.textContent = isActivity ? 'กำลังจัดกิจกรรม' : 'กำลังประชุม';
       if (heroDot) heroDot.className = isActivity ? 'w-2 h-2 rounded-full bg-amber-400 animate-ping' : 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
       if (heroStatusWrapper) {
