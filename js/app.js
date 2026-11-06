@@ -1676,6 +1676,11 @@ window.addEventListener('DOMContentLoaded', () => {
       window.renderUserQrCode(window.currentUserId);
     }
   }
+
+  // Handle direct URL route (e.g. /setconference, /random, /calendar, /projects, etc.)
+  if (typeof window.handleCurrentRoute === 'function') {
+    window.handleCurrentRoute(true);
+  }
   if (typeof window.updateSidebarVisibility === 'function') window.updateSidebarVisibility();
   if (typeof window.syncSidebarTopOffset === 'function') window.syncSidebarTopOffset();
   if (typeof window.rebuildRandomMemberPool === 'function') window.rebuildRandomMemberPool();

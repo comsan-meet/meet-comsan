@@ -941,13 +941,6 @@ function switchRoleView(role, force) {
   if (typeof window.setSessionRole === 'function') {
     window.setSessionRole(role);
   }
-  try {
-    if (typeof window.history !== 'undefined' && window.history.replaceState) {
-      if (window.location.pathname === '/admin') {
-        window.history.replaceState(null, '', '/' + (window.location.search || '') + (window.location.hash || ''));
-      }
-    }
-  } catch (e) {}
 
   // 1. Immediately trigger the GPU glider animation (0ms latency!)
   updateRoleSwitcherPill(role, false);
@@ -1045,9 +1038,61 @@ function showChatSplashScreen(onCovered) {
   }, 1300);
 }
 
-function switchUserTab(tab, skipRenderAll) {
+// --- URL Routing & History Management ---
+const ADMIN_TAB_TO_PATH = {
+  DASHBOARD: '/dashboard',
+  SETTINGS: '/setconference',
+  CHECKIN: '/checkin',
+  VOTING: '/voting',
+  QUEUE: '/queue',
+  RANDOM: '/random',
+  STREAM: '/stream',
+  FILES: '/files',
+  NOTES: '/notes',
+  CALENDAR: '/calendar',
+  PROJECTS: '/projects',
+  SUMMARY: '/summary',
+  MEMBERS: '/members',
+  DATABASE: '/database',
+  CHAT: '/chat'
+};
+
+const USER_TAB_TO_PATH = {
+  HOME: '/home',
+  VOTE: '/vote',
+  RAISE: '/raise',
+  CHAT: '/chat',
+  PROFILE: '/profile'
+};
+
+const USER_TOOL_TO_PATH = {
+  FILES: '/files',
+  STREAM: '/stream',
+  NOTE: '/notes',
+  CALENDAR: '/calendar',
+  PROJECTS: '/projects',
+  SEATS: '/seats',
+  RANDOM: '/random'
+};
+
+function updateBrowserUrl(path) {
+  if (!path) return;
+  try {
+    const currentPath = window.location.pathname || '/';
+    if (currentPath.toLowerCase() === path.toLowerCase()) return;
+    const search = window.location.search || '';
+    const hash = window.location.hash || '';
+    if (window.history && window.history.pushState) {
+      window.history.pushState({ path }, '', path + search + hash);
+    }
+  } catch (e) {
+    console.warn('updateBrowserUrl error:', e);
+  }
+}
+
+function switchUserTab(tab, skipRenderAll, updateUrl = true) {
   if (tab === 'CHAT' && window.currentRole === 'ADMIN') {
-    switchAdminTab('CHAT');
+    switchAdminTab('CHAT', updateUrl);
     return;
   }
 
@@ -1055,24 +1100,24 @@ function switchUserTab(tab, skipRenderAll) {
   const toolSubTabs = ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'PROJECTS', 'SEATS', 'RANDOM'];
   if (toolSubTabs.includes(tab)) {
     window.activeUserToolSubTab = tab;
-    switchUserTab('HOME', skipRenderAll);
-    switchUserToolSubTab(tab);
+    switchUserTab('HOME', skipRenderAll, false);
+    switchUserToolSubTab(tab, updateUrl);
     return;
   }
 
   if (tab === 'CHAT' && window.activeUserTab !== 'CHAT') {
     showChatSplashScreen(() => {
-      actuallySwitchUserTab('CHAT', skipRenderAll);
+      actuallySwitchUserTab('CHAT', skipRenderAll, updateUrl);
     });
     return;
   }
   if (tab === 'HOME' && !window.activeUserToolSubTab) {
     window.activeUserToolSubTab = 'FILES';
   }
-  actuallySwitchUserTab(tab, skipRenderAll);
+  actuallySwitchUserTab(tab, skipRenderAll, updateUrl);
 }
 
-function actuallySwitchUserTab(tab, skipRenderAll) {
+function actuallySwitchUserTab(tab, skipRenderAll, updateUrl = true) {
   if (window.isAdminAuthenticated && !window.isUserAuthenticated) {
     showUserLoginPopup();
     return;
@@ -1093,7 +1138,10 @@ function actuallySwitchUserTab(tab, skipRenderAll) {
 
   if (tab === 'HOME') {
     const subTab = window.activeUserToolSubTab || 'FILES';
-    switchUserToolSubTab(subTab);
+    switchUserToolSubTab(subTab, updateUrl);
+  } else if (updateUrl !== false) {
+    const targetPath = USER_TAB_TO_PATH[tab] || '/home';
+    updateBrowserUrl(targetPath);
   }
 
   const isMobile = window.innerWidth < 768;
@@ -1155,7 +1203,7 @@ function actuallySwitchUserTab(tab, skipRenderAll) {
   if (!skipRenderAll && typeof window.renderAll === 'function') window.renderAll();
 }
 
-function switchUserToolSubTab(subTab) {
+function switchUserToolSubTab(subTab, updateUrl = true) {
   const targetSub = subTab || 'FILES';
   window.activeUserToolSubTab = targetSub;
 
@@ -1165,6 +1213,11 @@ function switchUserToolSubTab(subTab) {
       const sec = document.getElementById(`uTab_${t}`);
       if (sec) sec.classList.toggle('hidden', t !== 'HOME');
     });
+  }
+
+  if (updateUrl !== false) {
+    const targetPath = USER_TOOL_TO_PATH[targetSub] || '/home';
+    updateBrowserUrl(targetPath);
   }
 
   ['FILES', 'STREAM', 'NOTE', 'CALENDAR', 'PROJECTS', 'SEATS', 'RANDOM'].forEach(st => {
@@ -1276,21 +1329,21 @@ function lockDatabaseTab() {
   }
 }
 
-function switchAdminTab(tab) {
+function switchAdminTab(tab, updateUrl = true) {
   if (tab === 'DATABASE' && !window.isDatabaseUnlocked) {
     openDatabaseUnlockModal();
     return;
   }
   if (tab === 'CHAT' && window.activeAdminTab !== 'CHAT') {
     showChatSplashScreen(() => {
-      actuallySwitchAdminTab('CHAT');
+      actuallySwitchAdminTab('CHAT', updateUrl);
     });
     return;
   }
-  actuallySwitchAdminTab(tab);
+  actuallySwitchAdminTab(tab, updateUrl);
 }
 
-function actuallySwitchAdminTab(tab) {
+function actuallySwitchAdminTab(tab, updateUrl = true) {
   if (tab === 'DATABASE' && !window.isDatabaseUnlocked) {
     openDatabaseUnlockModal();
     return;
@@ -1305,6 +1358,11 @@ function actuallySwitchAdminTab(tab) {
     if (uChat) uChat.classList.add('hidden');
     const aChat = document.getElementById('aTab_CHAT');
     if (aChat) aChat.classList.remove('hidden');
+  }
+
+  if (updateUrl !== false) {
+    const targetPath = ADMIN_TAB_TO_PATH[tab] || '/dashboard';
+    updateBrowserUrl(targetPath);
   }
 
   if (tab === 'CALENDAR') {
@@ -1358,9 +1416,226 @@ function actuallySwitchAdminTab(tab) {
 
   closeMobileSidebar();
   updateSidebarVisibility();
+  updateSidebarActiveStates();
   updateChatFloatingButtons();
   if (typeof window.renderAll === 'function') window.renderAll();
 }
+
+function handleCurrentRoute(isInitial = false) {
+  let rawPath = (window.location.pathname || '/').toLowerCase().trim();
+  if (rawPath.length > 1 && rawPath.endsWith('/')) {
+    rawPath = rawPath.slice(0, -1);
+  }
+
+  if (!rawPath || rawPath === '/' || rawPath === '/auth') {
+    return;
+  }
+
+  const isAdmin = window.currentRole === 'ADMIN' || window.isAdminAuthenticated;
+
+  // Direct Admin Routes
+  if (rawPath === '/setconference' || rawPath === '/settings') {
+    if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeAdminTab = 'SETTINGS';
+      window.switchRoleView('ADMIN', true);
+    }
+    actuallySwitchAdminTab('SETTINGS', false);
+    return;
+  }
+  if (rawPath === '/dashboard' || rawPath === '/admin') {
+    if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeAdminTab = 'DASHBOARD';
+      window.switchRoleView('ADMIN', true);
+    }
+    actuallySwitchAdminTab('DASHBOARD', false);
+    return;
+  }
+  if (rawPath === '/checkin') {
+    if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeAdminTab = 'CHECKIN';
+      window.switchRoleView('ADMIN', true);
+    }
+    actuallySwitchAdminTab('CHECKIN', false);
+    return;
+  }
+  if (rawPath === '/voting') {
+    if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeAdminTab = 'VOTING';
+      window.switchRoleView('ADMIN', true);
+    }
+    actuallySwitchAdminTab('VOTING', false);
+    return;
+  }
+  if (rawPath === '/queue') {
+    if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeAdminTab = 'QUEUE';
+      window.switchRoleView('ADMIN', true);
+    }
+    actuallySwitchAdminTab('QUEUE', false);
+    return;
+  }
+  if (rawPath === '/summary') {
+    if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeAdminTab = 'SUMMARY';
+      window.switchRoleView('ADMIN', true);
+    }
+    actuallySwitchAdminTab('SUMMARY', false);
+    return;
+  }
+  if (rawPath === '/members') {
+    if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeAdminTab = 'MEMBERS';
+      window.switchRoleView('ADMIN', true);
+    }
+    actuallySwitchAdminTab('MEMBERS', false);
+    return;
+  }
+  if (rawPath === '/database') {
+    if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeAdminTab = 'DATABASE';
+      window.switchRoleView('ADMIN', true);
+    }
+    actuallySwitchAdminTab('DATABASE', false);
+    return;
+  }
+
+  // Direct User Routes
+  if (rawPath === '/vote') {
+    if (window.currentRole === 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeUserTab = 'VOTE';
+      window.switchRoleView('USER', true);
+    }
+    actuallySwitchUserTab('VOTE', false, false);
+    return;
+  }
+  if (rawPath === '/raise') {
+    if (window.currentRole === 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeUserTab = 'RAISE';
+      window.switchRoleView('USER', true);
+    }
+    actuallySwitchUserTab('RAISE', false, false);
+    return;
+  }
+  if (rawPath === '/profile') {
+    if (window.currentRole === 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeUserTab = 'PROFILE';
+      window.switchRoleView('USER', true);
+    }
+    actuallySwitchUserTab('PROFILE', false, false);
+    return;
+  }
+  if (rawPath === '/home') {
+    if (window.currentRole === 'ADMIN' && typeof window.switchRoleView === 'function') {
+      window.activeUserTab = 'HOME';
+      window.switchRoleView('USER', true);
+    }
+    actuallySwitchUserTab('HOME', false, false);
+    return;
+  }
+
+  // Shared Routes (User Tool sub-tabs vs Admin Tabs)
+  if (rawPath === '/random') {
+    if (isAdmin) {
+      if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+        window.activeAdminTab = 'RANDOM';
+        window.switchRoleView('ADMIN', true);
+      }
+      actuallySwitchAdminTab('RANDOM', false);
+    } else {
+      if (window.activeUserTab !== 'HOME') actuallySwitchUserTab('HOME', true, false);
+      switchUserToolSubTab('RANDOM', false);
+    }
+    return;
+  }
+  if (rawPath === '/calendar') {
+    if (isAdmin) {
+      if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+        window.activeAdminTab = 'CALENDAR';
+        window.switchRoleView('ADMIN', true);
+      }
+      actuallySwitchAdminTab('CALENDAR', false);
+    } else {
+      if (window.activeUserTab !== 'HOME') actuallySwitchUserTab('HOME', true, false);
+      switchUserToolSubTab('CALENDAR', false);
+    }
+    return;
+  }
+  if (rawPath === '/projects') {
+    if (isAdmin) {
+      if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+        window.activeAdminTab = 'PROJECTS';
+        window.switchRoleView('ADMIN', true);
+      }
+      actuallySwitchAdminTab('PROJECTS', false);
+    } else {
+      if (window.activeUserTab !== 'HOME') actuallySwitchUserTab('HOME', true, false);
+      switchUserToolSubTab('PROJECTS', false);
+    }
+    return;
+  }
+  if (rawPath === '/files') {
+    if (isAdmin) {
+      if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+        window.activeAdminTab = 'FILES';
+        window.switchRoleView('ADMIN', true);
+      }
+      actuallySwitchAdminTab('FILES', false);
+    } else {
+      if (window.activeUserTab !== 'HOME') actuallySwitchUserTab('HOME', true, false);
+      switchUserToolSubTab('FILES', false);
+    }
+    return;
+  }
+  if (rawPath === '/stream') {
+    if (isAdmin) {
+      if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+        window.activeAdminTab = 'STREAM';
+        window.switchRoleView('ADMIN', true);
+      }
+      actuallySwitchAdminTab('STREAM', false);
+    } else {
+      if (window.activeUserTab !== 'HOME') actuallySwitchUserTab('HOME', true, false);
+      switchUserToolSubTab('STREAM', false);
+    }
+    return;
+  }
+  if (rawPath === '/notes') {
+    if (isAdmin) {
+      if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+        window.activeAdminTab = 'NOTES';
+        window.switchRoleView('ADMIN', true);
+      }
+      actuallySwitchAdminTab('NOTES', false);
+    } else {
+      if (window.activeUserTab !== 'HOME') actuallySwitchUserTab('HOME', true, false);
+      switchUserToolSubTab('NOTE', false);
+    }
+    return;
+  }
+  if (rawPath === '/seats') {
+    if (!isAdmin) {
+      if (window.activeUserTab !== 'HOME') actuallySwitchUserTab('HOME', true, false);
+      switchUserToolSubTab('SEATS', false);
+    }
+    return;
+  }
+  if (rawPath === '/chat') {
+    if (isAdmin) {
+      if (window.currentRole !== 'ADMIN' && typeof window.switchRoleView === 'function') {
+        window.activeAdminTab = 'CHAT';
+        window.switchRoleView('ADMIN', true);
+      }
+      actuallySwitchAdminTab('CHAT', false);
+    } else {
+      actuallySwitchUserTab('CHAT', false, false);
+    }
+    return;
+  }
+}
+
+window.addEventListener('popstate', () => {
+  handleCurrentRoute(false);
+});
 
 // Global ESC shortcut to exit chat on desktop
 document.addEventListener('keydown', (e) => {
@@ -1415,3 +1690,8 @@ window.openDatabaseUnlockModal = openDatabaseUnlockModal;
 window.closeDatabaseUnlockModal = closeDatabaseUnlockModal;
 window.handleDatabaseUnlock = handleDatabaseUnlock;
 window.lockDatabaseTab = lockDatabaseTab;
+window.handleCurrentRoute = handleCurrentRoute;
+window.updateBrowserUrl = updateBrowserUrl;
+window.ADMIN_TAB_TO_PATH = ADMIN_TAB_TO_PATH;
+window.USER_TAB_TO_PATH = USER_TAB_TO_PATH;
+window.USER_TOOL_TO_PATH = USER_TOOL_TO_PATH;

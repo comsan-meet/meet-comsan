@@ -10,8 +10,11 @@
       try {
         var aAuth = localStorage.getItem('comsan_admin_auth') === 'true';
         if (!aAuth) {
-          var targetSearch = window.location.search || '';
-          window.location.replace('/auth' + targetSearch);
+          var currentPath = window.location.pathname || '/';
+          var search = window.location.search || '';
+          var redirectTarget = (currentPath !== '/' && currentPath !== '/auth') ? (currentPath + search) : (search ? '/' + search : '');
+          var dest = '/auth' + (redirectTarget ? '?redirect=' + encodeURIComponent(redirectTarget) : '');
+          window.location.replace(dest);
         }
       } catch (e) {}
     })();

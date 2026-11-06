@@ -53,7 +53,7 @@
     if (checkin) {
       return `/?checkin=${encodeURIComponent(checkin)}`;
     }
-    if (redirect && redirect.startsWith('/') && redirect !== '/admin') {
+    if (redirect && redirect.startsWith('/') && redirect !== '/auth') {
       return redirect;
     }
     return '/';
