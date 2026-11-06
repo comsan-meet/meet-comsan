@@ -377,6 +377,9 @@ function startOfficialMeeting(e) {
   window.appState.raiseHandQueue = [];
   window.saveLocalState();
   window.socket.emit('admin:startMeeting', payload);
+  if (typeof window.persistFullStateToCloud === 'function') {
+    window.persistFullStateToCloud(true);
+  }
   if (typeof window.renderAll === 'function') window.renderAll();
   const isAct = currentMeetingFormat === 'ACTIVITY';
   showToast(isAct ? 'เปิดกิจกรรมชมรมเรียบร้อยแล้ว' : 'เปิดการประชุมเรียบร้อยแล้ว', 'success');
@@ -408,6 +411,9 @@ async function resetMeetingToNotStarted() {
   window.appState.raiseHandQueue = [];
   window.saveLocalState();
   window.socket.emit('admin:resetMeetingStatus');
+  if (typeof window.persistFullStateToCloud === 'function') {
+    window.persistFullStateToCloud(true);
+  }
   const toggleSwitch = document.getElementById('adminMeetingToggleSwitch');
   if (toggleSwitch) toggleSwitch.checked = false;
   if (typeof window.renderAll === 'function') window.renderAll();
@@ -502,6 +508,9 @@ async function endMeetingNow(skipConfirm = false) {
   window.appState.meeting.checkinToken = null;
 
   window.saveLocalState();
+  if (typeof window.persistFullStateToCloud === 'function') {
+    window.persistFullStateToCloud(true);
+  }
   if (typeof window.switchAdminTab === 'function') window.switchAdminTab('SUMMARY');
   if (typeof window.renderAll === 'function') window.renderAll();
   showToast(isAct ? 'จบกิจกรรมชมรมเรียบร้อยแล้ว และบันทึกประวัติสรุปผลสำเร็จ' : 'จบการประชุมเรียบร้อยแล้ว และบันทึกประวัติสรุปการประชุมสำเร็จ', 'info');
@@ -2096,9 +2105,15 @@ function renderSelectableCalendarEvents() {
     if (!evt || !evt.title) return false;
     
     // Filter by tab
-    if (filter === 'MEETING' && evt.category !== 'MEETING') return false;
-    if (filter === 'EVENT' && evt.category !== 'EVENT') return false;
-    if (filter === 'PROJECT' && !evt.isProjectEvent) return false;
+    if (filter === 'MEETING') {
+      const isMtg = evt.category === 'MEETING' || (evt.title || '').includes('ประชุม');
+      if (!isMtg) return false;
+    }
+    if (filter === 'EVENT') {
+      const isEvt = evt.category === 'EVENT' || evt.isProjectEvent || String(evt.category || '').startsWith('CAT_') || (evt.title || '').includes('กิจกรรม');
+      if (!isEvt) return false;
+    }
+    if (filter === 'PROJECT' && !evt.isProjectEvent && !evt.projectId) return false;
 
     // Filter by search query
     if (query) {
@@ -2129,7 +2144,7 @@ function renderSelectableCalendarEvents() {
 
   container.innerHTML = filtered.map(evt => {
     const isMeeting = evt.category === 'MEETING';
-    const isEvent = evt.category === 'EVENT';
+    const isEvent = evt.category === 'EVENT' || evt.isProjectEvent || String(evt.category || '').startsWith('CAT_');
     const catLabel = isEvent ? 'กิจกรรมชมรม' : (isMeeting ? 'การประชุม' : (evt.category || 'กำหนดการ'));
     const catBadgeClass = isEvent
       ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
@@ -2143,7 +2158,7 @@ function renderSelectableCalendarEvents() {
       ? `${evt.startTime} - ${evt.endTime || '19:00'} น.`
       : 'ตลอดทั้งวัน';
 
-    const safeId = String(evt.id).replace(/'/g, "\\'");
+    const safeId = encodeURIComponent(String(evt.id));
 
     return `
       <div class="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/50 transition shadow-2xs space-y-2 group">
@@ -2182,7 +2197,7 @@ function renderSelectableCalendarEvents() {
             ` : ''}
           </div>
 
-          <button type="button" onclick="applyCalendarEventToMeetingSetup('${safeId}')"
+          <button type="button" onclick="applyCalendarEventToMeetingSetup(decodeURIComponent('${safeId}'))"
             class="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-95 cursor-pointer self-end sm:self-center">
             <i data-lucide="check" class="w-3.5 h-3.5"></i>
             <span>เลือกใช้งาน</span>
@@ -2202,76 +2217,110 @@ function applyCalendarEventToMeetingSetup(eventId) {
     ? window.getAllCalendarEventsForMain()
     : ((window.appState && Array.isArray(window.appState.calendarEvents)) ? window.appState.calendarEvents : []);
 
-  const evt = events.find(e => e.id === eventId);
+  const evt = events.find(e => String(e.id) === String(eventId));
   if (!evt) {
     if (typeof showToast === 'function') showToast('ไม่พบข้อมูลรายการในปฏิทิน', 'error');
     return;
   }
 
-  // 1. Title
+  // 1. Determine format
+  const isEventCat = evt.category === 'EVENT' || evt.isProjectEvent || String(evt.category || '').startsWith('CAT_');
+  const hasActivityWord = (evt.title || '').toLowerCase().includes('กิจกรรม') || (evt.title || '').toLowerCase().includes('activity');
+  const isOnlineHint = (evt.title || '').toLowerCase().includes('online') ||
+    (evt.title || '').includes('ออนไลน์') ||
+    (evt.location && (evt.location.startsWith('http') || evt.location.toLowerCase().includes('meet.google') || evt.location.toLowerCase().includes('zoom')));
+
+  let targetFormat = 'ONSITE';
+  if (isEventCat || hasActivityWord || currentMeetingFormat === 'ACTIVITY') {
+    targetFormat = 'ACTIVITY';
+  } else if (isOnlineHint) {
+    targetFormat = 'ONLINE';
+  }
+
+  setMeetingFormat(targetFormat);
+
+  // 2. Title
   const titleInput = document.getElementById('cfgMeetingTitle');
   if (titleInput) titleInput.value = evt.title || '';
 
-  // 2. Dates
+  // 3. Dates
   const dateInput = document.getElementById('cfgMeetingDate');
   const endDateInput = document.getElementById('cfgMeetingEndDate');
   if (dateInput && evt.startDate) dateInput.value = evt.startDate;
   if (endDateInput) endDateInput.value = evt.endDate || evt.startDate || dateInput?.value || '';
 
-  // 3. Times
+  // 4. Times
   const startInput = document.getElementById('cfgStartTime');
   const endInput = document.getElementById('cfgEndTime');
   const lateInput = document.getElementById('cfgLateTime');
+  let calculatedLateTime = '17:15';
   if (startInput && evt.startTime && evt.startTime !== '00:00') {
     startInput.value = evt.startTime;
     // Calculate 15 mins late cutoff
     const parts = evt.startTime.split(':').map(Number);
-    if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1]) && lateInput) {
+    if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
       const total = parts[0] * 60 + parts[1] + 15;
       const lh = String(Math.floor(total / 60) % 24).padStart(2, '0');
       const lm = String(total % 60).padStart(2, '0');
-      lateInput.value = `${lh}:${lm}`;
+      calculatedLateTime = `${lh}:${lm}`;
+      if (lateInput) lateInput.value = calculatedLateTime;
     }
   }
   if (endInput && evt.endTime && evt.endTime !== '00:00') {
     endInput.value = evt.endTime;
   }
 
-  // 4. Determine format & locations
-  const isEventCat = evt.category === 'EVENT';
-  const hasActivityWord = (evt.title || '').toLowerCase().includes('กิจกรรม') || (evt.title || '').toLowerCase().includes('activity');
-  const isOnlineHint = (evt.title || '').toLowerCase().includes('online') ||
-    (evt.title || '').includes('ออนไลน์') ||
-    (evt.location && (evt.location.startsWith('http') || evt.location.toLowerCase().includes('meet.google') || evt.location.toLowerCase().includes('zoom')));
-
-  if (isEventCat || hasActivityWord) {
-    setMeetingFormat('ACTIVITY');
-  } else if (isOnlineHint) {
-    setMeetingFormat('ONLINE');
-  } else if (currentMeetingFormat !== 'ACTIVITY') {
-    setMeetingFormat('ONSITE');
-  }
-
-  // 5. Populate location inputs
+  // 5. Locations
   const locInput = document.getElementById('cfgMeetingLocation');
   const locDetailInput = document.getElementById('cfgMeetingLocationDetail');
   const onlineUrlInput = document.getElementById('cfgOnlineMeetingUrl');
   const onlineDetailInput = document.getElementById('cfgOnlineMeetingDetail');
 
+  let assignedLocation = '';
+  let assignedLocationDetail = '';
+
   if (evt.location) {
     if (evt.location.startsWith('http')) {
       if (onlineUrlInput) onlineUrlInput.value = evt.location;
       if (onlineDetailInput) onlineDetailInput.value = evt.description || '';
+      assignedLocation = evt.location;
+      assignedLocationDetail = evt.description || '';
     } else {
       if (locInput) locInput.value = evt.location;
-      if (locDetailInput) locDetailInput.value = (evt.description && evt.description !== evt.title) ? evt.description : evt.location;
+      assignedLocation = evt.location;
+      assignedLocationDetail = (evt.description && evt.description !== evt.title) ? evt.description : evt.location;
+      if (locDetailInput) locDetailInput.value = assignedLocationDetail;
     }
   } else if (evt.description) {
+    assignedLocationDetail = evt.description;
     if (locDetailInput && !locDetailInput.value) locDetailInput.value = evt.description;
     if (onlineDetailInput && !onlineDetailInput.value) onlineDetailInput.value = evt.description;
   }
 
+  // 6. CRITICAL: Persist to appState.meeting so renderAll() never wipes it out!
+  if (window.appState && window.appState.meeting) {
+    const m = window.appState.meeting;
+    m.title = evt.title || '';
+    m.date = evt.startDate || m.date || '';
+    m.endDate = evt.endDate || evt.startDate || m.date || '';
+    m.format = targetFormat;
+    if (evt.startTime && evt.startTime !== '00:00') {
+      m.startTime = evt.startTime;
+      m.lateTime = calculatedLateTime;
+    }
+    if (evt.endTime && evt.endTime !== '00:00') {
+      m.endTime = evt.endTime;
+    }
+    if (assignedLocation) m.location = assignedLocation;
+    if (assignedLocationDetail) m.locationDetail = assignedLocationDetail;
+    if (typeof window.saveLocalState === 'function') window.saveLocalState();
+  }
+
   closeSelectFromCalendarModal();
+
+  if (typeof window.renderAll === 'function') {
+    window.renderAll();
+  }
 
   if (typeof showToast === 'function') {
     showToast(`ดึงข้อมูล "${evt.title}" จากปฏิทินชมรมเรียบร้อยแล้ว`, 'success');

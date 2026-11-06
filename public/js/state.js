@@ -253,18 +253,26 @@ function mergeUsersAttendanceSafely(localUsers, incomingUsers, meeting) {
 function mergeMeetingHistorySafely(localHistory, incomingHistory) {
   const map = new Map();
   (incomingHistory || []).forEach(h => {
-    if (h && h.id) map.set(h.id, { ...h });
+    if (!h) return;
+    const key = h.id || (h.startedAtMs ? `MTG-${h.startedAtMs}` : (h.endedAtMs ? `MTG-${h.endedAtMs}` : null));
+    if (key) {
+      if (!h.id) h.id = key;
+      map.set(key, { ...h });
+    }
   });
   (localHistory || []).forEach(h => {
-    if (h && h.id) {
-      if (!map.has(h.id)) {
-        map.set(h.id, { ...h });
+    if (!h) return;
+    const key = h.id || (h.startedAtMs ? `MTG-${h.startedAtMs}` : (h.endedAtMs ? `MTG-${h.endedAtMs}` : null));
+    if (key) {
+      if (!h.id) h.id = key;
+      if (!map.has(key)) {
+        map.set(key, { ...h });
       } else {
-        const inc = map.get(h.id);
+        const inc = map.get(key);
         const incTime = Number(inc.endedAtMs || 0);
         const locTime = Number(h.endedAtMs || 0);
         if (locTime >= incTime) {
-          map.set(h.id, { ...inc, ...h });
+          map.set(key, { ...inc, ...h });
         }
       }
     }
@@ -292,6 +300,9 @@ function normalizeState(raw) {
 
   const rawMeeting = raw.meeting || {};
   const meeting = { ...defaultState.meeting, ...rawMeeting };
+  if (!rawMeeting.endDate && meeting.date) {
+    meeting.endDate = meeting.date;
+  }
 
   // If local and incoming have the same startedAtMs, and either was ended, it MUST remain ended!
   if (localMeeting && localMeeting.startedAtMs && meeting.startedAtMs && localMeeting.startedAtMs === meeting.startedAtMs) {
@@ -459,6 +470,7 @@ let appState = (function () {
   return normalizeState(defaultState);
 })();
 
+let _globalCloudSyncDebounceTimer = null;
 function saveLocalState() {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
@@ -470,6 +482,13 @@ function saveLocalState() {
       } else if (window.socket.engine && typeof window.socket.engine.syncStateToServer === 'function') {
         window.socket.engine.syncStateToServer('saveLocalState', appState);
       }
+    }
+    // Automatically debounce sync to Supabase Cloud for all devices
+    if (typeof window.persistFullStateToCloud === 'function' && !window._insidePersistCloud) {
+      if (_globalCloudSyncDebounceTimer) clearTimeout(_globalCloudSyncDebounceTimer);
+      _globalCloudSyncDebounceTimer = setTimeout(() => {
+        window.persistFullStateToCloud(false);
+      }, 600);
     }
   } catch (e) {}
 }

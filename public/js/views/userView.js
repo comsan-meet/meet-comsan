@@ -259,32 +259,8 @@ function logoutUser() {
   }
 
   if (typeof window.closeMobileSidebar === 'function') window.closeMobileSidebar();
-  const dashboard = document.getElementById('userDashboard');
-  const loginCard = document.getElementById('userLoginCard');
-  const authScreen = document.getElementById('authScreen');
-  const appLayout = document.getElementById('appLayout');
-
-  if (dashboard) dashboard.classList.add('hidden');
-  if (loginCard) loginCard.classList.remove('hidden');
-  if (authScreen) authScreen.classList.remove('hidden');
-  if (appLayout) {
-    appLayout.classList.add('hidden');
-    appLayout.classList.remove('flex');
-  }
-
-  const uInput = document.getElementById('userLoginName');
-  const pInput = document.getElementById('userLoginPass');
-  if (uInput) uInput.value = '';
-  if (pInput) pInput.value = '';
-
-  const qrBox = document.getElementById('userQrCodeBox');
-  if (qrBox) {
-    qrBox.innerHTML = '';
-    delete qrBox.dataset.renderedUser;
-  }
-
-  if (typeof window.updateSidebarVisibility === 'function') window.updateSidebarVisibility();
-  if (typeof window.renderAll === 'function') window.renderAll();
+  // Clean redirect to dedicated auth page
+  window.location.replace('/auth');
   showToast('ออกจากระบบเรียบร้อยแล้ว', 'info');
 }
 

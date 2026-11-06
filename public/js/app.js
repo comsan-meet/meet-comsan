@@ -60,7 +60,6 @@ function updateMeetingTimersAndBanners() {
   const uElapsed = document.getElementById('timerMeetingElapsed');
   const voteElapsed = document.getElementById('voteElapsedTimerText');
   const adminSetupBadge = document.getElementById('adminSetupStatusBadge');
-  const adminNotStartedBanner = document.getElementById('adminNotStartedBanner');
 
   const userBannerStatusPill = document.getElementById('userBannerStatusPill');
   const heroDot = document.getElementById('heroStatusDot');
@@ -75,11 +74,6 @@ function updateMeetingTimersAndBanners() {
   const raiseBannerIcon = document.getElementById('raiseTopBannerIcon');
   const raiseBannerStatusSub = document.getElementById('raiseBannerStatusSub');
   const raiseBannerCounterWrap = document.getElementById('raiseBannerCounterWrapper');
-
-  // Top Header Branding & Greeting (Desktop Main Header)
-  if (typeof window.updateDesktopHeader === 'function') {
-    window.updateDesktopHeader();
-  }
 
   const isMeetingActive = Boolean(m.isStarted && !m.isEnded);
   const currentFmt = (typeof window.currentMeetingFormat !== 'undefined' && !isMeetingActive)
@@ -98,7 +92,6 @@ function updateMeetingTimersAndBanners() {
     if (uElapsed) uElapsed.textContent = 'ยังไม่เริ่ม';
     if (voteElapsed) voteElapsed.textContent = 'ยังไม่เริ่ม';
     if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? 'ยังไม่เริ่มกิจกรรม' : 'ยังไม่เริ่มประชุม';
-    if (adminNotStartedBanner) adminNotStartedBanner.classList.remove('hidden');
     if (userBannerStatusPill) {
       if (lastHist) {
         userBannerStatusPill.textContent = isLastHistActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
@@ -134,7 +127,6 @@ function updateMeetingTimersAndBanners() {
     if (uElapsed) uElapsed.textContent = isEndedAct ? 'จบกิจกรรม' : 'จบการประชุม';
     if (voteElapsed) voteElapsed.textContent = isEndedAct ? 'จบกิจกรรม' : 'จบการประชุม';
     if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
-    if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
     if (userBannerStatusPill) {
       userBannerStatusPill.textContent = isEndedAct ? 'จบกิจกรรมแล้ว' : 'จบการประชุมแล้ว';
     }
@@ -171,7 +163,6 @@ function updateMeetingTimersAndBanners() {
       if (uElapsed) uElapsed.textContent = `รอเริ่ม (${startDisplayTime} น.)`;
       if (voteElapsed) voteElapsed.textContent = `รอเริ่ม (${startDisplayTime} น.)`;
       if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? `เปิดเช็คชื่อล่วงหน้า (เริ่ม ${startDisplayTime} น.)` : `เปิดห้องล่วงหน้า (เริ่ม ${startDisplayTime} น.)`;
-      if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
       if (userBannerStatusPill) userBannerStatusPill.textContent = isActivity ? `ยังไม่ถึงเวลากิจกรรม (เริ่ม ${startDisplayTime} น.)` : `ยังไม่ถึงเวลาประชุม (เริ่ม ${startDisplayTime} น.)`;
       if (heroDot) heroDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
       if (heroStatusWrapper) {
@@ -185,7 +176,6 @@ function updateMeetingTimersAndBanners() {
       if (uElapsed) uElapsed.textContent = `${elapsedMin} นาที`;
       if (voteElapsed) voteElapsed.textContent = `${elapsedMin} นาที`;
       if (adminSetupBadge) adminSetupBadge.textContent = isActivity ? 'กำลังดำเนินกิจกรรม' : 'กำลังดำเนินการประชุม';
-      if (adminNotStartedBanner) adminNotStartedBanner.classList.add('hidden');
       if (userBannerStatusPill) userBannerStatusPill.textContent = isActivity ? 'กำลังจัดกิจกรรม' : 'กำลังประชุม';
       if (heroDot) heroDot.className = isActivity ? 'w-2 h-2 rounded-full bg-amber-400 animate-ping' : 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
       if (heroStatusWrapper) {
@@ -716,7 +706,9 @@ function renderAll() {
     if (onlineDetailIn && document.activeElement !== onlineDetailIn) onlineDetailIn.value = m.locationDetail || '';
     const endDateIn = document.getElementById('cfgMeetingEndDate');
     if (dateIn && document.activeElement !== dateIn) dateIn.value = m.date || todayISO;
-    if (endDateIn && document.activeElement !== endDateIn) endDateIn.value = m.endDate || m.date || todayISO;
+    if (endDateIn && document.activeElement !== endDateIn) {
+      endDateIn.value = m.endDate || m.date || (dateIn ? dateIn.value : '') || todayISO;
+    }
     if (startIn && document.activeElement !== startIn) startIn.value = m.startTime || '17:00';
     if (lateIn && document.activeElement !== lateIn) lateIn.value = m.lateTime || '17:15';
     if (endIn && document.activeElement !== endIn) endIn.value = m.endTime || '19:00';
@@ -772,26 +764,49 @@ function renderAll() {
     });
     if (state.randomizer) state.randomizer.history = cleanHist;
 
+    const isAdmin = window.currentRole === 'ADMIN';
+    const aTab = window.activeAdminTab || 'DASHBOARD';
+    const uTab = window.activeUserTab || 'HOME';
+    const uSub = window.activeUserToolSubTab || 'FILES';
+
     const historyHTML = cleanHist.length > 0
       ? cleanHist.map((h, idx) => `<div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between"><span class="font-bold"><span class="text-indigo-600 mr-1">#${idx + 1}</span> ${h.winnerLabel}</span><span class="text-[11px] text-slate-400">${h.time}</span></div>`).join('')
       : `<p class="text-slate-400 text-center py-4">ยังไม่มีประวัติการสุ่มในรอบนี้</p>`;
     const adminRandList = document.getElementById('adminRandomHistoryList');
     const userRandList = document.getElementById('userRandomHistoryList');
-    if (adminRandList) adminRandList.innerHTML = historyHTML;
-    if (userRandList) userRandList.innerHTML = historyHTML;
+    if (adminRandList && (aTab === 'RANDOM' || aTab === 'DASHBOARD')) adminRandList.innerHTML = historyHTML;
+    if (userRandList && (uSub === 'RANDOM' || uTab === 'HOME')) userRandList.innerHTML = historyHTML;
 
-    // Component renders
-    if (typeof window.renderParliamentSeats === 'function') window.renderParliamentSeats();
-    if (typeof window.renderUserProfile === 'function') window.renderUserProfile();
+    // Component renders (Optimized: Scoped to active tabs only to avoid main-thread freeze)
+    if (typeof window.renderUserProfile === 'function' && !isAdmin && uTab === 'PROFILE') {
+      window.renderUserProfile();
+    }
     if (typeof window.renderFloatingChat === 'function') window.renderFloatingChat(false);
-    if (typeof window.renderAdminChatSection === 'function') window.renderAdminChatSection(false);
-    if (typeof window.renderFileDropSection === 'function') window.renderFileDropSection();
-    if (typeof window.renderStreamSection === 'function') window.renderStreamSection();
-    if (typeof window.renderSummarySection === 'function') window.renderSummarySection();
-    if (typeof window.updateRaiseHandUserUI === 'function') window.updateRaiseHandUserUI();
+    if (typeof window.renderAdminChatSection === 'function' && isAdmin && aTab === 'CHAT') {
+      window.renderAdminChatSection(false);
+    }
+    if (typeof window.renderParliamentSeats === 'function' && ((isAdmin && aTab === 'DASHBOARD') || (!isAdmin && uTab === 'HOME' && uSub === 'SEATS'))) {
+      window.renderParliamentSeats();
+    }
+    if (typeof window.renderFileDropSection === 'function' && ((isAdmin && aTab === 'FILES') || (!isAdmin && uTab === 'HOME' && uSub === 'FILES'))) {
+      window.renderFileDropSection();
+    }
+    if (typeof window.renderStreamSection === 'function' && ((isAdmin && aTab === 'STREAM') || (!isAdmin && uTab === 'HOME' && uSub === 'STREAM'))) {
+      window.renderStreamSection();
+    }
+    if (typeof window.renderSummarySection === 'function' && isAdmin && aTab === 'SUMMARY') {
+      window.renderSummarySection();
+    }
+    if (typeof window.updateRaiseHandUserUI === 'function' && !isAdmin && uTab === 'RAISE') {
+      window.updateRaiseHandUserUI();
+    }
     if (typeof window.checkOpenMotionsPopup === 'function') window.checkOpenMotionsPopup();
-    if (typeof window.renderAdminAnalyticsChart === 'function' && window.currentRole === 'ADMIN') window.renderAdminAnalyticsChart();
-    if (typeof window.renderTodayEventsBanner === 'function') window.renderTodayEventsBanner();
+    if (typeof window.renderAdminAnalyticsChart === 'function' && isAdmin && aTab === 'DASHBOARD') {
+      window.renderAdminAnalyticsChart();
+    }
+    if (typeof window.renderTodayEventsBanner === 'function' && !isAdmin && uTab === 'HOME') {
+      window.renderTodayEventsBanner();
+    }
 
     const isMeetingActiveForMotions = Boolean(m.isStarted && !m.isEnded);
     const motionMeetingWarn = document.getElementById('motionMeetingStatusWarning');
@@ -799,9 +814,9 @@ function renderAll() {
       motionMeetingWarn.classList.toggle('hidden', isMeetingActiveForMotions);
     }
 
-    // Admin motions list
+    // Admin motions list (Scoped to VOTING / DASHBOARD tab)
     const adminMotionsEl = document.getElementById('adminMotionsList');
-    if (adminMotionsEl) {
+    if (adminMotionsEl && (aTab === 'VOTING' || aTab === 'DASHBOARD')) {
       const rawMotions = state.motions || [];
       const sortedAdminMotions = [...rawMotions].sort((a, b) => {
         if (a.isOpen && !b.isOpen) return -1;
@@ -835,11 +850,11 @@ function renderAll() {
           }).join('');
     }
 
-    // Admin Raise Hand Queue List
+    // Admin Raise Hand Queue List (Scoped to QUEUE / DASHBOARD tab)
     const queueCountEl = document.getElementById('queueCount');
     const queueListEl = document.getElementById('raiseHandQueueList');
     if (queueCountEl) queueCountEl.textContent = (state.raiseHandQueue || []).length;
-    if (queueListEl) {
+    if (queueListEl && (aTab === 'QUEUE' || aTab === 'DASHBOARD')) {
       queueListEl.innerHTML = (state.raiseHandQueue || []).length === 0
         ? `<p class="text-xs text-muted-foreground text-center py-12"><i data-lucide="hand" class="w-8 h-8 mb-2 mx-auto text-muted-foreground/40 block"></i>ขณะนี้ยังไม่มีผู้ยกมือในคิว</p>`
         : (state.raiseHandQueue || []).map((q, i) => `
@@ -1652,6 +1667,17 @@ window.handleGoToStream = handleGoToStream;
 
 // App initialization
 window.addEventListener('DOMContentLoaded', () => {
+  // Support direct /admin route navigation
+  const currentPath = window.location.pathname;
+  if (currentPath === '/admin') {
+    if (window.isAdminAuthenticated) {
+      window.currentRole = 'ADMIN';
+    } else {
+      window.location.replace('/auth?redirect=/admin');
+      return;
+    }
+  }
+
   ensureDummyCheckinSpan();
   initTheme();
   setupSocketListeners();
@@ -1662,6 +1688,11 @@ window.addEventListener('DOMContentLoaded', () => {
     if (window.currentUserId && typeof window.renderUserQrCode === 'function') {
       window.renderUserQrCode(window.currentUserId);
     }
+  }
+
+  // Handle direct URL route (e.g. /setconference, /random, /calendar, /projects, etc.)
+  if (typeof window.handleCurrentRoute === 'function') {
+    window.handleCurrentRoute(true);
   }
   if (typeof window.updateSidebarVisibility === 'function') window.updateSidebarVisibility();
   if (typeof window.syncSidebarTopOffset === 'function') window.syncSidebarTopOffset();
@@ -1674,12 +1705,53 @@ window.addEventListener('DOMContentLoaded', () => {
   const dateInEl = document.getElementById('cfgMeetingDate');
   const endDateInEl = document.getElementById('cfgMeetingEndDate');
   if (dateInEl && endDateInEl) {
-    dateInEl.addEventListener('change', () => {
-      if (!endDateInEl.value || endDateInEl.value < dateInEl.value) {
+    let userHasManuallyChangedEndDate = false;
+
+    endDateInEl.addEventListener('input', () => {
+      userHasManuallyChangedEndDate = Boolean(endDateInEl.value && endDateInEl.value !== dateInEl.value);
+      if (dateInEl.value && endDateInEl.value && endDateInEl.value < dateInEl.value) {
         endDateInEl.value = dateInEl.value;
       }
+      if (window.appState && window.appState.meeting) {
+        window.appState.meeting.endDate = endDateInEl.value;
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+      }
     });
+
+    const syncStartDateToMeeting = () => {
+      const newStartDate = dateInEl.value;
+      // Default to same-day meeting unless user manually entered a valid later end date
+      if (!userHasManuallyChangedEndDate || !endDateInEl.value || endDateInEl.value < newStartDate) {
+        endDateInEl.value = newStartDate;
+      }
+      if (window.appState && window.appState.meeting) {
+        window.appState.meeting.date = newStartDate;
+        window.appState.meeting.endDate = endDateInEl.value;
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+      }
+    };
+
+    dateInEl.addEventListener('input', syncStartDateToMeeting);
+    dateInEl.addEventListener('change', syncStartDateToMeeting);
   }
+
+  // Auto-sync other meeting config form inputs into appState
+  ['cfgMeetingTitle', 'cfgMeetingLocation', 'cfgMeetingLocationDetail', 'cfgOnlineMeetingDetail', 'cfgStartTime', 'cfgLateTime', 'cfgEndTime'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        if (!window.appState || !window.appState.meeting) return;
+        const m = window.appState.meeting;
+        if (id === 'cfgMeetingTitle') m.title = el.value;
+        else if (id === 'cfgMeetingLocation') m.location = el.value;
+        else if (id === 'cfgMeetingLocationDetail' || id === 'cfgOnlineMeetingDetail') m.locationDetail = el.value;
+        else if (id === 'cfgStartTime') m.startTime = el.value;
+        else if (id === 'cfgLateTime') m.lateTime = el.value;
+        else if (id === 'cfgEndTime') m.endTime = el.value;
+        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+      });
+    }
+  });
 
   renderAll();
   setInterval(updateMeetingTimersAndBanners, 1000);
