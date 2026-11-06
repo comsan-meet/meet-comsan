@@ -130,8 +130,8 @@ function updateSidebarVisibility() {
   const isUserLogged = Boolean(window.isUserAuthenticated) && Boolean(window.currentUserId);
   const isAuthenticated = isAdminLogged || isUserLogged;
 
-  // 1. Not authenticated -> redirect to dedicated /auth page
-  if (!isAuthenticated) {
+  // 1. Maintenance Mode: Only Admin is permitted to enter
+  if (!isAdminLogged) {
     const searchParams = window.location.search || '';
     window.location.replace('/auth' + searchParams);
     return;

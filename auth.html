@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>เข้าสู่ระบบ - Meeting by Comsan</title>
-  <meta name="description" content="ระบบจัดการการประชุมและการลงมติแบบเรียลไทม์ ชมรมสันทนาการ comsan-choice.vercel.app" />
+  <title>ระบบกำลังปรับปรุงชั่วคราว (Admin Only) - Meeting by Comsan</title>
+  <meta name="description" content="ระบบจัดการการประชุมและการลงมติแบบเรียลไทม์ ชมรมสันทนาการ - ขณะนี้อยู่ระหว่างการปรับปรุงระบบชั่วคราว" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="alternate icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-  <!-- Google Fonts: Poppins & Prompt matching Comsan Choice -->
+  <!-- Google Fonts: Poppins & Prompt -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
@@ -21,7 +21,7 @@
   <!-- Lucide Icons -->
   <script src="js/lucide.min.js"></script>
 
-  <!-- Tailwind CSS & Comsan Choice Unified Config -->
+  <!-- Tailwind CSS Config -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     if (typeof tailwind !== 'undefined') {
@@ -69,7 +69,6 @@
   </script>
 
   <style>
-    /* Immediate theme check before paint to eliminate flash */
     html { transition: background-color 0.2s ease, color 0.2s ease; }
   </style>
   <script>
@@ -84,170 +83,191 @@
   </script>
 </head>
 
-<body class="bg-slate-50 dark:bg-slate-950 text-foreground min-h-screen flex flex-col justify-between p-4 selection:bg-indigo-500/20 selection:text-indigo-600 relative overflow-x-hidden antialiased">
+<body class="bg-slate-50 dark:bg-slate-950 text-foreground min-h-screen flex flex-col justify-between p-4 selection:bg-amber-500/20 selection:text-amber-600 relative overflow-x-hidden antialiased">
   
-  <!-- Ambient decorative backdrop glows (Exact Choice Style) -->
-  <div class="absolute -top-32 -right-32 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-  <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+  <!-- Ambient backdrop glows -->
+  <div class="absolute -top-32 -right-32 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-  <!-- Top Floating Controls: Brand badge & Theme Switcher -->
+  <!-- Top Floating Controls -->
   <header class="w-full max-w-5xl mx-auto flex items-center justify-between py-2 relative z-20">
-    <a href="/" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800 backdrop-blur-md text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition shadow-2xs">
+    <a href="/auth" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 backdrop-blur-md text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition shadow-2xs">
       <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NjAgOTYwIiB3aWR0aD0iOTYwIiBoZWlnaHQ9Ijk2MCI+CiAgPCEtLSBPdXRlciBSb3VuZGVkIFNxdWlyY2xlIEZyYW1lIC0tPgogIDxyZWN0IHdpZHRoPSI5NjAiIGhlaWdodD0iOTYwIiByeD0iMjIwIiByeT0iMjIwIiBmaWxsPSIjNjk2MWZiIi8+CiAgPCEtLSBJbm5lciBXaGl0ZSBTcXVpcmNsZSBDYXJkIC0tPgogIDxyZWN0IHg9Ijc4IiB5PSI3OCIgd2lkdGg9IjgwNCIgaGVpZ2h0PSI4MDQiIHJ4PSIxNTAiIHJ5PSIxNTAiIGZpbGw9IiNmZmZmZmYiLz4KICAKICA8IS0tIFRlYWwgRmlndXJlcyAoIzBmZDhiZSkgLS0+CiAgPGcgZmlsbD0iIzBmZDhiZSI+CiAgICA8IS0tIENlbnRlciBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjQ4MCIgY3k9IjM2MiIgcj0iODciIC8+CiAgICA8IS0tIExlZnQgUGVyc29uIEhlYWQgLS0+CiAgICA8Y2lyY2xlIGN4PSIyNDYiIGN5PSI0MzUiIHI9Ijg3IiAvPgogICAgPCEtLSBSaWdodCBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjcxNCIgY3k9IjQzNSIgcj0iODciIC8+CiAgICAKICAgIDwhLS0gQ2VudGVyIFBlcnNvbiBCb2R5IChDbG9zZWQgYXJjaCB3aXRoIGJvdHRvbSBiYXIpIC0tPgogICAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNIDM1MCA3MTAgViA1ODIgQyAzNTAgNTEwIDQwOCA0NjcgNDgwIDQ2NyBDIDU1MiA0NjcgNjEwIDUxMCA2MTAgNTgyIFYgNzEwIEggMzUwIFogTSAzODcgNjc0IEggNTczIFYgNTgyIEMgNTczIDUzMSA1MzEgNTAzIDQ4MCA1MDMgQyA0MjkgNTAzIDM4NyA1MzEgMzg3IDU4MiBWIDY3NCBaIiAvPgogIDwvZz4KICAKICA8IS0tIExlZnQgYW5kIFJpZ2h0IFNob3VsZGVycyAtLT4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwZmQ4YmUiIHN0cm9rZS13aWR0aD0iMzciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNIDE1NiA3MTAgViA2NTAgQyAxNTYgNjEyIDE5NSA1ODIgMzI4IDU4MiIgLz4KICAgIDxwYXRoIGQ9Ik0gODA0IDcxMCBWIDY1MCBDIDgwNCA2MTIgNzY1IDU4MiA2MzIgNTgyIiAvPgogIDwvZz4KPC9zdmc+" alt="Meeting Logo" class="w-4 h-4 object-contain" />
       <span>Meeting by Comsan</span>
-      <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-[#4338ca] dark:text-indigo-400 font-bold ml-1">v2.0</span>
+      <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold ml-1">Maintenance</span>
     </a>
 
-    <button type="button" onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white/70 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800 backdrop-blur-md text-slate-600 dark:text-slate-300 hover:text-foreground flex items-center justify-center transition shadow-2xs cursor-pointer" title="เปลี่ยนโหมดสี">
+    <button type="button" onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 backdrop-blur-md text-slate-600 dark:text-slate-300 hover:text-foreground flex items-center justify-center transition shadow-2xs cursor-pointer" title="เปลี่ยนโหมดสี">
       <i id="themeSunIcon" data-lucide="sun" class="w-4 h-4 hidden"></i>
       <i id="themeMoonIcon" data-lucide="moon" class="w-4 h-4"></i>
     </button>
   </header>
 
-  <!-- Main Login Container (Matching comsan-choice.vercel.app/auth) -->
-  <main class="w-full max-w-[420px] mx-auto relative z-10 my-auto py-6">
-    <!-- Centered Meeting Brand Header -->
-    <div class="text-center mb-6 flex flex-col items-center">
-      <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center mb-3 shadow-md shadow-indigo-500/5">
+  <!-- Main Maintenance Card Container -->
+  <main class="w-full max-w-[460px] mx-auto relative z-10 my-auto py-4 sm:py-6">
+    <!-- Centered Brand & Notice Badge -->
+    <div class="text-center mb-5 flex flex-col items-center">
+      <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center mb-3 shadow-md shadow-amber-500/10">
         <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NjAgOTYwIiB3aWR0aD0iOTYwIiBoZWlnaHQ9Ijk2MCI+CiAgPCEtLSBPdXRlciBSb3VuZGVkIFNxdWlyY2xlIEZyYW1lIC0tPgogIDxyZWN0IHdpZHRoPSI5NjAiIGhlaWdodD0iOTYwIiByeD0iMjIwIiByeT0iMjIwIiBmaWxsPSIjNjk2MWZiIi8+CiAgPCEtLSBJbm5lciBXaGl0ZSBTcXVpcmNsZSBDYXJkIC0tPgogIDxyZWN0IHg9Ijc4IiB5PSI3OCIgd2lkdGg9IjgwNCIgaGVpZ2h0PSI4MDQiIHJ4PSIxNTAiIHJ5PSIxNTAiIGZpbGw9IiNmZmZmZmYiLz4KICAKICA8IS0tIFRlYWwgRmlndXJlcyAoIzBmZDhiZSkgLS0+CiAgPGcgZmlsbD0iIzBmZDhiZSI+CiAgICA8IS0tIENlbnRlciBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjQ4MCIgY3k9IjM2MiIgcj0iODciIC8+CiAgICA8IS0tIExlZnQgUGVyc29uIEhlYWQgLS0+CiAgICA8Y2lyY2xlIGN4PSIyNDYiIGN5PSI0MzUiIHI9Ijg3IiAvPgogICAgPCEtLSBSaWdodCBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjcxNCIgY3k9IjQzNSIgcj0iODciIC8+CiAgICAKICAgIDwhLS0gQ2VudGVyIFBlcnNvbiBCb2R5IChDbG9zZWQgYXJjaCB3aXRoIGJvdHRvbSBiYXIpIC0tPgogICAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNIDM1MCA3MTAgViA1ODIgQyAzNTAgNTEwIDQwOCA0NjcgNDgwIDQ2NyBDIDU1MiA0NjcgNjEwIDUxMCA2MTAgNTgyIFYgNzEwIEggMzUwIFogTSAzODcgNjc0IEggNTczIFYgNTgyIEMgNTczIDUzMSA1MzEgNTAzIDQ4MCA1MDMgQyA0MjkgNTAzIDM4NyA1MzEgMzg3IDU4MiBWIDY3NCBaIiAvPgogIDwvZz4KICAKICA8IS0tIExlZnQgYW5kIFJpZ2h0IFNob3VsZGVycyAtLT4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwZmQ4YmUiIHN0cm9rZS13aWR0aD0iMzciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNIDE1NiA3MTAgViA2NTAgQyAxNTYgNjEyIDE5NSA1ODIgMzI4IDU4MiIgLz4KICAgIDxwYXRoIGQ9Ik0gODA0IDcxMCBWIDY1MCBDIDgwNCA2MTIgNzY1IDU4MiA2MzIgNTgyIiAvPgogIDwvZz4KPC9zdmc+" alt="Meeting Logo" class="w-10 h-10 object-contain" />
       </div>
-      <h1 class="text-3xl sm:text-4xl font-extrabold font-poppins tracking-tight text-slate-900 dark:text-white">Meeting</h1>
-      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">ยินดีต้อนรับกลับสู่ Meeting</p>
-    </div>
 
-    <!-- Auth Card (Exact Choice Card Layout) -->
-    <div id="userLoginCard" class="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-card-foreground shadow-xl shadow-slate-200/50 dark:shadow-none p-6 sm:p-8 backdrop-blur-md transition-all">
-      <div class="mb-5 space-y-1">
-        <h3 class="text-xl sm:text-2xl font-bold leading-tight text-slate-900 dark:text-white">เข้าสู่ระบบบัญชีของคุณ</h3>
-        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">กรอกข้อมูลเพื่อเข้าสู่ระบบ</p>
+      <!-- Pulsing Maintenance Status Pill -->
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold mb-2 shadow-2xs">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+        </span>
+        <span>ระบบกำลังปรับปรุงชั่วคราว</span>
       </div>
 
-      <form onsubmit="handleUserLogin(event)" class="space-y-4">
-        <!-- Username input -->
-        <div class="space-y-1.5">
-          <label class="block text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200" for="userLoginName">
-            ชื่อผู้ใช้งาน
-          </label>
-          <div class="relative flex items-center">
-            <i data-lucide="user" class="absolute left-3.5 text-muted-foreground w-4 h-4 pointer-events-none"></i>
-            <input type="text" id="userLoginName" placeholder="เช่น บอม, พลอย, ฟีฟ่า" required autocomplete="username"
-              class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#4338ca] transition shadow-2xs font-medium" />
+      <h1 class="text-2xl sm:text-3xl font-extrabold font-poppins text-slate-900 dark:text-white tracking-tight">Meeting by Comsan</h1>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+        ขออภัยในความไม่สะดวก เว็บไซต์อยู่ระหว่างการปรับปรุงและอัปเกรดประสิทธิภาพ
+      </p>
+    </div>
+
+    <!-- The Maintenance Notice Card & Admin Form -->
+    <div class="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-card-foreground shadow-2xl shadow-amber-500/5 p-6 sm:p-7 backdrop-blur-md space-y-4">
+      
+      <!-- Prominent Admin-Only Alert Banner -->
+      <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs leading-relaxed space-y-1">
+        <div class="flex items-center gap-1.5 font-bold text-sm text-amber-900 dark:text-amber-200">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-amber-500 shrink-0"></i>
+          <span>เปิดให้เฉพาะผู้ดูแลระบบ (ADMIN) เข้าใช้งาน</span>
+        </div>
+        <p class="text-[11px] text-amber-800/90 dark:text-amber-300/90">
+          ขณะนี้ระบบปิดรับการเข้าสู่ระบบสำหรับสมาชิกทั่วไปชั่วคราว หากต้องการเข้าใช้งาน กรุณาเข้าสู่ระบบด้วยสิทธิ์ผู้ดำเนินการ (ADMIN) เท่านั้น
+        </p>
+      </div>
+
+      <!-- Mode 1: Quick Admin Passcode Form -->
+      <div id="adminPasscodeMode">
+        <form onsubmit="handleDirectAdminLogin(event)" class="space-y-4">
+          <div class="space-y-1.5">
+            <label class="block text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200" for="adminDirectPass">
+              รหัสผ่านผู้ดูแลระบบ (ADMIN Passcode)
+            </label>
+            <div class="relative flex items-center">
+              <i data-lucide="key" class="absolute left-3.5 text-amber-500 w-4 h-4 pointer-events-none"></i>
+              <input type="password" id="adminDirectPass" placeholder="กรอกรหัสผ่านผู้ดูแลระบบ..." required autocomplete="current-password" autofocus
+                class="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition shadow-2xs font-medium" />
+              <button type="button" onclick="togglePasswordVisibility('adminDirectPass', this)" class="absolute right-3 text-muted-foreground hover:text-foreground transition cursor-pointer p-1">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <p class="text-[10px] text-muted-foreground">ใช้รหัสผ่านควบคุมการประชุมสำหรับ Admin</p>
           </div>
-        </div>
 
-        <!-- Password input -->
-        <div class="space-y-1.5">
-          <label class="block text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200" for="userLoginPass">
-            รหัสผ่าน
-          </label>
-          <div class="relative flex items-center">
-            <i data-lucide="lock" class="absolute left-3.5 text-muted-foreground w-4 h-4 pointer-events-none"></i>
-            <input type="password" id="userLoginPass" placeholder="••••••••" autocomplete="current-password"
-              class="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#4338ca] transition shadow-2xs font-medium" />
-            <button type="button" onclick="togglePasswordVisibility('userLoginPass', this)" class="absolute right-3 text-muted-foreground hover:text-foreground transition cursor-pointer p-1">
-              <i data-lucide="eye" class="w-4 h-4"></i>
-            </button>
+          <!-- Error Alert -->
+          <div id="adminDirectLoginError" class="text-xs text-rose-600 dark:text-rose-400 hidden font-medium flex items-center gap-1.5 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+            <span id="adminDirectLoginErrorText">รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง</span>
           </div>
-        </div>
 
-        <!-- Error alert message -->
-        <div id="userLoginError" class="text-xs text-rose-600 dark:text-rose-400 hidden font-medium flex items-center gap-1.5 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 mt-1">
-          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
-          <span id="userLoginErrorText">ไม่พบชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง!</span>
-        </div>
+          <!-- Submit Button -->
+          <button type="submit" id="btnAdminDirectSubmit" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm shadow-md transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>เข้าสู่ระบบผู้ดำเนินการ (ADMIN)</span>
+          </button>
+        </form>
 
-        <!-- Submit Button -->
-        <button type="submit" id="btnLoginSubmit" class="w-full py-3.5 px-4 rounded-xl bg-[#4338ca] hover:bg-[#3730a3] text-white font-bold text-sm shadow-md transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2 mt-2">
-          <span>เข้าสู่ระบบ</span>
-        </button>
-
-        <!-- Forgot Password Link -->
-        <div class="pt-1 text-center">
-          <button type="button" onclick="showLoginHelpModal()" class="text-xs sm:text-sm text-[#4338ca] dark:text-indigo-400 hover:underline font-semibold cursor-pointer">
-            ลืมรหัสผ่าน?
+        <div class="pt-2 text-center">
+          <button type="button" onclick="toggleAdminLoginMode('EMAIL')" class="text-xs text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition font-medium cursor-pointer">
+            หรือเข้าสู่ระบบด้วยอีเมลองค์กร (comsan.meet@gmail.com)
           </button>
         </div>
-      </form>
+      </div>
 
-      <!-- Admin Access Toggle Section -->
-      <div class="mt-5 pt-4 border-t border-slate-200/80 dark:border-slate-800 text-center">
-        <button type="button" onclick="requestAdminAccess()" class="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-muted-foreground hover:text-foreground transition cursor-pointer flex items-center justify-center gap-2">
-          <i data-lucide="shield" class="w-3.5 h-3.5 text-[#4338ca] dark:text-indigo-400"></i>
-          <span>ผู้ดูแลระบบ? เข้าสู่ระบบผู้ดำเนินการ (ADMIN)</span>
+      <!-- Mode 2: Full Email Admin Login Form (Hidden by default) -->
+      <div id="adminEmailMode" class="hidden">
+        <form onsubmit="handleOrgAdminLogin(event)" class="space-y-3.5">
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200" for="orgAdminName">
+              ชื่อผู้ใช้งาน หรือ อีเมลแอดมิน
+            </label>
+            <div class="relative flex items-center">
+              <i data-lucide="mail" class="absolute left-3.5 text-muted-foreground w-4 h-4 pointer-events-none"></i>
+              <input type="text" id="orgAdminName" placeholder="comsan.meet@gmail.com หรือ admin" autocomplete="username"
+                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition" />
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200" for="orgAdminPass">
+              รหัสผ่าน
+            </label>
+            <div class="relative flex items-center">
+              <i data-lucide="lock" class="absolute left-3.5 text-muted-foreground w-4 h-4 pointer-events-none"></i>
+              <input type="password" id="orgAdminPass" placeholder="••••••••" autocomplete="current-password"
+                class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition" />
+              <button type="button" onclick="togglePasswordVisibility('orgAdminPass', this)" class="absolute right-3 text-muted-foreground hover:text-foreground transition cursor-pointer p-1">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="btnOrgAdminSubmit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm shadow-md transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span>เข้าสู่ระบบด้วยบัญชีองค์กร</span>
+          </button>
+        </form>
+
+        <div class="pt-2 text-center">
+          <button type="button" onclick="toggleAdminLoginMode('PASSCODE')" class="text-xs text-amber-600 dark:text-amber-400 hover:underline transition font-semibold cursor-pointer">
+            ← กลับไปใช้รหัสผ่านด่วน (Passcode)
+          </button>
+        </div>
+      </div>
+
+      <!-- Member Locked Information Box -->
+      <div class="p-3.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-400 space-y-1 select-none">
+        <div class="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+          <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-500"></i>
+          <span>สำหรับสมาชิกชมรมทั่วไป:</span>
+        </div>
+        <p class="text-[11px] leading-relaxed">
+          ระบบปิดการเข้าใช้งานสำหรับสมาชิกชั่วคราวเพื่ออัปเกรดโครงสร้างเว็บไซต์และเพิ่มความเร็ว จะเปิดให้เข้าใช้งานตามปกติทันทีหลังการปรับปรุงเสร็จสิ้น
+        </p>
+      </div>
+
+      <div class="pt-1 text-center">
+        <button type="button" onclick="showLoginHelpModal()" class="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:underline cursor-pointer">
+          ต้องการความช่วยเหลือ หรือพบปัญหา?
         </button>
       </div>
     </div>
   </main>
 
-  <!-- Auth Footer (Comsan Choice Exact match) -->
-  <footer class="w-full text-center text-xs text-slate-500 dark:text-slate-400 py-4 space-y-1.5 relative z-20">
-    <p>หากพบปัญหาในการเข้าใช้งาน ติดต่อที่ <a href="mailto:comsan.meet@gmail.com" class="text-[#4338ca] dark:text-indigo-400 font-semibold hover:underline">comsan.meet@gmail.com</a></p>
+  <!-- Footer -->
+  <footer class="w-full text-center text-xs text-slate-500 dark:text-slate-400 py-3 space-y-1 relative z-20">
+    <p>ติดต่อสอบถามฝ่ายเทคนิคได้ที่ <a href="mailto:comsan.meet@gmail.com" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline">comsan.meet@gmail.com</a></p>
     <p class="opacity-70">© 2026 Meeting by Comsan. สงวนลิขสิทธิ์</p>
   </footer>
 
-  <!-- ========================================================= -->
-  <!-- MODAL: ADMIN LOGIN MODAL                                  -->
-  <!-- ========================================================= -->
-  <div id="adminLoginModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden items-center justify-center z-[200] p-4">
-    <div class="bg-card border border-border rounded-3xl max-w-md w-full p-6 shadow-2xl text-card-foreground animate-fadeIn">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-          <i data-lucide="shield-check" class="text-amber-500 w-5 h-5"></i>
-          <span>เข้าใช้งานระบบผู้ดูแล (ADMIN)</span>
-        </h3>
-        <button type="button" onclick="closeAdminModal()" class="w-8 h-8 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground flex items-center justify-center transition cursor-pointer">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-      <p class="text-xs text-muted-foreground mb-4">กรุณากรอกรหัสผ่านผู้ดูแลระบบเพื่อเข้าสู่โหมดควบคุมการประชุม</p>
-      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-foreground mb-1.5">รหัสผ่านผู้ดูแลระบบ</label>
-          <div class="relative flex items-center">
-            <input type="password" id="adminPassInput" placeholder="กรอกรหัสผ่านผู้ดูแลระบบ" required autocomplete="current-password"
-              class="w-full h-11 pl-4 pr-10 rounded-xl bg-background border border-input text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#4338ca] transition" />
-            <button type="button" onclick="togglePasswordVisibility('adminPassInput', this)" class="absolute right-3 text-muted-foreground hover:text-foreground transition cursor-pointer p-1">
-              <i data-lucide="eye" class="w-4 h-4"></i>
-            </button>
-          </div>
-          <p id="adminLoginError" class="text-xs text-rose-500 mt-1.5 hidden font-medium">รหัสผ่านไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง</p>
-        </div>
-        <button type="submit" class="w-full h-11 bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-slate-950 font-bold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center gap-2">
-          <i data-lucide="log-in" class="w-4 h-4 text-slate-900"></i>
-          <span>เข้าสู่ระบบผู้ดำเนินการ (ADMIN)</span>
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- ========================================================= -->
-  <!-- MODAL: LOGIN HELP MODAL                                   -->
-  <!-- ========================================================= -->
+  <!-- Modal Help -->
   <div id="loginHelpModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs items-center justify-center p-4">
     <div class="w-full max-w-sm bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-4 animate-fadeIn">
       <div class="flex items-center justify-between">
         <h4 class="font-bold text-base text-foreground flex items-center gap-2">
-          <i data-lucide="help-circle" class="w-5 h-5 text-[#4338ca] dark:text-indigo-400"></i>
-          <span>ช่วยเหลือการเข้าสู่ระบบ</span>
+          <i data-lucide="help-circle" class="w-5 h-5 text-amber-500"></i>
+          <span>แจ้งเตือนสถานะระบบ</span>
         </h4>
         <button type="button" onclick="closeLoginHelpModal()" class="w-8 h-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
       <div class="space-y-3 text-xs text-muted-foreground leading-relaxed">
-        <div class="p-3 rounded-xl bg-muted/50 border border-border/60">
-          <p class="font-semibold text-foreground mb-1">สำหรับสมาชิกชมรม:</p>
-          <p>กรอกชื่อเล่น เช่น <span class="font-bold text-[#4338ca] dark:text-indigo-400">บอม, พลอย, ฟีฟ่า, แมทธิว, เจมส์</span> หรือรหัสนักศึกษา</p>
-          <p class="mt-0.5">รหัสผ่าน: <span class="text-muted-foreground font-medium">ใช้รหัสผ่านประจำตัว หรือรหัสนักศึกษา</span></p>
+        <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200">
+          <p class="font-bold mb-1">ขณะนี้ระบบกำลังปรับปรุงชั่วคราว:</p>
+          <p>สมาชิกทั่วไปจะไม่สามารถเข้าสู่ระบบได้ในช่วงเวลานี้ เพื่อให้ทีมงานพัฒนาโครงสร้างความเร็วและปรับปรุงระบบ</p>
         </div>
-        <div class="p-3 rounded-xl bg-muted/50 border border-border/60">
+        <div class="p-3 rounded-xl bg-muted/60 border border-border/60">
           <p class="font-semibold text-foreground mb-1">สำหรับผู้ดูแลระบบ (Admin):</p>
-          <p>กรอกอีเมล <span class="font-mono font-semibold text-foreground">comsan.meet@gmail.com</span> หรือชื่อ <span class="font-mono font-semibold text-foreground">admin</span></p>
-          <p class="mt-0.5">หรือกดปุ่ม "ผู้ดูแลระบบ? เข้าสู่ระบบผู้ดำเนินการ" ด้านล่าง</p>
+          <p>ใช้รหัสผ่านผู้ดูแลระบบ (Passcode) ที่ได้รับมอบหมายเพื่อเข้าสู่ระบบควบคุม</p>
         </div>
-        <p>หากยังพบปัญหา ติดต่อฝ่ายสนับสนุนได้ที่ <a href="mailto:comsan.meet@gmail.com" class="text-[#4338ca] dark:text-indigo-400 font-semibold hover:underline">comsan.meet@gmail.com</a></p>
+        <p>หากมีข้อสงสัยเร่งด่วน ติดต่อได้ที่ <a href="mailto:comsan.meet@gmail.com" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline">comsan.meet@gmail.com</a></p>
       </div>
-      <button type="button" onclick="closeLoginHelpModal()" class="w-full py-2.5 rounded-xl bg-[#4338ca] hover:bg-[#3730a3] text-white font-semibold text-xs shadow-xs cursor-pointer">
+      <button type="button" onclick="closeLoginHelpModal()" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs cursor-pointer">
         เข้าใจแล้ว
       </button>
     </div>
@@ -255,9 +275,9 @@
 
   <!-- Lightweight Scripts for Auth -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabaseConfig.js?v=20261106_01"></script>
-  <script src="js/defaultProjects.js?v=20261106_01"></script>
-  <script src="js/state.js?v=20261106_01"></script>
-  <script src="js/auth.js?v=20261106_01"></script>
+  <script src="js/supabaseConfig.js?v=20261106_02"></script>
+  <script src="js/defaultProjects.js?v=20261106_02"></script>
+  <script src="js/state.js?v=20261106_02"></script>
+  <script src="js/auth.js?v=20261106_02"></script>
 </body>
 </html>

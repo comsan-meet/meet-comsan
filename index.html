@@ -4,13 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Meeting by Comsan</title>
-  <!-- Instant Authentication Guard: Redirects unauthenticated visitors to /auth immediately -->
+  <!-- Maintenance Guard: Only ADMIN can access during maintenance -->
   <script>
     (function() {
       try {
-        var uAuth = localStorage.getItem('comsan_user_auth') === 'true' && localStorage.getItem('comsan_user_id');
         var aAuth = localStorage.getItem('comsan_admin_auth') === 'true';
-        if (!uAuth && !aAuth) {
+        if (!aAuth) {
           var targetSearch = window.location.search || '';
           window.location.replace('/auth' + targetSearch);
         }
