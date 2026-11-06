@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>เข้าสู่ระบบผู้ดูแลระบบ - Meeting by Comsan</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <script>
+    (function() {
+      try {
+        localStorage.setItem('comsan_role', 'ADMIN');
+      } catch (e) {}
+      var search = window.location.search || '';
+      var hash = window.location.hash || '';
+      window.location.replace('/' + search + hash);
+    })();
+  </script>
+</head>
+<body style="margin:0; background:#020617; color:#fff; display:flex; align-items:center; justify-content:center; height:100vh; font-family:'Prompt', sans-serif;">
+  <div style="text-align:center;">
+    <p style="font-size:14px; opacity:0.8;">กำลังเปิดหน้าผู้ดูแลระบบ (ADMIN)...</p>
+  </div>
+</body>
+</html>

@@ -53,10 +53,10 @@
     if (checkin) {
       return `/?checkin=${encodeURIComponent(checkin)}`;
     }
-    if (redirect && redirect.startsWith('/')) {
+    if (redirect && redirect.startsWith('/') && redirect !== '/admin') {
       return redirect;
     }
-    return '/admin';
+    return '/';
   }
 
   // --- Guard: Check if already authenticated as ADMIN ---

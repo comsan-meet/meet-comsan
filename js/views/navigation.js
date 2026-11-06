@@ -943,9 +943,8 @@ function switchRoleView(role, force) {
   }
   try {
     if (typeof window.history !== 'undefined' && window.history.replaceState) {
-      const targetPath = role === 'ADMIN' ? '/admin' : '/';
-      if (window.location.pathname !== targetPath) {
-        window.history.replaceState(null, '', targetPath + (window.location.search || '') + (window.location.hash || ''));
+      if (window.location.pathname === '/admin') {
+        window.history.replaceState(null, '', '/' + (window.location.search || '') + (window.location.hash || ''));
       }
     }
   } catch (e) {}
