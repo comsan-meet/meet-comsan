@@ -83,41 +83,18 @@
   </script>
 </head>
 
-<body class="bg-slate-50 dark:bg-slate-950 text-foreground min-h-screen flex flex-col justify-between p-4 selection:bg-amber-500/20 selection:text-amber-600 relative overflow-x-hidden antialiased">
+<body class="bg-slate-50 dark:bg-slate-950 text-foreground min-h-screen flex flex-col justify-center items-center p-4 selection:bg-amber-500/20 selection:text-amber-600 relative overflow-x-hidden antialiased">
   
   <!-- Ambient backdrop glows -->
   <div class="absolute -top-32 -right-32 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
   <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-  <!-- Top Floating Controls -->
-  <header class="w-full max-w-5xl mx-auto flex items-center justify-between py-2 relative z-20">
-    <a href="/auth" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 backdrop-blur-md text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition shadow-2xs">
-      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NjAgOTYwIiB3aWR0aD0iOTYwIiBoZWlnaHQ9Ijk2MCI+CiAgPCEtLSBPdXRlciBSb3VuZGVkIFNxdWlyY2xlIEZyYW1lIC0tPgogIDxyZWN0IHdpZHRoPSI5NjAiIGhlaWdodD0iOTYwIiByeD0iMjIwIiByeT0iMjIwIiBmaWxsPSIjNjk2MWZiIi8+CiAgPCEtLSBJbm5lciBXaGl0ZSBTcXVpcmNsZSBDYXJkIC0tPgogIDxyZWN0IHg9Ijc4IiB5PSI3OCIgd2lkdGg9IjgwNCIgaGVpZ2h0PSI4MDQiIHJ4PSIxNTAiIHJ5PSIxNTAiIGZpbGw9IiNmZmZmZmYiLz4KICAKICA8IS0tIFRlYWwgRmlndXJlcyAoIzBmZDhiZSkgLS0+CiAgPGcgZmlsbD0iIzBmZDhiZSI+CiAgICA8IS0tIENlbnRlciBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjQ4MCIgY3k9IjM2MiIgcj0iODciIC8+CiAgICA8IS0tIExlZnQgUGVyc29uIEhlYWQgLS0+CiAgICA8Y2lyY2xlIGN4PSIyNDYiIGN5PSI0MzUiIHI9Ijg3IiAvPgogICAgPCEtLSBSaWdodCBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjcxNCIgY3k9IjQzNSIgcj0iODciIC8+CiAgICAKICAgIDwhLS0gQ2VudGVyIFBlcnNvbiBCb2R5IChDbG9zZWQgYXJjaCB3aXRoIGJvdHRvbSBiYXIpIC0tPgogICAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNIDM1MCA3MTAgViA1ODIgQyAzNTAgNTEwIDQwOCA0NjcgNDgwIDQ2NyBDIDU1MiA0NjcgNjEwIDUxMCA2MTAgNTgyIFYgNzEwIEggMzUwIFogTSAzODcgNjc0IEggNTczIFYgNTgyIEMgNTczIDUzMSA1MzEgNTAzIDQ4MCA1MDMgQyA0MjkgNTAzIDM4NyA1MzEgMzg3IDU4MiBWIDY3NCBaIiAvPgogIDwvZz4KICAKICA8IS0tIExlZnQgYW5kIFJpZ2h0IFNob3VsZGVycyAtLT4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwZmQ4YmUiIHN0cm9rZS13aWR0aD0iMzciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNIDE1NiA3MTAgViA2NTAgQyAxNTYgNjEyIDE5NSA1ODIgMzI4IDU4MiIgLz4KICAgIDxwYXRoIGQ9Ik0gODA0IDcxMCBWIDY1MCBDIDgwNCA2MTIgNzY1IDU4MiA2MzIgNTgyIiAvPgogIDwvZz4KPC9zdmc+" alt="Meeting Logo" class="w-4 h-4 object-contain" />
-      <span>Meeting by Comsan</span>
-      <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold ml-1">Maintenance</span>
-    </a>
-
-    <button type="button" onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 backdrop-blur-md text-slate-600 dark:text-slate-300 hover:text-foreground flex items-center justify-center transition shadow-2xs cursor-pointer" title="เปลี่ยนโหมดสี">
-      <i id="themeSunIcon" data-lucide="sun" class="w-4 h-4 hidden"></i>
-      <i id="themeMoonIcon" data-lucide="moon" class="w-4 h-4"></i>
-    </button>
-  </header>
-
   <!-- Main Maintenance Card Container -->
-  <main class="w-full max-w-[460px] mx-auto relative z-10 my-auto py-4 sm:py-6">
-    <!-- Centered Brand & Notice Badge -->
-    <div class="text-center mb-5 flex flex-col items-center">
+  <main class="w-full max-w-[460px] mx-auto relative z-10 py-6">
+    <!-- Centered Brand -->
+    <div class="text-center mb-6 flex flex-col items-center">
       <div class="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center mb-3 shadow-md shadow-amber-500/10">
         <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NjAgOTYwIiB3aWR0aD0iOTYwIiBoZWlnaHQ9Ijk2MCI+CiAgPCEtLSBPdXRlciBSb3VuZGVkIFNxdWlyY2xlIEZyYW1lIC0tPgogIDxyZWN0IHdpZHRoPSI5NjAiIGhlaWdodD0iOTYwIiByeD0iMjIwIiByeT0iMjIwIiBmaWxsPSIjNjk2MWZiIi8+CiAgPCEtLSBJbm5lciBXaGl0ZSBTcXVpcmNsZSBDYXJkIC0tPgogIDxyZWN0IHg9Ijc4IiB5PSI3OCIgd2lkdGg9IjgwNCIgaGVpZ2h0PSI4MDQiIHJ4PSIxNTAiIHJ5PSIxNTAiIGZpbGw9IiNmZmZmZmYiLz4KICAKICA8IS0tIFRlYWwgRmlndXJlcyAoIzBmZDhiZSkgLS0+CiAgPGcgZmlsbD0iIzBmZDhiZSI+CiAgICA8IS0tIENlbnRlciBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjQ4MCIgY3k9IjM2MiIgcj0iODciIC8+CiAgICA8IS0tIExlZnQgUGVyc29uIEhlYWQgLS0+CiAgICA8Y2lyY2xlIGN4PSIyNDYiIGN5PSI0MzUiIHI9Ijg3IiAvPgogICAgPCEtLSBSaWdodCBQZXJzb24gSGVhZCAtLT4KICAgIDxjaXJjbGUgY3g9IjcxNCIgY3k9IjQzNSIgcj0iODciIC8+CiAgICAKICAgIDwhLS0gQ2VudGVyIFBlcnNvbiBCb2R5IChDbG9zZWQgYXJjaCB3aXRoIGJvdHRvbSBiYXIpIC0tPgogICAgPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNIDM1MCA3MTAgViA1ODIgQyAzNTAgNTEwIDQwOCA0NjcgNDgwIDQ2NyBDIDU1MiA0NjcgNjEwIDUxMCA2MTAgNTgyIFYgNzEwIEggMzUwIFogTSAzODcgNjc0IEggNTczIFYgNTgyIEMgNTczIDUzMSA1MzEgNTAzIDQ4MCA1MDMgQyA0MjkgNTAzIDM4NyA1MzEgMzg3IDU4MiBWIDY3NCBaIiAvPgogIDwvZz4KICAKICA8IS0tIExlZnQgYW5kIFJpZ2h0IFNob3VsZGVycyAtLT4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwZmQ4YmUiIHN0cm9rZS13aWR0aD0iMzciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNIDE1NiA3MTAgViA2NTAgQyAxNTYgNjEyIDE5NSA1ODIgMzI4IDU4MiIgLz4KICAgIDxwYXRoIGQ9Ik0gODA0IDcxMCBWIDY1MCBDIDgwNCA2MTIgNzY1IDU4MiA2MzIgNTgyIiAvPgogIDwvZz4KPC9zdmc+" alt="Meeting Logo" class="w-10 h-10 object-contain" />
-      </div>
-
-      <!-- Pulsing Maintenance Status Pill -->
-      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold mb-2 shadow-2xs">
-        <span class="relative flex h-2 w-2">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-        </span>
-        <span>ระบบกำลังปรับปรุงชั่วคราว</span>
       </div>
 
       <h1 class="text-2xl sm:text-3xl font-extrabold font-poppins text-slate-900 dark:text-white tracking-tight">Meeting by Comsan</h1>
@@ -218,66 +195,14 @@
           </button>
         </div>
       </div>
-
-      <!-- Member Locked Information Box -->
-      <div class="p-3.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-400 space-y-1 select-none">
-        <div class="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
-          <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-500"></i>
-          <span>สำหรับสมาชิกชมรมทั่วไป:</span>
-        </div>
-        <p class="text-[11px] leading-relaxed">
-          ระบบปิดการเข้าใช้งานสำหรับสมาชิกชั่วคราวเพื่ออัปเกรดโครงสร้างเว็บไซต์และเพิ่มความเร็ว จะเปิดให้เข้าใช้งานตามปกติทันทีหลังการปรับปรุงเสร็จสิ้น
-        </p>
-      </div>
-
-      <div class="pt-1 text-center">
-        <button type="button" onclick="showLoginHelpModal()" class="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:underline cursor-pointer">
-          ต้องการความช่วยเหลือ หรือพบปัญหา?
-        </button>
-      </div>
     </div>
   </main>
 
-  <!-- Footer -->
-  <footer class="w-full text-center text-xs text-slate-500 dark:text-slate-400 py-3 space-y-1 relative z-20">
-    <p>ติดต่อสอบถามฝ่ายเทคนิคได้ที่ <a href="mailto:comsan.meet@gmail.com" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline">comsan.meet@gmail.com</a></p>
-    <p class="opacity-70">© 2026 Meeting by Comsan. สงวนลิขสิทธิ์</p>
-  </footer>
-
-  <!-- Modal Help -->
-  <div id="loginHelpModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs items-center justify-center p-4">
-    <div class="w-full max-w-sm bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-4 animate-fadeIn">
-      <div class="flex items-center justify-between">
-        <h4 class="font-bold text-base text-foreground flex items-center gap-2">
-          <i data-lucide="help-circle" class="w-5 h-5 text-amber-500"></i>
-          <span>แจ้งเตือนสถานะระบบ</span>
-        </h4>
-        <button type="button" onclick="closeLoginHelpModal()" class="w-8 h-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-      <div class="space-y-3 text-xs text-muted-foreground leading-relaxed">
-        <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200">
-          <p class="font-bold mb-1">ขณะนี้ระบบกำลังปรับปรุงชั่วคราว:</p>
-          <p>สมาชิกทั่วไปจะไม่สามารถเข้าสู่ระบบได้ในช่วงเวลานี้ เพื่อให้ทีมงานพัฒนาโครงสร้างความเร็วและปรับปรุงระบบ</p>
-        </div>
-        <div class="p-3 rounded-xl bg-muted/60 border border-border/60">
-          <p class="font-semibold text-foreground mb-1">สำหรับผู้ดูแลระบบ (Admin):</p>
-          <p>ใช้รหัสผ่านผู้ดูแลระบบ (Passcode) ที่ได้รับมอบหมายเพื่อเข้าสู่ระบบควบคุม</p>
-        </div>
-        <p>หากมีข้อสงสัยเร่งด่วน ติดต่อได้ที่ <a href="mailto:comsan.meet@gmail.com" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline">comsan.meet@gmail.com</a></p>
-      </div>
-      <button type="button" onclick="closeLoginHelpModal()" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs cursor-pointer">
-        เข้าใจแล้ว
-      </button>
-    </div>
-  </div>
-
   <!-- Lightweight Scripts for Auth -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabaseConfig.js?v=20261106_02"></script>
-  <script src="js/defaultProjects.js?v=20261106_02"></script>
-  <script src="js/state.js?v=20261106_02"></script>
-  <script src="js/auth.js?v=20261106_02"></script>
+  <script src="js/supabaseConfig.js?v=20261106_03"></script>
+  <script src="js/defaultProjects.js?v=20261106_03"></script>
+  <script src="js/state.js?v=20261106_03"></script>
+  <script src="js/auth.js?v=20261106_03"></script>
 </body>
 </html>
